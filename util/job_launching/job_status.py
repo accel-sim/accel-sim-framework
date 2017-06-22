@@ -142,7 +142,7 @@ stats_to_pull = { "gpgpu_simulation_time\s*=[^1-9]*(.*)" : "SIM_TIME",
                   "gpu_tot_sim_insn\s*=\s*(.*)" : "TOT_INSN",
                   "gpu_tot_ipc\s*=\s*(.*)" : "TOT_IPC" }
 
-ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}" +\
+ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t" +\
              "{gpusim_version:20.20}\t{config:20.20}\t{status:40.40}\t{stat:50}"
 
 # At this point we have the logfile we want to get a synopsis for.
@@ -200,7 +200,7 @@ for logfile in parsed_logfiles:
                     continue
 
                 # Only go up for 1000 lines looking for stuff
-                MAX_LINES = 1000
+                MAX_LINES = 100000
                 count = 0
                 for line in reversed(open(sim_file).readlines()):
                     count += 1
@@ -228,6 +228,8 @@ for logfile in parsed_logfiles:
                                 additional_stats += "\t{0}={1}".format( name, number )
                             else:
                                 additional_stats = "{0}={1}".format( name, number )
+                    if len(stat_found) == len(stats_to_pull):
+                        break
 
             if len( status_found ) > 0:
                 status_string = ", ".join( status_found )
