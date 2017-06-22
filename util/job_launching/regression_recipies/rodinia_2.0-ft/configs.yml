@@ -3,6 +3,7 @@ run:
     - QUADROFX5600
     - QUADROFX5800
     - TESLAC2050
+    - GTX750Ti
 
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
@@ -18,4 +19,8 @@ QUADROFX5800:
 
 TESLAC2050:
     base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
+    extra_params: ""
+
+GTX750Ti:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
     extra_params: ""
