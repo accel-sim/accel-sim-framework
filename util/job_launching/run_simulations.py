@@ -165,7 +165,7 @@ class ConfigurationSpec:
         if command_line_args == None:
             txt_args = ""
         else:
-            txt_args = ""
+            txt_args = command_line_args
 
         replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args],
                             "NODES":"1", 
@@ -228,10 +228,10 @@ if not os.path.exists( running_so_dir ):
 options.so_dir = running_so_dir
 
 options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "sdk_4.2", "benchmarks.yml"),
+    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "benchmarks.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "sdk_4.2", "configs.yml"),
+    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "configs.yml"),
     this_directory )
 
 
