@@ -166,6 +166,9 @@ for logfile in parsed_logfiles:
 
         failed_job_text = ""
         failed_jobs_summary = ""
+        num_jobs = 0
+        num_passed = 0
+        a_job_failed = False
         for line in f:
             time, jobId, app ,args, config, jobname = line.split()
 
@@ -175,6 +178,7 @@ for logfile in parsed_logfiles:
                 print("WARNING the outputdir " + output_dir + " does not exist")
                 continue
 
+            num_jobs += 1
             errfile = os.path.join(output_dir, app + "-" + args + "." + "e" + jobId)
             outfile = os.path.join(output_dir, app + "-" + args + "." + "o" + jobId)
 
@@ -262,12 +266,20 @@ for logfile in parsed_logfiles:
                 failed_job_text +=  open(errfile).read() + "\n"
                 failed_job_text += "------------------\n"
                 failed_job_text += "**********************************************************\n"
-        failed_job_filename = "failed_job_log_{0}".format(os.path.basename(logfile))
-        failed_job_filename = os.path.join(os.path.dirname(logfile), failed_job_filename)
-        failed_job_file = open( failed_job_filename, "w" )
-        failed_job_file.write( failed_jobs_summary + "\n" )
-        failed_job_file.write( failed_job_text )
-        failed_job_file.close()
+                a_job_failed = True
+            if "FUNC_TEST_PASSED" == status_found:
+                num_passed += 1
+
         print "-" * len(header)
-        print "failed job log written to {0}".format(failed_job_filename)
+        if num_passed == num_jobs:
+            print "Congratulations! All jobs pass!"
+
+        if a_job_failed:
+            failed_job_filename = "failed_job_log_{0}".format(os.path.basename(logfile))
+            failed_job_filename = os.path.join(os.path.dirname(logfile), failed_job_filename)
+            failed_job_file = open( failed_job_filename, "w" )
+            failed_job_file.write( failed_jobs_summary + "\n" )
+            failed_job_file.write( failed_job_text )
+            failed_job_file.close()
+            print "failed job log written to {0}".format(failed_job_filename)
 
