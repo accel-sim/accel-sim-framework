@@ -38,7 +38,7 @@ def dir_option_test(name, default, this_directory):
     if not os.path.isdir(name):
         name = os.path.join(os.getcwd(), name)
         if not os.path.isdir(name):
-            sys.exit("Error - cannot open file {0}".format(name))
+            exit("Error - cannot open file {0}".format(name))
     return name
 
 def parse_run_simulations_options():
