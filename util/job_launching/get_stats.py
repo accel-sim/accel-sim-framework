@@ -166,7 +166,10 @@ for stat_name, token in stats_to_pull.iteritems():
     for appargs in benchmark_args:
         csv_str += appargs + ","
         for config in configs:
-            csv_str += stat_map[appargs + config + stat_name] + ","
+            if appargs + config + stat_name in stat_map:
+                csv_str += stat_map[appargs + config + stat_name] + ","
+            else:
+                csv_str += "NA,"
         csv_str += "\n"
     csv_str += "\n"
 
