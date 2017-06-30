@@ -4,8 +4,6 @@ from optparse import OptionParser
 import os
 import subprocess
 import sys
-this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-sys.path.append(os.path.join(this_directory, '../'))
 import re
 import shutil
 import glob
@@ -13,6 +11,7 @@ import datetime
 import yaml
 import common
 
+this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_so_name( so_path ):
