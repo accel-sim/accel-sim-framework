@@ -1,0 +1,14 @@
+# Collect contains the name of the stats you want to collect.
+# Under the name of the stat provide a regex, where the first group
+# Is the value you want printed.
+# If you don't know "how to regex".... Learn how :) It will change your life.
+# Here is a handy regex tester that helps get the thing right faster without re-running stuff:
+#   http://www.regexpal.com/
+
+collect:
+    gpgpu_simulation_time:
+        'gpgpu_simulation_time\s*=[^1-9]*(.*)'
+    gpu_tot_sim_insn:
+        'gpu_tot_sim_insn\s*=\s*(.*)'
+    gpu_tot_ipc:
+        'gpu_tot_ipc\s*=\s*(.*)'
