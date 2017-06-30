@@ -138,9 +138,9 @@ status_strings = { "passed" : "FUNC_TEST_PASSED",
                    "XML Parsing error.*gpuwattch" : "NO_GPU_WATTCH_CFG" }
 
 # Also searches the output files for these stats and prints them in the log
-stats_to_pull = { "gpgpu_simulation_time\s*=[^1-9]*(.*)" : "SIM_TIME",
-                  "gpu_tot_sim_insn\s*=\s*(.*)" : "TOT_INSN",
-                  "gpu_tot_ipc\s*=\s*(.*)" : "TOT_IPC" }
+stats_to_pull = { "SIM_TIME": "gpgpu_simulation_time\s*=[^1-9]*(.*)",
+                  "TOT_INSN" : "gpu_tot_sim_insn\s*=\s*(.*)",
+                  "TOT_IPC" : "gpu_tot_ipc\s*=\s*(.*)" }
 
 ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t" +\
              "{gpusim_version:20.20}\t{config:20.20}\t{status:40.40}\t{stat:50}"
@@ -153,8 +153,6 @@ for logfile in parsed_logfiles:
 
     # Create the output file
     base_logname = os.path.basename(logfile)
-    output_filename = os.path.join( logfiles_directory, "job_status.{0}".format( base_logname ) )
-    out_file = open( output_filename, "w" )
 
     # Parse the logfile for job ids
     with open( logfile ) as f:
@@ -219,7 +217,7 @@ for logfile in parsed_logfiles:
                             status_found.add( name )
 
                     # pull out some stats
-                    for token, name in stats_to_pull.iteritems():
+                    for name,token in stats_to_pull.iteritems():
                         if token in stat_found:
                             continue
                         existance_test = re.search( token, line.rstrip() )
