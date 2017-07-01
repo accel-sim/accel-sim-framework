@@ -6,8 +6,8 @@
 #   http://www.regexpal.com/
 
 collect:
-    gpgpu_simulation_time:
-        'gpgpu_simulation_time\s*=[^1-9]*(.*)'
+    "gpgpu_simulation_time (sec)":
+        'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'
     gpu_tot_sim_insn:
         'gpu_tot_sim_insn\s*=\s*(.*)'
     gpu_tot_ipc:
