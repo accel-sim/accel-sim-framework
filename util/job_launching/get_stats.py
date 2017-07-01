@@ -153,7 +153,20 @@ for app_and_args in apps_and_args:
             print "WARNING - " + outfile + " does not exist"
             continue
 
-        # Only go up for 1000 lines looking for stuff
+        # Do a quick 100-line pass to get the GPGPU-Sim Version number
+        MAX_LINES = 100
+        count = 0
+        for line in open(outfile).readlines():
+            count += 1
+            if count >= MAX_LINES:
+                break
+            build_match = re.match(".*\[build\s+(.*)\].*", line)
+            if build_match:
+                stat_map[app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
+                break
+
+
+        # Only go up for 10000 lines looking for stuff
         MAX_LINES = 100000
         count = 0
         for line in reversed(open(outfile).readlines()):
@@ -176,7 +189,11 @@ for app_and_args in apps_and_args:
 # After collection, spew out the tables
 DIVISION = "-" * 100
 csv_str = ""
-for stat_name, token in stats_to_pull.iteritems():
+
+# Just adding this in here sinc it is a special case and is not parsed like everything else, because you need
+# to read from the beginning not the end
+stats_to_pull["GPGPU-Sim-build"] = ""
+for stat_name in stats_to_pull:
     csv_str += DIVISION + "\n"
     csv_str += stat_name + "\n,"
     for config in configs:
