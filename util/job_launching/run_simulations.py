@@ -34,8 +34,9 @@ class ConfigurationSpec:
     # Public Interface methods
     #########################################################################################
     # Class is constructed with a single line of text from the sweep_param file
-    def __init__(self, init_str, config_file):
-        [self.run_subdir, self.params] = re.split(":",init_str, 1)
+    def __init__(self, ( name, params, config_file ) ):
+        self.run_subdir = name
+        self.params = params
         self.config_file = config_file
 
     def my_print(self):
@@ -241,31 +242,17 @@ if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").s
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
     exit("ERROR - Cannot find nvcc PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
 
-benchmark_yaml = yaml.load(open(options.benchmark_file))
-benchmarks = []
-for suite in benchmark_yaml['run']:
-    for exe in benchmark_yaml[suite]['execs']:
-        exe_name = exe.keys()[0]
-        args_list = exe.values()[0]
-        benchmarks.append( ( benchmark_yaml[suite]['exec_dir'],
-                             benchmark_yaml[suite]['data_dirs'],
-                             exe_name, args_list ) )
+benchmarks = common.parse_app_yml( options.benchmark_file )
 
 print benchmarks
 
-# Construct a new ConfigurationSpec class for each line in the sweep file
-# match functions are to remove commented out lines and lines with only whitespace
-configs_yaml = yaml.load(open(options.configs_file))
+cfgs = common.parse_config_yml( options.configs_file )
 configurations = []
-for config in configs_yaml['run']:
-    gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
-    configurations.append(ConfigurationSpec( config + ":" + configs_yaml[config]['extra_params'],
-                                              gpgpusim_conf ) )
-
+for config in cfgs:
+    configurations.append( ConfigurationSpec( config ) )
 
 print("Running Simulations with GPGPU-Sim built from \n{0}\n ".format(version_string) +
       "\nUsing configs_file " + options.configs_file +
-      "\nBaseline Config File " + gpgpusim_conf +
       "\nBenchmark File " + options.benchmark_file)
 
 for config in configurations:

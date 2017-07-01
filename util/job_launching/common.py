@@ -3,6 +3,27 @@ from optparse import OptionParser
 import subprocess
 import re
 import os
+import yaml
+
+def parse_app_yml( app_yml ):
+    benchmark_yaml = yaml.load(open(app_yml))
+    benchmarks = []
+    for suite in benchmark_yaml['run']:
+        for exe in benchmark_yaml[suite]['execs']:
+            exe_name = exe.keys()[0]
+            args_list = exe.values()[0]
+            benchmarks.append( ( benchmark_yaml[suite]['exec_dir'],
+                                 benchmark_yaml[suite]['data_dirs'],
+                                 exe_name, args_list ) )
+    return benchmarks
+
+def parse_config_yml( config_yml ):
+    configs_yaml = yaml.load(open( config_yml ))
+    configurations = []
+    for config in configs_yaml['run']:
+        gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
+        configurations.append( ( config, configs_yaml[config]['extra_params'], gpgpusim_conf ) )
+    return configurations
 
 def get_cuda_version():
     # Get CUDA version
@@ -21,7 +42,10 @@ def get_cuda_version():
 # Either way it does a test if the absolute path exists and if not, tries a relative path
 def file_option_test(name, default, this_directory):
     if name == "":
-        name = os.path.join(this_directory, default)
+        if default == "":
+            return ""
+        else:
+            name = os.path.join(this_directory, default)
     try:
         with open(name): pass
     except IOError:
