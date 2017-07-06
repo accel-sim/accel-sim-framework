@@ -258,20 +258,3 @@ print("Running Simulations with GPGPU-Sim built from \n{0}\n ".format(version_st
 for config in configurations:
     config.my_print()
     config.run(version_string, benchmarks, options.run_directory, cuda_version, options.so_dir)
-
-if options.monitor:
-    os.chdir(this_directory + "../job_launching/")
-    logfiles_dir = os.path.join(this_directory, "../job_launching/logfiles/")
-    processid = subprocess.Popen([this_directory + "z_monitor.pl", options.run_directory])
-    all_log_files = [os.path.join(logfiles_dir, f)\
-    for f in os.listdir(logfiles_dir)\
-        if (re.match("sim_log.*", f))]
-    latest_file = max(all_log_files, key=os.path.getmtime)
-    combined_log_file = re.sub(logfiles_dir, logfiles_dir + "z_", latest_file) + ".latest"
-    print "A process named z_monitor was launched with ID: {0}.\nIt is actively testing ".format( processid.pid ) +\
-        "your jobs for completion and functional PASS/FAIL.\n" +\
-        "The output of this process is in {0}.\n".format( combined_log_file ) +\
-        "If you want to disable this monitoring feature, then do not use the --monitor option."
-
-    if str(os.getenv("DISPLAY")) != "None" and str(os.getenv("DISPLAY")) != "":
-        subprocess.Popen(["gvim", "+set nowrap", combined_log_file])
