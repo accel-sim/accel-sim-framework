@@ -60,12 +60,17 @@ while True:
                         num_not_done += 1
                     else:
                         num_else += 1
+                elif re.match("failed job log.*", line):
+                    failed_job_file = line
+
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
     
     total = num_passed + num_not_done + num_else
     print "Passed:{0}/{1}, Not passed:{2}/{1}, Not done:{3}/{1}"\
         .format(num_passed, total, num_else, num_not_done)
+    if num_else > 0:
+            print failed_job_file
     if num_not_done == 0:
         print "All {0} Tests Done.".format(total)
         if num_else == 0:
