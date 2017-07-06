@@ -5,8 +5,6 @@ import re
 import os
 import subprocess
 import sys
-this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-sys.path.append(os.path.join(this_directory, '../'))
 import common
 import math
 
