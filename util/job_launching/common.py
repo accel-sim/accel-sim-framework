@@ -91,9 +91,6 @@ def parse_run_simulations_options():
                   help="Point this to the directory that your .so is stored in. If nothing is input here - "+\
                        "the scripts will assume that you are using the so built in GPGPUSIM_ROOT.",
                        default="")
-    parser.add_option("-m", "--monitor", dest="monitor", action="store_true",
-                  help="Pass this if you do not want to launch the z_monitor.pl process.",
-                       default="")
     parser.add_option("-N", "--launch_name", dest="launch_name", default="",
                   help="Pass if you want to name the launch. This will determine the name of the logfile.\n" +\
                        "If you do not name the file, it will just use the current date/time.")
