@@ -14,7 +14,7 @@ The repository provides 3 things:
 3. The regression recipes run by Travis when regressing pull requests to the GPGPU-Sim dev branch. If you want to know if you pass Travis, then run this first.
 
 
-### How do a quickly just run what Travis runs?
+### How do  quickly just run what Travis runs?
 
 The scripts here provide a set of defaults that make it relatively painless to run the default regression test.
 Remember, the following things should be setup:
