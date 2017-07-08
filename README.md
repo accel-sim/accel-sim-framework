@@ -27,6 +27,7 @@ Remember, the following things should be setup:
 If all this is true, then running the following commands will verify that the configs that ship in GPGPU-Sim are finishing and functionally correct:
 
 ```
+git checkout travis-regress
 cd ./benchmarks/src
 make all -j
 # All the apps will be output to: ./benchmarks/bin/4.2/release
