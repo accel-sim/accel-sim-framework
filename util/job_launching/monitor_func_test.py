@@ -37,6 +37,18 @@ jobstatus_out_filename = "/tmp/job_status_out.txt"
 
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
+
+    ####### HACK###########
+    subprocess.call(["qstat"],
+        stdout=jobstatus_out_file, stderr=jobstatus_out_file)
+    jobstatus_out_file.seek(0)
+    for line in jobstatus_out_file.readlines():
+        print line
+    jobstatus_out_file.close()
+    os.remove(jobstatus_out_filename)
+    continue
+    ####### HACK###########
+
     if options.verbose:
         print "Calling job_status.py"
     if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
