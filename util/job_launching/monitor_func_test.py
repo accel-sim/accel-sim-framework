@@ -35,7 +35,7 @@ jobstatus_out_filename = "/tmp/job_status_out.txt"
 
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
-    if subprocess.call(["./job_status.py" ,"-l", options.logfile, "-N", options.sim_name],
+    if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
         stdout=jobstatus_out_file, stderr=jobstatus_out_file) < 0:
             exit("Error Launching job_status.py")
     else:
@@ -71,13 +71,15 @@ while True:
         .format(num_passed, total, num_else, num_not_done)
     if num_else > 0:
             print failed_job_file
+
     if num_not_done == 0:
         print "All {0} Tests Done.".format(total)
         if num_else == 0:
             print "Congratulations! All Tests Pass!"
+            exit(0)
         else:
             print "Something did not pass."
-        break
+            exit(1)
     else:
         print "Sleeping for 30s"
         time.sleep(30)
