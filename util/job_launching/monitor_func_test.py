@@ -34,7 +34,9 @@ options.sim_name = options.sim_name.strip()
 jobstatus_out_filename = "/tmp/job_status_out.txt"
 
 while True:
+    print "Beat"
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
+    print "File opened"
     if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
         stdout=jobstatus_out_file, stderr=jobstatus_out_file) < 0:
             exit("Error Launching job_status.py")
@@ -45,6 +47,7 @@ while True:
         num_not_done = 0
         num_else = 0
         for line in jobstatus_out_file.readlines():
+            print line
             if jobStatusCol == None:
                 name_line_match = re.match("(.*)JobStatus.*", line)
                 if name_line_match != None:
