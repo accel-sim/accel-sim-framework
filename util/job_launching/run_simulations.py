@@ -244,8 +244,6 @@ if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").s
 
 benchmarks = common.parse_app_yml( options.benchmark_file )
 
-print benchmarks
-
 cfgs = common.parse_config_yml( options.configs_file )
 configurations = []
 for config in cfgs:
