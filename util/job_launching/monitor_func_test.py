@@ -25,6 +25,8 @@ parser.add_option("-N", "--sim_name", dest="sim_name",
                        " give you the status of the latest run with that name."+ \
                        " if you want older runs from this name, then just point it directly at the"+\
                        " logfile with \"-l\"", default="")
+parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
+                  help="Constantly print stuff")
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
@@ -34,9 +36,9 @@ options.sim_name = options.sim_name.strip()
 jobstatus_out_filename = "/tmp/job_status_out.txt"
 
 while True:
-    print "Beat"
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
-    print "File opened"
+    if options.verbose:
+        print "Calling job_status.py"
     if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
         stdout=jobstatus_out_file, stderr=jobstatus_out_file) < 0:
             exit("Error Launching job_status.py")
@@ -47,7 +49,8 @@ while True:
         num_not_done = 0
         num_else = 0
         for line in jobstatus_out_file.readlines():
-            print line
+            if options.verbose:
+                print line.strip()
             if jobStatusCol == None:
                 name_line_match = re.match("(.*)JobStatus.*", line)
                 if name_line_match != None:
