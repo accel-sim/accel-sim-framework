@@ -34,6 +34,7 @@ options.sim_name = options.sim_name.strip()
 
 
 jobstatus_out_filename = "/tmp/job_status_out.txt"
+failed_job_file = None
 
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
@@ -58,7 +59,10 @@ while True:
                     continue
             else:
                 tokens = line.split('\t')
-                if len(tokens) > jobStatusCol:
+                fail_match = re.match("failed job log written to (.*)", line)
+                if fail_match != None:
+                    failed_job_file = fail_match.group(1)
+                elif len(tokens) > jobStatusCol:
                     status = tokens[jobStatusCol].strip()
                     if status == "FUNC_TEST_PASSED":
                         num_passed += 1
@@ -66,8 +70,6 @@ while True:
                         num_not_done += 1
                     else:
                         num_else += 1
-                elif re.match("failed job log.*", line):
-                    failed_job_file = line
 
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
@@ -76,7 +78,8 @@ while True:
     print "Passed:{0}/{1}, Not passed:{2}/{1}, Not done:{3}/{1}"\
         .format(num_passed, total, num_else, num_not_done)
     if num_else > 0:
-            print failed_job_file
+        print "Contents {0}:".format(failed_job_file)
+        print open(failed_job_file).read()
 
     if num_not_done == 0:
         print "All {0} Tests Done.".format(total)
