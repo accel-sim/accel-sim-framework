@@ -1,0 +1,12 @@
+run:
+    - GTX750Ti
+    - GTX750Ti-PTXPLUS
+
+
+GTX750Ti:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
+    extra_params: ""
+
+GTX750Ti-PTXPLUS:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
