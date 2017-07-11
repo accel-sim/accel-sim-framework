@@ -1,0 +1,11 @@
+run:
+    - TESLAC2050
+    - TESLAC2050-PTXPLUS
+
+TESLAC2050:
+    base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
+    extra_params: ""
+
+TESLAC2050-PTXPLUS:
+    base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"

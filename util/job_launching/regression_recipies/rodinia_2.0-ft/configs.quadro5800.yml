@@ -1,0 +1,13 @@
+run:
+    - QUADROFX5800
+    - QUADROFX5800-PTXPLUS
+
+
+QUADROFX5800:
+    base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
+    extra_params: ""
+
+QUADROFX5800-PTXPLUS:
+    base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+
