@@ -2,7 +2,7 @@
 #PBS -N REPLACE_NAME
 #PBS -l nodes=REPLACE_NODES
 #PBS -l walltime=200:00:00,mem=2000mb
-#PBS -q general-queue
+#PBS -q batch
 #PBS -m ea
 #PBS -V
 #PBS -p 1020
