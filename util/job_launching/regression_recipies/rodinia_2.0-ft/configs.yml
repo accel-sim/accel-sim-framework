@@ -1,11 +1,11 @@
 run:
     - GTX480
-    - QUADROFX5600
-    - QUADROFX5800
-    - TESLAC2050
-    - GTX750Ti
-    - GTX480-PTXPLUS
-    - GTX750Ti-PTXPLUS
+#    - QUADROFX5600
+#    - QUADROFX5800
+#    - TESLAC2050
+#    - GTX750Ti
+#    - GTX480-PTXPLUS
+#    - GTX750Ti-PTXPLUS
 
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"

@@ -33,8 +33,8 @@ options.logfile = options.logfile.strip()
 options.sim_name = options.sim_name.strip()
 
 
-jobstatus_out_filename = "/tmp/job_status_out.txt"
-get_stats_out_filename = "/tmp/get_stats_out.txt"
+jobstatus_out_filename = os.path.join(this_directory, "job_status_out.txt")
+get_stats_out_filename = os.path.join(this_directory, "get_stats_out.txt")
 failed_job_file = None
 
 while True:

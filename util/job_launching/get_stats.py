@@ -61,7 +61,7 @@ options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
 options.sim_name = options.sim_name.strip()
 
-cuda_version = common.get_cuda_version()
+cuda_version = common.get_cuda_version( this_directory )
 options.run_dir = common.dir_option_test( options.run_dir, this_directory + ("../../sim_run_%s/"%cuda_version),
                                           this_directory )
 if not os.path.isdir(options.run_dir):
