@@ -34,6 +34,7 @@ options.sim_name = options.sim_name.strip()
 
 
 jobstatus_out_filename = "/tmp/job_status_out.txt"
+get_stats_out_filename = "/tmp/get_stats_out.txt"
 failed_job_file = None
 
 while True:
@@ -88,6 +89,16 @@ while True:
         print "All {0} Tests Done.".format(total)
         if num_else == 0:
             print "Congratulations! All Tests Pass!"
+            if options.verbose:
+                get_stats_out_file = open(get_stats_out_filename, 'w+')
+                print "Calling get_stats.py"
+                if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-l", options.logfile, "-N", options.sim_name],
+                    stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
+                    print "Error Launching get_stats.py"
+                get_stats_out_file.seek(0)
+                print get_stats_out_file.read()
+                get_stats_out_file.close()
+                os.remove(get_stats_out_filename)
             exit(0)
         else:
             print "Something did not pass."
