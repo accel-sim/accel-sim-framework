@@ -27,7 +27,7 @@ def parse_config_yml( config_yml ):
 
 def get_cuda_version():
     # Get CUDA version
-    nvcc_out_filename = "nvcc_out.txt"
+    nvcc_out_filename = os.path.join( "/tmp", "nvcc_out.txt" )
     nvcc_out_file = open(nvcc_out_filename, 'w+')
     subprocess.call(["nvcc", "--version"],\
                    stdout=nvcc_out_file)
