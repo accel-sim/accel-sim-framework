@@ -41,7 +41,9 @@ while True:
     if options.verbose:
         print "Calling job_status.py"
     if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
-        stdout=jobstatus_out_file, stderr=jobstatus_out_file) < 0:
+        stdout=jobstatus_out_file, stderr=jobstatus_out_file) != 0:
+            jobstatus_out_file.seek(0)
+            print jobstatus_out_file.read()
             exit("Error Launching job_status.py")
     else:
         jobstatus_out_file.seek(0)
