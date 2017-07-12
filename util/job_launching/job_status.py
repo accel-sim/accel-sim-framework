@@ -12,7 +12,7 @@ import math
 def get_job_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
                    "exec_host" : "UNKNOWN" }
-    trace_out_filename = "/tmp/trace_out.txt"
+    trace_out_filename = os.path.join(this_directory, "trace_out.txt")
     trace_out_file = open(trace_out_filename, 'w+')
     if subprocess.call(["qstat" ,"-f", jobId],
         stdout=trace_out_file, stderr=trace_out_file) < 0:
@@ -82,7 +82,7 @@ options.num_lines = options.num_lines.strip()
 options.run_dir = options.run_dir.strip()
 options.sim_name = options.sim_name.strip()
 
-cuda_version = common.get_cuda_version()
+cuda_version = common.get_cuda_version( this_directory )
 
 parsed_logfiles = []
 logfiles_directory = this_directory + "../job_launching/logfiles/"

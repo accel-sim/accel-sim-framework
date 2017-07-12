@@ -207,7 +207,7 @@ if str(os.getenv("GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN")) != "1":
     sys.exit("ERROR - Please run setup_environment before running this script")
 
 
-cuda_version = common.get_cuda_version()
+cuda_version = common.get_cuda_version( this_directory )
 
 if options.run_directory == "":
     options.run_directory = os.path.join(this_directory, "../../sim_run_%s"%cuda_version)
