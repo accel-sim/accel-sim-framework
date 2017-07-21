@@ -81,7 +81,7 @@ while True:
         .format(num_passed, total, num_else, num_not_done)
     if num_else > 0:
         print "Contents {0}:".format(failed_job_file)
-        if options.verbose:
+        if options.verbose and failed_job_file != None:
             print open(failed_job_file).read()
 
     if num_not_done == 0:
