@@ -244,7 +244,7 @@ for logfile in parsed_logfiles:
 
             if "FUNC_TEST_PASSED" == status_string:
                 num_passed += 1
-            else if ( "WAITING_TO_RUN" not in status_string \
+            elif ( "WAITING_TO_RUN" not in status_string \
                 and "RUNNING" not in status_string ):
                 failed_jobs_summary += job_summary + "\n"
                 failed_job_text += "**********************************************************\n"
