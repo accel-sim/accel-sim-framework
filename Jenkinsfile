@@ -10,7 +10,6 @@ pipeline {
                 make -j -C ./benchmarks/src all'
             }
         }
-        }
     }
     post {
         always{
