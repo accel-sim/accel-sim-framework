@@ -89,26 +89,27 @@ class ConfigurationSpec:
                     torque_out_file.close()
                     os.remove(torque_out_filename)
                     os.chdir(saved_dir)
-        
-                    # Dump the benchmark description to the logfile
-                    if not os.path.exists(this_directory + "logfiles/"):
-                        os.makedirs(this_directory + "logfiles/")
-                    now_time = datetime.datetime.now()
-                    day_string = now_time.strftime("%y.%m.%d-%A")
-                    time_string = now_time.strftime("%H:%M:%S")
-                    log_name = "sim_log.{0}".format(options.launch_name)
-                    logfile = open(this_directory +\
-                                   "logfiles/"+ log_name + "." +\
-                                   day_string + ".txt",'a')
-                    print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
-                           ( time_string ,\
-                           torque_out ,\
-                           benchmark ,\
-                           self.benchmark_args_subdirs[args] ,\
-                           self.run_subdir,\
-                           benchmark,\
-                           build_handle )
-                    logfile.close()
+
+                    if len(torque_out) > 0:
+                        # Dump the benchmark description to the logfile
+                        if not os.path.exists(this_directory + "logfiles/"):
+                            os.makedirs(this_directory + "logfiles/")
+                        now_time = datetime.datetime.now()
+                        day_string = now_time.strftime("%y.%m.%d-%A")
+                        time_string = now_time.strftime("%H:%M:%S")
+                        log_name = "sim_log.{0}".format(options.launch_name)
+                        logfile = open(this_directory +\
+                                       "logfiles/"+ log_name + "." +\
+                                       day_string + ".txt",'a')
+                        print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
+                               ( time_string ,\
+                               torque_out ,\
+                               benchmark ,\
+                               self.benchmark_args_subdirs[args] ,\
+                               self.run_subdir,\
+                               benchmark,\
+                               build_handle )
+                        logfile.close()
             self.benchmark_args_subdirs.clear()
 
     #########################################################################################
