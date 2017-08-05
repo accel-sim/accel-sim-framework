@@ -7,6 +7,7 @@ pipeline {
         stage('4.2-simulations-build'){
             steps{
                 sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
+                source ./benchmarks/src/setup_environment &&\
                 make -j -C ./benchmarks/src all'
             }
         }
