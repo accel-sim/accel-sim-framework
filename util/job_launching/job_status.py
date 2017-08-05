@@ -153,6 +153,7 @@ for logfile in parsed_logfiles:
     base_logname = os.path.basename(logfile)
 
     # Parse the logfile for job ids
+    errs = ""
     with open( logfile ) as f:
         header = ROW_STRING.format( jobId="TorqueJob",exec_node="Node",app="App",args="AppArgs",
                 gpusim_version="GPGPU-SimVersion",config="GPGPU-SimConfig",
@@ -166,7 +167,12 @@ for logfile in parsed_logfiles:
         num_passed = 0
         a_job_failed = False
         for line in f:
-            time, jobId, app ,args, config, jobname = line.split()
+            try:
+                time, jobId, app ,args, config, jobname = line.split()
+            except ValueError as err:
+                errs += "Warning - logfile line: \n\"{0}\"\nis missing all the required fields.".format(line.strip())+\
+                       " This is likely because the launching of a job failed.\n"
+                continue
 
             # now get the right logfile
             output_dir = os.path.join(options.run_dir, app, args, config)
@@ -269,6 +275,10 @@ for logfile in parsed_logfiles:
         print "-" * len(header)
         if num_passed == num_jobs:
             print "Congratulations! All jobs pass!"
+        
+        if errs != "":
+            print "There were some errors while parsing the logfiles:"
+            print errs
 
         if a_job_failed:
             failed_job_filename = "failed_job_log_{0}".format(os.path.basename(logfile))
