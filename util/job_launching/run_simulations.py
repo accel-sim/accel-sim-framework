@@ -69,7 +69,7 @@ class ConfigurationSpec:
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
-                    torque_out_filename = this_directory + "torque_out.txt"
+                    torque_out_filename = this_directory + "torque_out.{0}.txt".format(os.getpgrp())
                     torque_out_file = open(torque_out_filename, 'w+')
                     saved_dir = os.getcwd()
                     os.chdir(this_run_dir)
