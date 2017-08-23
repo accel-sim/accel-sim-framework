@@ -1,0 +1,40 @@
+
+# The run_simulations.py script will run all the suites specified under run
+run:
+    - dragon-naive
+
+# The format is:
+# suite_name:
+#   exec_dir: <location of the executables, relative to the run_simulations.py script>
+#   data_dir: <location of the directories containing benchmark data>
+#   execs:
+#       - <exec_name_1>:
+#           - <commandline arg_list 1> # Leave blank if no arguments
+#           - <commandline arg_list 2>
+#           ...
+#       - <exec_name_2>
+#           ...
+#       ...
+# If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
+
+# dragon-naive
+dragon-naive:
+    exec_dir: "../../benchmarks/dragon_li/bin/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/dragon/"
+    execs:
+        - testBfs:
+	    - -g ./data/sample.gr -e -v
+            - -g graphs/citationCiteseer.graph -f metis -e -v 
+            - -g graphs/coPapersDBLP.graph -f metis -e -v --sf 1.5
+
+	- testAmr:
+            - -v -e -r 20
+        - testSssp:
+	    - -g graphs/sample.gr -e -v
+            - -g graphs/citationCiteseer.graph -f metis -e -v
+	    - -g graphs/coPapersDBLP.graph -f metis -e -v
+	-testJoin:
+	    - -v -e -l 204800 -r 204800
+
+
+

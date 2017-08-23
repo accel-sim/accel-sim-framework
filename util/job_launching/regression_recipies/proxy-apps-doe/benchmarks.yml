@@ -1,0 +1,38 @@
+
+# The run_simulations.py script will run all the suites specified under run
+run:
+    - proxy-apps-doe
+
+# The format is:
+# suite_name:
+#   exec_dir: <location of the executables, relative to the run_simulations.py script>
+#   data_dir: <location of the directories containing benchmark data>
+#   execs:
+#       - <exec_name_1>:
+#           - <commandline arg_list 1> # Leave blank if no arguments
+#           - <commandline arg_list 2>
+#           ...
+#       - <exec_name_2>
+#           ...
+#       ...
+# If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
+
+# Rodinia 1.0 implemented with a pass/fail functional test
+#proxy-apps-doe
+proxy-apps-doe:
+    exec_dir: "../../benchmarks/proxy-apps-doe/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+         - comd/CoMDCUDA:
+            - p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
+         - xsbench/XSBench:
+            - 12 small 0
+            - 12 large 0
+         - minife_matvec_ell/matvec :
+            - ./data/8x8x8.mtx 0
+            - ./data/32x32x32.mtx 0
+            - ./data/32x64x64.mtx 0
+            - ./data/64x64x64.mtx 0
+            - ./data/128x64x64.mtx 0
+
+#- cns/cns: TO DO
