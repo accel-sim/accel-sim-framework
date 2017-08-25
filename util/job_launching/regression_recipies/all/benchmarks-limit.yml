@@ -4,6 +4,8 @@ run:
     - rodinia_2.0-ft
     - dragon-naive
     - pannotia
+    - proxy-apps-doe1
+    - proxy-apps-doe2
 
 # The format is:
 # suite_name:
@@ -21,7 +23,7 @@ run:
 
 # Rodinia 1.0 implemented with a pass/fail functional test
 rodinia_2.0-ft:
-    exec_dir: "../../benchmarks/bin/8.0/release/"
+    exec_dir: "../../benchmarks/bin/4.2/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/2.0-ft/"
     execs:
         - backprop-rodinia-2.0-ft:
@@ -49,56 +51,81 @@ rodinia_2.0-ft:
 
 # pannotia
 pannotia:
-    exec_dir: "../../benchmarks/bin/8.0/release/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/pannotia/"
+    exec_dir: "../../benchmarks/bin/4.2/release/"
+    data_dirs: "../../benchmarks/data_dirs/pannotia/"
     execs:
         - bc:
-	    - ./data/1k_128k.gr     #1.7 MB
-	    - ./data/2k_1M.gr       #14.5 MB
+            - ./data/1k_128k.gr
+            - ./data/2k_1M.gr
         - color_max:
-            - ./data/ecology1.graph 1  #28.5 MB
-	    - ./G3_circuit.graph 1     #46.3 MB
- 	- color_maxmin:
-            - ./data/ecology1.graph 1  #28.5 MB
-	    - ./G3_circuit.graph 1     #46.3 MB
+            - ./data/ecology1.graph 1
+            - ./G3_circuit.graph 1
+        - color_maxmin:
+            - ./data/ecology1.graph 1
+            - ./G3_circuit.graph 1
         - fw:
-            - ./data/256_16384.gr      #200 KB
-	    - ./data/512_65536.gr      #800 KB
-	- fw_block:
             - ./data/256_16384.gr
-	    - ./data/512_65536.gr
+            - ./data/512_65536.gr
+        - fw_block:
+            - ./data/256_16384.g
+            - ./data/512_65536.g
         - mis:
-            - ./data/ecology1.graph 1     #28.5 MB
-            - ./data/G3_circuit.graph 1   #46.3 MB
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
         - pagerank:
-            - ./data/coAuthorsDBLP.graph 1   #12.5 MB
+            - ./data/coAuthorsDBLP.graph 1
         - pagerank_spmv:
             - ./data/coAuthorsDBLP.graph 1
-	- sssp:
-            - ./data/USA-road-d.NW.gr     #60 MB
-            - ./data/USA-road-d.NY.gr    #15 MB
-	- sssp_ell:
+        - sssp:
+            - ./data/USA-road-d.NW.gr
+            - ./data/USA-road-d.NY.gr
+        - sssp_ell:
             - ./data/USA-road-d.NW.gr
             - ./data/USA-road-d.NY.gr
 
 # dragon-naive
 dragon-naive:
-    exec_dir: "../../benchmarks/dragon_li/bin/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/dragon/"
+    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    data_dirs: "../../benchmarks/data_dirs/dragon/"
     execs:
-        - testBfs:
-	    - -g ./data/sample.gr -e -v
+         - testBfs:
+            - -g ./data/sample.gr -e -v
             - -g graphs/citationCiteseer.graph -f metis -e -v 
             - -g graphs/coPapersDBLP.graph -f metis -e -v --sf 1.5
-
-	- testAmr:
+         - testAmr:
             - -v -e -r 20
-        - testSssp:
-	    - -g graphs/sample.gr -e -v
+         - testSssp:
+            - -g graphs/sample.gr -e -v
             - -g graphs/citationCiteseer.graph -f metis -e -v
-	    - -g graphs/coPapersDBLP.graph -f metis -e -v
-	-testJoin:
-	    - -v -e -l 204800 -r 204800
+            - -g graphs/coPapersDBLP.graph -f metis -e -v
+         - testJoin:
+            - -v -e -l 204800 -r 204800
+
+#proxy-apps-doe
+proxy-apps-doe1:
+    exec_dir: "../../benchmarks/proxy-apps-doe/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+         - comd/CoMDCUDA:
+            - p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
+         - cns/cns_all:
+            - 64 32 32 1
+
+proxy-apps-doe2:
+    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+         - matvec:
+            - ./data/8x8x8.mtx 0
+            - ./data/32x32x32.mtx 0
+            - ./data/32x64x64.mtx 0
+            - ./data/64x64x64.mtx 0
+            - ./data/128x64x64.mtx 0
+         - XSBench:
+            - 12 small 0
+            - 12 large 0
+         - lulesh:
+            -
 
 
-
+#- cns/cns: TO DO

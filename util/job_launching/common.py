@@ -14,7 +14,7 @@ def parse_app_yml( app_yml ):
             args_list = exe.values()[0]
             benchmarks.append( ( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
-                                 exe_name, args_list ) )
+                                 exe_name.replace('/','_'), args_list ) )
     return benchmarks
 
 def parse_config_yml( config_yml ):
