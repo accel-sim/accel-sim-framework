@@ -19,7 +19,7 @@ run:
 
 # dragon-cdp
 dragon-cdp:
-    exec_dir: "../../benchmarks/dragon_li/cdp_bin/"
+    exec_dir: "../../benchmarks/dragon_li/cdp_bin/8.0/"
     data_dirs: "../../benchmarks/data_dirs/dragon/"
     execs:
         - testBfs:

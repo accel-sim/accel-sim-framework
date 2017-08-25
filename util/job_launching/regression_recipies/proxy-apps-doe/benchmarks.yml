@@ -1,7 +1,8 @@
 
 # The run_simulations.py script will run all the suites specified under run
 run:
-    - proxy-apps-doe
+    - proxy-apps-doe1
+    - proxy-apps-doe2
 
 # The format is:
 # suite_name:
@@ -19,20 +20,28 @@ run:
 
 # Rodinia 1.0 implemented with a pass/fail functional test
 #proxy-apps-doe
-proxy-apps-doe:
+proxy-apps-doe1:
     exec_dir: "../../benchmarks/proxy-apps-doe/"
     data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
     execs:
          - comd/CoMDCUDA:
             - p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
-         - xsbench/XSBench:
-            - 12 small 0
-            - 12 large 0
-         - minife_matvec_ell/matvec :
+         - cns/cns_all:
+            - 64 32 32 1
+
+proxy-apps-doe2:
+    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+         - matvec:
             - ./data/8x8x8.mtx 0
             - ./data/32x32x32.mtx 0
             - ./data/32x64x64.mtx 0
             - ./data/64x64x64.mtx 0
             - ./data/128x64x64.mtx 0
+         - XSBench:
+            - 12 small 0
+            - 12 large 0
+         - lulesh:
+            -
 
-#- cns/cns: TO DO

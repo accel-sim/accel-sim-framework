@@ -44,3 +44,6 @@ rodinia_2.0-ft:
             - ./data/matrix128x128.txt 1 150 1 100 .5 2 ./data/result_matrix128x128_1_150_1_100_.5_2.txt
         - streamcluster-rodinia-2.0-ft:
             - 3 6 16 1024 1024 100 none output.txt 1 ./data/result_3_6_16_1024_1024_100_none_1.txt
+
+
+

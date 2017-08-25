@@ -229,10 +229,10 @@ if not os.path.exists( running_so_dir ):
 options.so_dir = running_so_dir
 
 options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "benchmarks.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "benchmarks.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "configs.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "configs.yml"),
     this_directory )
 
 
