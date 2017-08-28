@@ -20,7 +20,7 @@ run:
 
 #proxy-apps-doe
 proxy-apps-doe1:
-    exec_dir: "../../benchmarks/proxy-apps-doe/"
+    exec_dir: "../../benchmarks/src/cuda/proxy-apps-doe/"
     data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
     execs:
          - comd/CoMDCUDA:
