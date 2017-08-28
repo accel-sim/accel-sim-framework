@@ -19,7 +19,7 @@ run:
 
 # dragon-naive
 dragon-naive:
-    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    exec_dir: "../../benchmarks/dragon_li/src/cuda/bin/4.2/"
     data_dirs: "../../benchmarks/data_dirs/dragon/"
     execs:
          - testBfs:
