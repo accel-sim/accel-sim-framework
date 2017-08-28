@@ -85,7 +85,7 @@ pannotia:
 
 # dragon-naive
 dragon-naive:
-    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    exec_dir: "../../benchmarks/dragon_li/src/cuda/bin/4.2/"
     data_dirs: "../../benchmarks/data_dirs/dragon/"
     execs:
          - testBfs:
@@ -100,6 +100,7 @@ dragon-naive:
             - -g ./data/coPapersDBLP.graph -f metis -e -v
          - testJoin:
             - -v -e -l 204800 -r 204800
+
 
 #proxy-apps-doe
 proxy-apps-doe1:
