@@ -24,14 +24,14 @@ dragon-naive:
     execs:
          - testBfs:
             - -g ./data/sample.gr -e -v
-            - -g graphs/citationCiteseer.graph -f metis -e -v 
-            - -g graphs/coPapersDBLP.graph -f metis -e -v --sf 1.5
+            - -g ./data/citationCiteseer.graph -f metis -e -v 
+            - -g ./data/dataphs/coPapersDBLP.graph -f metis -e -v --sf 1.5
          - testAmr:
             - -v -e -r 20
          - testSssp:
-            - -g graphs/sample.gr -e -v
-            - -g graphs/citationCiteseer.graph -f metis -e -v
-            - -g graphs/coPapersDBLP.graph -f metis -e -v
+            - -g ./data/sample.gr -e -v
+            - -g ./data/citationCiteseer.graph -f metis -e -v
+            - -g ./data/coPapersDBLP.graph -f metis -e -v
          - testJoin:
             - -v -e -l 204800 -r 204800
 

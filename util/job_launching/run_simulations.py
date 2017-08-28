@@ -48,7 +48,7 @@ class ConfigurationSpec:
         for dir_bench in benchmarks:
             exec_dir, run_dir, benchmark, self.command_line_args_list = dir_bench
             full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_run_dir = os.path.join( this_directory, run_dir, benchmark )
+            full_run_dir = os.path.join( this_directory, run_dir, benchmark.replace('/','_') )
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:

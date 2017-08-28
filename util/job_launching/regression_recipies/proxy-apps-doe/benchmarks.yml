@@ -30,7 +30,7 @@ proxy-apps-doe1:
             - 64 32 32 1
 
 proxy-apps-doe2:
-    exec_dir: "../../benchmarks/dragon_li/bin/4.2/"
+    exec_dir: "../../benchmarks/bin/4.2/release/"
     data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
     execs:
          - matvec:
@@ -44,4 +44,3 @@ proxy-apps-doe2:
             - 12 large 0
          - lulesh:
             -
-

@@ -28,16 +28,16 @@ pannotia:
             - ./data/2k_1M.gr
         - color_max:
             - ./data/ecology1.graph 1
-            - ./G3_circuit.graph 1
+            - ./data/G3_circuit.graph 1
         - color_maxmin:
             - ./data/ecology1.graph 1
-            - ./G3_circuit.graph 1
+            - ./data/G3_circuit.graph 1
         - fw:
             - ./data/256_16384.gr
             - ./data/512_65536.gr
         - fw_block:
-            - ./data/256_16384.g
-            - ./data/512_65536.g
+            - ./data/256_16384.gr
+            - ./data/512_65536.gr
         - mis:
             - ./data/ecology1.graph 1
             - ./data/G3_circuit.graph 1
@@ -46,9 +46,8 @@ pannotia:
         - pagerank_spmv:
             - ./data/coAuthorsDBLP.graph 1
         - sssp:
-            - ./data/USA-road-d.NW.gr
-            - ./data/USA-road-d.NY.gr
+            - ./data/USA-road-d.NW.gr 0
+            - ./data/USA-road-d.NY.gr 0
         - sssp_ell:
-            - ./data/USA-road-d.NW.gr
-            - ./data/USA-road-d.NY.gr
-
+            - ./data/USA-road-d.NW.gr 0
+            - ./data/USA-road-d.NY.gr 0
