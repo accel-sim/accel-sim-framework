@@ -175,14 +175,14 @@ for logfile in parsed_logfiles:
                 continue
 
             # now get the right logfile
-            output_dir = os.path.join(options.run_dir, app, args, config)
+            output_dir = os.path.join(options.run_dir, app.replace('/','_'), args, config)
             if not os.path.isdir( output_dir ):
                 print("WARNING the outputdir " + output_dir + " does not exist")
                 continue
 
             num_jobs += 1
-            errfile = os.path.join(output_dir, app + "-" + args + "." + "e" + jobId)
-            outfile = os.path.join(output_dir, app + "-" + args + "." + "o" + jobId)
+            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "e" + jobId)
+            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""
