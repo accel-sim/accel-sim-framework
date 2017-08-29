@@ -60,7 +60,7 @@ class ConfigurationSpec:
 
             for args in self.command_line_args_list:
                 this_run_dir = run_directory +\
-                            "/" + benchmark + "/" + self.benchmark_args_subdirs[args] +\
+                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
                             "/" + self.run_subdir + "/"
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
