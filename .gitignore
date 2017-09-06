@@ -1,2 +1,6 @@
 bin/
 sim_run_*
+benchmarks/data_dirs/*.tgz
+benchmarks/data_dirs/dragon
+benchmarks/data_dirs/pannotia
+benchmarks/data_dirs/proxy-apps-doe
