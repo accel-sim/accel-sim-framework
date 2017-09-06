@@ -48,7 +48,7 @@ class ConfigurationSpec:
         for dir_bench in benchmarks:
             exec_dir, run_dir, benchmark, self.command_line_args_list = dir_bench
             full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_run_dir = os.path.join( this_directory, run_dir, benchmark )
+            full_run_dir = os.path.join( this_directory, run_dir, benchmark.replace('/','_') )
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
@@ -60,7 +60,7 @@ class ConfigurationSpec:
 
             for args in self.command_line_args_list:
                 this_run_dir = run_directory +\
-                            "/" + benchmark + "/" + self.benchmark_args_subdirs[args] +\
+                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
                             "/" + self.run_subdir + "/"
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
@@ -229,10 +229,10 @@ if not os.path.exists( running_so_dir ):
 options.so_dir = running_so_dir
 
 options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "benchmarks.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "benchmarks.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "configs.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "configs.yml"),
     this_directory )
 
 
