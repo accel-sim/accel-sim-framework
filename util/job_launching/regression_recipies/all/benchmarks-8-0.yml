@@ -116,12 +116,6 @@ proxy-apps-doe2:
     exec_dir: "../../benchmarks/bin/8.0/release/"
     data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
     execs:
-         - matvec:
-            - ./data/8x8x8.mtx 0
-            - ./data/32x32x32.mtx 0
-            - ./data/32x64x64.mtx 0
-            - ./data/64x64x64.mtx 0
-            - ./data/128x64x64.mtx 0
          - XSBench:
             - 12 small 0
             - 12 large 0
