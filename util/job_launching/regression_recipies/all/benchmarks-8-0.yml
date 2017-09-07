@@ -89,17 +89,17 @@ dragon-naive:
     data_dirs: "../../benchmarks/data_dirs/dragon/"
     execs:
         - testBfs:
-            - -g ./data/sample_cdp.gr -e -v --cdp
-            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
+            - -g ./data/sample_cdp.gr -e -v
+            - -g ./data/citationCiteseer.graph -f metis -e -v
             - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5
         - testAmr:
-            - -v -e --cdp -r 20
+            - -v -e -r 20
         - testSssp:
-            - -g ./data/sample_cdp.gr -e -v --cdp
-            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
-            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp
+            - -g ./data/sample_cdp.gr -e -v
+            - -g ./data/citationCiteseer.graph -f metis -e -v
+            - -g ./data/coPapersDBLP.graph -f metis -e -v
         - testJoin:
-            - -v -e --cdp -l 204800 -r 204800
+            - -v -e -l 204800 -r 204800
 
 
 #proxy-apps-doe
