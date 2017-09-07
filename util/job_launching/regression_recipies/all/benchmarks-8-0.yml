@@ -91,7 +91,7 @@ dragon-naive:
         - testBfs:
             - -g ./data/sample_cdp.gr -e -v
             - -g ./data/citationCiteseer.graph -f metis -e -v
-            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5
+            - -g ./data/coPapersDBLP.graph -f metis -e -v --sf 1.5
         - testAmr:
             - -v -e -r 20
         - testSssp:
