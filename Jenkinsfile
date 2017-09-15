@@ -13,13 +13,19 @@ pipeline {
         }
     }
     post {
-        always{
+        success {
+            emailext body: "See ${BUILD_URL}",
+                recipientProviders: [[$class: 'CulpritsRecipientProvider'],
+                    [$class: 'RequesterRecipientProvider']],
+                subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - Success!",
+                to: 'tgrogers@purdue.edu'
+        }
+        failure {
             emailext body: "See ${BUILD_URL}",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'],
                     [$class: 'RequesterRecipientProvider']],
                 subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - ${currentBuild.result}",
                 to: 'tgrogers@purdue.edu'
-
         }
-    }
+   }
 }
