@@ -15,7 +15,7 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_so_name( so_path ):
-    objdump_out_filename = this_directory + "so_objdump_out.txt"
+    objdump_out_filename = this_directory + "so_objdump_out.{0}.txt".format(os.getpid())
     objdump_out_file = open(objdump_out_filename, 'w+')
     subprocess.call(["objdump", "-p", so_path], stdout=objdump_out_file)
     objdump_out_file.seek(0)
