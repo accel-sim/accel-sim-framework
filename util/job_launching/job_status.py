@@ -12,7 +12,7 @@ import math
 def get_job_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
                    "exec_host" : "UNKNOWN" }
-    trace_out_filename = os.path.join(this_directory, "trace_out.txt")
+    trace_out_filename = os.path.join(this_directory, "trace_out-{0}.txt".format(os.getpid()))
     trace_out_file = open(trace_out_filename, 'w+')
     if subprocess.call(["qstat" ,"-f", jobId],
         stdout=trace_out_file, stderr=trace_out_file) < 0:
@@ -153,6 +153,7 @@ for logfile in parsed_logfiles:
     base_logname = os.path.basename(logfile)
 
     # Parse the logfile for job ids
+    errs = ""
     with open( logfile ) as f:
         header = ROW_STRING.format( jobId="TorqueJob",exec_node="Node",app="App",args="AppArgs",
                 gpusim_version="GPGPU-SimVersion",config="GPGPU-SimConfig",
@@ -166,17 +167,22 @@ for logfile in parsed_logfiles:
         num_passed = 0
         a_job_failed = False
         for line in f:
-            time, jobId, app ,args, config, jobname = line.split()
+            try:
+                time, jobId, app ,args, config, jobname = line.split()
+            except ValueError as err:
+                errs += "Warning - logfile line: \n\"{0}\"\nis missing all the required fields.".format(line.strip())+\
+                       " This is likely because the launching of a job failed.\n"
+                continue
 
             # now get the right logfile
-            output_dir = os.path.join(options.run_dir, app, args, config)
+            output_dir = os.path.join(options.run_dir, app.replace('/','_'), args, config)
             if not os.path.isdir( output_dir ):
                 print("WARNING the outputdir " + output_dir + " does not exist")
                 continue
 
             num_jobs += 1
-            errfile = os.path.join(output_dir, app + "-" + args + "." + "e" + jobId)
-            outfile = os.path.join(output_dir, app + "-" + args + "." + "o" + jobId)
+            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "e" + jobId)
+            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""
@@ -269,6 +275,10 @@ for logfile in parsed_logfiles:
         print "-" * len(header)
         if num_passed == num_jobs:
             print "Congratulations! All jobs pass!"
+        
+        if errs != "":
+            print "There were some errors while parsing the logfiles:"
+            print errs
 
         if a_job_failed:
             failed_job_filename = "failed_job_log_{0}".format(os.path.basename(logfile))

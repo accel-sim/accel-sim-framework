@@ -15,7 +15,7 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_so_name( so_path ):
-    objdump_out_filename = this_directory + "so_objdump_out.txt"
+    objdump_out_filename = this_directory + "so_objdump_out.{0}.txt".format(os.getpid())
     objdump_out_file = open(objdump_out_filename, 'w+')
     subprocess.call(["objdump", "-p", so_path], stdout=objdump_out_file)
     objdump_out_file.seek(0)
@@ -48,7 +48,7 @@ class ConfigurationSpec:
         for dir_bench in benchmarks:
             exec_dir, run_dir, benchmark, self.command_line_args_list = dir_bench
             full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_run_dir = os.path.join( this_directory, run_dir, benchmark )
+            full_run_dir = os.path.join( this_directory, run_dir, benchmark.replace('/','_') )
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
@@ -60,7 +60,7 @@ class ConfigurationSpec:
 
             for args in self.command_line_args_list:
                 this_run_dir = run_directory +\
-                            "/" + benchmark + "/" + self.benchmark_args_subdirs[args] +\
+                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
                             "/" + self.run_subdir + "/"
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
@@ -69,7 +69,7 @@ class ConfigurationSpec:
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
-                    torque_out_filename = this_directory + "torque_out.txt"
+                    torque_out_filename = this_directory + "torque_out.{0}.txt".format(os.getpid())
                     torque_out_file = open(torque_out_filename, 'w+')
                     saved_dir = os.getcwd()
                     os.chdir(this_run_dir)
@@ -89,26 +89,27 @@ class ConfigurationSpec:
                     torque_out_file.close()
                     os.remove(torque_out_filename)
                     os.chdir(saved_dir)
-        
-                    # Dump the benchmark description to the logfile
-                    if not os.path.exists(this_directory + "logfiles/"):
-                        os.makedirs(this_directory + "logfiles/")
-                    now_time = datetime.datetime.now()
-                    day_string = now_time.strftime("%y.%m.%d-%A")
-                    time_string = now_time.strftime("%H:%M:%S")
-                    log_name = "sim_log.{0}".format(options.launch_name)
-                    logfile = open(this_directory +\
-                                   "logfiles/"+ log_name + "." +\
-                                   day_string + ".txt",'a')
-                    print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
-                           ( time_string ,\
-                           torque_out ,\
-                           benchmark ,\
-                           self.benchmark_args_subdirs[args] ,\
-                           self.run_subdir,\
-                           benchmark,\
-                           build_handle )
-                    logfile.close()
+
+                    if len(torque_out) > 0:
+                        # Dump the benchmark description to the logfile
+                        if not os.path.exists(this_directory + "logfiles/"):
+                            os.makedirs(this_directory + "logfiles/")
+                        now_time = datetime.datetime.now()
+                        day_string = now_time.strftime("%y.%m.%d-%A")
+                        time_string = now_time.strftime("%H:%M:%S")
+                        log_name = "sim_log.{0}".format(options.launch_name)
+                        logfile = open(this_directory +\
+                                       "logfiles/"+ log_name + "." +\
+                                       day_string + ".txt",'a')
+                        print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
+                               ( time_string ,\
+                               torque_out ,\
+                               benchmark ,\
+                               self.benchmark_args_subdirs[args] ,\
+                               self.run_subdir,\
+                               benchmark,\
+                               build_handle )
+                        logfile.close()
             self.benchmark_args_subdirs.clear()
 
     #########################################################################################
@@ -228,10 +229,10 @@ if not os.path.exists( running_so_dir ):
 options.so_dir = running_so_dir
 
 options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "benchmarks.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "benchmarks.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "configs.yml"),
+    os.path.join( this_directory, "regression_recipies", "all", "configs.yml"),
     this_directory )
 
 
