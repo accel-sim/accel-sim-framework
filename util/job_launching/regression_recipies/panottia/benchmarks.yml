@@ -1,0 +1,53 @@
+
+# The run_simulations.py script will run all the suites specified under run
+run:
+    - pannotia
+
+
+# The format is:
+# suite_name:
+#   exec_dir: <location of the executables, relative to the run_simulations.py script>
+#   data_dir: <location of the directories containing benchmark data>
+#   execs:
+#       - <exec_name_1>:
+#           - <commandline arg_list 1> # Leave blank if no arguments
+#           - <commandline arg_list 2>
+#           ...
+#       - <exec_name_2>
+#           ...
+#       ...
+# If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
+
+# pannotia
+pannotia:
+    exec_dir: "../../benchmarks/bin/4.2/release/"
+    data_dirs: "../../benchmarks/data_dirs/pannotia/"
+    execs:
+        - bc:
+            - ./data/1k_128k.gr
+            - ./data/2k_1M.gr
+        - color_max:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - color_maxmin:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - fw:
+            - ./data/256_16384.gr
+            - ./data/512_65536.gr
+        - fw_block:
+            - ./data/256_16384.gr
+            - ./data/512_65536.gr
+        - mis:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - pagerank:
+            - ./data/coAuthorsDBLP.graph 1
+        - pagerank_spmv:
+            - ./data/coAuthorsDBLP.graph 1
+        - sssp:
+            - ./data/USA-road-d.NW.gr 0
+            - ./data/USA-road-d.NY.gr 0
+        - sssp_ell:
+            - ./data/USA-road-d.NW.gr 0
+            - ./data/USA-road-d.NY.gr 0

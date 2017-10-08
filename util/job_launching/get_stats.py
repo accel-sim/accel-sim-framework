@@ -74,7 +74,8 @@ options.apps_yml = common.file_option_test( options.apps_yml, "", this_directory
 
 stat_map = {}
 configs = set()
-apps_and_args = set()
+apps_and_args = []
+exes_and_args = []
 specific_jobIds = {}
 
 stats_to_pull = {}
@@ -127,11 +128,13 @@ else:
             for line in f:
                 time, jobId, app ,args, config, jobname = line.split()
                 configs.add(config)
-                app_and_args = os.path.join( app, args )
-                apps_and_args.add( app_and_args )
+                app_and_args = os.path.join( app.replace('/','_'), args )
+                apps_and_args.append( app_and_args )
+                exe_and_args = os.path.join( os.path.basename(app), args)
+                exes_and_args.append(exe_and_args)
                 specific_jobIds[ config + app_and_args ] = jobId
 
-for app_and_args in apps_and_args:
+for idx, app_and_args in enumerate(apps_and_args):
     for config in configs:
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
@@ -141,7 +144,7 @@ for app_and_args in apps_and_args:
         
         if config + app_and_args in specific_jobIds:
             jobId = specific_jobIds[ config + app_and_args ]
-            outfile = os.path.join(output_dir, app_and_args.replace("/", "-") + "." + "o" + jobId)
+            outfile = os.path.join(output_dir, exes_and_args[idx].replace("/", "-") + "." + "o" + jobId)
         else:
             all_outfiles = [os.path.join(output_dir, f) \
                            for f in os.listdir(output_dir) if(re.match(r'.*\.o[0-9]+',f))]
