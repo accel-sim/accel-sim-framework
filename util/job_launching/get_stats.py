@@ -56,6 +56,8 @@ parser.add_option("-a", "--apps_yml", dest="apps_yml", default="",
 parser.add_option("-s", "--stats_yml", dest="stats_yml", default="",
                   help="The yaml file that defines the stats you want to collect."+\
                        " by default it uses stats/example_stats.yml")
+parser.add_option("-k", "--per_kernel", dest="per_kernel", action="store_true",
+                  help="Aggregate the statistics for each named kernel")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -81,7 +83,7 @@ stats_to_pull = {}
 stats_yaml = yaml.load(open(options.stats_yml))
 stats= {}
 for stat in stats_yaml['collect']:
-    stats_to_pull[stat] = re.compile(stats_yaml['collect'][stat])
+    stats_to_pull[stat] = re.compile(stat)
 
 if options.configs_yml != "" and options.apps_yml != "":
     for app in common.parse_app_yml( options.apps_yml ):
@@ -131,7 +133,9 @@ else:
                 apps_and_args.add( app_and_args )
                 specific_jobIds[ config + app_and_args ] = jobId
 
+all_named_kernels = {}
 for app_and_args in apps_and_args:
+    all_named_kernels[app_and_args] = set()
     for config in configs:
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
@@ -162,51 +166,110 @@ for app_and_args in apps_and_args:
                 break
             build_match = re.match(".*\[build\s+(.*)\].*", line)
             if build_match:
-                stat_map[app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
+                stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
                 break
 
+        if not options.per_kernel:
+            all_named_kernels[app_and_args].add("final_kernel")
+            # Only go up for 10000 lines looking for stuff
+            MAX_LINES = 100000
+            count = 0
+            for line in reversed(open(outfile).readlines()):
+                count += 1
+                if count >= MAX_LINES:
+                    break
 
-        # Only go up for 10000 lines looking for stuff
-        MAX_LINES = 100000
-        count = 0
-        for line in reversed(open(outfile).readlines()):
-            count += 1
-            if count >= MAX_LINES:
-                break
-
-            # pull out some stats
-            for stat_name, token in stats_to_pull.iteritems():
-                if stat_name in stat_found:
+                # pull out some stats
+                for stat_name, token in stats_to_pull.iteritems():
+                    if stat_name in stat_found:
+                        continue
+                    existance_test = token.search( line.rstrip() )
+                    if existance_test != None:
+                        stat_found.add(stat_name)
+                        number = existance_test.group(1).strip()
+                        stat_map["final_kernel" + app_and_args + config + stat_name] = number
+                if len(stat_found) == len(stats_to_pull):
+                    break
+        else:
+            current_kernel =""
+            last_kernel = ""
+            raw_last = {}
+            blank_kernel = False
+            for line in open(outfile).readlines():
+                kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
+                if kernel_match:
+                    if kernel_match.group(1).strip() == "":
+                        blank_kernel = True
+                        continue
+                    else:
+                        blank_kernel = False
+                    last_kernel = current_kernel
+                    current_kernel = kernel_match.group(1).strip()
+                    all_named_kernels[app_and_args].add(current_kernel)
+                    if current_kernel + app_and_args + config + "k-count" in stat_map:
+                        stat_map[current_kernel + app_and_args + config + "k-count"] += 1
+                    else:
+                        stat_map[current_kernel + app_and_args + config + "k-count"] = 1
                     continue
-                existance_test = token.search( line.rstrip() )
-                if existance_test != None:
-                    stat_found.add(stat_name)
-                    number = existance_test.group(1).strip()
-                    stat_map[app_and_args + config + stat_name] = number
-            if len(stat_found) == len(stats_to_pull):
-                break
+
+                if blank_kernel:
+                    continue
+
+                for stat_name, token in stats_to_pull.iteritems():
+                    existance_test = token.search( line.rstrip() )
+                    if existance_test != None:
+                        stat_found.add(stat_name)
+                        number = existance_test.group(1).strip()
+                        if current_kernel + app_and_args + config + stat_name in stat_map:
+                            if stat_name in raw_last:
+                                stat_last_kernel = raw_last[stat_name]
+                            else:
+                                stat_last_kernel = 0.0
+                            raw_last[ stat_name ] = float(number)
+                            stat_map[current_kernel + app_and_args + config + stat_name] += ( float(number) - stat_last_kernel )
+                        else:
+                            if last_kernel + app_and_args + config + stat_name in stat_map:
+                                stat_last_kernel = raw_last[stat_name]
+                            else:
+                                stat_last_kernel = 0.0
+                            raw_last[stat_name] = float(number)
+                            stat_map[current_kernel + app_and_args + config + stat_name] = ( float(number) - stat_last_kernel )
+
+# Just adding this in here since it is a special case and is not parsed like everything else, because you need
+# to read from the beginning not the end
+if options.per_kernel:
+    stats_yaml['collect'].append("k-count")
 
 # After collection, spew out the tables
-DIVISION = "-" * 100
-csv_str = ""
-
-# Just adding this in here sinc it is a special case and is not parsed like everything else, because you need
-# to read from the beginning not the end
-stats_to_pull["GPGPU-Sim-build"] = ""
-for stat_name in stats_to_pull:
+def print_stat(stat_name, all_named_kernels):
+    csv_str = ""
+    DIVISION = "-" * 100
     csv_str += DIVISION + "\n"
     csv_str += stat_name + "\n,"
     for config in configs:
         csv_str += config + ","
     csv_str += "\n"
     for appargs in apps_and_args:
-        csv_str += appargs + ","
-        for config in configs:
-            if appargs + config + stat_name in stat_map:
-                csv_str += stat_map[appargs + config + stat_name] + ","
-            else:
-                csv_str += "NA,"
-        csv_str += "\n"
+        knames = all_named_kernels[appargs]
+        for kname in knames:
+            if kname == "":
+                continue
+            csv_str += appargs + "--" + kname + ","
+            for config in configs:
+                if kname + appargs + config + stat_name in stat_map:
+                    csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                else:
+                    csv_str += "NA,"
+            csv_str += "\n"
     csv_str += "\n"
+    print csv_str
 
-print csv_str
+# Print any stats that do not make sense on a per-kernel basis ever (like GPGPU-Sim Build)
+all_kernels = {}
+for appargs in apps_and_args:
+    all_kernels[appargs] = ["all_kernels"]
+
+print_stat( "GPGPU-Sim-build", all_kernels )
+
+for stat_name in stats_yaml['collect']:
+    print_stat( stat_name, all_named_kernels )
