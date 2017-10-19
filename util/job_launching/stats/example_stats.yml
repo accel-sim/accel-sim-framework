@@ -6,13 +6,14 @@
 #   http://www.regexpal.com/
 
 collect:
-    "gpgpu_simulation_time (sec)":
-        'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'
-    gpu_tot_sim_insn:
-        'gpu_tot_sim_insn\s*=\s*(.*)'
-    gpu_tot_ipc:
-        'gpu_tot_ipc\s*=\s*(.*)'
-    L2_total_cache_misses:
-        'L2_total_cache_misses\s*=\s*(.*)'
-    L1D_total_cache_misses:
-        'L1D_total_cache_misses\s*=\s*(.*)'
+    - 'gpu_sim_insn\s*=\s*(.*)'
+    - 'gpu_ipc\s*=\s*(.*)'
+    - 'gpu_sim_cycle\s*=\s*(.*)'
+    - 'gpu_tot_sim_insn\s*=\s*(.*)'
+    - 'gpu_tot_ipc\s*=\s*(.*)'
+    - 'gpu_tot_sim_cycle\s*=\s*(.*)'
+    - 'L2_total_cache_misses\s*=\s*(.*)'
+    - 'L2_total_cache_accesses\s*=\s*(.*)'
+    - 'L1D_total_cache_misses\s*=\s*(.*)'
+    - 'L1D_total_cache_accesses\s*=\s*(.*)'
+    - 'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'
