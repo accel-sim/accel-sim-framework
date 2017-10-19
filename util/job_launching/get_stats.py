@@ -24,10 +24,8 @@ help_str = "There are 3 ways to use this file" +\
            " 2) Specify a logfile: \"-l <the-file>\"\n"+\
            "    If you do this, then the jobs in the specific logfile will be parsed" +\
            " If no options are specified, then it basically defaults to the -l"+\
-           " option using the latest logfile."
-#           " 3) Specify a configs yml: \"-y <the-yaml>\"\n"+\
-#           "    The \"configs\" and \"benchmark\" lists in the yaml are parsed."+\
-#           " The most recent runs of these bench+config options are searched.\n"+\
+           " option using the latest logfile." +\
+           " 3) Specify a configs -c and benchmarks -b yaml files you want data for."
 
 
 parser = OptionParser(usage=help_str)
@@ -48,7 +46,7 @@ parser.add_option("-N", "--sim_name", dest="sim_name",
 parser.add_option("-c", "--configs_yml", dest="configs_yml", default="",
                   help="If this option is specified, then sim_name and logfile are ignored." +\
                        "Instead, the output files that will be parsed will")
-parser.add_option("-a", "--apps_yml", dest="apps_yml", default="",
+parser.add_option("-b", "--apps_yml", dest="apps_yml", default="",
                   help="If this option is specified, then sim_name and logfile are ignored." +\
                        "Instead, the output files that will be parsed will")
 #parser.add_option("-b", "--simulator_build", dest="simulator_build", default="",
@@ -75,8 +73,8 @@ options.configs_yml = common.file_option_test( options.configs_yml, "", this_dir
 options.apps_yml = common.file_option_test( options.apps_yml, "", this_directory )
 
 stat_map = {}
-configs = set()
-apps_and_args = set()
+configs = []
+apps_and_args = []
 specific_jobIds = {}
 
 stats_to_pull = {}
@@ -89,9 +87,9 @@ if options.configs_yml != "" and options.apps_yml != "":
     for app in common.parse_app_yml( options.apps_yml ):
         a,b,exe_name,args_list = app
         for args in args_list:
-            apps_and_args.add( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", args.strip())) )
+            apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", args.strip())) )
     for config, params, gpuconf_file in common.parse_config_yml( options.configs_yml ):
-        configs.add( config )
+        configs.append( config )
 else:
     # This code gets the logfiles to pull the stats from if you are using the "-l" or "-N" option
     parsed_logfiles = []
@@ -128,9 +126,9 @@ else:
         with open( logfile ) as f:
             for line in f:
                 time, jobId, app ,args, config, jobname = line.split()
-                configs.add(config)
+                configs.append(config)
                 app_and_args = os.path.join( app, args )
-                apps_and_args.add( app_and_args )
+                apps_and_args.append( app_and_args )
                 specific_jobIds[ config + app_and_args ] = jobId
 
 all_named_kernels = {}
@@ -149,7 +147,10 @@ for app_and_args in apps_and_args:
         else:
             all_outfiles = [os.path.join(output_dir, f) \
                            for f in os.listdir(output_dir) if(re.match(r'.*\.o[0-9]+',f))]
-            outfile = max(all_outfiles, key=os.path.getmtime)
+            if len(all_outfiles) != 0:
+                outfile = max(all_outfiles, key=os.path.getmtime)
+            else:
+                outfile = os.path.join(output_dir, f)
 
         stat_found = set()
 
