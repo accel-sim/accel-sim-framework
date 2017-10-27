@@ -1,0 +1,77 @@
+
+# The run_simulations.py script will run all the suites specified under run
+run:
+    - sdk-4.2
+
+sdk-4.2:
+    exec_dir: "../../benchmarks/bin/4.2/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
+    execs:
+        - BlackScholes:
+            -
+        - Mandelbrot:
+            -
+        - MonteCarlo:
+            -
+        - SobolQRNG:
+            -
+        - alignedTypes:
+            -
+        - asyncAPI:
+            -
+        - bandwidthTest:
+            -
+        - bicubicTexture:
+            -
+        - binomialOptions:
+            -
+        - clock:
+            -
+        - convolutionSeparable:
+            -
+        - convolutionTexture:
+            -
+        - cppIntegration:
+            -
+        - dct8x8:
+            -
+        - dwtHaar1D:
+            -
+        - dxtc:
+            -
+        - fastWalshTransform:
+            -
+        - histogram:
+            -
+        - mergeSort:
+            -
+        - quasirandomGenerator:
+            -
+        - reduction:
+            -
+        - scalarProd:
+            -
+        - simpleAtomicIntrinsics:
+            -
+        - simpleP2P:
+            -
+        - simplePrintf:
+            -
+        - simpleTemplates:
+            -
+        - simpleTexture:
+            -
+        - simpleVoteIntrinsics:
+            -
+        - simpleZeroCopy:
+            -
+        - sortingNetworks:
+            -
+        - template:
+            -
+        - threadFenceReduction:
+            -
+        - transpose:
+            -
+        - vectorAdd:
+            -
