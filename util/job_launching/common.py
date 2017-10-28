@@ -5,24 +5,43 @@ import re
 import os
 import yaml
 
-def parse_app_yml( app_yml ):
+def parse_app_definition_yaml( def_yml ):
     benchmark_yaml = yaml.load(open(app_yml))
-    benchmarks = []
-    for suite in benchmark_yaml['run']:
+    benchmarks = {}
+    for suite in benchmark_yaml:
+        suite = suite[0]
         for exe in benchmark_yaml[suite]['execs']:
             exe_name = exe.keys()[0]
             args_list = exe.values()[0]
-            benchmarks.append( ( benchmark_yaml[suite]['exec_dir'],
+            benchmarks[suite] = ( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
-                                 exe_name, args_list ) )
+                                 exe_name, args_list )
     return benchmarks
 
-def parse_config_yml( config_yml ):
+def parse_config_definition_yaml( def_yml ):
+    configs_yaml = yaml.load(open( def_yml ))
+    configurations = {}
+    for config in configs_yaml:
+        config = config[0]
+        gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
+        configurations[config] = ( config, configs_yaml[config]['extra_params'], gpgpusim_conf )
+    return configurations
+
+def parse_app_yml( app_yml, apps ):
+    apps = parse_app_definition_yaml( os.path.join(this_directory, 'apps/define-ft-apps.yml'))
+    benchmark_yaml = yaml.load(open(app_yml))
+    benchmarks = []
+    for suite in benchmark_yaml['run']:
+        if suite in apps:
+            benchmarks.append(apps[suite])
+    return benchmarks
+
+def parse_config_yml( config_yml, configs ):
+    apps = parse_app_definition_yaml( os.path.join(this_directory, 'configs/define-standard-cfgs.yml'))
     configs_yaml = yaml.load(open( config_yml ))
     configurations = []
     for config in configs_yaml['run']:
-        gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
-        configurations.append( ( config, configs_yaml[config]['extra_params'], gpgpusim_conf ) )
+        configurations.append( confgis[config] )
     return configurations
 
 def get_cuda_version(this_directory):
@@ -35,6 +54,7 @@ def get_cuda_version(this_directory):
     cuda_version = re.sub(r".*release (\d+\.\d+).*", r"\1", nvcc_out_file.read().strip().replace("\n"," "))
     nvcc_out_file.close()
     os.remove(nvcc_out_filename)
+    os.environ['CUDA_VERSION'] = cuda_version
     return cuda_version
 
 # This function exists so that this file can accept both absolute and relative paths

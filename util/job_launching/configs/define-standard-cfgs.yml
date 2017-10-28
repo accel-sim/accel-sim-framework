@@ -1,15 +1,3 @@
-run:
-    - GTX480
-#    - GTX480-PTXPLUS
-    - QUADROFX5600
-#    - QUADROFX5600-PTXPLUS
-    - QUADROFX5800
-#    - QUADROFX5800-PTXPLUS
-    - TESLAC2050
-#    - TESLAC2050-PTXPLUS
-    - GTX750Ti
-#    - GTX750Ti-PTXPLUS
-
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
     extra_params: ""
@@ -49,3 +37,7 @@ GTX750Ti:
 GTX750Ti-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+
+PASCALTITANX:
+    base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
+    extra_params: ""

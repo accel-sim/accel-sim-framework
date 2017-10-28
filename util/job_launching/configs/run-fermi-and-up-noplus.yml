@@ -1,0 +1,4 @@
+run:
+    - GTX480
+    - GTX750Ti
+    - PASCALTITANX
