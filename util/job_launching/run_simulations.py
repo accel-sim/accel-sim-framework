@@ -65,7 +65,7 @@ class ConfigurationSpec:
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
                 self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir)
-                self.append_gpgpusim_config(full_run_dir, this_run_dir, self.config_file)
+                self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
@@ -186,8 +186,9 @@ class ConfigurationSpec:
         open(this_run_dir + "torque.sim", 'w').write(torque_text)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
-    def append_gpgpusim_config(self,full_bin_dir,this_run_dir, config_text_file):
-        benchmark_spec_opts_file = os.path.join( full_bin_dir, "benchmark_options.txt" )
+    def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
+        benchmark_spec_opts_file = os.path.join( this_directory, "..", "..", "benchmarks",
+            "app-specific-gpgpu-sim-options", bench_name, "benchmark_options.txt" )
         benchmark_spec_opts = ""
         if(os.path.isfile(benchmark_spec_opts_file)):
             f = open(benchmark_spec_opts_file)
