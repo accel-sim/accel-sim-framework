@@ -9,8 +9,6 @@ sdk-4.2:
     execs:
         - BlackScholes:
             -
-        - Mandelbrot:
-            -
         - MonteCarlo:
             -
         - SobolQRNG:
@@ -21,8 +19,6 @@ sdk-4.2:
             -
         - bandwidthTest:
             -
-        - bicubicTexture:
-            -
         - binomialOptions:
             -
         - clock:
@@ -32,12 +28,6 @@ sdk-4.2:
         - convolutionTexture:
             -
         - cppIntegration:
-            -
-        - dct8x8:
-            -
-        - dwtHaar1D:
-            -
-        - dxtc:
             -
         - fastWalshTransform:
             -
@@ -68,8 +58,6 @@ sdk-4.2:
         - sortingNetworks:
             -
         - template:
-            -
-        - threadFenceReduction:
             -
         - transpose:
             -
