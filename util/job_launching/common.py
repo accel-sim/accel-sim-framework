@@ -4,44 +4,49 @@ import subprocess
 import re
 import os
 import yaml
+import glob
 
-def parse_app_definition_yaml( def_yml ):
-    benchmark_yaml = yaml.load(open(app_yml))
-    benchmarks = {}
+def parse_app_definition_yaml( def_yml, apps ):
+    benchmark_yaml = yaml.load(open(def_yml))
     for suite in benchmark_yaml:
-        suite = suite[0]
+        apps[suite] = []
         for exe in benchmark_yaml[suite]['execs']:
             exe_name = exe.keys()[0]
             args_list = exe.values()[0]
-            benchmarks[suite] = ( benchmark_yaml[suite]['exec_dir'],
+            apps[suite].append(( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
-                                 exe_name, args_list )
-    return benchmarks
+                                 exe_name, args_list ))
+    return
 
-def parse_config_definition_yaml( def_yml ):
+def parse_config_definition_yaml( def_yml, configurations ):
     configs_yaml = yaml.load(open( def_yml ))
-    configurations = {}
     for config in configs_yaml:
-        config = config[0]
         gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
         configurations[config] = ( config, configs_yaml[config]['extra_params'], gpgpusim_conf )
-    return configurations
+    return
 
-def parse_app_yml( app_yml, apps ):
-    apps = parse_app_definition_yaml( os.path.join(this_directory, 'apps/define-ft-apps.yml'))
-    benchmark_yaml = yaml.load(open(app_yml))
+def parse_app_yml( this_directory, app_yml ):
+    define_yamls = glob.glob(os.path.join(this_directory, 'apps/define-*.yml'))
     benchmarks = []
+    apps = {}
+    for def_yaml in define_yamls:
+        parse_app_definition_yaml( os.path.join(this_directory, 'apps', def_yaml), apps)
+    benchmark_yaml = yaml.load(open(app_yml))
     for suite in benchmark_yaml['run']:
         if suite in apps:
-            benchmarks.append(apps[suite])
+            benchmarks = benchmarks + apps[suite]
+    print benchmarks
     return benchmarks
 
-def parse_config_yml( config_yml, configs ):
-    apps = parse_app_definition_yaml( os.path.join(this_directory, 'configs/define-standard-cfgs.yml'))
-    configs_yaml = yaml.load(open( config_yml ))
+def parse_config_yml( this_directory, config_yml ):
+    define_yamls = glob.glob(os.path.join(this_directory, 'configs/define-*.yml'))
     configurations = []
+    configs = {}
+    for def_yaml in define_yamls:
+        parse_config_definition_yaml( os.path.join(this_directory, 'configs', def_yaml), configs )
+    configs_yaml = yaml.load(open( config_yml ))
     for config in configs_yaml['run']:
-        configurations.append( confgis[config] )
+        configurations.append( configs[config] )
     return configurations
 
 def get_cuda_version(this_directory):

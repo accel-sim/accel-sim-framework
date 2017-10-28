@@ -230,10 +230,10 @@ if not os.path.exists( running_so_dir ):
 options.so_dir = running_so_dir
 
 options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "all", "benchmarks.yml"),
+    os.path.join( this_directory, "apps", "run-all-ft.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "all", "configs.yml"),
+    os.path.join( this_directory, "configs", "run-fermi-and-up-noplus.yml"),
     this_directory )
 
 
@@ -244,9 +244,9 @@ if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").s
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
     exit("ERROR - Cannot find nvcc PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
 
-benchmarks = common.parse_app_yml( options.benchmark_file )
+benchmarks = common.parse_app_yml( this_directory, options.benchmark_file )
 
-cfgs = common.parse_config_yml( options.configs_file )
+cfgs = common.parse_config_yml( this_directory, options.configs_file )
 configurations = []
 for config in cfgs:
     configurations.append( ConfigurationSpec( config ) )
