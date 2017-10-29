@@ -192,7 +192,7 @@ class ConfigurationSpec:
         benchmark_spec_opts = ""
         if(os.path.isfile(benchmark_spec_opts_file)):
             f = open(benchmark_spec_opts_file)
-            benchmark_spec_opts_line_args = f.read().strip()
+            benchmark_spec_opts = f.read().strip()
             f.close()
 
         config_text = open(config_text_file).read()
