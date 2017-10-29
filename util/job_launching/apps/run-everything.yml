@@ -1,8 +1,0 @@
-run:
-    - sdk-4.2
-    - rodinia_2.0-ft
-    - dragon-naive
-    - proxy-apps-doe1
-    - proxy-apps-doe2
-    - pannotia
-    - dragon-cdp
