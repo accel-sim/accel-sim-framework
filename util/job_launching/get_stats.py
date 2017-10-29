@@ -85,7 +85,7 @@ stats= {}
 for stat in stats_yaml['collect']:
     stats_to_pull[stat] = re.compile(stat)
 
-if options.configs_list != "" and options.apps_list != "":
+if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
         for args in args_list:
@@ -126,13 +126,19 @@ else:
             exit("Cannot open Logfile " + logfile)
 
         with open( logfile ) as f:
+            added_cfgs = set()
+            added_apps = set()
             for line in f:
                 time, jobId, app ,args, config, jobname = line.split()
-                configs.append(config)
+                if config not in added_cfgs:
+                    configs.append(config)
+                    added_cfgs.add(config)
                 app_and_args = os.path.join( app.replace('/','_'), args )
-                apps_and_args.append( app_and_args )
-                exe_and_args = os.path.join( os.path.basename(app), args)
-                exes_and_args.append(exe_and_args)
+                if app_and_args not in added_apps:
+                    apps_and_args.append( app_and_args )
+                    exe_and_args = os.path.join( os.path.basename(app), args)
+                    exes_and_args.append(exe_and_args)
+                    added_apps.add(app_and_args)
                 specific_jobIds[ config + app_and_args ] = jobId
 
 all_named_kernels = {}
