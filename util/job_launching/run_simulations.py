@@ -247,8 +247,8 @@ for config in cfgs:
     configurations.append( ConfigurationSpec( config ) )
 
 print("Running Simulations with GPGPU-Sim built from \n{0}\n ".format(version_string) +
-      "\nUsing configs_file " + options.configs_file +
-      "\nBenchmark File " + options.benchmark_file)
+      "\nUsing configs: " + options.configs_list +
+      "\nBenchmark: " + options.benchmark_list)
 
 for config in configurations:
     config.my_print()
