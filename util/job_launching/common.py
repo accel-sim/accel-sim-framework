@@ -38,27 +38,17 @@ def parse_config_definition_yaml( def_yml, configurations ):
         configurations[config] = ( config, configs_yaml[config]['extra_params'], gpgpusim_conf )
     return
 
-def parse_app_yml( app_yml ):
-    benchmarks = []
-    benchmark_yaml = yaml.load(open(app_yml))
-    for suite in benchmark_yaml['run']:
-        if suite in defined_apps:
-            benchmarks = benchmarks + defined_apps[suite]
-    print benchmarks
-    return benchmarks
-
-def parse_config_yml( config_yml ):
-    configurations = []
-    configs_yaml = yaml.load(open( config_yml ))
-    for config in configs_yaml['run']:
-        configurations.append( defined_configs[config] )
-    return configurations
-
 def gen_apps_from_suite_list( app_list ):
     benchmarks = []
     for app in app_list:
         benchmarks += defined_apps[app]
     return benchmarks
+
+def gen_configs_from_list( cfg_list ):
+    configs = []
+    for cfg in app_list:
+        configs.append(defined_configs[cfg])
+    return configs
 
 def get_cuda_version(this_directory):
     # Get CUDA version
@@ -103,16 +93,14 @@ def dir_option_test(name, default, this_directory):
 
 def parse_run_simulations_options():
     parser = OptionParser()
-    parser.add_option("-c", "--configs_file", dest="configs_file",
-                  help="configs_file used to determine which configurations are run",
-                  default="")
     parser.add_option("-B", "--benchmark_list", dest="benchmark_list",
                   help="a comma seperated list of benchmark suites to run. See apps/define-*.yml for " +\
                         "the benchmark suite names.",
-                  default="")
-    parser.add_option("-b", "--benchmark_file", dest="benchmark_file",
-                  help="the yaml file used to define which benchmarks are run",
-                  default="")
+                  default="rodinia_2.0-ft")
+    parser.add_option("-C", "--configs_list", dest="configs_list",
+                  help="a comma seperated list of configs to run. See configs/define-*.yml for " +\
+                        "the config names.",
+                  default="GTX480")
     parser.add_option("-p", "--benchmark_exec_prefix", dest="benchmark_exec_prefix",
                  help="When submitting the job to torque this string" +\
                  " is placed before the command line that runs the benchmark. " +\
@@ -137,9 +125,9 @@ def parse_run_simulations_options():
     
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
-    options.configs_file = options.configs_file.strip()
+    options.configs_list = options.configs_list.strip()
     options.benchmark_exec_prefix = options.benchmark_exec_prefix.strip()
-    options.benchmark_file = options.benchmark_file.strip()
+    options.benchmark_list = options.benchmark_list.strip()
     options.run_directory = options.run_directory.strip()
     options.so_dir = options.so_dir.strip()
     options.launch_name = options.launch_name.strip()

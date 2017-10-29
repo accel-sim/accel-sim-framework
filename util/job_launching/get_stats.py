@@ -43,12 +43,14 @@ parser.add_option("-N", "--sim_name", dest="sim_name",
                        " give you the status of the latest run with that name."+ \
                        " if you want older runs from this name, then just point it directly at the"+\
                        " logfile with \"-l\"", default="")
-parser.add_option("-c", "--configs_yml", dest="configs_yml", default="",
-                  help="If this option is specified, then sim_name and logfile are ignored." +\
-                       "Instead, the output files that will be parsed will")
-parser.add_option("-b", "--apps_yml", dest="apps_yml", default="",
-                  help="If this option is specified, then sim_name and logfile are ignored." +\
-                       "Instead, the output files that will be parsed will")
+parser.add_option("-B", "--benchmark_list", dest="benchmark_list",
+                  help="a comma seperated list of benchmark suites to run. See apps/define-*.yml for " +\
+                        "the benchmark suite names.",
+                  default="")
+parser.add_option("-C", "--configs_list", dest="configs_list",
+                  help="a comma seperated list of configs to run. See configs/define-*.yml for " +\
+                        "the config names.",
+                  default="")
 #parser.add_option("-b", "--simulator_build", dest="simulator_build", default="",
 #                  help="If you only want data from a particular build of the simulator, specify this flag.")
 parser.add_option("-s", "--stats_yml", dest="stats_yml", default="",
@@ -61,6 +63,8 @@ options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
 options.sim_name = options.sim_name.strip()
 
+common.load_defined_yamls()
+
 cuda_version = common.get_cuda_version( this_directory )
 options.run_dir = common.dir_option_test( options.run_dir, this_directory + ("../../sim_run_%s/"%cuda_version),
                                           this_directory )
@@ -69,9 +73,6 @@ if not os.path.isdir(options.run_dir):
 
 options.stats_yml = common.file_option_test( options.stats_yml, os.path.join( this_directory, "stats", "example_stats.yml" ),
                                             this_directory )
-options.configs_yml = common.file_option_test( options.configs_yml, "", this_directory )
-options.apps_yml = common.file_option_test( options.apps_yml, "", this_directory )
-
 stat_map = {}
 configs = []
 apps_and_args = []
@@ -84,12 +85,12 @@ stats= {}
 for stat in stats_yaml['collect']:
     stats_to_pull[stat] = re.compile(stat)
 
-if options.configs_yml != "" and options.apps_yml != "":
-    for app in common.parse_app_yml( options.apps_yml ):
+if options.configs_list != "" and options.apps_list != "":
+    for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
         for args in args_list:
             apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", args.strip())) )
-    for config, params, gpuconf_file in common.parse_config_yml( options.configs_yml ):
+    for config, params, gpuconf_file in common.gen_configs_from_list( options.configs_list.split(",") ):
         configs.append( config )
 else:
     # This code gets the logfiles to pull the stats from if you are using the "-l" or "-N" option
