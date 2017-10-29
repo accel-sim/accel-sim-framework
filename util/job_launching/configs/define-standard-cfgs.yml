@@ -41,3 +41,7 @@ GTX750Ti-PTXPLUS:
 PASCALTITANX:
     base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
     extra_params: ""
+
+PASCALTITANX-PTXPLUS:
+    base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
