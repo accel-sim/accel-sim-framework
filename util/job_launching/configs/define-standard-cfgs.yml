@@ -4,7 +4,7 @@ GTX480:
 
 GTX480-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 QUADROFX5600:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5600/gpgpusim.config"
@@ -12,7 +12,7 @@ QUADROFX5600:
 
 QUADROFX5600-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5600/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 QUADROFX5800:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
@@ -20,7 +20,7 @@ QUADROFX5800:
 
 QUADROFX5800-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 TESLAC2050:
     base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
@@ -28,7 +28,7 @@ TESLAC2050:
 
 TESLAC2050-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 GTX750Ti:
     base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
@@ -36,7 +36,7 @@ GTX750Ti:
 
 GTX750Ti-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 PASCALTITANX:
     base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
