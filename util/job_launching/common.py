@@ -6,6 +6,19 @@ import os
 import yaml
 import glob
 
+this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+
+defined_apps = {}
+defined_configs = {}
+
+def load_defined_yamls():
+    define_yamls = glob.glob(os.path.join(this_directory, 'apps/define-*.yml'))
+    for def_yaml in define_yamls:
+        parse_app_definition_yaml( os.path.join(this_directory, 'apps', def_yaml), defined_apps)
+    define_yamls = glob.glob(os.path.join(this_directory, 'configs/define-*.yml'))
+    for def_yaml in define_yamls:
+        parse_config_definition_yaml( os.path.join(this_directory, 'configs', def_yaml), defined_configs )
+
 def parse_app_definition_yaml( def_yml, apps ):
     benchmark_yaml = yaml.load(open(def_yml))
     for suite in benchmark_yaml:
@@ -25,29 +38,27 @@ def parse_config_definition_yaml( def_yml, configurations ):
         configurations[config] = ( config, configs_yaml[config]['extra_params'], gpgpusim_conf )
     return
 
-def parse_app_yml( this_directory, app_yml ):
-    define_yamls = glob.glob(os.path.join(this_directory, 'apps/define-*.yml'))
+def parse_app_yml( app_yml ):
     benchmarks = []
-    apps = {}
-    for def_yaml in define_yamls:
-        parse_app_definition_yaml( os.path.join(this_directory, 'apps', def_yaml), apps)
     benchmark_yaml = yaml.load(open(app_yml))
     for suite in benchmark_yaml['run']:
-        if suite in apps:
-            benchmarks = benchmarks + apps[suite]
+        if suite in defined_apps:
+            benchmarks = benchmarks + defined_apps[suite]
     print benchmarks
     return benchmarks
 
-def parse_config_yml( this_directory, config_yml ):
-    define_yamls = glob.glob(os.path.join(this_directory, 'configs/define-*.yml'))
+def parse_config_yml( config_yml ):
     configurations = []
-    configs = {}
-    for def_yaml in define_yamls:
-        parse_config_definition_yaml( os.path.join(this_directory, 'configs', def_yaml), configs )
     configs_yaml = yaml.load(open( config_yml ))
     for config in configs_yaml['run']:
-        configurations.append( configs[config] )
+        configurations.append( defined_configs[config] )
     return configurations
+
+def gen_apps_from_suite_list( app_list ):
+    benchmarks = []
+    for app in app_list:
+        benchmarks += defined_apps[app]
+    return benchmarks
 
 def get_cuda_version(this_directory):
     # Get CUDA version
@@ -94,6 +105,10 @@ def parse_run_simulations_options():
     parser = OptionParser()
     parser.add_option("-c", "--configs_file", dest="configs_file",
                   help="configs_file used to determine which configurations are run",
+                  default="")
+    parser.add_option("-B", "--benchmark_list", dest="benchmark_list",
+                  help="a comma seperated list of benchmark suites to run. See apps/define-*.yml for " +\
+                        "the benchmark suite names.",
                   default="")
     parser.add_option("-b", "--benchmark_file", dest="benchmark_file",
                   help="the yaml file used to define which benchmarks are run",
