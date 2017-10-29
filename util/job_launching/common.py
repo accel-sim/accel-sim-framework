@@ -46,7 +46,7 @@ def gen_apps_from_suite_list( app_list ):
 
 def gen_configs_from_list( cfg_list ):
     configs = []
-    for cfg in app_list:
+    for cfg in cfg_list:
         configs.append(defined_configs[cfg])
     return configs
 
