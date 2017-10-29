@@ -229,13 +229,14 @@ if not os.path.exists( running_so_dir ):
     shutil.copy( so_path, running_so_dir )
 options.so_dir = running_so_dir
 
+is_bench_file_specified = options.benchmark_file != ""
 options.benchmark_file = common.file_option_test(options.benchmark_file,
     os.path.join( this_directory, "apps", "run-all-ft.yml"),
     this_directory )
 options.configs_file = common.file_option_test(options.configs_file,
     os.path.join( this_directory, "configs", "run-fermi-and-up-noplus.yml"),
     this_directory )
-
+common.load_defined_yamls()
 
 # Test for the existance of torque on the system
 if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").split(os.pathsep)]):
@@ -244,9 +245,14 @@ if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").s
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
     exit("ERROR - Cannot find nvcc PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
 
-benchmarks = common.parse_app_yml( this_directory, options.benchmark_file )
+benchmarks = []
+if options.benchmark_list != "":
+    benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
 
-cfgs = common.parse_config_yml( this_directory, options.configs_file )
+if is_bench_file_specified or options.benchmark_list == "":
+    benchmarks += common.parse_app_yml( options.benchmark_file )
+
+cfgs = common.parse_config_yml( options.configs_file )
 configurations = []
 for config in cfgs:
     configurations.append( ConfigurationSpec( config ) )
