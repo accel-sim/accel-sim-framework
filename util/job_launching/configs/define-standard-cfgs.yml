@@ -48,11 +48,11 @@ PASCALTITANX-PTXPLUS:
 
 P100-HBM:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: ""
 
 TITANX-P102:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1"
+    extra_params: ""
 
 P100-HBM-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
