@@ -8,14 +8,16 @@ pipeline {
             steps{
                 sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
                 source ./benchmarks/src/setup_environment &&\
+                make -C ./benchmarks/src clean_rodinia-3.1 &&\
                 make -C ./benchmarks/src all'
             }
         }
         stage('8.0-simulations-build'){
             steps{
                 sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/8.0_env_setup.sh &&\
-                source ./benchmarks/src/setup_environment &&\
-                make -j -C ./benchmarks/src all'
+                source ./benchmarks/src/setup_environment && \
+                make -C ./benchmarks/src clean_rodinia-3.1 && \
+                make -C ./benchmarks/src all'
             }
         }
     }
