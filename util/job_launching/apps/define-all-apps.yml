@@ -204,7 +204,7 @@ rodinia-3.1:
     data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
-            - file ../data/mil.txt command ../data/command.txt
+            - file ./data/mil.txt command ./data/command.txt
         - backprop-rodinia-3.1:
             - 65536
         - bfs-rodinia-3.1:
