@@ -209,6 +209,8 @@ rodinia-3.1:
             - 65536
         - bfs-rodinia-3.1:
             - ./data/graph1MW_6.txt
+            - ./data/graph4096.txt
+            - ./data/graph65536.txt
         - cfd-rodinia-3.1:
             - ./data/fvcorr.domn.097K
             - ./data/fvcorr.domn.193K
@@ -225,67 +227,36 @@ rodinia-3.1:
             - 512 2 2 ./data/temp_512 ./data/power_512 output.out
         - hotspot3D-rodinia-3.1:
             - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
-
+        # Only works with newer versions of CUDA
 #        - huffman-rodinia-3.1:
 #            - ./data/huffman/test1024_H2.206587175259.in
-
-
-        - pathfinder-rodinia-3.1:
-            - 100000 100 20 > result.txt
-        - nn-rodinia-3.1:
-            - ./data/filelist_4 -r 5 -lat 30 -lng 90
-        - mycyocte-rodinia-3.1:
-            - 100 1 0
-
         - hybridsort-rodinia-3.1:
             - r
-
-
-
-
-
-
-
-
-
-
-        #r./benchmarks/src/cuda/rodinia/3.1/cuda/lavaMD/run
-#           
-#./pathfinder 100000 100 20 > result.txt./benchmarks/src/cuda/rodinia/3.1/cuda/nn/run
-#./nn filelist_4 -r 5 -lat 30 -lng 90./benchmarks/src/cuda/rodinia/3.1/cuda/myocyte/run
-
-#./benchmarks/src/cuda/rodinia/3.1/cuda/hotspot/run
-#./hotspot 512 2 2 ../../data/hotspot/temp_512 ../../data/hotspot/power_512 output.out
-#./benchmarks/src/cuda/rodinia/3.1/cuda/hybridsort/run
-#./hybridsort r./benchmarks/src/cuda/rodinia/3.1/cuda/lavaMD/run
-#./lavaMD -boxes1d 10./benchmarks/src/cuda/rodinia/3.1/cuda/gaussian/run
-#./gaussian -f ../../data/gaussian/matrix4.txt
-#./gaussian -s 16./benchmarks/src/cuda/rodinia/3.1/cuda/lud/run
-## cuda/lud_cuda -i ../../data/lud/256.dat 
-#cuda/lud_cuda -s 256 -v
-#./benchmarks/src/cuda/rodinia/3.1/cuda/nw/run
-#./needle 2048 10
-#./benchmarks/src/cuda/rodinia/3.1/cuda/streamcluster/run
-#./sc_gpu 10 20 256 65536 65536 1000 none output.txt 1./benchmarks/src/cuda/rodinia/3.1/cuda/mummergpu/run
-#usage: mummergpu [options] reference.fna query.fna
-#
-#bin/mummergpu ../../data/mummergpu/NC_003997.fna ../../data/mummergpu/NC_003997_q100bp.fna > NC_00399.out./benchmarks/src/cuda/rodinia/3.1/cuda/leukocyte/CUDA/run
-#./leukocyte ../../../data/leukocyte/testfile.avi 10
-#./benchmarks/src/cuda/rodinia/3.1/cuda/leukocyte/run
-#./CUDA/leukocyte  ../../data/leukocyte/testfile.avi 5 
-#./benchmarks/src/cuda/rodinia/3.1/cuda/particlefilter/run
-#./particlefilter_naive -x 128 -y 128 -z 10 -np 1000
-#./particlefilter_float -x 128 -y 128 -z 10 -np 1000
-#./benchmarks/src/cuda/rodinia/3.1/cuda/srad/srad_v1/run
-#./srad 100 0.5 502 458
-#./benchmarks/src/cuda/rodinia/3.1/cuda/srad/srad_v2/run
-#./srad 2048 2048 0 127 0 127 0.5 2./benchmarks/src/cuda/rodinia/3.1/cuda/b+tree/run
-#./b+tree.out file ../../data/b+tree/mil.txt command ../../data/b+tree/command.txt
-#./benchmarks/src/cuda/rodinia/3.1/cuda/hotspot3D/run
-#./3D 512 8 100 ../../data/hotspot3D/power_512x8 ../../data/hotspot3D/temp_512x8 output.out
-#./benchmarks/src/cuda/rodinia/3.1/cuda/kmeans/run
-#./kmeans -o -i ../../data/kmeans/kdd_cup 
-#./benchmarks/src/cuda/rodinia/3.1/cuda/backprop/run
-#./backprop 65536
-#./benchmarks/src/cuda/rodinia/3.1/cuda/bfs/run
-#./bfs ../../data/bfs/graph1MW_6.txt
+        - kmeans-rodinia-3.1:
+            - -o -i ./data/kdd_cup
+        - lavaMD-rodinia-3.1:
+            - -boxes1d 10
+        - leukocyte-rodinia-3.1:
+            - ./data/testfile.avi 5
+        - lud-rodinia-3.1:
+            - -s 256 -v
+        - mummergpu-rodinia-3.1:
+            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
+        - mycyocte-rodinia-3.1:
+            - 100 1 0
+        - nn-rodinia-3.1:
+            - ./data/filelist_4 -r 5 -lat 30 -lng 90
+        - nw-rodinia-3.1:
+            - 2048 10
+        - particlefilter_float-rodinia-3.1:
+            - -x 128 -y 128 -z 10 -np 1000
+        - particlefilter_naive-rodinia-3.1:
+            - -x 128 -y 128 -z 10 -np 1000
+        - pathfinder-rodinia-3.1:
+            - 100000 100 20 > result.txt
+        - srad_v1-rodinia-3.1:
+            - 100 0.5 502 458
+        - srad_v2-rodinia-3.1:
+            - 2048 2048 0 127 0 127 0.5 2
+        - streamcluster-rodinia-3.1:
+            - 10 20 256 65536 65536 1000 none output.txt 1
