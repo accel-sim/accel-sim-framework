@@ -218,7 +218,7 @@ rodinia-3.1:
         - dwt2d-rodinia-3.1:
             - 192.bmp -d 192x192 -f -5 -l 3
             - rgb.bmp -d 1024x1024 -f -5 -l 3
-        - gaussian:
+        - gaussian-rodinia-3.1:
             - -f ./data/matrix4.txt
             - -s 16
         - heartwall-rodinia-3.1:
