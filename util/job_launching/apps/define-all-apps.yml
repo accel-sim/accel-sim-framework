@@ -82,8 +82,6 @@ sdk-4.2:
             -
         - simpleP2P:
             -
-        - simplePrintf:
-            -
         - simpleTemplates:
             -
         - simpleVoteIntrinsics:
