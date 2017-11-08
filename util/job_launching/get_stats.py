@@ -58,6 +58,8 @@ parser.add_option("-s", "--stats_yml", dest="stats_yml", default="",
                        " by default it uses stats/example_stats.yml")
 parser.add_option("-k", "--per_kernel", dest="per_kernel", action="store_true",
                   help="Aggregate the statistics for each named kernel")
+parser.add_option("-K", "--kernel_instance", dest="kernel_instance", action="store_true",
+                  help="Print stats for each individual kernel the statistics for each named kernel")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -143,7 +145,7 @@ else:
 
 all_named_kernels = {}
 for idx, app_and_args in enumerate(apps_and_args):
-    all_named_kernels[app_and_args] = set()
+    all_named_kernels[app_and_args] = []
     for config in configs:
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
@@ -181,7 +183,7 @@ for idx, app_and_args in enumerate(apps_and_args):
                 break
 
         if not options.per_kernel:
-            all_named_kernels[app_and_args].add("final_kernel")
+            all_named_kernels[app_and_args].append("final_kernel")
             # Only go up for 10000 lines looking for stuff
             MAX_LINES = 100000
             count = 0
@@ -206,6 +208,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             last_kernel = ""
             raw_last = {}
             blank_kernel = False
+            running_kcount = {}
             for line in open(outfile).readlines():
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
@@ -216,7 +219,15 @@ for idx, app_and_args in enumerate(apps_and_args):
                         blank_kernel = False
                     last_kernel = current_kernel
                     current_kernel = kernel_match.group(1).strip()
-                    all_named_kernels[app_and_args].add(current_kernel)
+
+                    if options.kernel_instance:
+                        if current_kernel not in running_kcount:
+                            running_kcount[current_kernel] = 0
+                        else:
+                            running_kcount[current_kernel] += 1
+                        current_kernel += "--" + str(running_kcount[current_kernel])
+
+                    all_named_kernels[app_and_args].append(current_kernel)
                     if current_kernel + app_and_args + config + "k-count" in stat_map:
                         stat_map[current_kernel + app_and_args + config + "k-count"] += 1
                     else:
@@ -248,7 +259,7 @@ for idx, app_and_args in enumerate(apps_and_args):
 
 # Just adding this in here since it is a special case and is not parsed like everything else, because you need
 # to read from the beginning not the end
-if options.per_kernel:
+if options.per_kernel and not options.kernel_instance:
     stats_yaml['collect'].append("k-count")
 
 # After collection, spew out the tables
