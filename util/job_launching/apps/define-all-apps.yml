@@ -25,8 +25,9 @@ rodinia_2.0-ft:
             - 30 6 40 ./data/result_30_6_40.txt
         - heartwall-rodinia-2.0-ft:
             - ./data/test.avi 1 ./data/result-1.txt
-        - kmeans-rodinia-2.0-ft:
-            - -i data/400.txt -g data/400-result.txt -o
+        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
+#        - kmeans-rodinia-2.0-ft:
+#            - -i data/400.txt -g data/400-result.txt -o
         - lud-rodinia-2.0-ft:
             - -v -b -i ./data/64.dat
         - nw-rodinia-2.0-ft:
@@ -230,8 +231,9 @@ rodinia-3.1:
 #            - ./data/huffman/test1024_H2.206587175259.in
         - hybridsort-rodinia-3.1:
             - r
-        - kmeans-rodinia-3.1:
-            - -o -i ./data/kdd_cup
+        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
+#        - kmeans-rodinia-3.1:
+#            - -o -i ./data/kdd_cup
         - lavaMD-rodinia-3.1:
             - -boxes1d 10
         - leukocyte-rodinia-3.1:
