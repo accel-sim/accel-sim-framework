@@ -29,6 +29,10 @@ def parse_app_definition_yaml( def_yml, apps ):
             apps[suite].append(( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
                                  exe_name, args_list ))
+            apps[suite + ":" + exe_name] = []
+            apps[suite + ":" + exe_name].append( ( benchmark_yaml[suite]['exec_dir'],
+                                 benchmark_yaml[suite]['data_dirs'],
+                                 exe_name, args_list ) )
     return
 
 def parse_config_definition_yaml( def_yml, configurations ):
