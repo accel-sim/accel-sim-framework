@@ -61,3 +61,15 @@ P100-HBM-PTXPLUS:
 TITANX-P102-PTXPLUS:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+
+PASCALTITANX-SM6:
+    base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62"
+
+P100-HBM-SM6:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62"
+
+TITANX-P102-SM6:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62"
