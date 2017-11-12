@@ -91,7 +91,10 @@ if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
         for args in args_list:
-            apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())) )
+            if args == "" or args == None:
+                apps_and_args.append( os.path.join(exe_name, "NO_ARGS") )
+            else:
+                apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())) )
     for config, params, gpuconf_file in common.gen_configs_from_list( options.configs_list.split(",") ):
         configs.append( config )
 else:
