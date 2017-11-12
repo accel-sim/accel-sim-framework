@@ -186,7 +186,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                 break
 
         if not options.per_kernel:
-            all_named_kernels[app_and_args].append("final_kernel")
+            if len(all_named_kernels[app_and_args]) == 0:
+                all_named_kernels[app_and_args].append("final_kernel")
             # Only go up for 10000 lines looking for stuff
             MAX_LINES = 100000
             count = 0
