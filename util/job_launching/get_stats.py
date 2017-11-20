@@ -231,7 +231,9 @@ for idx, app_and_args in enumerate(apps_and_args):
                             running_kcount[current_kernel] += 1
                         current_kernel += "--" + str(running_kcount[current_kernel])
 
-                    all_named_kernels[app_and_args].append(current_kernel)
+                    if current_kernel not in all_named_kernels[app_and_args]:
+                        all_named_kernels[app_and_args].append(current_kernel)
+
                     if current_kernel + app_and_args + config + "k-count" in stat_map:
                         stat_map[current_kernel + app_and_args + config + "k-count"] += 1
                     else:
