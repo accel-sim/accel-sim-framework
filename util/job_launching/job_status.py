@@ -251,6 +251,14 @@ for logfile in parsed_logfiles:
             if ("FUNC_TEST_PASSED" not in status_found \
                 and "WAITING_TO_RUN" not in status_string \
                 and "RUNNING" not in status_string ):
+
+                # We need ro spin here to make sure the output files exist...
+                # Sometimes torque can tell us the job is complete, but the file is not actually on the file system yet.
+                while( not os.path.exists(outfile) ):
+                    pass
+                while( not os.path.exists(errfile) ):
+                    pass
+
                 failed_jobs_summary += job_summary + "\n"
                 failed_job_text += "**********************************************************\n"
                 failed_job_text += "{0}-{1}--{2}. Status={3}\n".format( app, args, config, status_string )
