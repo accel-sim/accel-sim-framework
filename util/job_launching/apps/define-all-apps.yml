@@ -47,8 +47,10 @@ sdk-4.2:
     execs:
         - BlackScholes:
             -
-        - MonteCarlo:
-            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - MonteCarlo:
+#            -
         - SobolQRNG:
             -
         - alignedTypes:
@@ -57,14 +59,17 @@ sdk-4.2:
             -
         - bandwidthTest:
             -
-        - binomialOptions:
-            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - binomialOptions:
+#            -
         - clock:
             -
         - convolutionSeparable:
             -
-        - convolutionTexture:
-            -
+        # Texture ops - question on if support makes sense.
+#        - convolutionTexture:
+#            -
         - cppIntegration:
             -
         - fastWalshTransform:
@@ -73,8 +78,10 @@ sdk-4.2:
             -
         - mergeSort:
             -
-        - quasirandomGenerator:
-            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - quasirandomGenerator:
+#            -
         - reduction:
             -
         - scalarProd:
