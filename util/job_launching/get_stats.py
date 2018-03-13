@@ -91,7 +91,10 @@ if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
         for args in args_list:
-            apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())) )
+            if args == "" or args == None:
+                apps_and_args.append( os.path.join(exe_name, "NO_ARGS") )
+            else:
+                apps_and_args.append( os.path.join(exe_name, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())) )
     for config, params, gpuconf_file in common.gen_configs_from_list( options.configs_list.split(",") ):
         configs.append( config )
 else:
@@ -183,7 +186,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                 break
 
         if not options.per_kernel:
-            all_named_kernels[app_and_args].append("final_kernel")
+            if len(all_named_kernels[app_and_args]) == 0:
+                all_named_kernels[app_and_args].append("final_kernel")
             # Only go up for 10000 lines looking for stuff
             MAX_LINES = 100000
             count = 0
@@ -227,7 +231,9 @@ for idx, app_and_args in enumerate(apps_and_args):
                             running_kcount[current_kernel] += 1
                         current_kernel += "--" + str(running_kcount[current_kernel])
 
-                    all_named_kernels[app_and_args].append(current_kernel)
+                    if current_kernel not in all_named_kernels[app_and_args]:
+                        all_named_kernels[app_and_args].append(current_kernel)
+
                     if current_kernel + app_and_args + config + "k-count" in stat_map:
                         stat_map[current_kernel + app_and_args + config + "k-count"] += 1
                     else:
