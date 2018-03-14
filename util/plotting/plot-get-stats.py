@@ -8,6 +8,7 @@ from plotly.graph_objs import *
 import os
 import subprocess
 import shutil
+import glob
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -111,17 +112,19 @@ for stat,value in all_stats.iteritems():
         )
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = options.basename+"--"+stat
+    figure_name = stat
     print "plotting: " + figure_name
-    outdir = (os.path.join(this_directory,"htmls--" + options.basename))
+    outdir = (os.path.join(this_directory,"htmls", options.basename))
     if not os.path.exists( outdir ):
         os.makedirs(outdir)
     plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
     stat_count += 1
 
+
 shutil.copy2(options.csv_file, outdir)
 if options.publish_path != "":
-    if subprocess.call(["scp", "-r" ,outdir, options.publish_path]) != 0:
+    files = glob.glob(os.path.join(outdir, "*"))
+    if subprocess.call(["scp"] + files + [options.publish_path]) != 0:
         print "Error Publishing via scp"
     else:
-        print "Successfully pushed results to: {0}".format(options.publish_web + "/htmls--" + options.basename)
+        print "Successfully pushed results to: {0}".format(options.publish_web)
