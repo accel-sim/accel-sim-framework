@@ -1,9 +1,12 @@
+#!/usr/bin/env python
+
 from optparse import OptionParser
 import plotly
 import plotly.plotly as py
 import plotly.tools as tls
 from plotly.graph_objs import *
 import os
+import subprocess
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -59,6 +62,14 @@ parser.add_option("-n", "--basename", dest="basename",
 parser.add_option("-c", "--csv_file", dest="csv_file",
                   help="File to parse",
                   default="")
+parser.add_option("-p", "--publish_path", dest="publish_path",
+                  help="After the htmls are generated - they will get published here."+\
+                  " Assumes you can scp to this directory.",
+                  default="")
+parser.add_option("-w", "--publish_web", dest="publish_web",
+                  help="After the htmls are generated - they will get published here."+\
+                  " Assumes you can scp to this directory.",
+                  default="")
 (options, args) = parser.parse_args()
 options.csv_file = common.file_option_test( options.csv_file, "", this_directory )
 
@@ -106,3 +117,9 @@ for stat,value in all_stats.iteritems():
         os.makedirs(outdir)
     plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
     stat_count += 1
+
+if options.publish_path != "":
+    if subprocess.call(["scp", "-r" ,os.path.join(this_directory, "htmls"), options.publish_path]) != 0:
+        print "Error Publishing via scp"
+    else:
+        print "Successfully pushed results to: {0}".format(options.publish_web)
