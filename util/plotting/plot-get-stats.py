@@ -87,7 +87,7 @@ for stat,value in all_stats.iteritems():
             x= apps,
             y= v,
             name=k,
-            marker=Marker(color=colors[cfg_count]),
+            marker=Marker(color=colors[cfg_count % len(colors)]),
             xaxis='x1',
             yaxis='y{}'.format(stat_count+1)
             )
