@@ -60,6 +60,8 @@ parser.add_option("-k", "--per_kernel", dest="per_kernel", action="store_true",
                   help="Aggregate the statistics for each named kernel")
 parser.add_option("-K", "--kernel_instance", dest="kernel_instance", action="store_true",
                   help="Print stats for each individual kernel the statistics for each named kernel")
+parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="store_true",
+                  help="Instread of apps as rows in the csv, make configs as rows.")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -269,26 +271,49 @@ if options.per_kernel and not options.kernel_instance:
     stats_yaml['collect'].append("k-count")
 
 # After collection, spew out the tables
-def print_stat(stat_name, all_named_kernels):
+def print_stat(stat_name, all_named_kernels, cfg_as_rows):
     csv_str = ""
     DIVISION = "-" * 100
     csv_str += DIVISION + "\n"
     csv_str += stat_name + "\n,"
-    for config in configs:
-        csv_str += config + ","
-    csv_str += "\n"
-    for appargs in apps_and_args:
-        knames = all_named_kernels[appargs]
-        for kname in knames:
-            if kname == "":
-                continue
+    if cfg_as_rows:
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
             csv_str += appargs + "--" + kname + ","
-            for config in configs:
-                if kname + appargs + config + stat_name in stat_map:
-                    csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                else:
-                    csv_str += "NA,"
+
+        csv_str += "\n"
+        for config in configs:
+            csv_str += config + ","
+            for appargs in apps_and_args:
+                knames = all_named_kernels[appargs]
+                if kname == "":
+                    continue
+                for kname in knames:
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                    else:
+                        csv_str += "NA,"
             csv_str += "\n"
+    else:
+        for config in configs:
+            csv_str += config + ","
+        csv_str += "\n"
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
+                csv_str += appargs + "--" + kname + ","
+                for config in configs:
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                    else:
+                        csv_str += "NA,"
+                csv_str += "\n"
+    
     csv_str += "\n"
     print csv_str
 
@@ -297,7 +322,7 @@ all_kernels = {}
 for appargs in apps_and_args:
     all_kernels[appargs] = ["all_kernels"]
 
-print_stat( "GPGPU-Sim-build", all_kernels )
+print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
 
 for stat_name in stats_yaml['collect']:
-    print_stat( stat_name, all_named_kernels )
+    print_stat( stat_name, all_named_kernels, options.configs_as_rows )
