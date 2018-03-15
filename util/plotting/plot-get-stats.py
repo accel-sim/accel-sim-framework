@@ -81,7 +81,7 @@ options.csv_file = common.file_option_test( options.csv_file, "", this_directory
 
 all_stats = get_csv_data(options.csv_file)
 
-colors= ['#0F8C79','#BD2D28','#E3BA22']
+colors= ['#0F8C79','#BD2D28','#E3BA22','#E6842A','#137B80','#8E6C8A','#9A3E25', '#E6842A']
 stat_count = 0
 for stat,value in all_stats.iteritems():
     traces = []
