@@ -24,6 +24,7 @@ def get_csv_data(filepath):
     all_stats = {}
     apps = []
     data = {}
+    any_data = False
     with open(filepath, 'r') as data_file:
         reader = csv.reader(data_file)        # define reader object
         state = "start"
@@ -41,15 +42,18 @@ def get_csv_data(filepath):
                 continue
             if state == "process-cfgs":
                 if len(row) == 0:
-                    all_stats[current_stat] = apps,data
+                    if any_data:
+                        all_stats[current_stat] = apps,data
                     apps = []
                     data = {}
                     state = "start"
+                    any_data = False
                     continue
                 temp = []
                 for x in row[1:]:
                     try:
                         temp.append(float(x))
+                        any_data = True
                     except ValueError:
                         temp.append(0)
                 data[row[0]] = np.array(temp)
