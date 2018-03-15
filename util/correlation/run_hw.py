@@ -47,7 +47,7 @@ logfile = day_string + "--" + time_string + ".csv"
 for bench in benchmarks:
     edir, ddir, exe, args = bench
     ddir = os.path.join(this_directory,ddir,exe)
-    if args == "" or args == None:
+    if args[0] == "" or args[0] == None:
         run_name= os.path.join(exe,"NO_ARGS")
     else:
         run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
@@ -62,6 +62,9 @@ for bench in benchmarks:
             os.remove(os.path.join(this_run_dir, "data"))
         print "Doing Link"
         os.symlink(os.path.join(ddir, "data"), os.path.join(this_run_dir,"data"))
+
+    if args[0] == None:
+        args = ""
 
     sh_contents = os.path.join("export CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
         "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
