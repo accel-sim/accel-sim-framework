@@ -284,6 +284,7 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                     continue
             csv_str += appargs + "--" + kname + ","
 
+        csv_str = csv_str[:-1]
         csv_str += "\n"
         for config in configs:
             csv_str += config + ","
@@ -296,10 +297,12 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                         csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
                     else:
                         csv_str += "NA,"
+            csv_str = csv_str[:-1]
             csv_str += "\n"
     else:
         for config in configs:
             csv_str += config + ","
+        csv_str = csv_str[:-1]
         csv_str += "\n"
         for appargs in apps_and_args:
             knames = all_named_kernels[appargs]
@@ -312,8 +315,10 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                         csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
                     else:
                         csv_str += "NA,"
+                csv_str = csv_str[:-1]
                 csv_str += "\n"
-    
+
+    csv_str = csv_str[:-1]
     csv_str += "\n"
     print csv_str
 
