@@ -282,7 +282,7 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
             for kname in knames:
                 if kname == "":
                     continue
-            csv_str += appargs + "--" + kname + ","
+                csv_str += appargs + "--" + kname + ","
 
         csv_str += "\n"
         for config in configs:
