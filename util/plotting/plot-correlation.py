@@ -19,6 +19,7 @@ import csv
 import re
 import glob
 import copy
+import ast
 
 
 def get_sim_csv_data(filepath):
@@ -158,12 +159,16 @@ parser.add_option("-H", "--hardware_dir", dest="hardware_dir",
 parser.add_option("-c", "--csv_file", dest="csv_file",
                   help="File to parse",
                   default="")
+parser.add_option("-d", "--data_mappings", dest="data_mappings",
+                  help="python file that descibes your desired data mappings",
+                  default="")
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
 
 benchmarks = []
 benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
+options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
 
 # Get the hardware Data
 hw_data = {}
@@ -179,29 +184,7 @@ for root, dirs, files in os.walk(options.hardware_dir):
 #Get the simulator data
 sim_data = get_sim_csv_data(options.csv_file)
 
-config_maps = \
-{
-    "TITANX-P102": "TITAN X (Pascal)",
-    "P100-HBM" : "Tesla P100",
-}
-
-import collections
-CorrelStat = collections.namedtuple('CorrelStat', 'chart_name hw_eval sim_eval config plotfile')
-correl_list = \
-[
-    CorrelStat(chart_name="Execution Cycles (1417 MHz)",
-        plotfile="titanx-p102-cycles.html",
-        hw_eval="float(hw[\"Duration\"])*1417",
-        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
-        config="TITANX-P102"
-    ),
-    CorrelStat(chart_name="Execution Cycles (1480 MHz)",
-        plotfile="p100-cycles.html",
-        hw_eval="float(hw[\"Duration\"])*1480",
-        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
-        config="P100-HBM"
-    ),
-]
+exec(open(options.data_mappings,'r').read())
 
 hw_array = []
 sim_array = []
@@ -214,7 +197,6 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
     hw_cfg = None
     for device in hw_data.iterkeys():
-        print device
         if config_maps[cfg] in device:
             hw_cfg = device
             continue
@@ -224,7 +206,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         continue
 
     for correl in correl_list:
-        if cfg != "all" and cfg != correl.config:
+        if correl.config != "all" and cfg != correl.config:
+            print "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
             continue
 
         for appargs,sim_klist in sim_for_cfg.iteritems():
@@ -258,5 +241,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         )
         
         data = [trace]
-        
-        plotly.offline.plot(Figure(data=data,layout=layout), filename=os.path.join(correl.plotfile),auto_open=False)
+
+        plotname = filename=os.path.join("correl-html", cfg + "." + correl.plotfile)
+        print "Plotting {0}".format(plotname)
+        if not os.path.isdir("correl-html"):
+            os.makedirs("correl-html")
+        plotly.offline.plot(Figure(data=data,layout=layout), plotname, auto_open=False)
