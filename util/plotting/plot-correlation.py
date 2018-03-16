@@ -6,6 +6,7 @@ import plotly.plotly as py
 import plotly.tools as tls
 from plotly.graph_objs import *
 import os
+import plotly.graph_objs as go
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -39,7 +40,6 @@ def get_sim_csv_data(filepath):
                     last_appargs = ""
                     for item in row[1:]:
                         split = item.split("--")
-                        print split
                         if len(split) > 1:
                             appargs = split[0]
                             kname = split[1]
@@ -66,8 +66,6 @@ def get_sim_csv_data(filepath):
                 count = 0
                 for x in row[1:]:
                     try:
-                        print str(count) + "--" + str(len(klist))
-                        print x
                         appargs,kname,num = klist[count]
                         all_kerns[appargs][num][current_stat] = float(x)
                     except ValueError:
@@ -77,27 +75,49 @@ def get_sim_csv_data(filepath):
 
 def parse_hw_csv(csv_file):
     kdata = []
-    with open(csv_file, 'r') as data_file:
-        reader = csv.reader(data_file)        # define reader object
-        state = "start"
-        header = []
-        for row in reader:                    # loop through rows in csv file
-            if state == "start":
-                if "Profiling result" in row[0]:
-                    state = "header_proc"
-                continue
-            if state == "header_proc":
-                header = row
-                state = "kernel_proc"
-                continue
-            if state == "kernel_proc":
-                count = 0
-                kstat = {}
-                for elem in row:
-                    kstat[header[count]] = elem
-                    count += 1
-                kdata.append(kstat)
-                continue
+    processFiles = True
+    processedCycle = False
+    while processFiles:
+        with open(csv_file, 'r') as data_file:
+            reader = csv.reader(data_file)        # define reader object
+            state = "start"
+            header = []
+            kcount = 0
+            for row in reader:                    # loop through rows in csv file
+                if state == "start":
+                    if "Profiling result" in row[0]:
+                        state = "header_proc"
+                    continue
+                if state == "header_proc":
+                    header = row
+                    state = "blanc_proc"
+                    continue
+                if state == "blanc_proc":
+                    state = "kernel_proc"
+                    continue
+                if state == "kernel_proc":
+                    if processedCycle:
+                        if "[CUDA " in "".join(row):
+                            continue
+                        count = 0
+                        for elem in row:
+                            kdata[kcount][header[count]] = elem
+                            count += 1
+                        kcount += 1
+                    else:
+                        kstat = {}
+                        count = 0
+                        for elem in row:
+                            kstat[header[count]] = elem
+                            count += 1
+                        kdata.append(kstat)
+                    continue
+        if os.path.exists(csv_file + ".cycle") and not processedCycle and len(kdata) > 0:
+            processedCycle = True
+            csv_file += ".cycle"
+        else:
+            processFiles = False
+
     return kdata
 
 
@@ -132,71 +152,68 @@ for root, dirs, files in os.walk(options.hardware_dir):
         if len(csvs) > 0:
             hw_data[os.path.join(os.path.basename(root),d)] = parse_hw_csv(max(csvs, key=os.path.getctime))
 
-#print hw_data
-#exit()
 
 #Get the simulator data
 sim_data = get_sim_csv_data(options.csv_file)
 
-print sim_data
+hw_array = []
+sim_array = []
+label_array = []
+for appargs,sim_klist in sim_data.iteritems():
+#    print appargs
+    if appargs in hw_data:
+        hw_klist = hw_data[appargs]
+        if len(hw_klist) == len(sim_klist):
+            count = 0
+            for k in sim_klist:
+                hw_num = hw_klist[count]["Duration"]
+                sw_num = k["gpu_tot_sim_cycle\s*=\s*(.*)"]
+                # HW in us - clock is 1417 MHz
+                # HW_CYCLES=hw_us/10^6
+                hw_array.append(float(hw_num)*1417)
+                sim_array.append(float(sw_num))
+                label_array.append(appargs + "--" + hw_klist[count]["Name"])
+                count += 1
+#            print "Sane"
+#        else:
+#            print "HW List"
+#            for k in hw_klist:
+#                print k["Kernel"]
+#            print "SIM List"
+#            for k in sim_klist:
+#                print k["Kernel"]
+#            print "INSANE hw={0},sim={1}".format(len(hw_klist),len(sim_klist))
 
-exit()
 
 
-for bench in benchmarks:
-    edir, ddir, exe, args = bench
-    ddir = os.path.join(this_directory,ddir,exe)
-    if args[0] == "" or args[0] == None:
-        run_name= os.path.join(exe,"NO_ARGS")
-    else:
-        run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
-
-    this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
-    print this_run_dir
-
-exit()
-
-all_stats = get_csv_data(options.csv_file)
-
-colors= ['#0F8C79','#BD2D28','#E3BA22']
-stat_count = 0
-for stat,value in all_stats.iteritems():
-    traces = []
-    cfg_count = 0
-    apps, data = value
-    for k,v in data.iteritems():
-        traces.append(Bar(
-            x= apps,
-            y= v,
-            name=k,
-            marker=Marker(color=colors[cfg_count]),
-            xaxis='x1',
-            yaxis='y{}'.format(stat_count+1)
-            )
+# Create a trace
+trace = go.Scatter(
+    x = hw_array,
+    y = sim_array,
+    mode = 'markers',
+    text=label_array,
+)
+layout = Layout(
+    title="TITANX-P102 Correlation on rodinia_2.0-ft",
+     xaxis=dict(
+        title='HW Cycles (us x 1417)',
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
         )
-        cfg_count += 1
-
-    data = Data(traces)
-    layout = Layout(
-        title=stat,
-        barmode='group',
-        bargroupgap=0,
-        bargap=0.25,
-        showlegend=True,
-        yaxis=YAxis(
-            title="test",
-            titlefont=dict(
-                family='Courier New, monospace',
-                size=18,
-                color='#7f7f7f'
-            )
+    ),
+    yaxis=dict(
+        title='GPGPU-Sim Cycles',
+        titlefont=dict(
+            family='Courier New, monospace',
+            size=18,
+            color='#7f7f7f'
         )
     )
-    fig = Figure(data=data, layout=layout)
-    figure_name = options.basename+"--"+stat
-    print "plotting: " + figure_name
-    outdir = (os.path.join(this_directory,"htmls"))
-    if not os.path.exists( outdir ):
-        os.makedirs(outdir)
-    plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
-    stat_count += 1
+)
+
+data = [trace]
+
+# Plot and embed in ipython notebook!
+plotly.offline.plot(Figure(data=data,layout=layout), filename=os.path.join("first-correl.html"),auto_open=False)
