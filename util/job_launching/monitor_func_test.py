@@ -27,6 +27,8 @@ parser.add_option("-N", "--sim_name", dest="sim_name",
                        " logfile with \"-l\"", default="")
 parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="Constantly print stuff")
+parser.add_option("-s", "--statsfile", dest="statsfile", default="",
+                  help="In verbose mode specify where the stats go")
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
@@ -34,7 +36,6 @@ options.sim_name = options.sim_name.strip()
 
 
 jobstatus_out_filename = os.path.join(this_directory, "job_status_out-{0}.txt".format(os.getpid()))
-get_stats_out_filename = os.path.join(this_directory, "get_stats_out-{0}.txt".format(os.getpid()))
 failed_job_file = None
 
 while True:
@@ -89,16 +90,15 @@ while True:
         print "All {0} Tests Done.".format(total)
         if num_else == 0:
             print "Congratulations! All Tests Pass!"
-            if options.verbose:
-                get_stats_out_file = open(get_stats_out_filename, 'w+')
+            if options.verbose and options.statsfile:
+                get_stats_out_file = open(options.statsfile, 'w+')
                 print "Calling get_stats.py"
-                if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-l", options.logfile, "-N", options.sim_name],
+                if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
                     stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
                     print "Error Launching get_stats.py"
                 get_stats_out_file.seek(0)
                 print get_stats_out_file.read()
                 get_stats_out_file.close()
-                os.remove(get_stats_out_filename)
             exit(0)
         else:
             print "Something did not pass."
