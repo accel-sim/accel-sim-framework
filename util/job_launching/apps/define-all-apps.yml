@@ -267,3 +267,30 @@ rodinia-3.1:
             - 2048 2048 0 127 0 127 0.5 2
         - streamcluster-rodinia-3.1:
             - 10 20 256 65536 65536 1000 none output.txt 1
+
+ispass-2009:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/ispass-2009/"
+    execs:
+        - ispass-2009-AES:
+            - e 128 ./data/output.bmp ./data/key128.txt
+        - ispass-2009-BFS:
+            - ./data/graph65536.txt
+        #benchmarks/cp/build/cuda_short/cp
+        #../bin/release/DG ./data/cubeK268.neu
+        - ispass-2009-LIB:
+            -
+        - ispass-2009-LPS:
+            -
+        - ispass-2009-MUM:
+            - ./data/NC_003997.20k.fna ./data/NC_003997_q25bp.50k.fna
+        - ispass-2009-NN:
+            - 28
+        - ispass-2009-NQU:
+            -
+        - ispass-2009-RAY:
+            - 256 256
+        - ispass-2009-STO:
+            - 
+        - ispass-2009-WP:
+            - < ./data/args
