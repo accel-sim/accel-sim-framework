@@ -60,7 +60,6 @@ for bench in benchmarks:
     if os.path.isdir(os.path.join(ddir, "data")):
         if os.path.lexists(os.path.join(this_run_dir, "data")):
             os.remove(os.path.join(this_run_dir, "data"))
-        print "Doing Link"
         os.symlink(os.path.join(ddir, "data"), os.path.join(this_run_dir,"data"))
 
     if args[0] == None:
@@ -76,7 +75,7 @@ for bench in benchmarks:
 if not options.norun:
     for bench in benchmarks:
         edir, ddir, exe, args = bench
-        if args == "" or args == None:
+        if args[0] == "" or args[0] == None:
             run_name= os.path.join(exe,"NO_ARGS")
         else:
             run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
@@ -86,5 +85,5 @@ if not options.norun:
         print "Running {0}".format(exe)
 
         if subprocess.call(["bash", "run.sh"]) != 0:
-            exit("Error invoking profiler on {0}".format(this_run_dir))
+            print "Error invoking profiler on {0}".format(this_run_dir)
         os.chdir(saved_dir)
