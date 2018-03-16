@@ -45,45 +45,44 @@ time_string = now_time.strftime("%H:%M:%S")
 logfile = day_string + "--" + time_string + ".csv"
 
 for bench in benchmarks:
-    edir, ddir, exe, args = bench
+    edir, ddir, exe, argslist = bench
     ddir = os.path.join(this_directory,ddir,exe)
-    if args[0] == "" or args[0] == None:
-        run_name= os.path.join(exe,"NO_ARGS")
-    else:
-        run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
-
-    this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
-    if not os.path.exists(this_run_dir):
-        os.makedirs(this_run_dir)
-
-    # link the data directory
-    if os.path.isdir(os.path.join(ddir, "data")):
-        if os.path.lexists(os.path.join(this_run_dir, "data")):
-            os.remove(os.path.join(this_run_dir, "data"))
-        os.symlink(os.path.join(ddir, "data"), os.path.join(this_run_dir,"data"))
-
-    if args[0] == None:
-        args = ""
-
-    sh_contents = os.path.join("export CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-        "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
-        os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + " ".join(args) )
-    open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
-    if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
-        exit("Error chmod runfile")
-
-if not options.norun:
-    for bench in benchmarks:
-        edir, ddir, exe, args = bench
-        if args[0] == "" or args[0] == None:
+    for args in argslist:
+        if args == "" or args == None:
             run_name= os.path.join(exe,"NO_ARGS")
         else:
             run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
-        this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
-        saved_dir = os.getcwd()
-        os.chdir(this_run_dir)
-        print "Running {0}".format(exe)
 
-        if subprocess.call(["bash", "run.sh"]) != 0:
-            print "Error invoking profiler on {0}".format(this_run_dir)
-        os.chdir(saved_dir)
+        this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
+        if not os.path.exists(this_run_dir):
+            os.makedirs(this_run_dir)
+
+        # link the data directory
+        if os.path.isdir(os.path.join(ddir, "data")):
+            if os.path.lexists(os.path.join(this_run_dir, "data")):
+                os.remove(os.path.join(this_run_dir, "data"))
+            os.symlink(os.path.join(ddir, "data"), os.path.join(this_run_dir,"data"))
+
+        if args == None:
+            args = ""
+
+        sh_contents = "export CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+            "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
+        os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + args
+
+        sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+            "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
+        os.path.join(this_run_dir,logfile + ".cycle") + " " + os.path.join(this_directory, edir,exe) + " " + args
+
+        open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
+        if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
+            exit("Error chmod runfile")
+
+        if not options.norun:
+            saved_dir = os.getcwd()
+            os.chdir(this_run_dir)
+            print "Running {0}".format(exe)
+
+            if subprocess.call(["bash", "run.sh"]) != 0:
+                print "Error invoking profiler on {0}".format(this_run_dir)
+            os.chdir(saved_dir)
