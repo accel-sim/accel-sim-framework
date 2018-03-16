@@ -98,8 +98,8 @@ sdk-4.2:
             -
         - sortingNetworks:
             -
-        - template:
-            -
+#        - template:
+#            -
         - transpose:
             -
         - vectorAdd:
