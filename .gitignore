@@ -1,5 +1,6 @@
 bin/
 sim_run_*
+run_hw/
 benchmarks/data_dirs/*.tgz
 benchmarks/data_dirs/dragon
 benchmarks/data_dirs/pannotia
