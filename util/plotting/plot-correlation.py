@@ -18,10 +18,13 @@ import numpy as np  # (*) numpy for math functions and arrays
 import csv
 import re
 import glob
+import copy
+import ast
 
 
 def get_sim_csv_data(filepath):
     all_kerns = {}
+    all_kern_cfg = {}
     klist = []
     with open(filepath, 'r') as data_file:
         reader = csv.reader(data_file)        # define reader object
@@ -51,10 +54,10 @@ def get_sim_csv_data(filepath):
                                 last_appargs = appargs
                                 num = 0
                             klist.append((appargs, kname, num))
-                            if appargs not in all_kerns:
-                                all_kerns[appargs] = []
-                            all_kerns[appargs].append({})
-                            all_kerns[appargs][-1]["Kernel"] = kname
+                            if appargs not in all_kern_cfg:
+                                all_kern_cfg[appargs] = []
+                            all_kern_cfg[appargs].append({})
+                            all_kern_cfg[appargs][-1]["Kernel"] = kname
                 if not kname == "all_kernels":
                     state = "process-cfgs"
                 continue
@@ -64,12 +67,15 @@ def get_sim_csv_data(filepath):
                     state = "start"
                     continue
                 count = 0
+                cfg = row[0]
+                if cfg not in all_kerns:
+                    all_kerns[cfg] = copy.deepcopy(all_kern_cfg)
                 for x in row[1:]:
                     try:
                         appargs,kname,num = klist[count]
-                        all_kerns[appargs][num][current_stat] = float(x)
+                        all_kerns[cfg][appargs][num][current_stat] = float(x)
                     except ValueError:
-                        all_kerns[appargs][num][current_stat] = float(0)
+                        all_kerns[cfg][appargs][num][current_stat] = float(0)
                     count += 1
     return all_kerns
 
@@ -77,6 +83,8 @@ def parse_hw_csv(csv_file):
     kdata = []
     processFiles = True
     processedCycle = False
+    cfg = ""
+    cfg_col = None
     while processFiles:
         with open(csv_file, 'r') as data_file:
             reader = csv.reader(data_file)        # define reader object
@@ -90,6 +98,14 @@ def parse_hw_csv(csv_file):
                     continue
                 if state == "header_proc":
                     header = row
+                    count = 0
+
+                    # get the device column
+                    for elem in row:
+                        if elem == "Device":
+                            cfg_col = count
+                        count += 1
+
                     state = "blanc_proc"
                     continue
                 if state == "blanc_proc":
@@ -105,6 +121,12 @@ def parse_hw_csv(csv_file):
                             count += 1
                         kcount += 1
                     else:
+                        # Set the Device
+                        if cfg != "" and cfg != row[cfg_col]:
+                            print "data for more than one device in {0}..{1}:{2}".format(csv_file,cfg,elem)
+                            exit()
+                        cfg = row[cfg_col]
+
                         kstat = {}
                         count = 0
                         for elem in row:
@@ -118,7 +140,7 @@ def parse_hw_csv(csv_file):
         else:
             processFiles = False
 
-    return kdata
+    return kdata, cfg
 
 
 parser = OptionParser()
@@ -137,83 +159,91 @@ parser.add_option("-H", "--hardware_dir", dest="hardware_dir",
 parser.add_option("-c", "--csv_file", dest="csv_file",
                   help="File to parse",
                   default="")
+parser.add_option("-d", "--data_mappings", dest="data_mappings",
+                  help="python file that descibes your desired data mappings",
+                  default="")
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
 
 benchmarks = []
 benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
+options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
 
 # Get the hardware Data
 hw_data = {}
+tmp = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csvs = glob.glob(os.path.join(root, d,"*.csv"))
         if len(csvs) > 0:
-            hw_data[os.path.join(os.path.basename(root),d)] = parse_hw_csv(max(csvs, key=os.path.getctime))
+            tmp[os.path.join(os.path.basename(root),d)],cfgname = parse_hw_csv(max(csvs, key=os.path.getctime))
+            hw_data[cfgname] = tmp
 
 
 #Get the simulator data
 sim_data = get_sim_csv_data(options.csv_file)
 
+exec(open(options.data_mappings,'r').read())
+
 hw_array = []
 sim_array = []
 label_array = []
-for appargs,sim_klist in sim_data.iteritems():
-#    print appargs
-    if appargs in hw_data:
-        hw_klist = hw_data[appargs]
-        if len(hw_klist) == len(sim_klist):
-            count = 0
-            for k in sim_klist:
-                hw_num = hw_klist[count]["Duration"]
-                sw_num = k["gpu_tot_sim_cycle\s*=\s*(.*)"]
-                # HW in us - clock is 1417 MHz
-                # HW_CYCLES=hw_us/10^6
-                hw_array.append(float(hw_num)*1417)
-                sim_array.append(float(sw_num))
-                label_array.append(appargs + "--" + hw_klist[count]["Name"])
-                count += 1
-#            print "Sane"
-#        else:
-#            print "HW List"
-#            for k in hw_klist:
-#                print k["Kernel"]
-#            print "SIM List"
-#            for k in sim_klist:
-#                print k["Kernel"]
-#            print "INSANE hw={0},sim={1}".format(len(hw_klist),len(sim_klist))
+color_array = []
 
+for cfg,sim_for_cfg in sim_data.iteritems():
+    if cfg not in config_maps:
+        continue
 
+    hw_cfg = None
+    for device in hw_data.iterkeys():
+        if config_maps[cfg] in device:
+            hw_cfg = device
+            continue
 
-# Create a trace
-trace = go.Scatter(
-    x = hw_array,
-    y = sim_array,
-    mode = 'markers',
-    text=label_array,
-)
-layout = Layout(
-    title="TITANX-P102 Correlation on rodinia_2.0-ft",
-     xaxis=dict(
-        title='HW Cycles (us x 1417)',
-        titlefont=dict(
-            family='Courier New, monospace',
-            size=18,
-            color='#7f7f7f'
+    if hw_cfg == None:
+        print "Cannot find HW data for {0} skipping plots.".format(hw_cfg)
+        continue
+
+    for correl in correl_list:
+        if correl.config != "all" and cfg != correl.config:
+            print "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
+            continue
+
+        for appargs,sim_klist in sim_for_cfg.iteritems():
+        #    print appargs
+            if appargs in hw_data[hw_cfg]:
+                hw_klist = hw_data[hw_cfg][appargs]
+                if len(hw_klist) == len(sim_klist):
+                    count = 0
+                    for sim in sim_klist:
+                        hw = hw_klist[count]
+                        hw_array.append(eval(correl.hw_eval))
+                        sim_array.append(eval(correl.sim_eval))
+                        label_array.append(appargs + "--" + hw_klist[count]["Name"])
+                        count += 1
+    
+        # Create a trace
+        trace = go.Scatter(
+            x = hw_array,
+            y = sim_array,
+            mode = 'markers',
+            text=label_array,
         )
-    ),
-    yaxis=dict(
-        title='GPGPU-Sim Cycles',
-        titlefont=dict(
-            family='Courier New, monospace',
-            size=18,
-            color='#7f7f7f'
+        layout = Layout(
+            title=correl.chart_name + " for " + cfg,
+             xaxis=dict(
+                title='Hardware',
+            ),
+            yaxis=dict(
+                title='GPGPU-Sim',
+            )
         )
-    )
-)
+        
+        data = [trace]
 
-data = [trace]
-
-# Plot and embed in ipython notebook!
-plotly.offline.plot(Figure(data=data,layout=layout), filename=os.path.join("first-correl.html"),auto_open=False)
+        plotname = filename=os.path.join("correl-html", cfg + "." + correl.plotfile)
+        print "Plotting {0}".format(plotname)
+        if not os.path.isdir("correl-html"):
+            os.makedirs("correl-html")
+        plotly.offline.plot(Figure(data=data,layout=layout), plotname, auto_open=False)
