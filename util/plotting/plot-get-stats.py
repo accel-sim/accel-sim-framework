@@ -37,7 +37,7 @@ def get_csv_data(filepath):
                 state = "find-apps"
                 continue
             if state == "find-apps":
-                apps = [item[:4].upper() for item in row[1:]]
+                apps = [item.upper() for item in row[1:]]
                 state = "process-cfgs"
                 continue
             if state == "process-cfgs":
