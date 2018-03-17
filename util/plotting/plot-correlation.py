@@ -112,9 +112,9 @@ def parse_hw_csv(csv_file):
                             count += 1
                         kdata.append(kstat)
                     continue
-        if os.path.exists(csv_file + ".cycle") and not processedCycle and len(kdata) > 0:
+        if os.path.exists(csv_file[:-6]) and not processedCycle and len(kdata) > 0:
             processedCycle = True
-            csv_file += ".cycle"
+            csv_file = csv_file[:-6]
         else:
             processFiles = False
 
@@ -148,7 +148,7 @@ options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_
 hw_data = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
-        csvs = glob.glob(os.path.join(root, d,"*.csv"))
+        csvs = glob.glob(os.path.join(root, d,"*.cycle"))
         if len(csvs) > 0:
             hw_data[os.path.join(os.path.basename(root),d)] = parse_hw_csv(max(csvs, key=os.path.getctime))
 
