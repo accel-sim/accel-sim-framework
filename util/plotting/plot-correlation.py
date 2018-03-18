@@ -319,7 +319,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         
         data = [trace]
 
-        plotname = filename=os.path.join("correl-html", cfg + "." + correl.plotfile)
+        plotname = filename=os.path.join(this_directory, "correl-html", cfg + "." + correl.plotfile)
         print "Plotting {0}: {1}".format(plotname, chart_info)
         if not os.path.isdir("correl-html"):
             os.makedirs("correl-html")
