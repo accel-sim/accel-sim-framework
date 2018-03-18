@@ -206,10 +206,6 @@ exec(open(options.data_mappings,'r').read())
 
 
 for cfg,sim_for_cfg in sim_data.iteritems():
-    hw_array = []
-    sim_array = []
-    label_array = []
-    color_array = []
     if cfg not in config_maps:
         continue
 
@@ -226,6 +222,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         continue
 
     for correl in correl_list:
+        hw_array = []
+        sim_array = []
+        label_array = []
+        color_array = []
         if correl.config != "all" and cfg != correl.config:
             msg = "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
             correl_log += msg
