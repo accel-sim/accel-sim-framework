@@ -226,7 +226,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
     for correl in correl_list:
         if correl.config != "all" and cfg != correl.config:
-            print "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
+            msg = "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
+            correl_log += msg
             continue
 
         appcount = 0
@@ -251,18 +252,19 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         try:
                             hw_pass = True
                             hw_array.append(eval(correl.hw_eval))
-                        except KeyError:
+                        except KeyError as e:
                             hw_pass = False
-                            correl_log += "Potentially uncollected stat in {0}]\n".format(correl.hw_eval)
+                            correl_log += "Potentially uncollected stat in {0}.\nError: {1}\n".format(correl.hw_eval, e)
                             kernelcount -= 1
                             continue
                         try:
                             sim_array.append(eval(correl.sim_eval))
-                        except KeyError:
-                            correl_log += "Potentially uncollected stat in {0}]\n".format(correl.sim_eval)
+                        except KeyError as e:
+                            print e
+                            correl_log += "Potentially uncollected stat in {0}.\nError: {1}".format(correl.sim_eval, e)
 
                         processAnyKernels = True
-                        err = None
+                        err = 99999
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
                             err = (err / hw_array[-1]) * 100
@@ -276,7 +278,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                 else:
                     msg = "For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2}\n"\
                         .format(appargs, len(hw_klist), len(sim_klist))
-                    print msg
+                    #print msg
                     correl_log += msg
                 if processAnyKernels:
                     appcount += 1
@@ -287,7 +289,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         day_string = now_time.strftime("%y.%m.%d-%A")
         time_string = now_time.strftime("%H:%M:%S")
         logfile = "correl_log--" + day_string + "--" + time_string + ".log"
-        open(os.path.join(this_directory,logfile),"w").write(correl_log)
+        log_dir = os.path.join(this_directory, "correl_logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        open(os.path.join(log_dir,logfile),"w").write(correl_log)
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
