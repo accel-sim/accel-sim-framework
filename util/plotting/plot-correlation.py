@@ -239,11 +239,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
+                processAnyKernels = False
                 if len(hw_klist) == len(sim_klist):
                     correl_log += "Found hw/sim match for {0}\n".format(appargs)
                     sim_appargs_leftover.remove(appargs)
                     hw_appargs_leftover.remove(appargs)
-                    appcount += 1
                     count = 0
                     for sim in sim_klist:
                         kernelcount += 1
@@ -254,12 +254,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         except KeyError:
                             hw_pass = False
                             correl_log += "Potentially uncollected stat in {0}]\n".format(correl.hw_eval)
+                            kernelcount -= 1
+                            continue
                         try:
-                            if hw_pass:
-                                sim_array.append(eval(correl.sim_eval))
+                            sim_array.append(eval(correl.sim_eval))
                         except KeyError:
                             correl_log += "Potentially uncollected stat in {0}]\n".format(correl.sim_eval)
 
+                        processAnyKernels = True
                         err = None
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
@@ -276,7 +278,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         .format(appargs, len(hw_klist), len(sim_klist))
                     print msg
                     correl_log += msg
-    
+                if processAnyKernels:
+                    appcount += 1
         correl_log += "Sim apps no HW:\n{0}\nHW apps no sim data:\n{1}\n"\
             .format(sim_appargs_leftover, hw_appargs_leftover)
 
@@ -298,8 +301,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             mode = 'markers',
             text=label_array,
         )
+        chart_info = correl.chart_name + " for " + cfg + "\n({0} apps, {1} kernels({4} under, {5} over))\n[Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
         layout = Layout(
-            title=correl.chart_name + " for " + cfg + " ({0} apps, {1} kernels({4} under, {5} over)) [Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over),
+            title=chart_info,
              xaxis=dict(
                 title='Hardware',
             ),
@@ -311,7 +315,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         data = [trace]
 
         plotname = filename=os.path.join("correl-html", cfg + "." + correl.plotfile)
-        print "Plotting {0}".format(plotname)
+        print "Plotting {0}: {1}".format(plotname, chart_info)
         if not os.path.isdir("correl-html"):
             os.makedirs("correl-html")
         plotly.offline.plot(Figure(data=data,layout=layout), filename=plotname, auto_open=False)
