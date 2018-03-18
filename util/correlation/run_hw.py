@@ -28,6 +28,8 @@ parser.add_option("-D", "--device_num", dest="device_num",
                  default="0")
 parser.add_option("-n", "--norun", dest="norun", action="store_true",
                  help="Do not actually run the apps, just create the dir structure and launch files")
+parser.add_option("-c", "--cycle_only", dest="cycle_only", action="store_true",
+                 help="Just get Kernel Duration")
 (options, args) = parser.parse_args()
 
 if not any([os.path.isfile(os.path.join(p, "nvprof")) for p in os.getenv("PATH").split(os.pathsep)]):
@@ -66,13 +68,14 @@ for bench in benchmarks:
         if args == None:
             args = ""
 
-        sh_contents = "export CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-            "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
-        os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + args
-
-        sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+        sh_contents = "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
             "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
-        os.path.join(this_run_dir,logfile + ".cycle") + " " + os.path.join(this_directory, edir,exe) + " " + args
+        os.path.join(this_run_dir,logfile + ".cycle") + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
+
+        if  not options.cycle_only:
+            sh_contents += "export CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
+            os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + args
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
