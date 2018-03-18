@@ -203,12 +203,13 @@ sim_data = get_sim_csv_data(options.csv_file, correl_log)
 
 exec(open(options.data_mappings,'r').read())
 
-hw_array = []
-sim_array = []
-label_array = []
-color_array = []
+
 
 for cfg,sim_for_cfg in sim_data.iteritems():
+    hw_array = []
+    sim_array = []
+    label_array = []
+    color_array = []
     if cfg not in config_maps:
         continue
 
