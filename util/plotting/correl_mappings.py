@@ -21,10 +21,27 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         config="P100-HBM"
     ),
-    CorrelStat(chart_name="Instructions Issued",
-        plotfile="instrs.html",
-        hw_eval="float(hw[\"inst_issued\"])",
-        sim_eval="float(sim[\"gpu_tot_sim_insn\s*=\s*(.*)\"])",
-        config="all"
-    ),
+#    CorrelStat(chart_name="Global Load Transactions",
+#        plotfile="global-load.html",
+#        hw_eval="float(hw[\"gld_transactions\"])",
+#        sim_eval="float(sim[\"L1_GLOBAL_R\s*=\s*(.*)\"])",
+#        config="all"
+#    ),
+#    CorrelStat(chart_name="Warp Instructions",
+#        plotfile="warp-inst.html",
+#        hw_eval="float(hw[\"inst_executed\"])",
+#        sim_eval="float(sim[\"gpgpu_n_tot_w_icount\s*=\s*(.*)\"])",
+#        config="all"
+#    ),
+#    CorrelStat(chart_name="L2 read transactions",
+#        plotfile="l2-read-transactions.html",
+#        hw_eval="float(hw[\"l2_read_transactions\"])",
+#        sim_eval="float(sim[\"GLOBAL_ACC_R\s*=\s*(.*)\"]) + "\
+#            "float(sim[\"LOCAL_ACC_R\s*=\s*(.*)\"]) + "\
+#            "float(sim[\"CONST_ACC_R\s*=\s*(.*)\"]) + "\
+#            "float(sim[\"TEXTURE_ACC_R\s*=\s*(.*)\"]) + "\
+#            "float(sim[\"INST_ACC_R\s*=\s*(.*)\"]) + "\
+#            "float(sim[\"L1_WR_ALLOC_R\s*=\s*(.*)\"])",
+#        config="all"
+#    ),
 ]
