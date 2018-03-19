@@ -248,13 +248,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                     hw_appargs_leftover.remove(appargs)
                     count = 0
                     for sim in sim_klist:
-                        kernelcount += 1
                         hw = hw_klist[count]
                         try:
                             hw_array.append(eval(correl.hw_eval))
                         except KeyError as e:
                             correl_log += "Potentially uncollected stat in {0}.\nError: {1}\n".format(correl.hw_eval, e)
-                            kernelcount -= 1
                             continue
                         try:
                             sim_array.append(eval(correl.sim_eval))
@@ -263,7 +261,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             correl_log += "Potentially uncollected stat in {0}.\nError: {1}".format(correl.sim_eval, e)
                             hw_array = hw_array[:-1]
                             continue
-
+                        kernelcount += 1
                         processAnyKernels = True
                         err = 99999
                         if hw_array[-1] > 0:
