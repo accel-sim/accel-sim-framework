@@ -94,7 +94,6 @@ for stat,value in all_stats.iteritems():
             name=k,
             marker=Marker(color=colors[cfg_count % len(colors)]),
             xaxis='x1',
-            yaxis='y{}'.format(stat_count+1)
             )
         )
         cfg_count += 1
@@ -107,12 +106,7 @@ for stat,value in all_stats.iteritems():
         bargap=0.25,
         showlegend=True,
         yaxis=YAxis(
-            title="test",
-            titlefont=dict(
-                family='Courier New, monospace',
-                size=18,
-                color='#7f7f7f'
-            )
+            title=stat,
         )
     )
     fig = Figure(data=data, layout=layout)
