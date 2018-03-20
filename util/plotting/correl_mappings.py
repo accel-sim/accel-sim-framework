@@ -2,6 +2,8 @@ config_maps = \
 {
     "TITANX-P102": "TITAN X (Pascal)",
     "P100-HBM" : "Tesla P100",
+    "GTX480" : "GeForce GTX 480",
+    "GTX480-PTXPLUS" : "GeForce GTX 480",
 }
 
 
@@ -14,6 +16,18 @@ correl_list = \
         hw_eval="float(hw[\"Duration\"])*1417",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         config="TITANX-P102"
+    ),
+    CorrelStat(chart_name="Execution Cycles (1400 MHz - 16-wide SIMD)",
+        plotfile="gtx480-cycles.html",
+        hw_eval="float(hw[\"Duration\"])*1400",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])*2",
+        config="GTX480"
+    ),
+    CorrelStat(chart_name="Execution Cycles (1400 MHz - 16-wide SIMD)",
+        plotfile="gtx480-ptxplus-cycles.html",
+        hw_eval="float(hw[\"Duration\"])*1400",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])*2",
+        config="GTX480-PTXPLUS"
     ),
     CorrelStat(chart_name="Execution Cycles (1480 MHz)",
         plotfile="p100-cycles.html",
