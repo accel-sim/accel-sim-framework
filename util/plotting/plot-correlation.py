@@ -23,9 +23,28 @@ import ast
 import numpy
 import datetime
 
-correl_log = ""
 
-def get_sim_csv_data(filepath, correl_log):
+class Logger:
+    def __init__(self, verbose):
+        self.correl_log = ""
+        self.verbose = verbose
+
+    def log(self, msg):
+        if self.verbose:
+            print msg
+        self.correl_log += msg + "\n"
+
+    def write_log(self):
+        now_time = datetime.datetime.now()
+        day_string = now_time.strftime("%y.%m.%d-%A")
+        time_string = now_time.strftime("%H:%M:%S")
+        logfile = "correl_log--" + day_string + "--" + time_string + ".log"
+        log_dir = os.path.join(this_directory, "correl_logs")
+        if not os.path.exists(log_dir):
+            os.makedirs(log_dir)
+        open(os.path.join(log_dir,logfile),"w").write(self.correl_log)
+
+def get_sim_csv_data(filepath, logger):
     all_kerns = {}
     all_kern_cfg = {}
     klist = []
@@ -39,7 +58,7 @@ def get_sim_csv_data(filepath, correl_log):
                 continue
             if state == "find-stat":
                 current_stat = row[0]
-                correl_log += "Processing Stat {0}\n".format(current_stat)
+                logger.log("Processing Stat {0}".format(current_stat))
                 state = "find-apps"
                 continue
             if state == "find-apps":
@@ -57,7 +76,7 @@ def get_sim_csv_data(filepath, correl_log):
                             else:
                                 last_appargs = appargs
                                 num = 0
-                            correl_log += "Found appargs {0}. Kernel {1}\n".format(appargs,kname)
+                            logger.log("Found appargs {0}. Kernel {1}".format(appargs,kname))
                             klist.append((appargs, kname, num))
                             if appargs not in all_kern_cfg:
                                 all_kern_cfg[appargs] = []
@@ -73,7 +92,7 @@ def get_sim_csv_data(filepath, correl_log):
                     continue
                 count = 0
                 cfg = row[0]
-                correl_log += "Processing config: {0}\n".format(cfg)
+                logger.log("Processing config: {0}".format(cfg))
                 if cfg not in all_kerns:
                     all_kerns[cfg] = copy.deepcopy(all_kern_cfg)
                 for x in row[1:]:
@@ -85,7 +104,7 @@ def get_sim_csv_data(filepath, correl_log):
                     count += 1
     return all_kerns
 
-def parse_hw_csv(csv_file, correl_log):
+def parse_hw_csv(csv_file, logger):
     kdata = []
     processFiles = True
     processedCycle = False
@@ -93,7 +112,7 @@ def parse_hw_csv(csv_file, correl_log):
     cfg_col = None
     while processFiles:
         with open(csv_file, 'r') as data_file:
-            correl_log +="Parsing HW csv file {0}\n".format(csv_file)
+            logger.log("Parsing HW csv file {0}".format(csv_file))
             reader = csv.reader(data_file)        # define reader object
             state = "start"
             header = []
@@ -121,13 +140,16 @@ def parse_hw_csv(csv_file, correl_log):
                 if state == "kernel_proc":
                     if "[CUDA " in "".join(row):
                         continue
+                    if len(row) == 1:
+                        logger.log("Bad line - possibly the app failed -- {0}".format(row))
+                        continue
                     if processedCycle:
                         count = 0
                         for elem in row:
                             kdata[kcount][header[count]] = elem
                             count += 1
                         kname = kdata[kcount]["Kernel"]
-                        correl_log += "Kernel Launch {0}: HW Kernel {1} found\n".format(kcount,kname)
+                        logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
                         kcount += 1
                     else:
                         # Set the Device
@@ -142,8 +164,9 @@ def parse_hw_csv(csv_file, correl_log):
                             kstat[header[count]] = elem
                             count += 1
                         kname = kstat["Name"]
-                        correl_log += "Kernel Launch {0}: HW Kernel {1} found\n".format(kcount,kname)
+                        logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
                         kdata.append(kstat)
+                        kcount += 1
                     continue
         # Drop the .cycle off the name
         if os.path.exists(csv_file[:-6]) and not processedCycle and len(kdata) > 0:
@@ -153,7 +176,6 @@ def parse_hw_csv(csv_file, correl_log):
             processFiles = False
 
     return kdata, cfg
-
 
 parser = OptionParser()
 parser = OptionParser()
@@ -174,6 +196,9 @@ parser.add_option("-c", "--csv_file", dest="csv_file",
 parser.add_option("-d", "--data_mappings", dest="data_mappings",
                   help="python file that descibes your desired data mappings",
                   default="")
+parser.add_option("-v", "--verbose", dest="verbose",
+                  help="spew the log to stdout",
+                  action="store_true")
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
 
@@ -182,29 +207,30 @@ benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
 options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
 
+logger = Logger(options.verbose)
+
 # Get the hardware Data
-correl_log += "Getting HW data\n"
+logger.log("Getting HW data\n")
 hw_data = {}
 tmp = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csv_dir = os.path.join(root, d)
         csvs = glob.glob(os.path.join(csv_dir,"*.cycle"))
-        correl_log += "Found HW {0} csvs in {1}\n".format(len(csvs),csv_dir)
+        logger.log("Found HW {0} csvs in {1}\n".format(len(csvs),csv_dir))
         if len(csvs) > 0:
             tmp[os.path.join(os.path.basename(root),d)],cfgname\
-                = parse_hw_csv(max(csvs, key=os.path.getctime),correl_log)
+                = parse_hw_csv(max(csvs, key=os.path.getctime),logger)
             hw_data[cfgname] = tmp
 
 
 #Get the simulator data
-correl_log += "Processing simulator data\n"
-sim_data = get_sim_csv_data(options.csv_file, correl_log)
+logger.log("Processing simulator data\n")
+sim_data = get_sim_csv_data(options.csv_file, logger)
 
 exec(open(options.data_mappings,'r').read())
 
-
-
+fig_data = {} # map of HW config to a list of scatters
 for cfg,sim_for_cfg in sim_data.iteritems():
     if cfg not in config_maps:
         continue
@@ -216,20 +242,18 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             continue
 
     if hw_cfg == None:
-        msg =  "Cannot find HW data for {0} skipping plots.\n".format(hw_cfg)
-        print msg
-        correl_log += msg
+        logger.log("Cannot find HW data for {0} skipping plots.".format(hw_cfg))
         continue
 
     for correl in correl_list:
+        if correl.config != "all" and cfg != correl.config:
+            logger.log("for cfg:{0} - Skipping plot:\n{1}".format(cfg, correl))
+            continue
+
         hw_array = []
         sim_array = []
         label_array = []
         color_array = []
-        if correl.config != "all" and cfg != correl.config:
-            msg = "for cfg:{0} - Skipping plot:\n{1}\n".format(cfg, correl)
-            correl_log += msg
-            continue
 
         appcount = 0
         kernelcount = 0
@@ -243,7 +267,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
                 if len(hw_klist) == len(sim_klist):
-                    correl_log += "Found hw/sim match for {0}\n".format(appargs)
+                    logger.log("Found hw/sim match for {0}".format(appargs))
                     sim_appargs_leftover.remove(appargs)
                     hw_appargs_leftover.remove(appargs)
                     count = 0
@@ -252,13 +276,13 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         try:
                             hw_array.append(eval(correl.hw_eval))
                         except KeyError as e:
-                            correl_log += "Potentially uncollected stat in {0}.\nError: {1}\n".format(correl.hw_eval, e)
+                            logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
                             continue
                         try:
                             sim_array.append(eval(correl.sim_eval))
                         except KeyError as e:
                             print e
-                            correl_log += "Potentially uncollected stat in {0}.\nError: {1}".format(correl.sim_eval, e)
+                            logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.sim_eval, e))
                             hw_array = hw_array[:-1]
                             continue
                         kernelcount += 1
@@ -275,23 +299,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
                         count += 1
                 else:
-                    msg = "For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2}\n"\
-                        .format(appargs, len(hw_klist), len(sim_klist))
-                    #print msg
-                    correl_log += msg
+                    logger.log("For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2}\n"\
+                        .format(appargs, len(hw_klist), len(sim_klist)))
                 if processAnyKernels:
                     appcount += 1
-        correl_log += "Sim apps no HW:\n{0}\nHW apps no sim data:\n{1}\n"\
-            .format(sim_appargs_leftover, hw_appargs_leftover)
+        logger.log("Sim apps no HW:\n{0}\nHW apps no sim data:\n{1}"\
+            .format(sim_appargs_leftover, hw_appargs_leftover))
 
-        now_time = datetime.datetime.now()
-        day_string = now_time.strftime("%y.%m.%d-%A")
-        time_string = now_time.strftime("%H:%M:%S")
-        logfile = "correl_log--" + day_string + "--" + time_string + ".log"
-        log_dir = os.path.join(this_directory, "correl_logs")
-        if not os.path.exists(log_dir):
-            os.makedirs(log_dir)
-        open(os.path.join(log_dir,logfile),"w").write(correl_log)
+        logger.write_log()
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
@@ -304,6 +319,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             y = sim_array,
             mode = 'markers',
             text=label_array,
+            name=cfg,
         )
         chart_info = correl.chart_name + " for " + cfg + "\n({0} apps, {1} kernels({4} under, {5} over))\n[Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
         layout = Layout(
@@ -315,12 +331,36 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                 title='GPGPU-Sim',
             )
         )
-        
         data = [trace]
-
         correl_outdir = os.path.join(this_directory, "correl-html")
         plotname = filename=os.path.join(correl_outdir, cfg + "." + correl.plotfile)
-        print "Plotting {0}: {1}".format(plotname, chart_info)
         if not os.path.isdir(correl_outdir):
             os.makedirs(correl_outdir)
-        plotly.offline.plot(Figure(data=data,layout=layout), filename=plotname, auto_open=False)
+        if hw_cfg not in fig_data:
+            fig_data[hw_cfg] = []
+        fig_data[hw_cfg].append((trace, layout, plotname, chart_info))
+
+
+for hw_cfg, traces in fig_data.iteritems():
+    print "Plotting HW cfg:{0}".format(hw_cfg)
+    data = []
+    markers =[dict(size = 10, color = 'rgba(152, 0, 0, .8)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
+              dict(size = 10,color = 'rgba(255, 182, 193, .9)',line = dict(width = 2,))]
+    count = 0
+    agg_info = ""
+    SEP = "  :  "
+    agg_plotname = ""
+    for trace, layout, plotname, chart_info in traces:
+        trace.marker = markers[count %len(markers)]
+        trace.mode = "markers"
+        data.append(trace)
+        agg_info +=  chart_info + SEP
+        if agg_plotname == "":
+            agg_plotname = plotname
+        agg_plotname += os.path.basename(plotname)
+        count += 1
+
+    agg_info = agg_info[:-len(SEP)]
+    layout.title = agg_info
+    print "Plotting {0}: {1}".format(agg_plotname, agg_info)
+    plotly.offline.plot(Figure(data=data,layout=layout), filename=agg_plotname, auto_open=False)
