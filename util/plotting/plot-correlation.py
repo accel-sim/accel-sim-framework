@@ -24,6 +24,21 @@ import numpy
 import datetime
 
 
+def make_anno1(text, fontsize, x, y):
+    return Annotation(
+        text=text,   # annotation text
+        xref='paper',  # use paper coordinates
+        yref='paper',  #   for both x and y coords
+        x=x,           # x and y position 
+        y=y,           #   in norm. coord. 
+        font=Font(size=fontsize),  # text font size
+        showarrow=False,       # no arrow (default is True)
+        bgcolor='#F5F3F2',     # light grey background color
+        bordercolor='#FFFFFF', # white borders
+        borderwidth=1,         # border width
+        borderpad=fontsize     # set border/text space to 1 fontsize
+    )
+
 class Logger:
     def __init__(self, verbose):
         self.correl_log = ""
@@ -32,7 +47,7 @@ class Logger:
     def log(self, msg):
         if self.verbose:
             print msg
-        self.correl_log += msg + "\n"
+            self.correl_log += msg + "\n"
 
     def write_log(self):
         now_time = datetime.datetime.now()
@@ -321,24 +336,21 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             text=label_array,
             name=cfg,
         )
-        chart_info = correl.chart_name + " for " + cfg + "\n({0} apps, {1} kernels({4} under, {5} over))\n[Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
+        anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
         layout = Layout(
-            title=chart_info,
+            title=correl.chart_name,
              xaxis=dict(
                 title='Hardware',
             ),
             yaxis=dict(
                 title='GPGPU-Sim',
-            )
+            ),
         )
         data = [trace]
-        correl_outdir = os.path.join(this_directory, "correl-html")
-        plotname = filename=os.path.join(correl_outdir, cfg + "." + correl.plotfile)
-        if not os.path.isdir(correl_outdir):
-            os.makedirs(correl_outdir)
+
         if hw_cfg not in fig_data:
             fig_data[hw_cfg] = []
-        fig_data[hw_cfg].append((trace, layout, plotname, chart_info))
+        fig_data[hw_cfg].append((trace, layout, cfg, anno, correl.plotfile))
 
 
 for hw_cfg, traces in fig_data.iteritems():
@@ -347,20 +359,23 @@ for hw_cfg, traces in fig_data.iteritems():
     markers =[dict(size = 10, color = 'rgba(152, 0, 0, .8)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
               dict(size = 10,color = 'rgba(255, 182, 193, .9)',line = dict(width = 2,))]
     count = 0
-    agg_info = ""
-    SEP = "  :  "
-    agg_plotname = ""
-    for trace, layout, plotname, chart_info in traces:
+    annotations = []
+    agg_cfg = ""
+    print_anno = ""
+    for trace, layout, cfg, anno, plotfile in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         data.append(trace)
-        agg_info +=  chart_info + SEP
-        if agg_plotname == "":
-            agg_plotname = plotname
-        agg_plotname += os.path.basename(plotname)
+        annotations.append(make_anno1(anno,10,0.05,1.0 - count * 0.05))
+        print_anno += anno + "\n"
+        agg_cfg += "." + cfg
         count += 1
 
-    agg_info = agg_info[:-len(SEP)]
-    layout.title = agg_info
-    print "Plotting {0}: {1}".format(agg_plotname, agg_info)
-    plotly.offline.plot(Figure(data=data,layout=layout), filename=agg_plotname, auto_open=False)
+    layout.annotations=annotations
+    correl_outdir = os.path.join(this_directory, "correl-html")
+    plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
+    if not os.path.isdir(correl_outdir):
+        os.makedirs(correl_outdir)
+
+    print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
+    plotly.offline.plot(Figure(data=data,layout=layout), filename=plotname, auto_open=False)
