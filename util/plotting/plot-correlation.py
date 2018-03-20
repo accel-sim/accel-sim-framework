@@ -277,6 +277,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         errs = []
         sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
         hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
+        max_axis_val = 0.0
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
@@ -313,6 +314,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             errs.append(abs(err))
                         label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
                         count += 1
+                        if hw_array[-1] > max_axis_val:
+                            max_axis_val = hw_array[-1]
+                        if sim_array[-1] > max_axis_val:
+                            max_axis_val = sim_array[-1]
+
                 else:
                     logger.log("For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2}\n"\
                         .format(appargs, len(hw_klist), len(sim_klist)))
@@ -340,10 +346,12 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
-                title='Hardware',
+                title='Hardware {0}'.format(hw_cfg),
+                range=[0,max_axis_val*1.1]
             ),
             yaxis=dict(
                 title='GPGPU-Sim',
+                range=[0,max_axis_val*1.1]
             ),
         )
         data = [trace]
