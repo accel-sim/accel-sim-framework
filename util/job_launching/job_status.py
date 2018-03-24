@@ -181,8 +181,10 @@ for logfile in parsed_logfiles:
                 continue
 
             num_jobs += 1
-            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "e" + jobId)
-            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "o" + jobId)
+            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
+                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "e" + jobId)
+            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
+                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""
