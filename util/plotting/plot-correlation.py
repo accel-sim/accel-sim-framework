@@ -62,6 +62,7 @@ class Logger:
 def get_sim_csv_data(filepath, logger):
     all_kerns = {}
     all_kern_cfg = {}
+    stats_missing = set()
     klist = []
     with open(filepath, 'r') as data_file:
         reader = csv.reader(data_file)        # define reader object
@@ -115,11 +116,16 @@ def get_sim_csv_data(filepath, logger):
                         appargs,kname,num = klist[count]
                         all_kerns[cfg][appargs][num][current_stat] = float(x)
                     except ValueError:
-                        all_kerns[cfg][appargs][num][current_stat] = float(0)
+                        all_kerns[cfg][appargs][num][current_stat] = None
+                        stats_missing.add((appargs, num, current_stat))
                     count += 1
+    for stat in stats_missing:
+        appargs, num, current_stat = stat
+        for cfg in all_kerns.iterkeys():
+            del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
-def parse_hw_csv(csv_file, logger):
+def parse_hw_csv(csv_file, hw_data, appargs, logger):
     kdata = []
     processFiles = True
     processedCycle = False
@@ -190,7 +196,10 @@ def parse_hw_csv(csv_file, logger):
         else:
             processFiles = False
 
-    return kdata, cfg
+    if cfg != "" and cfg != None:
+        if cfg not in hw_data:
+            hw_data[cfg] = {}
+        hw_data[cfg][appargs] = kdata
 
 parser = OptionParser()
 parser = OptionParser()
@@ -227,16 +236,13 @@ logger = Logger(options.verbose)
 # Get the hardware Data
 logger.log("Getting HW data\n")
 hw_data = {}
-tmp = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csv_dir = os.path.join(root, d)
         csvs = glob.glob(os.path.join(csv_dir,"*.cycle"))
         logger.log("Found HW {0} csvs in {1}\n".format(len(csvs),csv_dir))
         if len(csvs) > 0:
-            tmp[os.path.join(os.path.basename(root),d)],cfgname\
-                = parse_hw_csv(max(csvs, key=os.path.getctime),logger)
-            hw_data[cfgname] = tmp
+            parse_hw_csv(max(csvs, key=os.path.getctime),hw_data, os.path.join(os.path.basename(root),d), logger)
 
 
 #Get the simulator data
@@ -294,13 +300,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             hw_array.append(eval(correl.hw_eval))
                         except KeyError as e:
                             logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
+                            count += 1
                             continue
                         try:
                             sim_array.append(eval(correl.sim_eval))
                         except KeyError as e:
-                            print e
                             logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.sim_eval, e))
                             hw_array = hw_array[:-1]
+                            count += 1
                             continue
                         kernelcount += 1
                         processAnyKernels = True
