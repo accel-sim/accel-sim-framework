@@ -64,7 +64,7 @@ class ConfigurationSpec:
                             "/" + self.run_subdir + "/"
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
-                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir)
+                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
@@ -141,7 +141,7 @@ class ConfigurationSpec:
 
     # replaces all the "REAPLCE_*" strings in the torque.sim file
     def text_replace_torque_sim( self,full_run_dir,this_run_dir,benchmark, cuda_version, command_line_args,
-                                 libpath, exec_dir ):
+                                 libpath, exec_dir, gpgpusim_build_handle ):
         # get the pre-launch sh commands
         prelaunch_filename =  full_run_dir +\
                              "benchmark_pre_launch_command_line.txt"
@@ -168,7 +168,8 @@ class ConfigurationSpec:
         else:
             txt_args = command_line_args
 
-        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args],
+        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
+                                gpgpusim_build_handle,
                             "NODES":"1", 
                             "GPGPUSIM_ROOT":os.getenv("GPGPUSIM_ROOT"),
                             "LIBPATH": libpath,
