@@ -146,7 +146,7 @@ else:
                     exe_and_args = os.path.join( os.path.basename(app), args)
                     exes_and_args.append(exe_and_args)
                     added_apps.add(app_and_args)
-                specific_jobIds[ config + app_and_args ] = jobId
+                specific_jobIds[ config + app_and_args ] = (jobId,jobname)
 
 all_named_kernels = {}
 for idx, app_and_args in enumerate(apps_and_args):
@@ -157,10 +157,11 @@ for idx, app_and_args in enumerate(apps_and_args):
         if not os.path.isdir( output_dir ):
             print("WARNING the outputdir " + output_dir + " does not exist")
             continue
-        
+
         if config + app_and_args in specific_jobIds:
-            jobId = specific_jobIds[ config + app_and_args ]
-            outfile = os.path.join(output_dir, exes_and_args[idx].replace("/", "-") + "." + "o" + jobId)
+            jobId,jobname = specific_jobIds[ config + app_and_args ]
+            outfile = os.path.join(output_dir, exes_and_args[idx].replace("/", "-") + "." +\
+               re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "o" + jobId)
         else:
             all_outfiles = [os.path.join(output_dir, f) \
                            for f in os.listdir(output_dir) if(re.match(r'.*\.o[0-9]+',f))]
