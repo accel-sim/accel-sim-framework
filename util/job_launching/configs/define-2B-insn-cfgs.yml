@@ -1,0 +1,31 @@
+2B-P100-HBM-copyk:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
+    extra_params: "-perf_sim_memcpy 1 -gpgpu_max_insn 2000000000"
+
+2B-TITANX-P102-copyk:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+    extra_params: "-perf_sim_memcpy 1 -gpgpu_max_insn 2000000000"
+
+2B-TITANX-P102-L1ON-copyk:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+    extra_params: "-gmem_skip_L1D 0 -perf_sim_memcpy 1 -gpgpu_max_insn 2000000000"
+
+2B-P100-HBM:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
+    extra_params: "-gpgpu_max_insn 2000000000"
+
+2B-TITANX-P102:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+    extra_params: "-gpgpu_max_insn 2000000000"
+
+2B-TITANX-P102-L1ON:
+    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+    extra_params: "-gmem_skip_L1D 0 -gpgpu_max_insn 2000000000"
+
+2B-3.x-PASCALTITANX:
+    base_file: "$GPGPUSIM_ROOT/configs/PascalP100X/gpgpu-sim-3.x/gpgpusim.config"
+    extra_params: "-gpgpu_max_insn 2000000000"
+
+2B-3.x-P100:
+    base_file: "$GPGPUSIM_ROOT/configs/PascalP100X/gpgpu-sim-3.x/gpgpusim.config"
+    extra_params: "-gpgpu_max_insn 2000000000"
