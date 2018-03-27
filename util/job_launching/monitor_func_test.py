@@ -53,6 +53,7 @@ while True:
         num_passed = 0
         num_not_done = 0
         num_else = 0
+        num_no_err = 0
         for line in jobstatus_out_file.readlines():
             if options.verbose:
                 print line.strip()
@@ -70,6 +71,8 @@ while True:
                     status = tokens[jobStatusCol].strip()
                     if status == "FUNC_TEST_PASSED":
                         num_passed += 1
+                    elif status == "COMPLETE_NO_OTHER_INFO":
+                        num_no_err += 1
                     elif status == "RUNNING" or status == "WAITING_TO_RUN":
                         num_not_done += 1
                     else:
@@ -79,8 +82,8 @@ while True:
         os.remove(jobstatus_out_filename)
     
     total = num_passed + num_not_done + num_else
-    print "Passed:{0}/{1}, Not passed:{2}/{1}, Not done:{3}/{1}"\
-        .format(num_passed, total, num_else, num_not_done)
+    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Not done:{4}/{1}"\
+        .format(num_passed, total, num_no_err, num_else, num_not_done)
     if num_else > 0:
         print "Contents {0}:".format(failed_job_file)
         if options.verbose:
