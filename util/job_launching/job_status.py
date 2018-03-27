@@ -236,7 +236,7 @@ for logfile in parsed_logfiles:
                                 additional_stats += "\t{0}={1}".format( name, number )
                             else:
                                 additional_stats = "{0}={1}".format( name, number )
-                    if len(stat_found) == len(stats_to_pull):
+                    if len(stat_found) == len(stats_to_pull) and len(status_found) > 0:
                         break
 
             if len( status_found ) > 0:
