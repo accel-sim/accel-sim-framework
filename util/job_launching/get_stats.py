@@ -58,6 +58,8 @@ parser.add_option("-s", "--stats_yml", dest="stats_yml", default="",
                        " by default it uses stats/example_stats.yml")
 parser.add_option("-k", "--per_kernel", dest="per_kernel", action="store_true",
                   help="Aggregate the statistics for each named kernel")
+parser.add_option("-n", "--no_kernel_delta", dest="no_kernel_delta", action="store_true",
+                  help="Don't take the difference when doing per kernel launch")
 parser.add_option("-K", "--kernel_instance", dest="kernel_instance", action="store_true",
                   help="Print stats for each individual kernel the statistics for each named kernel")
 parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="store_true",
@@ -251,7 +253,9 @@ for idx, app_and_args in enumerate(apps_and_args):
                     if existance_test != None:
                         stat_found.add(stat_name)
                         number = existance_test.group(1).strip()
-                        if current_kernel + app_and_args + config + stat_name in stat_map:
+                        if options.no_kernel_delta:
+                            stat_map[current_kernel + app_and_args + config + stat_name] = number
+                        elif current_kernel + app_and_args + config + stat_name in stat_map:
                             if stat_name in raw_last:
                                 stat_last_kernel = raw_last[stat_name]
                             else:
@@ -291,9 +295,9 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
             csv_str += config + ","
             for appargs in apps_and_args:
                 knames = all_named_kernels[appargs]
-                if kname == "":
-                    continue
                 for kname in knames:
+                    if kname == "":
+                        continue
                     if kname + appargs + config + stat_name in stat_map:
                         csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
                     else:
