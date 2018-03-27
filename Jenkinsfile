@@ -3,6 +3,10 @@ pipeline {
         label "purdue-cluster"
         }
 
+    options {
+        disableConcurrentBuilds()
+    }
+
     stages {
         stage('4.2-simulations-build'){
             steps{
