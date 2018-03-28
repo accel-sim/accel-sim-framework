@@ -54,6 +54,8 @@ def millify(n):
     n = float(n)
     if math.isnan(n):
         return "NaN"
+    if math.isinf(n):
+        return "inf"
     millidx = max(0,min(len(millnames)-1,
                     int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
     return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
@@ -214,7 +216,7 @@ for logfile in parsed_logfiles:
                     continue
 
                 # Only go up for 1000 lines looking for stuff
-                MAX_LINES = 100000
+                MAX_LINES = 10000
                 count = 0
                 for line in reversed(open(sim_file).readlines()):
                     count += 1
