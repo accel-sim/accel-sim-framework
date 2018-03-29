@@ -9,6 +9,17 @@ import common
 import math
 import yaml
 
+millnames = ['',' K',' M',' B',' T']
+def millify(n):
+    n = float(n)
+    if math.isnan(n):
+        return "NaN"
+    if math.isinf(n):
+        return "inf"
+    millidx = max(0,min(len(millnames)-1,
+                    int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
+    return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
+
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 #*********************************************************--
@@ -181,7 +192,8 @@ for idx, app_and_args in enumerate(apps_and_args):
         # Do a quick 100-line pass to get the GPGPU-Sim Version number
         MAX_LINES = 100
         count = 0
-        for line in open(outfile).readlines():
+        f = open(outfile)
+        for line in f:
             count += 1
             if count >= MAX_LINES:
                 break
@@ -189,18 +201,19 @@ for idx, app_and_args in enumerate(apps_and_args):
             if build_match:
                 stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
                 break
+        f.close()
 
         if not options.per_kernel:
             if len(all_named_kernels[app_and_args]) == 0:
                 all_named_kernels[app_and_args].append("final_kernel")
-            # Only go up for 10000 lines looking for stuff
-            MAX_LINES = 100000
+            BYTES_TO_READ = int(250 * 1024 * 1024)
             count = 0
-            for line in reversed(open(outfile).readlines()):
-                count += 1
-                if count >= MAX_LINES:
-                    break
-
+            f = open(outfile)
+            fsize = int(os.stat(outfile).st_size)
+            if fsize > BYTES_TO_READ:
+                f.seek(-BYTES_TO_READ, os.SEEK_END)
+            lines = f.readlines()
+            for line in reversed(lines):
                 # pull out some stats
                 for stat_name, token in stats_to_pull.iteritems():
                     if stat_name in stat_found:
@@ -212,13 +225,16 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_map["final_kernel" + app_and_args + config + stat_name] = number
                 if len(stat_found) == len(stats_to_pull):
                     break
+            del lines
+            f.close()
         else:
             current_kernel =""
             last_kernel = ""
             raw_last = {}
             blank_kernel = False
             running_kcount = {}
-            for line in open(outfile).readlines():
+            f = open(outfile)
+            for line in f:
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
                     if kernel_match.group(1).strip() == "":
