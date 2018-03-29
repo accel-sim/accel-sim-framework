@@ -201,6 +201,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
             hw_data[cfg] = {}
         hw_data[cfg][appargs] = kdata
 
+# Our big correlations are blowing up the csv package :)
+csv.field_size_limit(sys.maxsize)
 parser = OptionParser()
 parser = OptionParser()
 parser.add_option("-H", "--hardware_dir", dest="hardware_dir",
