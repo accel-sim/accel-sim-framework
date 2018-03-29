@@ -52,7 +52,8 @@ while True:
         jobStatusCol = None
         num_passed = 0
         num_not_done = 0
-        num_else = 0
+        num_error = 0
+        num_no_err = 0
         for line in jobstatus_out_file.readlines():
             if options.verbose:
                 print line.strip()
@@ -70,25 +71,27 @@ while True:
                     status = tokens[jobStatusCol].strip()
                     if status == "FUNC_TEST_PASSED":
                         num_passed += 1
+                    elif status == "COMPLETE_NO_OTHER_INFO":
+                        num_no_err += 1
                     elif status == "RUNNING" or status == "WAITING_TO_RUN":
                         num_not_done += 1
                     else:
-                        num_else += 1
+                        num_error += 1
 
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
     
-    total = num_passed + num_not_done + num_else
-    print "Passed:{0}/{1}, Not passed:{2}/{1}, Not done:{3}/{1}"\
-        .format(num_passed, total, num_else, num_not_done)
-    if num_else > 0:
+    total = num_passed + num_not_done + num_error
+    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Not done:{4}/{1}"\
+        .format(num_passed, total, num_no_err, num_error, num_not_done)
+    if num_error > 0:
         print "Contents {0}:".format(failed_job_file)
         if options.verbose:
             print open(failed_job_file).read()
 
     if num_not_done == 0:
         print "All {0} Tests Done.".format(total)
-        if num_else == 0:
+        if num_error == 0:
             print "Congratulations! All Tests Pass!"
             if options.verbose and options.statsfile:
                 get_stats_out_file = open(options.statsfile, 'w+')
