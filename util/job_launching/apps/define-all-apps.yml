@@ -151,17 +151,17 @@ proxy-apps-doe2:
          - XSBench:
             - 12 small 0
             - 12 large 0
-         - lulesh:
-            -
+#         - lulesh:
+#            -
 
 # pannotia
 pannotia:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/pannotia/"
     execs:
-        - bc:
-            - ./data/1k_128k.gr
-            - ./data/2k_1M.gr
+#        - bc:
+#            - ./data/1k_128k.gr
+#            - ./data/2k_1M.gr
         - color_max:
             - ./data/ecology1.graph 1
             - ./data/G3_circuit.graph 1
@@ -181,12 +181,12 @@ pannotia:
             - ./data/coAuthorsDBLP.graph 1
         - pagerank_spmv:
             - ./data/coAuthorsDBLP.graph 1
-        - sssp:
-            - ./data/USA-road-d.NW.gr 0
-            - ./data/USA-road-d.NY.gr 0
-        - sssp_ell:
-            - ./data/USA-road-d.NW.gr 0
-            - ./data/USA-road-d.NY.gr 0
+#        - sssp:
+#            - ./data/USA-road-d.NW.gr 0
+#            - ./data/USA-road-d.NY.gr 0
+#        - sssp_ell:
+#            - ./data/USA-road-d.NW.gr 0
+#            - ./data/USA-road-d.NY.gr 0
 
 dragon-cdp:
     exec_dir: "../../benchmarks/src/cuda/dragon_li/cdp_bin/$CUDA_VERSION/"
@@ -217,10 +217,10 @@ rodinia-3.1:
             - ./data/graph1MW_6.txt
             - ./data/graph4096.txt
             - ./data/graph65536.txt
-        - cfd-rodinia-3.1:
-            - ./data/fvcorr.domn.097K
-            - ./data/fvcorr.domn.193K
-            - ./data/missile.domn.0.2M
+#        - cfd-rodinia-3.1:
+#            - ./data/fvcorr.domn.097K
+#            - ./data/fvcorr.domn.193K
+#            - ./data/missile.domn.0.2M
         - dwt2d-rodinia-3.1:
             - 192.bmp -d 192x192 -f -5 -l 3
             - rgb.bmp -d 1024x1024 -f -5 -l 3
