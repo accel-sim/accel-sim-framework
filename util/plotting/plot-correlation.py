@@ -203,14 +203,6 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
 
 parser = OptionParser()
 parser = OptionParser()
-parser.add_option("-B", "--benchmark_list", dest="benchmark_list",
-                  help="a comma seperated list of benchmark suites to run. See apps/define-*.yml for " +\
-                        "the benchmark suite names.",
-                  default="rodinia_2.0-ft")
-parser.add_option("-C", "--configs_list", dest="configs_list",
-                  help="a comma seperated list of configs to run. See configs/define-*.yml for " +\
-                        "the config names.",
-                  default="TITANX-P102")
 parser.add_option("-H", "--hardware_dir", dest="hardware_dir",
                   help="The hardware stats directories",
                   default="")
@@ -227,7 +219,6 @@ parser.add_option("-v", "--verbose", dest="verbose",
 common.load_defined_yamls()
 
 benchmarks = []
-benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
 options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
 
