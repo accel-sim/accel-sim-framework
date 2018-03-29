@@ -81,7 +81,7 @@ while True:
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
     
-    total = num_passed + num_not_done + num_error
+    total = num_passed + num_not_done + num_error + num_no_err
     print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Not done:{4}/{1}"\
         .format(num_passed, total, num_no_err, num_error, num_not_done)
     if num_error > 0:
