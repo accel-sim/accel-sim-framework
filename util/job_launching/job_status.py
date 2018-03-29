@@ -260,7 +260,8 @@ for logfile in parsed_logfiles:
 
             if ("FUNC_TEST_PASSED" not in status_found \
                 and "WAITING_TO_RUN" not in status_string \
-                and "RUNNING" not in status_string ):
+                and "RUNNING" not in status_string \
+                and "COMPLETE_NO_OTHER_INFO" not in status_string):
 
                 # We need ro spin here to make sure the output files exist...
                 # Sometimes torque can tell us the job is complete, but the file is not actually on the file system yet.
