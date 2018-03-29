@@ -226,7 +226,12 @@ so_path = os.path.join( options.so_dir, "libcudart.so" )
 version_string = extract_so_name( so_path )
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
-    os.makedirs( running_so_dir )
+    # In the very rare case that concurrent builds try to make the directory at the same time
+    # (after the test to os.path.exists -- this has actually happened...)
+    try:
+        os.makedirs( running_so_dir )
+    except:
+        pass
     shutil.copy( so_path, running_so_dir )
 options.so_dir = running_so_dir
 
