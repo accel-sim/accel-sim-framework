@@ -93,7 +93,12 @@ class ConfigurationSpec:
                     if len(torque_out) > 0:
                         # Dump the benchmark description to the logfile
                         if not os.path.exists(this_directory + "logfiles/"):
-                            os.makedirs(this_directory + "logfiles/")
+                            # In the very rare case that concurrent builds try to make the directory at the same time
+                            # (after the test to os.path.exists -- this has actually happened...)
+                            try:
+                                os.makedirs(this_directory + "logfiles/")
+                            except:
+                                pass
                         now_time = datetime.datetime.now()
                         day_string = now_time.strftime("%y.%m.%d-%A")
                         time_string = now_time.strftime("%H:%M:%S")
