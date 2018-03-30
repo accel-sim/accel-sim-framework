@@ -282,8 +282,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
-                if len(hw_klist) == len(sim_klist):
-                    logger.log("Found hw/sim match for {0}".format(appargs))
+                if len(sim_klist) >= len(hw_klist):
+                    logger.log("Found hw/sim match for {0}. Sim={1}. HW={2}"
+                        .format(appargs, len(sim_klist), len(hw_klist)))
                     sim_appargs_leftover.remove(appargs)
                     hw_appargs_leftover.remove(appargs)
                     count = 0
@@ -321,7 +322,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             max_axis_val = sim_array[-1]
 
                 else:
-                    logger.log("For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2}\n"\
+                    logger.log("For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2} and software has more than hardware\n"\
                         .format(appargs, len(hw_klist), len(sim_klist)))
                 if processAnyKernels:
                     appcount += 1
@@ -366,7 +367,10 @@ for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg:{0}".format(hw_cfg)
     data = []
     markers =[dict(size = 10, color = 'rgba(152, 0, 0, .8)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 10,color = 'rgba(255, 182, 193, .9)',line = dict(width = 2,))]
+              dict(size = 10,color = 'rgba(255, 182, 193, .9)',line = dict(width = 2,)),
+              dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
+              dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
+              dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
     count = 0
     annotations = []
     agg_cfg = ""
