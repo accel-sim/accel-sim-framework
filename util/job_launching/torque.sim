@@ -30,8 +30,8 @@ echo "doing: export PATH=REPLACE_PATH"
 export PATH=REPLACE_PATH
 
 # Uncomment to force blocking torque launches
-#echo "doing export CUDA_LAUNCH_BLOCKING=1"
-#export CUDA_LAUNCH_BLOCKING=1
+echo "doing export CUDA_LAUNCH_BLOCKING=1"
+export CUDA_LAUNCH_BLOCKING=1
 
 
 echo "doing: REPLACE_EXEC_NAME REPLACE_COMMAND_LINE"
