@@ -231,17 +231,19 @@ for idx, app_and_args in enumerate(apps_and_args):
             current_kernel =""
             last_kernel = ""
             raw_last = {}
-            blank_kernel = False
             running_kcount = {}
             f = open(outfile)
             for line in f:
+                # If we ended simulation due to too many insn - ignore the last kernel launch, as it is no complete.
+                # Note: This only appies if we are doing kernel-by-kernel stats
+                last_kernel_break = re.match("GPGPU-Sim: \*\* break due to reaching the maximum cycles \(or instructions\) \*\*", line)
+                if last_kernel_break:
+                    print "NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile)
+                    for stat_name in stats_to_pull.keys():
+                        del stat_map[current_kernel + app_and_args + config + stat_name]
+
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
-                    if kernel_match.group(1).strip() == "":
-                        blank_kernel = True
-                        continue
-                    else:
-                        blank_kernel = False
                     last_kernel = current_kernel
                     current_kernel = kernel_match.group(1).strip()
 
@@ -259,9 +261,6 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_map[current_kernel + app_and_args + config + "k-count"] += 1
                     else:
                         stat_map[current_kernel + app_and_args + config + "k-count"] = 1
-                    continue
-
-                if blank_kernel:
                     continue
 
                 for stat_name, token in stats_to_pull.iteritems():
