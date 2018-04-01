@@ -8,6 +8,7 @@ import sys
 import common
 import math
 import yaml
+import time
 
 millnames = ['',' K',' M',' B',' T']
 def millify(n):
@@ -25,6 +26,10 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 #*********************************************************--
 # main script start
 #*********************************************************--
+start_time = time.time()
+files_parsed = 0
+bytes_parsed = 0
+
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 help_str = "There are 3 ways to use this file" +\
@@ -210,8 +215,12 @@ for idx, app_and_args in enumerate(apps_and_args):
             count = 0
             f = open(outfile)
             fsize = int(os.stat(outfile).st_size)
+            files_parsed += 1
             if fsize > BYTES_TO_READ:
                 f.seek(-BYTES_TO_READ, os.SEEK_END)
+                bytes_parsed += BYTES_TO_READ
+            else:
+                bytes_parsed += fsize
             lines = f.readlines()
             for line in reversed(lines):
                 # pull out some stats
@@ -232,6 +241,8 @@ for idx, app_and_args in enumerate(apps_and_args):
             last_kernel = ""
             raw_last = {}
             running_kcount = {}
+            files_parsed += 1
+            bytes_parsed += os.stat(outfile).st_size
             f = open(outfile)
             #print "Parsing File {0}. Size: {1}".format(outfile, millify(os.stat(outfile).st_size))
             for line in f:
@@ -285,7 +296,6 @@ for idx, app_and_args in enumerate(apps_and_args):
                                 stat_last_kernel = 0.0
                             raw_last[stat_name] = float(number)
                             stat_map[current_kernel + app_and_args + config + stat_name] = ( float(number) - stat_last_kernel )
-
 # Just adding this in here since it is a special case and is not parsed like everything else, because you need
 # to read from the beginning not the end
 if options.per_kernel and not options.kernel_instance:
@@ -352,3 +362,9 @@ print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
 
 for stat_name in stats_yaml['collect']:
     print_stat( stat_name, all_named_kernels, options.configs_as_rows )
+
+duration = time.time() - start_time
+
+print"Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
+    format(duration , files_parsed, millify(bytes_parsed),
+    millify(float(bytes_parsed)/float(duration)))
