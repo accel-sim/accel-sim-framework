@@ -233,6 +233,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             raw_last = {}
             running_kcount = {}
             f = open(outfile)
+            #print "Parsing File {0}. Size: {1}".format(outfile, millify(os.stat(outfile).st_size))
             for line in f:
                 # If we ended simulation due to too many insn - ignore the last kernel launch, as it is no complete.
                 # Note: This only appies if we are doing kernel-by-kernel stats
