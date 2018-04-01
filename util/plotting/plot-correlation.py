@@ -170,12 +170,13 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                             kdata[kcount][header[count]] = elem
                             count += 1
                         kname = kdata[kcount]["Kernel"]
-                        logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
+                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
                         kcount += 1
                     else:
                         # Set the Device
                         if cfg != "" and cfg != row[cfg_col]:
-                            print "data for more than one device in {0}..{1}:{2}".format(csv_file,cfg,elem)
+                            print "data for more than one device in {0}..{1}:{2}"\
+                                .format(csv_file,cfg,elem)
                             exit()
                         cfg = row[cfg_col]
 
@@ -185,7 +186,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                             kstat[header[count]] = elem
                             count += 1
                         kname = kstat["Name"]
-                        logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
+                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
                         kdata.append(kstat)
                         kcount += 1
                     continue
