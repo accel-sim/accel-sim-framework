@@ -159,6 +159,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                     state = "kernel_proc"
                     continue
                 if state == "kernel_proc":
+                    # skip the memcopies
                     if "[CUDA " in "".join(row):
                         continue
                     if len(row) == 1:
@@ -234,7 +235,7 @@ for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csv_dir = os.path.join(root, d)
         csvs = glob.glob(os.path.join(csv_dir,"*.cycle"))
-        logger.log("Found HW {0} csvs in {1}\n".format(len(csvs),csv_dir))
+        logger.log("Found HW cycle {0} csvs in {1}\n".format(len(csvs),csv_dir))
         if len(csvs) > 0:
             parse_hw_csv(max(csvs, key=os.path.getctime),hw_data, os.path.join(os.path.basename(root),d), logger)
 
