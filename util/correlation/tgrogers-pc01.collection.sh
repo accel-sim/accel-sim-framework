@@ -1,5 +1,5 @@
 DATE=`date '+%Y-%m-%d--%H.%M.%S'`
-./run_hw.py -D 0 -c -B `cat ../job_launching/apps/all-apps.list`
+./run_hw.py -D 0 -B `cat ../job_launching/apps/all-apps.list`
 cp -r ../../run_hw/device-0 ../../run_hw/TITAN-X-PASCAL
 cd ../../run_hw
 tar zcvf pascal.titanx.cycle.tgz ./TITAN-X-PASCAL
