@@ -360,9 +360,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         )
         data = [trace]
 
-        if hw_cfg not in fig_data:
-            fig_data[hw_cfg] = []
-        fig_data[hw_cfg].append((trace, layout, cfg, anno, correl.plotfile))
+        if correl.plotfile + hw_cfg not in fig_data:
+            fig_data[ correl.plotfile + hw_cfg ] = []
+        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile))
 
 
 for hw_cfg, traces in fig_data.iteritems():
