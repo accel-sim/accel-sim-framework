@@ -87,6 +87,7 @@ options.sim_name = options.sim_name.strip()
 
 common.load_defined_yamls()
 
+
 cuda_version = common.get_cuda_version( this_directory )
 options.run_dir = common.dir_option_test( options.run_dir, this_directory + ("../../sim_run_%s/"%cuda_version),
                                           this_directory )
@@ -186,7 +187,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             if len(all_outfiles) != 0:
                 outfile = max(all_outfiles, key=os.path.getmtime)
             else:
-                outfile = os.path.join(output_dir, f)
+                continue
 
         stat_found = set()
 
@@ -207,6 +208,32 @@ for idx, app_and_args in enumerate(apps_and_args):
                 stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
                 break
         f.close()
+
+        # Do a quick 10000-line reverse pass to make sure the simualtion thread finished
+        SIM_EXIT_STRING = "GPGPU-Sim: \*\*\* exit detected \*\*\*"
+        exit_success = False
+        MAX_LINES = 10000
+        BYTES_TO_READ = int(250 * 1024 * 1024)
+        count = 0
+        f = open(outfile)
+        fsize = int(os.stat(outfile).st_size)
+        if fsize > BYTES_TO_READ:
+            f.seek(-BYTES_TO_READ, os.SEEK_END)
+        lines = f.readlines()
+        for line in reversed(lines):
+            count += 1
+            if count >= MAX_LINES:
+                break
+            exit_match = re.match(SIM_EXIT_STRING, line)
+            if exit_match:
+                exit_success = True
+                break
+        del lines
+        f.close()
+
+        if not exit_success:
+            print "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile)
+            continue
 
         if not options.per_kernel:
             if len(all_named_kernels[app_and_args]) == 0:
@@ -252,7 +279,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                 if last_kernel_break:
                     print "NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile)
                     for stat_name in stats_to_pull.keys():
-                        del stat_map[current_kernel + app_and_args + config + stat_name]
+                        if current_kernel + app_and_args + config + stat_name in stat_map:
+                            del stat_map[current_kernel + app_and_args + config + stat_name]
 
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
