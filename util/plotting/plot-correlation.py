@@ -23,7 +23,6 @@ import ast
 import numpy
 import datetime
 
-
 def make_anno1(text, fontsize, x, y):
     return Annotation(
         text=text,   # annotation text
@@ -305,6 +304,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             hw_array = hw_array[:-1]
                             count += 1
                             continue
+                        except ZeroDivisionError as e:
+                           count += 1
+                           hw_array = hw_array[:-1]
+                           continue
                         kernelcount += 1
                         processAnyKernels = True
                         err = 99999
@@ -393,4 +396,7 @@ for hw_cfg, traces in fig_data.iteritems():
         os.makedirs(correl_outdir)
 
     print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
-    plotly.offline.plot(Figure(data=data,layout=layout), filename=plotname, auto_open=False)
+    figure = Figure(data=data,layout=layout)
+    plotly.offline.plot(figure, filename=plotname, auto_open=False)
+    py.image.save_as(figure, plotname + ".png", height=1024, width=1024)
+
