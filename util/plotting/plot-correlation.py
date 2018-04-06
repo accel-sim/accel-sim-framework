@@ -218,6 +218,9 @@ parser.add_option("-d", "--data_mappings", dest="data_mappings",
 parser.add_option("-v", "--verbose", dest="verbose",
                   help="spew the log to stdout",
                   action="store_true")
+parser.add_option("-e", "--err_off", dest="err_off",
+                  help="turn off the error prints",
+                  action="store_true")
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
 
@@ -311,6 +314,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         kernelcount += 1
                         processAnyKernels = True
                         err = 99999
+
+#                        if hw_array[-1] > 50000:
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
                             err = (err / hw_array[-1]) * 100
@@ -318,6 +323,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 num_over += 1
                             else:
                                 num_under += 1
+                            #if abs(err) < 100:
                             errs.append(abs(err))
                         label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
                         count += 1
@@ -336,10 +342,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         logger.write_log()
 
+        if len(errs) == 0:
+            continue
+
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
         for err in errs:
             avg_err += err
+        
         avg_err = avg_err / len(errs)
 
         trace = go.Scatter(
@@ -349,7 +359,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             text=label_array,
             name=cfg,
         )
-        anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.2} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
+        if not options.err_off:
+            anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
+        else:
+            anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
@@ -372,7 +385,7 @@ for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg:{0}".format(hw_cfg)
     data = []
     markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 14,color = 'rgba(0, 0, 127, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
+              dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
               dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
               dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
               dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
@@ -413,11 +426,15 @@ for hw_cfg, traces in fig_data.iteritems():
     png_layout.xaxis.titlefont.color='black'
     png_layout.xaxis.tickfont.size=TEXT_SIZE
     png_layout.xaxis.tickfont.color='black'
+    png_layout.xaxis.type="log"
+    png_layout.xaxis.autorange=True
 
     png_layout.yaxis.titlefont.size = TEXT_SIZE
     png_layout.yaxis.tickfont.size = TEXT_SIZE
     png_layout.yaxis.titlefont.color='black'
     png_layout.yaxis.tickfont.color='black'
+    png_layout.yaxis.type="log"
+    png_layout.yaxis.autorange=True
 
     png_layout.margin.t = 100
 
@@ -440,5 +457,7 @@ for hw_cfg, traces in fig_data.iteritems():
             trace.name = "Old-Model"
         elif "P102" in trace.name:
             trace.name = "New-Model"
-
+    xyline = go.Scatter(x=[1, layout.xaxis.range[1]],y=[1,layout.xaxis.range[1]],showlegend=False,mode="lines")
+    xyline.line.color = 'rgba(255,0,0,.7)'
+    data.append(xyline)
     py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
