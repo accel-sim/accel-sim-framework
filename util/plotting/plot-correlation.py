@@ -371,8 +371,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg:{0}".format(hw_cfg)
     data = []
-    markers =[dict(size = 10, color = 'rgba(152, 0, 0, .8)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 10,color = 'rgba(255, 182, 193, .9)',line = dict(width = 2,)),
+    markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
+              dict(size = 14,color = 'rgba(0, 0, 127, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
               dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
               dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
               dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
@@ -384,7 +384,7 @@ for hw_cfg, traces in fig_data.iteritems():
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         data.append(trace)
-        annotations.append(make_anno1(anno,10,0.05,1.0 - count * 0.05))
+        annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
         print_anno += anno + "\n"
         agg_cfg += "." + cfg
         count += 1
@@ -398,5 +398,47 @@ for hw_cfg, traces in fig_data.iteritems():
     print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
     figure = Figure(data=data,layout=layout)
     plotly.offline.plot(figure, filename=plotname, auto_open=False)
-    py.image.save_as(figure, plotname + ".png", height=1024, width=1024)
 
+    TEXT_SIZE=26
+    # plotly will only let you do .pdf if you pay for it - I have.
+    # To get this to work for free change the extension to .png
+    png_name = plotname[:-5].replace(".", "_") + ".pdf"
+    png_layout = copy.deepcopy(layout)
+    png_layout.title=None
+    for anno in png_layout.annotations:
+        anno.font=Font(size=22,color='black')
+        anno.text = re.sub(r"[^\s]*3.x[^\s]*", "Old-Model", anno.text)
+        anno.text = re.sub(r"[^\s]*P102[^\s]*", "New-Model",anno.text)
+    png_layout.xaxis.titlefont.size = TEXT_SIZE
+    png_layout.xaxis.titlefont.color='black'
+    png_layout.xaxis.tickfont.size=TEXT_SIZE
+    png_layout.xaxis.tickfont.color='black'
+
+    png_layout.yaxis.titlefont.size = TEXT_SIZE
+    png_layout.yaxis.tickfont.size = TEXT_SIZE
+    png_layout.yaxis.titlefont.color='black'
+    png_layout.yaxis.tickfont.color='black'
+
+    png_layout.margin.t = 100
+
+    png_layout.legend=dict(
+        x=0,
+        y=1,
+        traceorder='normal',
+        font=dict(
+            family='sans-serif',
+            size=TEXT_SIZE,
+            color='#000'
+        ),
+        bgcolor='#E2E2E2',
+        bordercolor='#FFFFFF',
+        borderwidth=2
+    )
+
+    for trace in data:
+        if "3.x" in trace.name:
+            trace.name = "Old-Model"
+        elif "P102" in trace.name:
+            trace.name = "New-Model"
+
+    py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
