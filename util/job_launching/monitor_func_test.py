@@ -66,7 +66,8 @@ while True:
         jobstatus_out_file.seek(0)
         jobStatusCol = None
         num_passed = 0
-        num_not_done = 0
+        num_running = 0
+        num_waiting = 0
         num_error = 0
         num_no_err = 0
         for line in jobstatus_out_file.readlines():
@@ -88,23 +89,25 @@ while True:
                         num_passed += 1
                     elif status == "COMPLETE_NO_OTHER_INFO":
                         num_no_err += 1
-                    elif status == "RUNNING" or status == "WAITING_TO_RUN":
-                        num_not_done += 1
+                    elif status == "RUNNING":
+                        num_running += 1
+                    elif status == "WAITING_TO_RUN":
+                        num_waiting += 1
                     else:
                         num_error += 1
 
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
     
-    total = num_passed + num_not_done + num_error + num_no_err
-    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Not done:{4}/{1}"\
-        .format(num_passed, total, num_no_err, num_error, num_not_done)
+    total = num_passed + num_running + num_waiting + num_error + num_no_err
+    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Running:{4}/{1}, Waiting:{5}/{1}"\
+        .format(num_passed, total, num_no_err, num_error, num_running, num_waiting)
     if num_error > 0:
         print "Contents {0}:".format(failed_job_file)
         if options.verbose:
             print open(failed_job_file).read()
 
-    if num_not_done == 0:
+    if num_running + num_waiting == 0:
         print "All {0} Tests Done.".format(total)
         if num_error == 0:
             print "Congratulations! All Tests Pass!"
