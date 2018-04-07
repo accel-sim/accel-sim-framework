@@ -34,12 +34,12 @@ def make_submission_quality_image(traces):
     annotations = []
     agg_cfg = ""
     print_anno = ""
-    for trace, layout, cfg, anno, plotfile in traces:
+    for trace, layout, cfg, anno, plotfile, err_dropped in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         data.append(trace)
         annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
-        print_anno += anno + "\n"
+        print_anno += anno + " :: {0} high error points dropped from Err calc\n".format(err_dropped)
         agg_cfg += "." + cfg
         count += 1
 
@@ -292,6 +292,10 @@ parser.add_option("-v", "--verbose", dest="verbose",
 parser.add_option("-e", "--err_off", dest="err_off",
                   help="turn off the error prints",
                   action="store_true")
+parser.add_option("-E", "--err_calc_threadhold", dest="err_calc_threadhold",
+                  help="Do not include data points with an error higher than this in the error calculation.",
+                  type="float", default="9999999.0")
+
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
 
@@ -353,6 +357,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
         hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
         max_axis_val = 0.0
+        err_dropped_stats = 0
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
@@ -395,8 +400,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 num_over += 1
                             else:
                                 num_under += 1
-                            #if abs(err) < 100:
-                            errs.append(abs(err))
+                            if abs(err) < options.err_calc_threadhold:
+                                errs.append(abs(err))
+                            else:
+                                err_dropped_stats += 1
                         label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
                         count += 1
                         if hw_array[-1] > max_axis_val:
@@ -450,7 +457,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         if correl.plotfile + hw_cfg not in fig_data:
             fig_data[ correl.plotfile + hw_cfg ] = []
-        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile))
+        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats))
 
 
 for hw_cfg, traces in fig_data.iteritems():
