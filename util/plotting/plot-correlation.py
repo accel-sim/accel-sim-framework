@@ -357,7 +357,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
-                if len(sim_klist) >= len(hw_klist):
+                if len(sim_klist) <= len(hw_klist):
                     logger.log("Found hw/sim match for {0}. Sim={1}. HW={2}"
                         .format(appargs, len(sim_klist), len(hw_klist)))
                     sim_appargs_leftover.remove(appargs)
@@ -379,6 +379,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             count += 1
                             continue
                         except ZeroDivisionError as e:
+                           logger.log("Division by zerofor  stat in {0}.Error: {1}".format(correl.sim_eval, e))
                            count += 1
                            hw_array = hw_array[:-1]
                            continue
