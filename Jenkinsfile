@@ -10,7 +10,7 @@ pipeline {
     stages {
         stage('setup-data') {
             steps{
-                sh 'unlink /home/tgrogers-raid/a/common/data_dirs &&\
+                sh 'unlink ./benchmarks/data_dirs &&\
                 ln -s /home/tgrogers-raid/a/common/data_dirs ./benchmarks/'
             }
         }
