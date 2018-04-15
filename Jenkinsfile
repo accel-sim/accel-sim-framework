@@ -10,8 +10,7 @@ pipeline {
     stages {
         stage('setup-data') {
             steps{
-                sh 'unlink ./benchmarks/data_dirs &&\
-                ln -s /home/tgrogers-raid/a/common/data_dirs ./benchmarks/'
+                sh 'ln -sf /home/tgrogers-raid/a/common/data_dirs ./benchmarks/'
             }
         }
         stage('4.2-simulations-build'){
