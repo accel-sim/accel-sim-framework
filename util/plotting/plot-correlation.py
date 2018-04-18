@@ -490,5 +490,5 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 
 for hw_cfg, traces in fig_data.iteritems():
-    print "Plotting HW cfg:{0}".format(hw_cfg)
+    print "Plotting HW cfg: {0}".format(hw_cfg)
     make_submission_quality_image(traces)
