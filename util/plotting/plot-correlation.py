@@ -23,6 +23,77 @@ import ast
 import numpy
 import datetime
 
+def make_submission_quality_image(traces):
+    data = []
+    markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
+              dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
+              dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
+              dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
+              dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
+    count = 0
+    annotations = []
+    agg_cfg = ""
+    print_anno = ""
+    for trace, layout, cfg, anno, plotfile in traces:
+        trace.marker = markers[count %len(markers)]
+        trace.mode = "markers"
+        data.append(trace)
+        annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
+        print_anno += anno + "\n"
+        agg_cfg += "." + cfg
+        count += 1
+
+    layout.annotations=annotations
+    correl_outdir = os.path.join(this_directory, "correl-html")
+    plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
+    if not os.path.isdir(correl_outdir):
+        os.makedirs(correl_outdir)
+
+    print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
+    TEXT_SIZE=26
+    # plotly will only let you do .pdf if you pay for it - I have.
+    # To get this to work for free change the extension to .png
+    png_name = plotname[:-5].replace(".", "_") + ".pdf"
+    png_layout = copy.deepcopy(layout)
+    png_layout.title=None
+    for anno in png_layout.annotations:
+        anno.font=Font(size=22,color='black')
+    png_layout.xaxis.titlefont.size = TEXT_SIZE
+    png_layout.xaxis.titlefont.color='black'
+    png_layout.xaxis.tickfont.size=TEXT_SIZE
+    png_layout.xaxis.tickfont.color='black'
+    png_layout.xaxis.type="log"
+    png_layout.xaxis.autorange=True
+
+    png_layout.yaxis.titlefont.size = TEXT_SIZE
+    png_layout.yaxis.tickfont.size = TEXT_SIZE
+    png_layout.yaxis.titlefont.color='black'
+    png_layout.yaxis.tickfont.color='black'
+    png_layout.yaxis.type="log"
+    png_layout.yaxis.autorange=True
+
+    png_layout.margin.t = 100
+
+    png_layout.legend=dict(
+        x=0,
+        y=1,
+        traceorder='normal',
+        font=dict(
+            family='sans-serif',
+            size=TEXT_SIZE,
+            color='#000'
+        ),
+        bgcolor='#E2E2E2',
+        bordercolor='#FFFFFF',
+        borderwidth=2
+    )
+
+    xyline = go.Scatter(x=[1, layout.xaxis.range[1]],y=[1,layout.xaxis.range[1]],showlegend=False,mode="lines")
+    xyline.line.color = 'rgba(255,0,0,.7)'
+    data.append(xyline)
+    py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
+    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname, auto_open=False)
+
 def make_anno1(text, fontsize, x, y):
     return Annotation(
         text=text,   # annotation text
@@ -383,81 +454,4 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg:{0}".format(hw_cfg)
-    data = []
-    markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
-              dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
-              dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
-    count = 0
-    annotations = []
-    agg_cfg = ""
-    print_anno = ""
-    for trace, layout, cfg, anno, plotfile in traces:
-        trace.marker = markers[count %len(markers)]
-        trace.mode = "markers"
-        data.append(trace)
-        annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
-        print_anno += anno + "\n"
-        agg_cfg += "." + cfg
-        count += 1
-
-    layout.annotations=annotations
-    correl_outdir = os.path.join(this_directory, "correl-html")
-    plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
-    if not os.path.isdir(correl_outdir):
-        os.makedirs(correl_outdir)
-
-    print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
-    figure = Figure(data=data,layout=layout)
-    plotly.offline.plot(figure, filename=plotname, auto_open=False)
-
-    TEXT_SIZE=26
-    # plotly will only let you do .pdf if you pay for it - I have.
-    # To get this to work for free change the extension to .png
-    png_name = plotname[:-5].replace(".", "_") + ".pdf"
-    png_layout = copy.deepcopy(layout)
-    png_layout.title=None
-    for anno in png_layout.annotations:
-        anno.font=Font(size=22,color='black')
-        anno.text = re.sub(r"[^\s]*3.x[^\s]*", "Old-Model", anno.text)
-        anno.text = re.sub(r"[^\s]*P102[^\s]*", "New-Model",anno.text)
-    png_layout.xaxis.titlefont.size = TEXT_SIZE
-    png_layout.xaxis.titlefont.color='black'
-    png_layout.xaxis.tickfont.size=TEXT_SIZE
-    png_layout.xaxis.tickfont.color='black'
-    png_layout.xaxis.type="log"
-    png_layout.xaxis.autorange=True
-
-    png_layout.yaxis.titlefont.size = TEXT_SIZE
-    png_layout.yaxis.tickfont.size = TEXT_SIZE
-    png_layout.yaxis.titlefont.color='black'
-    png_layout.yaxis.tickfont.color='black'
-    png_layout.yaxis.type="log"
-    png_layout.yaxis.autorange=True
-
-    png_layout.margin.t = 100
-
-    png_layout.legend=dict(
-        x=0,
-        y=1,
-        traceorder='normal',
-        font=dict(
-            family='sans-serif',
-            size=TEXT_SIZE,
-            color='#000'
-        ),
-        bgcolor='#E2E2E2',
-        bordercolor='#FFFFFF',
-        borderwidth=2
-    )
-
-    for trace in data:
-        if "3.x" in trace.name:
-            trace.name = "Old-Model"
-        elif "P102" in trace.name:
-            trace.name = "New-Model"
-    xyline = go.Scatter(x=[1, layout.xaxis.range[1]],y=[1,layout.xaxis.range[1]],showlegend=False,mode="lines")
-    xyline.line.color = 'rgba(255,0,0,.7)'
-    data.append(xyline)
-    py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
+    make_submission_quality_image(traces)
