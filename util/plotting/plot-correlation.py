@@ -23,6 +23,21 @@ import ast
 import numpy
 import datetime
 
+def make_pretty_app_list(apps_included):
+    ret_str = "Application + Arguments :: Number Kernels Launched :: Average Error\n\n"
+    app_list = apps_included.keys()
+    app_list = sorted(app_list, key=lambda x: len(apps_included[x]), reverse=True)
+    for app in app_list:
+        if len(apps_included[app]) > 0:
+            avg_err = 0.0
+            for err in apps_included[app]:
+                avg_err += err
+            avg_err = avg_err / len(apps_included[app])
+            ret_str += "{0} :: {1} :: {2:.2f}%\n".format(app, len(apps_included[app]), avg_err)
+        else:
+            ret_str += "{0} :: No kernels included in error calc".format(app)
+    return ret_str
+
 def make_submission_quality_image(traces):
     data = []
     markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
@@ -34,22 +49,29 @@ def make_submission_quality_image(traces):
     annotations = []
     agg_cfg = ""
     print_anno = ""
-    for trace, layout, cfg, anno, plotfile, err_dropped in traces:
+    applist_file_contents = ""
+    for trace, layout, cfg, anno, plotfile, err_dropped, apps_included in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         data.append(trace)
         annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc\n".format(err_dropped)
         agg_cfg += "." + cfg
+        applist_file_contents += "{0}\n{1}\n\n".format(cfg, make_pretty_app_list(apps_included))
         count += 1
 
     layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
     plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
+    appsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".appsincluded.txt")
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
+    f = open(appsinludedname, 'w')
+    f.write(applist_file_contents)
+    f.close()
 
-    print "Plotting {0}: {1}\n{2}".format(plotname, layout.title, print_anno)
+    print "Plotting {0}: {1}\n{2}Apps included listed in {3}\n"\
+        .format(plotname, layout.title, print_anno, appsinludedname)
     TEXT_SIZE=26
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
@@ -351,6 +373,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         appcount = 0
         kernelcount = 0
+        num_less_than_one_percent = 0
         num_under = 0
         num_over = 0
         errs = []
@@ -358,6 +381,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
         max_axis_val = 0.0
         err_dropped_stats = 0
+        apps_included = {}
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
                 hw_klist = hw_data[hw_cfg][appargs]
@@ -388,20 +412,26 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                            count += 1
                            hw_array = hw_array[:-1]
                            continue
+
+                        if appargs not in apps_included:
+                            apps_included[appargs] = [];
+
                         kernelcount += 1
                         processAnyKernels = True
                         err = 99999
 
-#                        if hw_array[-1] > 50000:
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
                             err = (err / hw_array[-1]) * 100
-                            if err > 0:
+                            if abs(err) < 1.0:
+                                num_less_than_one_percent += 1
+                            elif err > 0:
                                 num_over += 1
                             else:
                                 num_under += 1
                             if abs(err) < options.err_calc_threadhold:
                                 errs.append(abs(err))
+                                apps_included[appargs].append(abs(err))
                             else:
                                 err_dropped_stats += 1
                         label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
@@ -428,7 +458,6 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         avg_err = 0
         for err in errs:
             avg_err += err
-        
         avg_err = avg_err / len(errs)
 
         trace = go.Scatter(
@@ -439,9 +468,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             name=cfg,
         )
         if not options.err_off:
-            anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
+            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
         else:
-            anno = cfg + " ({0} apps, {1} kernels ({4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over)
+            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
@@ -457,7 +486,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         if correl.plotfile + hw_cfg not in fig_data:
             fig_data[ correl.plotfile + hw_cfg ] = []
-        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats))
+        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included))
 
 
 for hw_cfg, traces in fig_data.iteritems():
