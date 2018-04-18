@@ -336,7 +336,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         continue
 
     for correl in correl_list:
-        if correl.config != "all" and cfg != correl.config:
+        if correl.hw_name != "all" and hw_cfg != correl.hw_name:
             logger.log("for cfg:{0} - Skipping plot:\n{1}".format(cfg, correl))
             continue
 
