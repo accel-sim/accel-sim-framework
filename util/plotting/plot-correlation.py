@@ -362,8 +362,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         continue
 
     for correl in correl_list:
-        if correl.hw_name != "all" and hw_cfg != correl.hw_name:
-            logger.log("for cfg:{0} - Skipping plot:\n{1}".format(cfg, correl))
+        if correl.hw_name != "all" and correl.hw_name not in hw_cfg:
+            logger.log("for cfg:{0}, hw_cfg:{1} - Skipping plot:\n{2}".format(cfg, hw_cfg, correl))
             continue
 
         hw_array = []
