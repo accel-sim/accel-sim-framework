@@ -38,7 +38,7 @@ def make_pretty_app_list(apps_included):
             ret_str += "{0} :: No kernels included in error calc".format(app)
     return ret_str
 
-def make_submission_quality_image(traces):
+def make_submission_quality_image(plot_pdf, traces):
     data = []
     markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
               dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
@@ -75,7 +75,10 @@ def make_submission_quality_image(traces):
     TEXT_SIZE=26
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
-    png_name = plotname[:-5].replace(".", "_") + ".pdf"
+    if plot_pdf:
+        png_name = plotname[:-5].replace(".", "_") + ".pdf"
+    else:
+        png_name = plotname[:-5].replace(".", "_") + ".png"
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
     for anno in png_layout.annotations:
@@ -317,6 +320,11 @@ parser.add_option("-e", "--err_off", dest="err_off",
 parser.add_option("-E", "--err_calc_threadhold", dest="err_calc_threadhold",
                   help="Do not include data points with an error higher than this in the error calculation.",
                   type="float", default="9999999.0")
+parser.add_option("-P", "--plot_pdf", dest="plot_pdf",
+                  help="Generate a pdf image alongside the html. Note that your plotly account must be setup"+\
+                       " and have the ability to plot PDFs. i.e. be paid for. Professor Rogers has such an account"+\
+                       " if you need submission quality PDFs. Without this switch, you will generate png files.",
+                  action="store_true")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -491,4 +499,4 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg: {0}".format(hw_cfg)
-    make_submission_quality_image(traces)
+    make_submission_quality_image(options.plot_pdf, traces)
