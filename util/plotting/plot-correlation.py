@@ -38,7 +38,7 @@ def make_pretty_app_list(apps_included):
             ret_str += "{0} :: No kernels included in error calc".format(app)
     return ret_str
 
-def make_submission_quality_image(plot_pdf, traces):
+def make_submission_quality_image(image_type, traces):
     data = []
     markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
               dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
@@ -73,12 +73,8 @@ def make_submission_quality_image(plot_pdf, traces):
     print "Plotting {0}: {1}\n{2}Apps included listed in {3}\n"\
         .format(plotname, layout.title, print_anno, appsinludedname)
     TEXT_SIZE=26
-    # plotly will only let you do .pdf if you pay for it - I have.
-    # To get this to work for free change the extension to .png
-    if plot_pdf:
-        png_name = plotname[:-5].replace(".", "_") + ".pdf"
-    else:
-        png_name = plotname[:-5].replace(".", "_") + ".png"
+
+
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
     for anno in png_layout.annotations:
@@ -116,7 +112,12 @@ def make_submission_quality_image(plot_pdf, traces):
     xyline = go.Scatter(x=[1, layout.xaxis.range[1]],y=[1,layout.xaxis.range[1]],showlegend=False,mode="lines")
     xyline.line.color = 'rgba(255,0,0,.7)'
     data.append(xyline)
-    py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
+    # plotly will only let you do .pdf if you pay for it - I have.
+    # To get this to work for free change the extension to .png
+    if image_type != "":
+        png_name = plotname[:-5].replace(".", "_") + "." + image_type
+        py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
+    # This generates the html
     plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname, auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
@@ -320,11 +321,12 @@ parser.add_option("-e", "--err_off", dest="err_off",
 parser.add_option("-E", "--err_calc_threadhold", dest="err_calc_threadhold",
                   help="Do not include data points with an error higher than this in the error calculation.",
                   type="float", default="9999999.0")
-parser.add_option("-P", "--plot_pdf", dest="plot_pdf",
-                  help="Generate a pdf image alongside the html. Note that your plotly account must be setup"+\
+parser.add_option("-i", "--image_type", dest="image_type",
+                  help="Generate a pdf/png image alongside the html. Note that your plotly account must be setup"+\
                        " and have the ability to plot PDFs. i.e. be paid for. Professor Rogers has such an account"+\
-                       " if you need submission quality PDFs. Without this switch, you will generate png files.",
-                  action="store_true")
+                       " if you need submission quality PDFs. You will only generate html. If everything is setup"+\
+                       " properly, just specify the right file extension (pdf or png) here.",
+                  default="")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -499,4 +501,4 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 for hw_cfg, traces in fig_data.iteritems():
     print "Plotting HW cfg: {0}".format(hw_cfg)
-    make_submission_quality_image(options.plot_pdf, traces)
+    make_submission_quality_image(options.image_type, traces)
