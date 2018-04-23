@@ -29,6 +29,11 @@ parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="Constantly print stuff")
 parser.add_option("-s", "--statsfile", dest="statsfile", default="",
                   help="In verbose mode specify where the stats go")
+parser.add_option("-S", "--sleep_time", dest="sleep_time", default="30",
+                  help="Time to sleep in (s) - default is 30.")
+parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
+                  help="If some of the runs have errors - do not return an error code.")
+
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
@@ -105,7 +110,10 @@ while True:
             exit(0)
         else:
             print "Something did not pass."
-            exit(1)
+            if options.ignore_failures:
+                exit(0)
+            else:
+                exit(1)
     else:
-        print "Sleeping for 30s"
-        time.sleep(30)
+        print "Sleeping for {0}s".format(options.sleep_time)
+        time.sleep(int(option.sleep_time))
