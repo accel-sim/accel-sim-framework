@@ -116,4 +116,4 @@ while True:
                 exit(1)
     else:
         print "Sleeping for {0}s".format(options.sleep_time)
-        time.sleep(int(option.sleep_time))
+        time.sleep(int(options.sleep_time))
