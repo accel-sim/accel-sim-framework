@@ -357,13 +357,13 @@ exec(open(options.data_mappings,'r').read())
 
 fig_data = {} # map of HW config to a list of scatters
 for cfg,sim_for_cfg in sim_data.iteritems():
-    if cfg not in config_maps:
+    if cfg.split('-')[0] not in config_maps:
         logger.log("cfg {0} not in config_maps:{1}.".format(cfg, config_maps))
         continue
 
     hw_cfg = None
     for device in hw_data.iterkeys():
-        if config_maps[cfg] in device:
+        if config_maps[cfg.split('-')[0]] in device:
             hw_cfg = device
             continue
 

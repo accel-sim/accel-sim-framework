@@ -4,17 +4,12 @@
 #   Every time you want to correlate a new configuration, you need to map it here.
 config_maps = \
 {
-    "TITANX-P102": "TITAN X (Pascal)",
-    "1B-TITANX-P102": "TITAN X (Pascal)",
-    "1B-TITANX-P102-L1ON": "TITAN X (Pascal)",
-    "1B-TITANX-P102-L1ON-copyk": "TITAN X (Pascal)",
-    "1B-TITANX-P102-copyk": "TITAN X (Pascal)",
-    "1B-3.x-PASCALTITANX" : "TITAN X (Pascal)",
-    "TITANX-P102": "TITAN X (Pascal)",
-    "1B-3.x-P100" :  "Tesla P100",
-    "1B-P100-HBM" : "Tesla P100",
+    "TITANX_P102": "TITAN X (Pascal)",
+    "3.x_PASCALTITANX" : "TITAN X (Pascal)",
+    "3.x_P100" :  "Tesla P100",
+    "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
-    "GTX480-PTXPLUS" : "GeForce GTX 480",
+    "GTX480" : "GeForce GTX 480",
 }
 
 
