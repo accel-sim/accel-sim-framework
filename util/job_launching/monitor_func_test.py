@@ -8,6 +8,16 @@ import sys
 import common
 import time
 
+def print_statsfile(options, this_directory):
+    get_stats_out_file = open(options.statsfile, 'w+')
+    print "Calling get_stats.py"
+    if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
+        stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
+        print "Error Launching get_stats.py"
+    get_stats_out_file.seek(0)
+    print get_stats_out_file.read()
+    get_stats_out_file.close()
+
 #*********************************************************--
 # main script start
 #*********************************************************--
@@ -98,22 +108,15 @@ while True:
         print "All {0} Tests Done.".format(total)
         if num_error == 0:
             print "Congratulations! All Tests Pass!"
-            if options.verbose and options.statsfile:
-                get_stats_out_file = open(options.statsfile, 'w+')
-                print "Calling get_stats.py"
-                if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
-                    stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
-                    print "Error Launching get_stats.py"
-                get_stats_out_file.seek(0)
-                print get_stats_out_file.read()
-                get_stats_out_file.close()
-            exit(0)
         else:
             print "Something did not pass."
-            if options.ignore_failures:
-                exit(0)
-            else:
-                exit(1)
+
+        if num_error == 0 or options.ignore_failures:
+            if options.verbose and options.statsfile:
+                print_statsfile(options, this_directory)
+            exit(0)
+        else:
+            exit(1)
     else:
         print "Sleeping for {0}s".format(options.sleep_time)
         time.sleep(int(options.sleep_time))
