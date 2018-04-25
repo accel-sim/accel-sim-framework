@@ -155,7 +155,7 @@ else:
             added_cfgs = set()
             added_apps = set()
             for line in f:
-                time, jobId, app ,args, config, jobname = line.split()
+                jobtime, jobId, app ,args, config, jobname = line.split()
                 if config not in added_cfgs:
                     configs.append(config)
                     added_cfgs.add(config)
