@@ -72,13 +72,13 @@ def make_submission_quality_image(image_type, traces):
 
     print "Plotting {0}: {1}\n{2}Apps included listed in {3}\n"\
         .format(plotname, layout.title, print_anno, appsinludedname)
-    TEXT_SIZE=26
+    TEXT_SIZE=22
 
 
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
     for anno in png_layout.annotations:
-        anno.font=Font(size=22,color='black')
+        anno.font=Font(size=16,color='black')
     png_layout.xaxis.titlefont.size = TEXT_SIZE
     png_layout.xaxis.titlefont.color='black'
     png_layout.xaxis.tickfont.size=TEXT_SIZE
@@ -101,7 +101,7 @@ def make_submission_quality_image(image_type, traces):
         traceorder='normal',
         font=dict(
             family='sans-serif',
-            size=TEXT_SIZE,
+            size=16,
             color='#000'
         ),
         bgcolor='#E2E2E2',
