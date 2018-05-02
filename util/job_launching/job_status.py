@@ -11,7 +11,8 @@ import math
 # uses torque's tracejob to determine the job status
 def get_job_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
-                   "exec_host" : "UNKNOWN" }
+                   "exec_host" : "UNKNOWN",
+                   "running_time": "UNKNOWN" }
     trace_out_filename = os.path.join(this_directory, "trace_out-{0}.txt".format(os.getpid()))
     trace_out_file = open(trace_out_filename, 'w+')
     if subprocess.call(["qstat" ,"-f", jobId],
@@ -30,6 +31,9 @@ def get_job_status( jobId ):
             host_match = re.search( "exec_host\s=\s([^\s]*)", trace_out )
             if host_match != None:
                 job_status[ "exec_host" ] = host_match.group(1)
+            time_match = re.search( "resources_used.walltime\s=\s([^\s]*)", trace_out )
+            if time_match != None:
+                job_status[ "running_time" ] = time_match.group(1)
         trace_out_file.close()
         os.remove(trace_out_filename)
     return job_status
@@ -50,6 +54,8 @@ def millify(n):
     n = float(n)
     if math.isnan(n):
         return "NaN"
+    if math.isinf(n):
+        return "inf"
     millidx = max(0,min(len(millnames)-1,
                     int(math.floor(0 if n == 0 else math.log10(abs(n))/3))))
     return '{:.3f}{}'.format(n / 10**(3 * millidx), millnames[millidx])
@@ -141,7 +147,8 @@ stats_to_pull = { "SIM_TIME": "gpgpu_simulation_time\s*=[^1-9]*(.*)",
                   "TOT_IPC" : "gpu_tot_ipc\s*=\s*(.*)" }
 
 ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t" +\
-             "{gpusim_version:20.20}\t{config:20.20}\t{status:40.40}\t{stat:50}"
+             "{gpusim_version:20.20}\t{config:20.20}\t{running_time:15}\t{status:40.40}\t"+\
+             "{stat:50}\t"
 
 # At this point we have the logfile we want to get a synopsis for.
 for logfile in parsed_logfiles:
@@ -157,7 +164,7 @@ for logfile in parsed_logfiles:
     with open( logfile ) as f:
         header = ROW_STRING.format( jobId="TorqueJob",exec_node="Node",app="App",args="AppArgs",
                 gpusim_version="GPGPU-SimVersion",config="GPGPU-SimConfig",
-                status="JobStatus", stat="Basic GPGPU-Sim Stats" )
+                status="JobStatus", stat="Basic GPGPU-Sim Stats", running_time="RunningTime" )
         print header
         print "-" * len(header)
 
@@ -181,8 +188,10 @@ for logfile in parsed_logfiles:
                 continue
 
             num_jobs += 1
-            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "e" + jobId)
-            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + "o" + jobId)
+            errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
+                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "e" + jobId)
+            outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
+                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""
@@ -199,6 +208,7 @@ for logfile in parsed_logfiles:
                 status_string = "COMPLETE_NO_OTHER_INFO"
 
             exec_node = job_status[ "exec_host" ]
+            running_time = job_status[ "running_time" ]
 
             for sim_file in files_to_check:
                 if not os.path.isfile( sim_file ):
@@ -206,7 +216,7 @@ for logfile in parsed_logfiles:
                     continue
 
                 # Only go up for 1000 lines looking for stuff
-                MAX_LINES = 100000
+                MAX_LINES = 10000
                 count = 0
                 for line in reversed(open(sim_file).readlines()):
                     count += 1
@@ -234,7 +244,7 @@ for logfile in parsed_logfiles:
                                 additional_stats += "\t{0}={1}".format( name, number )
                             else:
                                 additional_stats = "{0}={1}".format( name, number )
-                    if len(stat_found) == len(stats_to_pull):
+                    if len(stat_found) == len(stats_to_pull) and len(status_found) > 0:
                         break
 
             if len( status_found ) > 0:
@@ -245,12 +255,13 @@ for logfile in parsed_logfiles:
             gpgpu_git_commit = re.sub(r".*-commit-([^_]{7})[^_]+_(.*)\.so", r"\1-\2", jobname)
             job_summary = ROW_STRING.format( jobId=jobId, exec_node=exec_node, app=app, args=args,
                             config=config, status=status_string, stat=additional_stats,
-                            gpusim_version=gpgpu_git_commit )
+                            gpusim_version=gpgpu_git_commit, running_time=running_time )
             print job_summary
 
             if ("FUNC_TEST_PASSED" not in status_found \
                 and "WAITING_TO_RUN" not in status_string \
-                and "RUNNING" not in status_string ):
+                and "RUNNING" not in status_string \
+                and "COMPLETE_NO_OTHER_INFO" not in status_string):
 
                 # We need ro spin here to make sure the output files exist...
                 # Sometimes torque can tell us the job is complete, but the file is not actually on the file system yet.
