@@ -64,7 +64,7 @@ class ConfigurationSpec:
                             "/" + self.run_subdir + "/"
                 self.setup_run_directory(full_run_dir, this_run_dir)
 
-                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir)
+                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
@@ -93,7 +93,12 @@ class ConfigurationSpec:
                     if len(torque_out) > 0:
                         # Dump the benchmark description to the logfile
                         if not os.path.exists(this_directory + "logfiles/"):
-                            os.makedirs(this_directory + "logfiles/")
+                            # In the very rare case that concurrent builds try to make the directory at the same time
+                            # (after the test to os.path.exists -- this has actually happened...)
+                            try:
+                                os.makedirs(this_directory + "logfiles/")
+                            except:
+                                pass
                         now_time = datetime.datetime.now()
                         day_string = now_time.strftime("%y.%m.%d-%A")
                         time_string = now_time.strftime("%H:%M:%S")
@@ -141,7 +146,7 @@ class ConfigurationSpec:
 
     # replaces all the "REAPLCE_*" strings in the torque.sim file
     def text_replace_torque_sim( self,full_run_dir,this_run_dir,benchmark, cuda_version, command_line_args,
-                                 libpath, exec_dir ):
+                                 libpath, exec_dir, gpgpusim_build_handle ):
         # get the pre-launch sh commands
         prelaunch_filename =  full_run_dir +\
                              "benchmark_pre_launch_command_line.txt"
@@ -168,7 +173,8 @@ class ConfigurationSpec:
         else:
             txt_args = command_line_args
 
-        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args],
+        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
+                                gpgpusim_build_handle,
                             "NODES":"1", 
                             "GPGPUSIM_ROOT":os.getenv("GPGPUSIM_ROOT"),
                             "LIBPATH": libpath,
@@ -225,7 +231,12 @@ so_path = os.path.join( options.so_dir, "libcudart.so" )
 version_string = extract_so_name( so_path )
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
-    os.makedirs( running_so_dir )
+    # In the very rare case that concurrent builds try to make the directory at the same time
+    # (after the test to os.path.exists -- this has actually happened...)
+    try:
+        os.makedirs( running_so_dir )
+    except:
+        pass
     shutil.copy( so_path, running_so_dir )
 options.so_dir = running_so_dir
 

@@ -3,13 +3,21 @@ pipeline {
         label "purdue-cluster"
         }
 
+    options {
+        disableConcurrentBuilds()
+    }
+
     stages {
+        stage('setup-data') {
+            steps{
+                sh 'ln -sf /home/tgrogers-raid/a/common/data_dirs ./benchmarks/'
+            }
+        }
         stage('4.2-simulations-build'){
             steps{
                 sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
                 source ./benchmarks/src/setup_environment &&\
                 make -C ./benchmarks/src clean &&\
-                rm -r ./benchmarks/data_dirs && ln -s /home/tgrogers-raid/a/common/data_dirs ./benchmarks/ && \
                 make -C ./benchmarks/src all'
             }
         }
@@ -18,7 +26,6 @@ pipeline {
                 sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
                 source ./benchmarks/src/setup_environment && \
                 make -C ./benchmarks/src clean && \
-                rm -r ./benchmarks/data_dirs && ln -s /home/tgrogers-raid/a/common/data_dirs ./benchmarks/ && \
                 make -C ./benchmarks/src all'
             }
         }

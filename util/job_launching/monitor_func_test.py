@@ -8,6 +8,16 @@ import sys
 import common
 import time
 
+def print_statsfile(options, this_directory):
+    get_stats_out_file = open(options.statsfile, 'w+')
+    print "Calling get_stats.py"
+    if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
+        stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
+        print "Error Launching get_stats.py"
+    get_stats_out_file.seek(0)
+    print get_stats_out_file.read()
+    get_stats_out_file.close()
+
 #*********************************************************--
 # main script start
 #*********************************************************--
@@ -29,6 +39,11 @@ parser.add_option("-v", "--verbose", dest="verbose", action="store_true",
                   help="Constantly print stuff")
 parser.add_option("-s", "--statsfile", dest="statsfile", default="",
                   help="In verbose mode specify where the stats go")
+parser.add_option("-S", "--sleep_time", dest="sleep_time", default="30",
+                  help="Time to sleep in (s) - default is 30.")
+parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
+                  help="If some of the runs have errors - do not return an error code.")
+
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
@@ -51,8 +66,10 @@ while True:
         jobstatus_out_file.seek(0)
         jobStatusCol = None
         num_passed = 0
-        num_not_done = 0
-        num_else = 0
+        num_running = 0
+        num_waiting = 0
+        num_error = 0
+        num_no_err = 0
         for line in jobstatus_out_file.readlines():
             if options.verbose:
                 print line.strip()
@@ -70,39 +87,39 @@ while True:
                     status = tokens[jobStatusCol].strip()
                     if status == "FUNC_TEST_PASSED":
                         num_passed += 1
-                    elif status == "RUNNING" or status == "WAITING_TO_RUN":
-                        num_not_done += 1
+                    elif status == "COMPLETE_NO_OTHER_INFO":
+                        num_no_err += 1
+                    elif status == "RUNNING":
+                        num_running += 1
+                    elif status == "WAITING_TO_RUN":
+                        num_waiting += 1
                     else:
-                        num_else += 1
+                        num_error += 1
 
         jobstatus_out_file.close()
         os.remove(jobstatus_out_filename)
     
-    total = num_passed + num_not_done + num_else
-    print "Passed:{0}/{1}, Not passed:{2}/{1}, Not done:{3}/{1}"\
-        .format(num_passed, total, num_else, num_not_done)
-    if num_else > 0:
+    total = num_passed + num_running + num_waiting + num_error + num_no_err
+    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Running:{4}/{1}, Waiting:{5}/{1}"\
+        .format(num_passed, total, num_no_err, num_error, num_running, num_waiting)
+    if num_error > 0:
         print "Contents {0}:".format(failed_job_file)
         if options.verbose:
             print open(failed_job_file).read()
 
-    if num_not_done == 0:
+    if num_running + num_waiting == 0:
         print "All {0} Tests Done.".format(total)
-        if num_else == 0:
+        if num_error == 0:
             print "Congratulations! All Tests Pass!"
-            if options.verbose and options.statsfile:
-                get_stats_out_file = open(options.statsfile, 'w+')
-                print "Calling get_stats.py"
-                if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
-                    stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
-                    print "Error Launching get_stats.py"
-                get_stats_out_file.seek(0)
-                print get_stats_out_file.read()
-                get_stats_out_file.close()
-            exit(0)
         else:
             print "Something did not pass."
+
+        if num_error == 0 or options.ignore_failures:
+            if options.verbose and options.statsfile:
+                print_statsfile(options, this_directory)
+            exit(0)
+        else:
             exit(1)
     else:
-        print "Sleeping for 30s"
-        time.sleep(30)
+        print "Sleeping for {0}s".format(options.sleep_time)
+        time.sleep(int(options.sleep_time))

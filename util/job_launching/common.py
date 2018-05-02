@@ -9,7 +9,26 @@ import glob
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 defined_apps = {}
-defined_configs = {}
+defined_baseconfigs = {}
+defined_xtracfgs = {}
+
+# Test to see if the passed config adheres to any defined configs and add it to the configrations to run/collect.
+def get_config(name, defined_baseconfigs, defined_xtracfgs):
+    tokens = name.split('-')
+    if tokens[0] not in defined_baseconfigs:
+        print "Could not fined {0} in defined basenames {1}".format(tokens[0], defined_baseconfigs)
+        return None
+    else:
+        config = (name, "", defined_baseconfigs[tokens[0]])
+    for token in tokens[1:]:
+        if token not in defined_xtracfgs:
+            print "Could not find {0} in defined xtraconfigs {1}".format(token, defined_xtracfgs)
+            return None
+        else:
+            oldName, oldXtra, oldBasename = config
+            config = \
+                (oldName, oldXtra + "\n#{0}\n{1}\n".format(token, defined_xtracfgs[token]), oldBasename)
+    return config
 
 def load_defined_yamls():
     define_yamls = glob.glob(os.path.join(this_directory, 'apps/define-*.yml'))
@@ -17,7 +36,7 @@ def load_defined_yamls():
         parse_app_definition_yaml( os.path.join(this_directory, 'apps', def_yaml), defined_apps)
     define_yamls = glob.glob(os.path.join(this_directory, 'configs/define-*.yml'))
     for def_yaml in define_yamls:
-        parse_config_definition_yaml( os.path.join(this_directory, 'configs', def_yaml), defined_configs )
+        parse_config_definition_yaml( os.path.join(this_directory, 'configs', def_yaml), defined_baseconfigs, defined_xtracfgs )
 
 def parse_app_definition_yaml( def_yml, apps ):
     benchmark_yaml = yaml.load(open(def_yml))
@@ -35,11 +54,13 @@ def parse_app_definition_yaml( def_yml, apps ):
                                  exe_name, args_list ) )
     return
 
-def parse_config_definition_yaml( def_yml, configurations ):
+def parse_config_definition_yaml( def_yml, defined_baseconfigs, defined_xtracfgs ):
     configs_yaml = yaml.load(open( def_yml ))
     for config in configs_yaml:
-        gpgpusim_conf = os.path.expandvars(configs_yaml[config]['base_file'])
-        configurations[config] = ( config, configs_yaml[config]['extra_params'], gpgpusim_conf )
+        if 'base_file' in configs_yaml[config]:
+            defined_baseconfigs[config] = os.path.expandvars(configs_yaml[config]['base_file'])
+        elif 'extra_params' in configs_yaml[config]:
+            defined_xtracfgs[config] = configs_yaml[config]['extra_params']
     return
 
 def gen_apps_from_suite_list( app_list ):
@@ -51,7 +72,7 @@ def gen_apps_from_suite_list( app_list ):
 def gen_configs_from_list( cfg_list ):
     configs = []
     for cfg in cfg_list:
-        configs.append(defined_configs[cfg])
+        configs.append(get_config(cfg, defined_baseconfigs, defined_xtracfgs))
     return configs
 
 def get_cuda_version(this_directory):
