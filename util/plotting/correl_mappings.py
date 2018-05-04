@@ -9,7 +9,7 @@ config_maps = \
     "3.x_P100" :  "Tesla P100",
     "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
-    "GTX480" : "GeForce GTX 480",
+    "GTX1080Ti" : "GeForce GTX 1080 Ti",
 }
 
 
@@ -36,6 +36,12 @@ correl_list = \
         hw_eval="float(hw[\"Duration\"])*1480",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla P100"
+    ),
+    CorrelStat(chart_name="Execution Cycles (1480 MHz)",
+        plotfile="1080ti-cycles.html",
+        hw_eval="float(hw[\"Duration\"])*1480",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="GeForce GTX 1080 Ti"
     ),
     CorrelStat(chart_name="Warp Instructions",
         plotfile="warp-inst.html",
