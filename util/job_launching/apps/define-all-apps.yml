@@ -204,7 +204,6 @@ pannotia:
 #            - ./data/USA-road-d.NW.gr 0
 #            - ./data/USA-road-d.NY.gr 0
 
-#PTX Does not parse
 dragon-cdp:
     exec_dir: "../../benchmarks/src/cuda/dragon_li/cdp_bin/$CUDA_VERSION/"
     data_dirs: "../../benchmarks/data_dirs/dragon/"
