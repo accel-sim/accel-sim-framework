@@ -1,6 +1,6 @@
 start=`date +%s`
 DATE=`date '+%Y-%m-%d--%H.%M.%S'`
-./run_hw.py -D 0 -B `cat ../job_launching/apps/all-apps.list` -R 5
+./run_hw.py -D 0 -B `cat ../job_launching/apps/all-apps.list` -R 10
 cp -r ../../run_hw/device-0 ../../run_hw/1080TI_PASCAL
 cd ../../run_hw
 tar zcvf pascal.1080ti.cycle.tgz ./1080TI_PASCAL
