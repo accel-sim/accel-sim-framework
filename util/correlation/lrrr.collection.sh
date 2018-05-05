@@ -1,6 +1,6 @@
 start=`date +%s`
 DATE=`date '+%Y-%m-%d--%H.%M.%S'`
-./run_hw.py -D 0 -B `cat ../job_launching/apps/all-apps.list`
+./run_hw.py -D 0 -B `cat ../job_launching/apps/all-apps.list` -R 10
 cp -r ../../run_hw/device-0 ../../run_hw/TESLA-P100
 cd ../../run_hw
 tar zcvf pascal.tesla.p100.cycles.tgz ./TESLA-P100
