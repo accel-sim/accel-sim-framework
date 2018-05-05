@@ -227,6 +227,9 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
     processedCycle = False
     cfg = ""
     cfg_col = None
+    cycle_file_count = options.cycle_runs_to_burn # Start at 3 - assume we burn the first 3 runs to get DVFS scaled up
+    if os.path.exists(csv_file + ".{0}".format(cycle_file_count)):
+        csv_file = csv_file + ".{0}".format(cycle_file_count)
     while processFiles:
         with open(csv_file, 'r') as data_file:
             logger.log("Parsing HW csv file {0}".format(csv_file))
@@ -264,7 +267,12 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                     if processedCycle:
                         count = 0
                         for elem in row:
-                            kdata[kcount][header[count]] = elem
+                            if header[count] not in kdata[kcount]:
+                                kdata[kcount][header[count]] = []
+                            try:
+                                kdata[kcount][header[count]].append(float(elem))
+                            except ValueError:
+                                kdata[kcount][header[count]].append(elem)
                             count += 1
                         kname = kdata[kcount]["Kernel"]
                         #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
@@ -277,20 +285,29 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                             exit()
                         cfg = row[cfg_col]
 
-                        kstat = {}
                         count = 0
+                        if len(kdata) <= kcount:
+                            kdata.append({})
                         for elem in row:
-                            kstat[header[count]] = elem
+                            if header[count] not in kdata[kcount]:
+                                kdata[kcount][header[count]] = []
+                            try:
+                                kdata[kcount][header[count]].append(float(elem))
+                            except ValueError:
+                                kdata[kcount][header[count]].append(elem)
                             count += 1
-                        kname = kstat["Name"]
-                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
-                        kdata.append(kstat)
+                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kdata[kcount]["Name"]))
                         kcount += 1
                     continue
         # Drop the .cycle off the name
-        if os.path.exists(csv_file[:-6]) and not processedCycle and len(kdata) > 0:
+        cycle_file_count += 1
+        no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
+        next_cycle_filename = re.sub(r'(.*\.cycle).*', r'\1', csv_file) + ".{0}".format(cycle_file_count)
+        if os.path.exists(next_cycle_filename):
+            csv_file = next_cycle_filename
+        elif os.path.exists(no_cycle_filename) and not processedCycle and len(kdata) > 0:
             processedCycle = True
-            csv_file = csv_file[:-6]
+            csv_file = no_cycle_filename
         else:
             processFiles = False
 
@@ -327,6 +344,11 @@ parser.add_option("-i", "--image_type", dest="image_type",
                        " if you need submission quality PDFs. You will only generate html. If everything is setup"+\
                        " properly, just specify the right file extension (pdf or png) here.",
                   default="")
+parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type="int",
+                  help="When collecting data from multiple real hardware cycle runs - ignore the first"+\
+                       " N runs defined by this variable. This helps to eliminate HW cycle error caused"+\
+                       " by DVFS",
+                  default=3)
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -343,7 +365,7 @@ hw_data = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csv_dir = os.path.join(root, d)
-        csvs = glob.glob(os.path.join(csv_dir,"*.cycle"))
+        csvs = glob.glob(os.path.join(csv_dir,"*.cycle*"))
         logger.log("Found HW cycle {0} csvs in {1}\n".format(len(csvs),csv_dir))
         if len(csvs) > 0:
             parse_hw_csv(max(csvs, key=os.path.getctime),hw_data, os.path.join(os.path.basename(root),d), logger)
@@ -377,6 +399,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             continue
 
         hw_array = []
+        hw_error = []
         sim_array = []
         label_array = []
         color_array = []
@@ -422,6 +445,12 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                            count += 1
                            hw_array = hw_array[:-1]
                            continue
+ 
+                        if correl.hw_error != None:
+                            hw_error.append(eval(correl.hw_error))
+                        else:
+                            hw_error.append(0)
+
 
                         if appargs not in apps_included:
                             apps_included[appargs] = [];
@@ -432,6 +461,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
+                            hw_err = (hw_error[-1]/hw_array[-1]) * 100
                             err = (err / hw_array[-1]) * 100
                             if abs(err) < 1.0:
                                 num_less_than_one_percent += 1
@@ -444,7 +474,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 apps_included[appargs].append(abs(err))
                             else:
                                 err_dropped_stats += 1
-                        label_array.append(appargs + "--" + hw_klist[count]["Name"] + " (Err={0:.2f}%)".format(err))
+                        label_array.append(appargs + "--" + hw_klist[count]["Name"][0] + " (Err={0:.2f}%, HW-Err={1:.2f}%)".format(err,hw_err))
                         count += 1
                         if hw_array[-1] > max_axis_val:
                             max_axis_val = hw_array[-1]
@@ -475,6 +505,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             y = sim_array,
             mode = 'markers',
             text=label_array,
+            error_x=dict(
+                type='data',
+                array=hw_error,
+                visible=True
+            ),
             name=cfg,
         )
         if not options.err_off:
