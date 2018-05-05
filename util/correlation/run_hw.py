@@ -30,6 +30,8 @@ parser.add_option("-n", "--norun", dest="norun", action="store_true",
                  help="Do not actually run the apps, just create the dir structure and launch files")
 parser.add_option("-c", "--cycle_only", dest="cycle_only", action="store_true",
                  help="Just get Kernel Duration")
+parser.add_option("-R", "--repeat_cycle", dest="repeat_cycle", default=1,
+                 help="When running the cycle tests, do them this many times (good when DVFS is enabled)")
 (options, args) = parser.parse_args()
 
 if not any([os.path.isfile(os.path.join(p, "nvprof")) for p in os.getenv("PATH").split(os.pathsep)]):
@@ -74,9 +76,10 @@ for bench in benchmarks:
                 "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
             os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
 
-        sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-            "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
-        os.path.join(this_run_dir,logfile + ".cycle") + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
+        for i in range(int(options.repeat_cycle)):
+            sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
+                os.path.join(this_run_dir,logfile + ".cycle.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
