@@ -1,83 +1,57 @@
-GTX480:
-    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
-    extra_params: ""
+# Basefile Configs
 
-GTX480-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+# Pascal
+GTX1080Ti:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX1080Ti/gpgpusim.config"
 
+# Deorecated files in the public repo
 QUADROFX5600:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5600/gpgpusim.config"
-    extra_params: ""
-
-QUADROFX5600-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5600/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 QUADROFX5800:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
-    extra_params: ""
-
-QUADROFX5800-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5800/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 TESLAC2050:
     base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
-    extra_params: ""
 
-TESLAC2050-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+GTX480:
+    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
 
+# This is a smaller GPU that takes forever to simulate
 GTX750Ti:
     base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
-    extra_params: ""
 
-GTX750Ti-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
-
-GTX1080Ti:
-    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX1080Ti/gpgpusim.config"
-    extra_params: ""
-
-PASCALTITANX:
+# Our Internal configurations
+3.x_PASCALTITANX:
     base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
-    extra_params: ""
 
-PASCALTITANX-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
-
-P100-HBM:
+P100_HBM:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
-    extra_params: ""
 
-TITANX-P102:
+TITANX_P102:
     base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
-    extra_params: ""
 
-TITANX-P102-L1ON:
-    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
+# Extra configs - these are composable.
+# The names here will be appended to the basefile name with hyphens
+#   For example TITANX_P102-L1ON-PTXPLUS
+PTXPLUS:
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+
+L1ON:
     extra_params: "-gmem_skip_L1D 0"
 
-P100-HBM-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+COPYK:
+    extra_params: "-perf_sim_memcpy 1"
 
-TITANX-P102-PTXPLUS:
-    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+2B:
+    extra_params: "-gpgpu_max_insn 2000000000"
 
-PASCALTITANX-SM6:
-    base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
+1B:
+    extra_params: "-gpgpu_max_insn 2000000000"
+
+
+# Experimental - for SM 60 PTXplus support
+PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
 
-P100-HBM-SM6:
-    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P100-HBM/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
 
-TITANX-P102-SM6:
-    base_file: "$GPGPUSIM_ROOT/configs/Pascal-P102-GDDR5X/gpgpusim.config"
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
