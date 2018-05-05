@@ -8,6 +8,7 @@ import sys
 import common
 import math
 import yaml
+import time
 
 millnames = ['',' K',' M',' B',' T']
 def millify(n):
@@ -25,6 +26,10 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 #*********************************************************--
 # main script start
 #*********************************************************--
+start_time = time.time()
+files_parsed = 0
+bytes_parsed = 0
+
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 help_str = "There are 3 ways to use this file" +\
@@ -81,6 +86,7 @@ options.run_dir = options.run_dir.strip()
 options.sim_name = options.sim_name.strip()
 
 common.load_defined_yamls()
+
 
 cuda_version = common.get_cuda_version( this_directory )
 options.run_dir = common.dir_option_test( options.run_dir, this_directory + ("../../sim_run_%s/"%cuda_version),
@@ -149,7 +155,7 @@ else:
             added_cfgs = set()
             added_apps = set()
             for line in f:
-                time, jobId, app ,args, config, jobname = line.split()
+                jobtime, jobId, app ,args, config, jobname = line.split()
                 if config not in added_cfgs:
                     configs.append(config)
                     added_cfgs.add(config)
@@ -181,7 +187,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             if len(all_outfiles) != 0:
                 outfile = max(all_outfiles, key=os.path.getmtime)
             else:
-                outfile = os.path.join(output_dir, f)
+                continue
 
         stat_found = set()
 
@@ -203,6 +209,32 @@ for idx, app_and_args in enumerate(apps_and_args):
                 break
         f.close()
 
+        # Do a quick 10000-line reverse pass to make sure the simualtion thread finished
+        SIM_EXIT_STRING = "GPGPU-Sim: \*\*\* exit detected \*\*\*"
+        exit_success = False
+        MAX_LINES = 10000
+        BYTES_TO_READ = int(250 * 1024 * 1024)
+        count = 0
+        f = open(outfile)
+        fsize = int(os.stat(outfile).st_size)
+        if fsize > BYTES_TO_READ:
+            f.seek(-BYTES_TO_READ, os.SEEK_END)
+        lines = f.readlines()
+        for line in reversed(lines):
+            count += 1
+            if count >= MAX_LINES:
+                break
+            exit_match = re.match(SIM_EXIT_STRING, line)
+            if exit_match:
+                exit_success = True
+                break
+        del lines
+        f.close()
+
+        if not exit_success:
+            print "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile)
+            continue
+
         if not options.per_kernel:
             if len(all_named_kernels[app_and_args]) == 0:
                 all_named_kernels[app_and_args].append("final_kernel")
@@ -210,8 +242,12 @@ for idx, app_and_args in enumerate(apps_and_args):
             count = 0
             f = open(outfile)
             fsize = int(os.stat(outfile).st_size)
+            files_parsed += 1
             if fsize > BYTES_TO_READ:
                 f.seek(-BYTES_TO_READ, os.SEEK_END)
+                bytes_parsed += BYTES_TO_READ
+            else:
+                bytes_parsed += fsize
             lines = f.readlines()
             for line in reversed(lines):
                 # pull out some stats
@@ -231,17 +267,23 @@ for idx, app_and_args in enumerate(apps_and_args):
             current_kernel =""
             last_kernel = ""
             raw_last = {}
-            blank_kernel = False
             running_kcount = {}
+            files_parsed += 1
+            bytes_parsed += os.stat(outfile).st_size
             f = open(outfile)
+            #print "Parsing File {0}. Size: {1}".format(outfile, millify(os.stat(outfile).st_size))
             for line in f:
+                # If we ended simulation due to too many insn - ignore the last kernel launch, as it is no complete.
+                # Note: This only appies if we are doing kernel-by-kernel stats
+                last_kernel_break = re.match("GPGPU-Sim: \*\* break due to reaching the maximum cycles \(or instructions\) \*\*", line)
+                if last_kernel_break:
+                    print "NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile)
+                    for stat_name in stats_to_pull.keys():
+                        if current_kernel + app_and_args + config + stat_name in stat_map:
+                            del stat_map[current_kernel + app_and_args + config + stat_name]
+
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
-                    if kernel_match.group(1).strip() == "":
-                        blank_kernel = True
-                        continue
-                    else:
-                        blank_kernel = False
                     last_kernel = current_kernel
                     current_kernel = kernel_match.group(1).strip()
 
@@ -259,9 +301,6 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_map[current_kernel + app_and_args + config + "k-count"] += 1
                     else:
                         stat_map[current_kernel + app_and_args + config + "k-count"] = 1
-                    continue
-
-                if blank_kernel:
                     continue
 
                 for stat_name, token in stats_to_pull.iteritems():
@@ -285,7 +324,6 @@ for idx, app_and_args in enumerate(apps_and_args):
                                 stat_last_kernel = 0.0
                             raw_last[stat_name] = float(number)
                             stat_map[current_kernel + app_and_args + config + stat_name] = ( float(number) - stat_last_kernel )
-
 # Just adding this in here since it is a special case and is not parsed like everything else, because you need
 # to read from the beginning not the end
 if options.per_kernel and not options.kernel_instance:
@@ -352,3 +390,9 @@ print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
 
 for stat_name in stats_yaml['collect']:
     print_stat( stat_name, all_named_kernels, options.configs_as_rows )
+
+duration = time.time() - start_time
+
+print"Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
+    format(duration , files_parsed, millify(bytes_parsed),
+    millify(float(bytes_parsed)/float(duration)))
