@@ -1,7 +1,10 @@
 # Basefile Configs
-GTX480:
-    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
 
+# Pascal
+GTX1080Ti:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX1080Ti/gpgpusim.config"
+
+# Deorecated files in the public repo
 QUADROFX5600:
     base_file: "$GPGPUSIM_ROOT/configs/QuadroFX5600/gpgpusim.config"
 
@@ -11,12 +14,14 @@ QUADROFX5800:
 TESLAC2050:
     base_file: "$GPGPUSIM_ROOT/configs/TeslaC2050/gpgpusim.config"
 
+GTX480:
+    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
+
+# This is a smaller GPU that takes forever to simulate
 GTX750Ti:
     base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
 
-GTX1080Ti:
-    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX1080Ti/gpgpusim.config"
-
+# Our Internal configurations
 3.x_PASCALTITANX:
     base_file: "$GPGPUSIM_ROOT/configs/PascalTitanX/gpgpu-sim-3.x/gpgpusim.config"
 
