@@ -181,6 +181,8 @@ def get_sim_csv_data(filepath, logger):
                         if len(split) > 1:
                             appargs = split[0]
                             kname = split[1]
+                            if len(split) > 2:
+                                kname += "--" + split[2]
                             if kname == "all_kernels":
                                 continue
                             if appargs == last_appargs:
@@ -474,7 +476,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 apps_included[appargs].append(abs(err))
                             else:
                                 err_dropped_stats += 1
-                        label_array.append(appargs + "--" + hw_klist[count]["Name"][0] + " (Err={0:.2f}%, HW-Err={1:.2f}%)".format(err,hw_err))
+                        label_array.append(appargs + "--" + sim_klist[count]["Kernel"] + " (Err={0:.2f}%, HW-Err={1:.2f}%)".format(err,hw_err))
                         count += 1
                         if hw_array[-1] > max_axis_val:
                             max_axis_val = hw_array[-1]
