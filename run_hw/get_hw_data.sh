@@ -20,9 +20,9 @@ fi
 
 if [ ! -d $FERMI_GTX480_DATA ]; then
     echo "in"
-    wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/fermi.gtx480.cycles.tgz
-    tar -xzvf fermi.gtx480.cycles.tgz -C $DATA_ROOT
-    rm fermi.gtx480.cycles.tgz
+    wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/fermi.gtx480.cycle.tgz
+    tar -xzvf fermi.gtx480.cycle.tgz -C $DATA_ROOT
+    rm fermi.gtx480.cycle.tgz
 fi
 
 if [ ! -d $1080Ti_DATA ]; then
