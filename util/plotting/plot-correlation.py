@@ -402,6 +402,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         hw_array = []
         hw_error = []
+        hw_error_min = []
         sim_array = []
         label_array = []
         color_array = []
@@ -449,9 +450,12 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                            continue
  
                         if correl.hw_error != None:
-                            hw_error.append(eval(correl.hw_error))
+                            maxe,mine = eval(correl.hw_error)
+                            hw_error.append(maxe)
+                            hw_error_min.append(mine)
                         else:
                             hw_error.append(0)
+                            hw_error_min.append(0)
 
 
                         if appargs not in apps_included:
@@ -463,7 +467,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
                         if hw_array[-1] > 0:
                             err = sim_array[-1] - hw_array[-1]
-                            hw_err = (hw_error[-1]/hw_array[-1]) * 100
+                            hw_high = (hw_error[-1]/hw_array[-1]) * 100
+                            hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
                             err = (err / hw_array[-1]) * 100
                             if abs(err) < 1.0:
                                 num_less_than_one_percent += 1
@@ -476,7 +481,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 apps_included[appargs].append(abs(err))
                             else:
                                 err_dropped_stats += 1
-                        label_array.append(appargs + "--" + sim_klist[count]["Kernel"] + " (Err={0:.2f}%, HW-Err={1:.2f}%)".format(err,hw_err))
+                        label_array.append(appargs + "--" + sim_klist[count]["Kernel"] +
+                            " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
                         count += 1
                         if hw_array[-1] > max_axis_val:
                             max_axis_val = hw_array[-1]
@@ -509,7 +515,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             text=label_array,
             error_x=dict(
                 type='data',
+                symmetric=False,
                 array=hw_error,
+                arrayminus=hw_error_min,
                 visible=True
             ),
             name=cfg,

@@ -22,28 +22,32 @@ correl_list = \
     CorrelStat(chart_name="Execution Cycles (1417 MHz)",
         plotfile="titanx-p102-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1417",
-        hw_error="np.max(hw[\"Duration\"])*1417 - np.average(hw[\"Duration\"])*1417",
+        hw_error="np.max(hw[\"Duration\"])*1417 - np.average(hw[\"Duration\"])*1417,"+\
+                 "np.average(hw[\"Duration\"])*1417 - np.min(hw[\"Duration\"])*1417",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN X (Pascal)"
     ),
     CorrelStat(chart_name="Execution Cycles (1400 MHz - 16-wide SIMD)",
         plotfile="gtx480-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1400",
-        hw_error="np.max(hw[\"Duration\"])*1400 - np.average(hw[\"Duration\"])*1400",
+        hw_error="np.max(hw[\"Duration\"])*1400 - np.average(hw[\"Duration\"])*1400,"+\
+                 "np.average(hw[\"Duration\"])*1400 - np.min(hw[\"Duration\"])*1400",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])*2",
         hw_name="GeForce GTX 480"
     ),
     CorrelStat(chart_name="Execution Cycles (1480 MHz)",
         plotfile="p100-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1480",
-        hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480",
+        hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
+                 "np.average(hw[\"Duration\"])*1480 - np.min(hw[\"Duration\"])*1480",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla P100"
     ),
     CorrelStat(chart_name="Execution Cycles (1480 MHz)",
         plotfile="1080ti-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1480",
-        hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480",
+        hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
+                 "np.average(hw[\"Duration\"])*1480 - np.min(hw[\"Duration\"])*1480",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="GeForce GTX 1080 Ti"
     ),
