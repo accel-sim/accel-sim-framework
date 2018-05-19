@@ -72,14 +72,14 @@ for bench in benchmarks:
 
         sh_contents = ""
         if not options.cycle_only:
-       	    for i in range(int(options.repeat_cycle)):
-            	sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                	"\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
-            	os.path.join(this_run_dir,logfile + "{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
+            for i in range(int(options.repeat_cycle)):
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
+                os.path.join(this_run_dir,logfile + ".{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
 
         for i in range(int(options.repeat_cycle)):
             sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                "\" ; nvprof --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
+                "\" ; nvprof --unified-memory-profiling off --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
                 os.path.join(this_run_dir,logfile + ".cycle.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
