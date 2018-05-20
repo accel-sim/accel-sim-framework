@@ -53,6 +53,8 @@ sdk-4.2-scaled:
             - -logK 11 -logD 19
         - scalarProd:
             - --size 13920
+        - transpose:
+            - dimX512 dimY512
 
 sdk-4.2:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
