@@ -114,7 +114,7 @@ sdk-4.2:
 #        - template:
 #            -
         - transpose:
-            -
+            - dimX128 dimY128
         - vectorAdd:
             -
 
