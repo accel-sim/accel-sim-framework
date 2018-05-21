@@ -102,7 +102,7 @@ sdk-4.2:
         - scalarProd:
             -
         - simpleAtomicIntrinsics:
-            -
+            - 128 16
         - simpleP2P:
             -
         - simpleTemplates:
