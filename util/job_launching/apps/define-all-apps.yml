@@ -381,7 +381,7 @@ parboil:
             - -i ./data/default/input/reference.bin,./data/default/input/frame.bin -o out.bin
 
         - parboil-sgemm:
-            - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,../data/medium/input/matrix2t.txt -o matrix3.txt
+            - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
 
         - parboil-stencil:
             - -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
