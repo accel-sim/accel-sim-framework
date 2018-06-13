@@ -52,10 +52,7 @@ class ConfigurationSpec:
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
-                if args == "" or args == None:
-                    self.benchmark_args_subdirs[args] = "NO_ARGS"
-                else:
-                    self.benchmark_args_subdirs[args] = re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())
+                self.benchmark_args_subdirs[args] = common.get_argfoldername( args )
 
 
             for args in self.command_line_args_list:
