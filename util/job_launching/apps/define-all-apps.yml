@@ -372,3 +372,81 @@ lonestargpu-2.0:
 #            - ./data/rmat12.sym.gr
 #            - ./data/USA-road-d.FLA.sym.gr
 #            - ./data/2d-2e20.sym.gr
+
+parboil:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/parboil/"
+    execs:
+        - parboil-sad:
+            - -i ./data/default/input/reference.bin,./data/default/input/frame.bin -o out.bin
+
+        - parboil-sgemm:
+            - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,../data/medium/input/matrix2t.txt -o matrix3.txt
+
+        - parboil-stencil:
+            - -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
+
+        - parboil-cutcp:
+            - -i ./data/small/input/watbox.sl40.pqr -o lattice.dat
+
+        - parboil-mri-q:
+            - -i ./data/small/input/32_32_32_dataset.bin -o 32_32_32_dataset.out
+
+        - parboil-lbm:
+            -  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
+
+        - parboil-histo:
+            - -i ./data/default/input/img.bin -o ref.bmp -- 20 4
+
+        - parboil-spmv:
+            - -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
+
+        - parboil-mri-gridding:
+            - -i ./data/small/input/small.uks -o output.txt -- 32 0
+        
+        - parboil-bfs:
+            - -i ./data/1M/input/graph_input.dat -o bfs-1M.out
+            - -i ./data/NY/input/graph_input.dat -o bfs-NY.out
+            - -i ./data/SF/input/graph_input.dat -o bfs-SF.out
+            - -i ./data/UT/input/graph_input.dat -o bfs-UT.out
+
+        - parboil-tpacf:
+            - -i ./data/large/input/Datapnts.1,./data/large/input/Randompnts.1,./data/large/input/Randompnts.2,./data/large/input/Randompnts.3,./data/large/input/Randompnts.4,./data/large/input/Randompnts.5,./data/large/input/Randompnts.6,./data/large/input/Randompnts.7,./data/large/input/Randompnts.8,./data/large/input/Randompnts.9,./data/large/input/Randompnts.10,./data/large/input/Randompnts.11,./data/large/input/Randompnts.12,./data/large/input/Randompnts.13,./data/large/input/Randompnts.14,./data/large/input/Randompnts.15,./data/large/input/Randompnts.16,./data/large/input/Randompnts.17,./data/large/input/Randompnts.18,./data/large/input/Randompnts.19,./data/large/input/Randompnts.20,./data/large/input/Randompnts.21,./data/large/input/Randompnts.22,./data/large/input/Randompnts.23,./data/large/input/Randompnts.24,./data/large/input/Randompnts.25,./data/large/input/Randompnts.26,./data/large/input/Randompnts.27,./data/large/input/Randompnts.28,./data/large/input/Randompnts.29,./data/large/input/Randompnts.30,./data/large/input/Randompnts.31,./data/large/input/Randompnts.32,./data/large/input/Randompnts.33,./data/large/input/Randompnts.34,./data/large/input/Randompnts.35,./data/large/input/Randompnts.36,./data/large/input/Randompnts.37,./data/large/input/Randompnts.38,./data/large/input/Randompnts.39,./data/large/input/Randompnts.40,./data/large/input/Randompnts.41,./data/large/input/Randompnts.42,./data/large/input/Randompnts.43,./data/large/input/Randompnts.44,./data/large/input/Randompnts.45,./data/large/input/Randompnts.46,./data/large/input/Randompnts.47,./data/large/input/Randompnts.48,./data/large/input/Randompnts.49,./data/large/input/Randompnts.50,./data/large/input/Randompnts.51,./data/large/input/Randompnts.52,./data/large/input/Randompnts.53,./data/large/input/Randompnts.54,./data/large/input/Randompnts.55,./data/large/input/Randompnts.56,./data/large/input/Randompnts.57,./data/large/input/Randompnts.58,./data/large/input/Randompnts.59,./data/large/input/Randompnts.60,./data/large/input/Randompnts.61,./data/large/input/Randompnts.62,./data/large/input/Randompnts.63,./data/large/input/Randompnts.64,./data/large/input/Randompnts.65,./data/large/input/Randompnts.66,./data/large/input/Randompnts.67,./data/large/input/Randompnts.68,./data/large/input/Randompnts.69,./data/large/input/Randompnts.70,./data/large/input/Randompnts.71,./data/large/input/Randompnts.72,./data/large/input/Randompnts.73,./data/large/input/Randompnts.74,./data/large/input/Randompnts.75,./data/large/input/Randompnts.76,./data/large/input/Randompnts.77,./data/large/input/Randompnts.78,./data/large/input/Randompnts.79,./data/large/input/Randompnts.80,./data/large/input/Randompnts.81,./data/large/input/Randompnts.82,./data/large/input/Randompnts.83,./data/large/input/Randompnts.84,./data/large/input/Randompnts.85,./data/large/input/Randompnts.86,./data/large/input/Randompnts.87,./data/large/input/Randompnts.88,./data/large/input/Randompnts.89,./data/large/input/Randompnts.90,./data/large/input/Randompnts.91,./data/large/input/Randompnts.92,./data/large/input/Randompnts.93,./data/large/input/Randompnts.94,./data/large/input/Randompnts.95,./data/large/input/Randompnts.96,./data/large/input/Randompnts.97,./data/large/input/Randompnts.98,./data/large/input/Randompnts.99,./data/large/input/Randompnts.100 -o tpacf.out -- -n 100 -p 10391
+
+
+
+
+polybench:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - polybench-2DConvolution:
+            - 
+        - polybench-2mm:
+            - 
+        - polybench-3DConvolution:
+            -
+        - polybench-3mm:
+            - 
+        - polybench-atax:
+            -
+        - polybench-bicg:
+            -
+        - polybench-correlation:
+            -
+        - polybench-covariance:
+            -
+        - polybench-fdtd2d:
+            -
+        - polybench-gemm:
+            -
+        - polybench-gesummv:
+            - 
+        - polybench-gramschmidt:
+            -
+        - polybench-mvt:
+            -
+        - polybench-syr2k:
+            -
+        - polybench-syrk:
+            -
