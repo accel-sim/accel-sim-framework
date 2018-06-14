@@ -63,6 +63,13 @@ def parse_app_definition_yaml( def_yml, apps ):
             apps[suite + ":" + exe_name].append( ( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
                                  exe_name, args_list ) )
+            count = 0
+            for args in args_list:
+                apps[suite + ":" + exe_name + ":" + str(count) ] = []
+                apps[suite + ":" + exe_name + ":" + str(count) ].append( ( benchmark_yaml[suite]['exec_dir'],
+                                    benchmark_yaml[suite]['data_dirs'],
+                                    exe_name, [args] ) )
+                count += 1
     return
 
 def parse_config_definition_yaml( def_yml, defined_baseconfigs, defined_xtracfgs ):
