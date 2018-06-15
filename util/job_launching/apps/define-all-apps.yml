@@ -232,9 +232,9 @@ rodinia-3.1:
         - backprop-rodinia-3.1:
             - 65536
         - bfs-rodinia-3.1:
-            - ./data/graph1MW_6.txt
             - ./data/graph4096.txt
             - ./data/graph65536.txt
+            - ./data/graph1MW_6.txt
 #        - cfd-rodinia-3.1:
 #            - ./data/fvcorr.domn.097K
 #            - ./data/fvcorr.domn.193K
@@ -246,6 +246,7 @@ rodinia-3.1:
             - -f ./data/matrix4.txt
             - -s 16
         - heartwall-rodinia-3.1:
+            - ./data/test.avi 1
             - ./data/test.avi 20
         - hotspot-rodinia-3.1:
             - 512 2 2 ./data/temp_512 ./data/power_512 output.out
@@ -256,6 +257,7 @@ rodinia-3.1:
             - ./data/huffman/test1024_H2.206587175259.in
         - hybridsort-rodinia-3.1:
             - r
+            - ./data/500000.txt
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
 #        - kmeans-rodinia-3.1:
 #            - -o -i ./data/kdd_cup
@@ -284,6 +286,7 @@ rodinia-3.1:
         - srad_v2-rodinia-3.1:
             - 2048 2048 0 127 0 127 0.5 2
         - streamcluster-rodinia-3.1:
+            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
             - 10 20 256 65536 65536 1000 none output.txt 1
 
 ispass-2009:
