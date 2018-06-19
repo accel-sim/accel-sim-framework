@@ -494,3 +494,5 @@ shoc:
             -
         - shoc-Triad:
             -
+        - shoc-spmv-modified
+            -
