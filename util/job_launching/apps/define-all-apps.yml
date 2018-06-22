@@ -119,6 +119,10 @@ sdk-4.2:
             - dimX128 dimY128
         - vectorAdd:
             -
+        - scan:
+            -
+        - matriMul:
+            -
 
 microbench:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -245,11 +249,13 @@ rodinia-3.1:
         - gaussian-rodinia-3.1:
             - -f ./data/matrix4.txt
             - -s 16
+            - -f ./data/matrix208.txt
         - heartwall-rodinia-3.1:
             - ./data/test.avi 1
             - ./data/test.avi 20
         - hotspot-rodinia-3.1:
             - 512 2 2 ./data/temp_512 ./data/power_512 output.out
+            - 1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
         - hotspot3D-rodinia-3.1:
             - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
         # Only works with newer versions of CUDA
@@ -267,6 +273,7 @@ rodinia-3.1:
             - ./data/testfile.avi 5
         - lud-rodinia-3.1:
             - -s 256 -v
+            - -i ./data/512.dat
         - mummergpu-rodinia-3.1:
             - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
         - mycyocte-rodinia-3.1:
@@ -494,5 +501,13 @@ shoc:
             -
         - shoc-Triad:
             -
-        - shoc-spmv-modified
+
+
+custom_apps:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - shoc-spmv-modified:
             -
+        - rodinia-kmn-no-tex:
+            - -o -i ./data_dirs/cuda/rodinia/3.1/kmeans-rodinia-3.1/data/28k_4x_features.txt

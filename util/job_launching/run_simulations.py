@@ -46,9 +46,9 @@ class ConfigurationSpec:
 
     def run(self, build_handle, benchmarks, run_directory, cuda_version, libdir):
         for dir_bench in benchmarks:
-            exec_dir, run_dir, benchmark, self.command_line_args_list = dir_bench
+            exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
             full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_run_dir = os.path.join( this_directory, run_dir, benchmark.replace('/','_') )
+            full_data_dir = os.path.join( this_directory, data_dir, benchmark.replace('/','_') )
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
@@ -59,9 +59,9 @@ class ConfigurationSpec:
                 this_run_dir = run_directory +\
                             "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
                             "/" + self.run_subdir + "/"
-                self.setup_run_directory(full_run_dir, this_run_dir)
+                self.setup_run_directory(full_data_dir, this_run_dir, data_dir)
 
-                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
+                self.text_replace_torque_sim(full_data_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
@@ -118,13 +118,13 @@ class ConfigurationSpec:
     # Internal utility methods
     #########################################################################################
     # copies and links the necessary files to the run directory
-    def setup_run_directory(self, full_bin_dir, this_run_dir):
+    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir):
         if not os.path.isdir(this_run_dir):
             os.makedirs(this_run_dir)
 
-        files_to_copy_to_run_dir = glob.glob(os.path.join(full_bin_dir, "*.ptx")) +\
-                                   glob.glob(os.path.join(full_bin_dir, "*.cl")) +\
-                                   glob.glob(os.path.join(full_bin_dir, "*.h")) +\
+        files_to_copy_to_run_dir = glob.glob(os.path.join(full_data_dir, "*.ptx")) +\
+                                   glob.glob(os.path.join(full_data_dir, "*.cl")) +\
+                                   glob.glob(os.path.join(full_data_dir, "*.h")) +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.icnt") +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
@@ -136,11 +136,17 @@ class ConfigurationSpec:
             shutil.copyfile(file_to_cp,new_file)
         
         # link the data directory
-        if os.path.isdir(os.path.join(full_bin_dir, "data")):
+        benchmark_data_dir = os.path.join(full_data_dir, "data")
+        if os.path.isdir(benchmark_data_dir):
             if os.path.lexists(os.path.join(this_run_dir, "data")):
                 os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(os.path.join(full_bin_dir, "data"), os.path.join(this_run_dir,"data"))
-
+            os.symlink(benchmark_data_dir, os.path.join(this_run_dir,"data"))
+        
+        all_data_link = os.path.join(this_run_dir,"data_dirs")
+        if os.path.lexists(all_data_link):
+            os.remove(all_data_link)
+        if os.path.exists(os.path.join(this_directory, data_dir)):
+            os.symlink(os.path.join(this_directory, data_dir), all_data_link)
     # replaces all the "REAPLCE_*" strings in the torque.sim file
     def text_replace_torque_sim( self,full_run_dir,this_run_dir,benchmark, cuda_version, command_line_args,
                                  libpath, exec_dir, gpgpusim_build_handle ):
