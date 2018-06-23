@@ -121,7 +121,7 @@ sdk-4.2:
             -
         - scan:
             -
-        - matriMul:
+        - matrixMul:
             -
 
 microbench:
@@ -265,8 +265,9 @@ rodinia-3.1:
             - r
             - ./data/500000.txt
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
-#        - kmeans-rodinia-3.1:
-#            - -o -i ./data/kdd_cup
+        - kmeans-rodinia-3.1:
+            - -o -i ./data/kmeans/28k_4x_features.txt
+            - -o -i ./data/kdd_cup
         - lavaMD-rodinia-3.1:
             - -boxes1d 10
         - leukocyte-rodinia-3.1:
