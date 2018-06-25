@@ -46,15 +46,21 @@ sdk-4.2-scaled:
     data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
     execs:
         - vectorAdd:
+            - --size 4000000
             - --size 6000000
         - convolutionSeparable:
+            - --size 3072
             - --size 30720
         - fastWalshTransform:
+            - -logK 7 -logD 21
             - -logK 11 -logD 19
         - scalarProd:
+            - --size 8192
             - --size 13920
         - transpose:
             - dimX512 dimY512
+        - scan
+            -
 
 sdk-4.2:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -118,10 +124,6 @@ sdk-4.2:
         - transpose:
             - dimX128 dimY128
         - vectorAdd:
-            -
-        - scan:
-            -
-        - matrixMul:
             -
 
 microbench:
@@ -512,3 +514,5 @@ custom_apps:
             -
         - rodinia-kmn-no-tex:
             - -o -i ./data_dirs/cuda/rodinia/3.1/kmeans-rodinia-3.1/data/28k_4x_features.txt
+        - sdk-matrixMul-modified:
+            -
