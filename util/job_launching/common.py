@@ -19,7 +19,7 @@ def get_argfoldername( args ):
     else:
         foldername = re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())
         # For every long arg lists - create a hash of the input args
-        if len(args) > 256:
+        if len(str(args)) > 256:
             foldername = "hashed_args_" + hashlib.md5(args).hexdigest()
         return foldername
 
