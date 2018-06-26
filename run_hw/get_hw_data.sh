@@ -2,7 +2,7 @@ export DATA_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 TITANX_PASCAL_DATA=$DATA_ROOT/TITAN-X-PASCAL
 P100_PASCAL_DATA=$DATA_ROOT/TESLA-P100
 FERMI_GTX480_DATA=$DATA_ROOT/GTX480
-1080Ti_DATA=$DATA_ROOT/1080Ti
+TI1080_DATA=$DATA_ROOT/1080TI_PASCAL
 TITANV_DATA=$DATA_ROOT/TITANV
 
 if [ ! -d $TITANX_PASCAL_DATA ]; then
@@ -23,7 +23,7 @@ if [ ! -d $FERMI_GTX480_DATA ]; then
     rm fermi.gtx480.cycle.tgz
 fi
 
-if [ ! -d $1080Ti_DATA ]; then
+if [ ! -d $TI1080_DATA ]; then
     wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/pascal.1080ti.cycle.tgz
     tar -xzvf pascal.1080ti.cycle.tgz -C $DATA_ROOT
     rm pascal.1080ti.cycle.tgz
