@@ -40,11 +40,11 @@ def make_pretty_app_list(apps_included):
 
 def make_submission_quality_image(image_type, traces):
     data = []
-    markers =[dict(size = 5, color = 'rgba(0, 0, 0, 1.0)', line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 14,color = 'rgba(210,105,30, .3)',line = dict(width = 2,color = 'rgb(0, 0, 0)')),
-              dict(size = 10,color = 'rgba(0, 182, 0, .9)',line = dict(width = 2,)),
-              dict(size = 10,color = 'rgba(0, 0, 193, .9)',line = dict(width = 2,)),
-              dict(size = 10,color = 'rgba(155, 155, 155, .9)',line = dict(width = 2,))]
+    markers =[dict(size = 14,color = 'rgba(210,105,30, .4)'),
+              dict(size = 3, color = 'rgba(0, 0, 0, 1.0)'),
+              dict(size = 10,color = 'rgba(0, 182, 0, .9)'),
+              dict(size = 10,color = 'rgba(0, 0, 193, .9)'),
+              dict(size = 10,color = 'rgba(155, 155, 155, .9)')]
     count = 0
     annotations = []
     agg_cfg = ""
@@ -53,6 +53,9 @@ def make_submission_quality_image(image_type, traces):
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
+        trace.error_x.color = trace.marker.color
+        # Set the alpha on the error bars to be 30%
+        trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
         data.append(trace)
         annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc\n".format(err_dropped)
@@ -230,6 +233,15 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
     cfg = ""
     cfg_col = None
     cycle_file_count = options.cycle_runs_to_burn # Start at 3 - assume we burn the first 3 runs to get DVFS scaled up
+
+    # The filename passed in is from the groups of latest collected CSVs, but it is not the .3 file -
+    # this little piece of code makes sure we start at the .3 filename
+    beginning_file = csv_file[:-1] + str(options.cycle_runs_to_burn)
+    if os.path.exists(beginning_file):
+        csv_file = beginning_file
+    else:
+        print "WARNING -- {0} does not exist - using {1} instead.".format(beginning_file, csv_file)
+
     if os.path.exists(csv_file + ".{0}".format(cycle_file_count)):
         csv_file = csv_file + ".{0}".format(cycle_file_count)
     while processFiles:
@@ -301,6 +313,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kdata[kcount]["Name"]))
                         kcount += 1
                     continue
+        logger.log("Kernels found: {0}".format(kcount))
         # Drop the .cycle off the name
         cycle_file_count += 1
         no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
@@ -370,7 +383,9 @@ for root, dirs, files in os.walk(options.hardware_dir):
         csvs = glob.glob(os.path.join(csv_dir,"*.cycle*"))
         logger.log("Found HW cycle {0} csvs in {1}\n".format(len(csvs),csv_dir))
         if len(csvs) > 0:
-            parse_hw_csv(max(csvs, key=os.path.getctime),hw_data, os.path.join(os.path.basename(root),d), logger)
+            # Pass in the lexiconically sorted newest file name. Cannot use getm/ctime because these files are
+            # created at the same time on the local file system from a tarbal;.
+            parse_hw_csv(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger)
 
 
 #Get the simulator data
@@ -529,11 +544,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
-                title='Hardware {0}'.format(hw_cfg),
+                title='Hardware {0} {1}'.format(hw_cfg, correl.chart_name),
                 range=[0,max_axis_val*1.1]
             ),
             yaxis=dict(
-                title='GPGPU-Sim',
+                title='GPGPU-Sim {0}'.format(correl.chart_name),
                 range=[0,max_axis_val*1.1]
             ),
         )
