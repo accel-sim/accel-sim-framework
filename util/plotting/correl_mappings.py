@@ -4,6 +4,7 @@
 #   Every time you want to correlate a new configuration, you need to map it here.
 config_maps = \
 {
+    "PUB_TITANX": "TITAN X (Pascal)",
     "TITANX_P102": "TITAN X (Pascal)",
     "3.x_PASCALTITANX" : "TITAN X (Pascal)",
     "3.x_P100" :  "Tesla P100",
@@ -19,7 +20,8 @@ import collections
 CorrelStat = collections.namedtuple('CorrelStat', 'chart_name hw_eval hw_error sim_eval hw_name plotfile')
 correl_list = \
 [
-    CorrelStat(chart_name="Execution Cycles (1417 MHz)",
+    # 1417 MHz
+    CorrelStat(chart_name="Cycles",
         plotfile="titanx-p102-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1417",
         hw_error="np.max(hw[\"Duration\"])*1417 - np.average(hw[\"Duration\"])*1417,"+\
@@ -27,7 +29,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN X (Pascal)"
     ),
-    CorrelStat(chart_name="Execution Cycles (1400 MHz - 16-wide SIMD)",
+    # (1400 MHz - 16-wide SIMD)
+    CorrelStat(chart_name="Cycles",
         plotfile="gtx480-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1400",
         hw_error="np.max(hw[\"Duration\"])*1400 - np.average(hw[\"Duration\"])*1400,"+\
@@ -35,7 +38,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])*2",
         hw_name="GeForce GTX 480"
     ),
-    CorrelStat(chart_name="Execution Cycles (1480 MHz)",
+    # 1480 MHz
+    CorrelStat(chart_name="Cycles",
         plotfile="p100-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1480",
         hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
@@ -43,7 +47,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla P100"
     ),
-    CorrelStat(chart_name="Execution Cycles (1480 MHz)",
+    # 1480 MHz
+    CorrelStat(chart_name="Cycles",
         plotfile="1080ti-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1480",
         hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
@@ -51,6 +56,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="GeForce GTX 1080 Ti"
     ),
+
+    # Common, non-cycle stats
     CorrelStat(chart_name="Warp Instructions",
         plotfile="warp-inst.html",
         hw_eval="np.average(hw[\"inst_executed\"])",
