@@ -173,8 +173,8 @@ proxy-apps-doe2:
          - XSBench:
             - 12 small 0
             - 12 large 0
-#         - lulesh:
-#            -
+         - lulesh:
+            - 1e-7
 
 # pannotia
 pannotia:
