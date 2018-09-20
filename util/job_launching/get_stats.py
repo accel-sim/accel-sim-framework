@@ -79,7 +79,9 @@ parser.add_option("-n", "--no_kernel_delta", dest="no_kernel_delta", action="sto
 parser.add_option("-K", "--kernel_instance", dest="kernel_instance", action="store_true",
                   help="Print stats for each individual kernel the statistics for each named kernel")
 parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="store_true",
-                  help="Instread of apps as rows in the csv, make configs as rows.")
+                  help="instread of apps as rows in the csv, make configs as rows.")
+parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
+                  help="If an app crashed, still collect its data")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -230,7 +232,8 @@ for idx, app_and_args in enumerate(apps_and_args):
 
         if not exit_success:
             print "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile)
-            continue
+            if not options.ignore_failures:
+                continue
 
         if not options.per_kernel:
             if len(all_named_kernels[app_and_args]) == 0:
