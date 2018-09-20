@@ -6,6 +6,8 @@ config_maps = \
 {
     "PUB_TITANX": "TITAN X (Pascal)",
     "TITANX_P102": "TITAN X (Pascal)",
+    "TITANX": "TITAN X (Pascal)"
+    "TITANV": "TITAN V"
     "3.x_PASCALTITANX" : "TITAN X (Pascal)",
     "3.x_P100" :  "Tesla P100",
     "P100_HBM" : "Tesla P100",
