@@ -81,8 +81,8 @@ def get_csv_data_for_merge(filepath):
         kname = appargs_kname[ first_delimiter + 2: ]
         if appargs not in all_named_kernels:
             all_named_kernels[appargs] = []
+            app_and_args.append(appargs)
         all_named_kernels[appargs].append( kname )
-        app_and_args.append(appargs)
 
     # The assumption here is that every entry in each stats file is run with the same
     # git hash number, if not we are just going to warn and fail.
