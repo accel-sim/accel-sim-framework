@@ -26,8 +26,8 @@ rodinia_2.0-ft:
         - heartwall-rodinia-2.0-ft:
             - ./data/test.avi 1 ./data/result-1.txt
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
-#        - kmeans-rodinia-2.0-ft:
-#            - -i data/400.txt -g data/400-result.txt -o
+        - kmeans-rodinia-2.0-ft:
+            - -i data/400.txt -g data/400-result.txt -o
         - lud-rodinia-2.0-ft:
             - -v -b -i ./data/64.dat
         - nw-rodinia-2.0-ft:
@@ -88,9 +88,8 @@ sdk-4.2:
             -
         - convolutionSeparable:
             -
-        # Texture ops - question on if support makes sense.
-#        - convolutionTexture:
-#            -
+        - convolutionTexture:
+            -
         - cppIntegration:
             -
         - fastWalshTransform:
@@ -181,10 +180,9 @@ pannotia:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/pannotia/"
     execs:
-# Uses texture accesses
-#        - bc:
-#            - ./data/1k_128k.gr
-#            - ./data/2k_1M.gr
+        - bc:
+            - ./data/1k_128k.gr
+            - ./data/2k_1M.gr
         - color_max:
             - ./data/ecology1.graph 1
             - ./data/G3_circuit.graph 1
@@ -246,8 +244,8 @@ rodinia-3.1:
 #            - ./data/fvcorr.domn.193K
 #            - ./data/missile.domn.0.2M
         - dwt2d-rodinia-3.1:
-            - 192.bmp -d 192x192 -f -5 -l 3
-            - rgb.bmp -d 1024x1024 -f -5 -l 3
+            - ./data/192.bmp -d 192x192 -f -5 -l 3
+            - ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
         - gaussian-rodinia-3.1:
             - -f ./data/matrix4.txt
             - -s 16
@@ -332,10 +330,10 @@ lonestargpu-2.0:
     data_dirs: "../../benchmarks/data_dirs/cuda/lonestargpu-2.0/"
     execs:
         # Needs Texture
-#        - lonestar-bfs-atomic:
-#            - ./data/r4-2e20.gr
-#            - ./data/rmat20.gr
-#            - ./data/USA-road-d.NY.gr
+        - lonestar-bfs-atomic:
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
         - lonestar-bfs-wlw: 
@@ -359,12 +357,12 @@ lonestargpu-2.0:
             #deadlock
 #            - ./data/USA-road-d.NY.gr
         # Needs Texture
-#        - lonestar-sssp-wln: 
-#            - ./data/r4-2e20.gr
-#            - ./data/rmat20.gr
-#            - ./data/USA-road-d.NY.gr
-#            - ./data/USA-road-d.FLA.gr
-#            - ./data/USA-road-d.USA.gr
+        - lonestar-sssp-wln: 
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
+            - ./data/USA-road-d.FLA.gr
+            - ./data/USA-road-d.USA.gr
         # Some register sizing problems
 #        - lonestar-bfs-wlc: 
 #            - ./data/r4-2e20.gr
@@ -381,10 +379,10 @@ lonestargpu-2.0:
             - ./data/r1M 20
             - ./data/r5M 12
         # Needs Texture
-#        - lonestar-mst:
-#            - ./data/rmat12.sym.gr
-#            - ./data/USA-road-d.FLA.sym.gr
-#            - ./data/2d-2e20.sym.gr
+        - lonestar-mst:
+            - ./data/rmat12.sym.gr
+            - ./data/USA-road-d.FLA.sym.gr
+            - ./data/2d-2e20.sym.gr
 
 parboil:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
