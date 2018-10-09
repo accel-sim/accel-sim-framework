@@ -31,7 +31,10 @@ GTX480:
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
 PTXPLUS:
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 13"
+
+SM_2:
+    extra_params: "-gpgpu_ptx_force_max_capability 20"
 
 L1ON:
     extra_params: "-gmem_skip_L1D 0"
@@ -43,7 +46,13 @@ COPYK:
     extra_params: "-gpgpu_max_insn 2000000000"
 
 1B:
-    extra_params: "-gpgpu_max_insn 2000000000"
+    extra_params: "-gpgpu_max_insn 1000000000"
+
+100M:
+    extra_params: "-gpgpu_max_insn 100000000"
+
+FLUSHL1:
+    extra_params: "-gpgpu_flush_l1_cache 1"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
