@@ -24,6 +24,15 @@ correl_list = \
 [
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
+        plotfile="titanv-cycles.html",
+        hw_eval="np.average(hw[\"Duration\"])*1200",
+        hw_error="np.max(hw[\"Duration\"])*1200 - np.average(hw[\"Duration\"])*1200,"+\
+                 "np.average(hw[\"Duration\"])*1200 - np.min(hw[\"Duration\"])*1200",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="TITAN V"
+    ),
+    # 1417 MHz
+    CorrelStat(chart_name="Cycles",
         plotfile="titanx-p102-cycles.html",
         hw_eval="np.average(hw[\"Duration\"])*1417",
         hw_error="np.max(hw[\"Duration\"])*1417 - np.average(hw[\"Duration\"])*1417,"+\
@@ -125,6 +134,13 @@ correl_list = \
         sim_eval=
             "100*float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])/"+\
             "float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all"
+    ),
+    CorrelStat(chart_name="Occupancy",
+        plotfile="occupancy.html",
+        hw_eval="np.average(hw[\"achieved_occupancy\"])*100",
+        hw_error=None,
+        sim_eval="float(sim[\"gpu_occupancy\s*=\s*(.*)%\"])",
         hw_name="all"
     ),
 ]
