@@ -25,18 +25,21 @@ import datetime
 
 def make_pretty_app_list(apps_included):
     ret_str = "Application + Arguments :: Number Kernels Launched :: Average Error\n\n"
+    kernel_str = "Application + Arguments :: kname :: Error vs. hardware\n\n"
     app_list = apps_included.keys()
     app_list = sorted(app_list, key=lambda x: len(apps_included[x]), reverse=True)
     for app in app_list:
         if len(apps_included[app]) > 0:
             avg_err = 0.0
-            for err in apps_included[app]:
-                avg_err += err
+            for err,name in apps_included[app]:
+                avg_err += abs(err)
+                kernel_str += "{0} :: {1} :: {2:.2f}%\n".format(app, name, err)
             avg_err = avg_err / len(apps_included[app])
             ret_str += "{0} :: {1} :: {2:.2f}%\n".format(app, len(apps_included[app]), avg_err)
         else:
             ret_str += "{0} :: No kernels included in error calc".format(app)
-    return ret_str
+            kernel_str += "{0} :: No kernels included in error calc".format(app)
+    return ret_str, kernel_str
 
 def make_submission_quality_image(image_type, traces):
     data = []
@@ -50,6 +53,7 @@ def make_submission_quality_image(image_type, traces):
     agg_cfg = ""
     print_anno = ""
     applist_file_contents = ""
+    kernellist_file_contents = ""
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
@@ -60,21 +64,27 @@ def make_submission_quality_image(image_type, traces):
         annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc\n".format(err_dropped)
         agg_cfg += "." + cfg
-        applist_file_contents += "{0}\n{1}\n\n".format(cfg, make_pretty_app_list(apps_included))
+        app_str, kernel_str = make_pretty_app_list(apps_included)
+        applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
+        kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         count += 1
 
     layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
     plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
     appsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".appsincluded.txt")
+    kernelsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".kernelsincluded.txt")
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
     f = open(appsinludedname, 'w')
     f.write(applist_file_contents)
     f.close()
+    f = open(kernelsinludedname, 'w')
+    f.write(kernellist_file_contents)
+    f.close()
 
-    print "Plotting {0}: {1}\n{2}Apps included listed in {3}\n"\
-        .format(plotname, layout.title, print_anno, appsinludedname)
+    print "Plotting {0}: {1}\n{2}Apps included listed in {3}\nKerenels included listed in {4}\n"\
+        .format(plotname, layout.title, print_anno, appsinludedname, kernelsinludedname)
     TEXT_SIZE=22
 
 
@@ -86,14 +96,16 @@ def make_submission_quality_image(image_type, traces):
     png_layout.xaxis.titlefont.color='black'
     png_layout.xaxis.tickfont.size=TEXT_SIZE
     png_layout.xaxis.tickfont.color='black'
-    png_layout.xaxis.type="log"
+    if not options.linearplot:
+        png_layout.xaxis.type="log"
     png_layout.xaxis.autorange=True
 
     png_layout.yaxis.titlefont.size = TEXT_SIZE
     png_layout.yaxis.tickfont.size = TEXT_SIZE
     png_layout.yaxis.titlefont.color='black'
     png_layout.yaxis.tickfont.color='black'
-    png_layout.yaxis.type="log"
+    if not options.linearplot:
+        png_layout.yaxis.type="log"
     png_layout.yaxis.autorange=True
 
     png_layout.margin.t = 100
@@ -317,12 +329,18 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
         # Drop the .cycle off the name
         cycle_file_count += 1
         no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
+        possible_stats_fnames = [no_cycle_filename, no_cycle_filename + ".0"]
         next_cycle_filename = re.sub(r'(.*\.cycle).*', r'\1', csv_file) + ".{0}".format(cycle_file_count)
         if os.path.exists(next_cycle_filename):
             csv_file = next_cycle_filename
-        elif os.path.exists(no_cycle_filename) and not processedCycle and len(kdata) > 0:
-            processedCycle = True
-            csv_file = no_cycle_filename
+        elif not processedCycle and len(kdata) > 0:
+            for name in possible_stats_fnames:
+                if os.path.exists(name):
+                    processedCycle = True
+                    csv_file = name
+                    break
+            if not processedCycle:
+                processFiles = False
         else:
             processFiles = False
 
@@ -364,6 +382,8 @@ parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type=
                        " N runs defined by this variable. This helps to eliminate HW cycle error caused"+\
                        " by DVFS",
                   default=3)
+parser.add_option("-L", "--linearplot", dest="linearplot", action="store_true",
+                  help="By default, plots are log/log. Set -L for linear x/y axises")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -493,7 +513,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                                 num_under += 1
                             if abs(err) < options.err_calc_threadhold:
                                 errs.append(abs(err))
-                                apps_included[appargs].append(abs(err))
+                                apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
                             else:
                                 err_dropped_stats += 1
                         label_array.append(appargs + "--" + sim_klist[count]["Kernel"] +
