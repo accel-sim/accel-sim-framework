@@ -31,7 +31,7 @@ GTX480:
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
 PTXPLUS:
-    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 13"
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
 SM_2:
     extra_params: "-gpgpu_ptx_force_max_capability 20"
