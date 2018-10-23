@@ -2,29 +2,11 @@
 
 # Volta
 TITANV:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM7_TITANV/gpgpusim.config"
-
-# Pascal
-GTX1080:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM6_GTX1080/gpgpusim.config"
-
-TITANX:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM6_TITANX/gpgpusim.config"
-
-P100:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM6_P100/gpgpusim.config"
-
-# Maxwell
-# Note: This is small card that takes ~2x as long to simulate...
-GTX750:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM5_GTX750/gpgpusim.config"
-
-# Kepler
-# We have not correlated any Kepler cards
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV/gpgpusim.config"
 
 # Fermi
 GTX480:
-    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM2_GTX480/gpgpusim.config"
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
 ############################################################################
 
 # Extra configs - these are composable.
