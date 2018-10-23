@@ -1,2 +1,9 @@
 bin/
 sim_run_*
+run_hw/
+benchmarks/data_dirs/*.tgz
+benchmarks/data_dirs/dragon
+benchmarks/data_dirs/pannotia
+benchmarks/data_dirs/proxy-apps-doe
+benchmarks/src/cuda/dragon_li/cdp_bin/
+*.DS_Store
