@@ -1,0 +1,516 @@
+# The format is:
+# suite_name:
+#   exec_dir: <location of the executables, relative to the run_simulations.py script>
+#   data_dir: <location of the directories containing benchmark data>
+#   execs:
+#       - <exec_name_1>:
+#           - <commandline arg_list 1> # Leave blank if no arguments
+#           - <commandline arg_list 2>
+#           ...
+#       - <exec_name_2>
+#           ...
+#       ...
+# If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
+
+# Rodinia 2.0 implemented with a pass/fail functional test
+rodinia_2.0-ft:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/2.0-ft/"
+    execs:
+        - backprop-rodinia-2.0-ft:
+            - 4096 ./data/result-4096.txt
+        - bfs-rodinia-2.0-ft:
+            - ./data/graph4096.txt ./data/graph4096-result.txt
+        - hotspot-rodinia-2.0-ft:
+            - 30 6 40 ./data/result_30_6_40.txt
+        - heartwall-rodinia-2.0-ft:
+            - ./data/test.avi 1 ./data/result-1.txt
+        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
+        - kmeans-rodinia-2.0-ft:
+            - -i data/400.txt -g data/400-result.txt -o
+        - lud-rodinia-2.0-ft:
+            - -v -b -i ./data/64.dat
+        - nw-rodinia-2.0-ft:
+            - 128 10 ./data/result_128_10.txt
+        - nn-rodinia-2.0-ft:
+            - ./data/filelist_4 3 30 90 ./data/filelist_4_3_30_90-result.txt
+        - pathfinder-rodinia-2.0-ft:
+            - 1000 20 5 ./data/result_1000_20_5.txt
+        - srad_v2-rodinia-2.0-ft:
+            - ./data/matrix128x128.txt 1 150 1 100 .5 2 ./data/result_matrix128x128_1_150_1_100_.5_2.txt
+        - streamcluster-rodinia-2.0-ft:
+            - 3 6 16 1024 1024 100 none output.txt 1 ./data/result_3_6_16_1024_1024_100_none_1.txt
+
+sdk-4.2-scaled:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
+    execs:
+        - vectorAdd:
+            - --size 4000000
+            - --size 6000000
+        - convolutionSeparable:
+            - --size 3072
+            - --size 30720
+        - fastWalshTransform:
+            - -logK 7 -logD 21
+            - -logK 11 -logD 19
+        - scalarProd:
+            - --size 8192
+            - --size 13920
+        - transpose:
+            - dimX512 dimY512
+        - scan:
+            -
+
+sdk-4.2:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
+    execs:
+        - BlackScholes:
+            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - MonteCarlo:
+#            -
+        - SobolQRNG:
+            -
+        - alignedTypes:
+            -
+        - asyncAPI:
+            -
+        - bandwidthTest:
+            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - binomialOptions:
+#            -
+        - clock:
+            -
+        - convolutionSeparable:
+            -
+        - convolutionTexture:
+            -
+        - cppIntegration:
+            -
+        - fastWalshTransform:
+            -
+        - histogram:
+            -
+        - mergeSort:
+            -
+        # complex compile flow makes 2 versions of the same kernel in
+        # CUDA 9.1 - screws up parser. Not worth continued support.
+#        - quasirandomGenerator:
+#            -
+        - reduction:
+            -
+        - scalarProd:
+            -
+        - simpleAtomicIntrinsics:
+            - 128 16
+        - simpleP2P:
+            -
+        - simpleTemplates:
+            -
+        - simpleVoteIntrinsics:
+            -
+        - simpleZeroCopy:
+            -
+        - sortingNetworks:
+            -
+#        - template:
+#            -
+        - transpose:
+            - dimX128 dimY128
+        - vectorAdd:
+            -
+
+microbench:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/src/microbench/"
+    execs:
+        - microbench-oo-vfunc-test:
+            - 
+
+
+### Apps without FTs
+
+# dragon-naive
+dragon-naive:
+    exec_dir: "../../benchmarks/src/cuda/dragon_li/bin/$CUDA_VERSION/"
+    data_dirs: "../../benchmarks/data_dirs/dragon/"
+    execs:
+        - testBfs:
+            - -g ./data/sample_cdp.gr -e -v
+            - -g ./data/citationCiteseer.graph -f metis -e -v
+            - -g ./data/coPapersDBLP.graph -f metis -e -v --sf 1.5
+        - testAmr:
+            - -v -e -r 20
+        - testSssp:
+            - -g ./data/sample_cdp.gr -e -v
+            - -g ./data/citationCiteseer.graph -f metis -e -v
+            - -g ./data/coPapersDBLP.graph -f metis -e -v
+        - testJoin:
+            - -v -e -l 204800 -r 204800
+
+
+#proxy-apps-doe
+proxy-apps-doe1:
+    exec_dir: "../../benchmarks/src/cuda/proxy-apps-doe/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+            # Does not compile
+#         - comd/CoMDCUDA:
+#            - p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
+         - cns/cns_all:
+            - 64 32 32 1
+
+proxy-apps-doe2:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/proxy-apps-doe/"
+    execs:
+         - XSBench:
+            - 12 small 0
+            - 12 large 0
+         - lulesh:
+            - 1e-7
+
+# pannotia
+pannotia:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/pannotia/"
+    execs:
+        - bc:
+            - ./data/1k_128k.gr
+            - ./data/2k_1M.gr
+        - color_max:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - color_maxmin:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - fw:
+            - ./data/256_16384.gr
+# This input is taking more thatn 17 hours to reach 2B insn
+#            - ./data/512_65536.gr
+        - fw_block:
+            - ./data/256_16384.gr
+            - ./data/512_65536.gr
+        - mis:
+            - ./data/ecology1.graph 1
+            - ./data/G3_circuit.graph 1
+        - pagerank:
+            - ./data/coAuthorsDBLP.graph 1
+        - pagerank_spmv:
+            - ./data/coAuthorsDBLP.graph 1
+#        - sssp:
+#            - ./data/USA-road-d.NW.gr 0
+#            - ./data/USA-road-d.NY.gr 0
+#        - sssp_ell:
+#            - ./data/USA-road-d.NW.gr 0
+#            - ./data/USA-road-d.NY.gr 0
+
+dragon-cdp:
+    exec_dir: "../../benchmarks/src/cuda/dragon_li/cdp_bin/$CUDA_VERSION/"
+    data_dirs: "../../benchmarks/data_dirs/dragon/"
+    execs:
+        - testBfs-cdp:
+            - -g ./data/sample_cdp.gr -e -v --cdp
+            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
+            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5
+#        - testAmr-cdp:
+#            - -v -e --cdp -r 20
+        - testSssp-cdp:
+            - -g ./data/sample_cdp.gr -e -v --cdp
+            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
+            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp
+#        - testJoin-cdp:
+#            - -v -e --cdp -l 204800 -r 204800
+
+rodinia-3.1:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/3.1/"
+    execs:
+        - b+tree-rodinia-3.1:
+            - file ./data/mil.txt command ./data/command.txt
+        - backprop-rodinia-3.1:
+            - 65536
+        - bfs-rodinia-3.1:
+            - ./data/graph4096.txt
+            - ./data/graph65536.txt
+            - ./data/graph1MW_6.txt
+#        - cfd-rodinia-3.1:
+#            - ./data/fvcorr.domn.097K
+#            - ./data/fvcorr.domn.193K
+#            - ./data/missile.domn.0.2M
+        - dwt2d-rodinia-3.1:
+            - ./data/192.bmp -d 192x192 -f -5 -l 3
+            - ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+        - gaussian-rodinia-3.1:
+            - -f ./data/matrix4.txt
+            - -s 16
+            - -f ./data/matrix208.txt
+        - heartwall-rodinia-3.1:
+            - ./data/test.avi 1
+            - ./data/test.avi 20
+        - hotspot-rodinia-3.1:
+            - 512 2 2 ./data/temp_512 ./data/power_512 output.out
+            - 1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+        - hotspot3D-rodinia-3.1:
+            - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
+        # Only works with newer versions of CUDA
+        - huffman-rodinia-3.1:
+            - ./data/huffman/test1024_H2.206587175259.in
+        - hybridsort-rodinia-3.1:
+            - r
+            - ./data/500000.txt
+        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
+        - kmeans-rodinia-3.1:
+            - -o -i ./data/28k_4x_features.txt
+            - -o -i ./data/kdd_cup
+        - lavaMD-rodinia-3.1:
+            - -boxes1d 10
+        - leukocyte-rodinia-3.1:
+            - ./data/testfile.avi 5
+        - lud-rodinia-3.1:
+            - -s 256 -v
+            - -i ./data/512.dat
+        - mummergpu-rodinia-3.1:
+            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
+        - mycyocte-rodinia-3.1:
+            - 100 1 0
+        - nn-rodinia-3.1:
+            - ./data/filelist_4 -r 5 -lat 30 -lng 90
+        - nw-rodinia-3.1:
+            - 2048 10
+        - particlefilter_float-rodinia-3.1:
+            - -x 128 -y 128 -z 10 -np 1000
+        - particlefilter_naive-rodinia-3.1:
+            - -x 128 -y 128 -z 10 -np 1000
+        - pathfinder-rodinia-3.1:
+            - 100000 100 20 > result.txt
+        - srad_v1-rodinia-3.1:
+            - 100 0.5 502 458
+        - srad_v2-rodinia-3.1:
+            - 2048 2048 0 127 0 127 0.5 2
+        - streamcluster-rodinia-3.1:
+            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
+            - 10 20 256 65536 65536 1000 none output.txt 1
+
+ispass-2009:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/ispass-2009/"
+    execs:
+        - ispass-2009-AES:
+            - e 128 ./data/output.bmp ./data/key128.txt
+        - ispass-2009-BFS:
+            - ./data/graph65536.txt
+        # Compile Issues
+        #benchmarks/cp/build/cuda_short/cp
+        #../bin/release/DG ./data/cubeK268.neu
+        - ispass-2009-LIB:
+            -
+        - ispass-2009-LPS:
+            -
+        - ispass-2009-MUM:
+            - ./data/NC_003997.20k.fna ./data/NC_003997_q25bp.50k.fna
+        - ispass-2009-NN:
+            - 28
+        - ispass-2009-NQU:
+            -
+        - ispass-2009-RAY:
+            - 256 256
+        - ispass-2009-STO:
+            - 
+        - ispass-2009-WP:
+            - < ./data/args
+
+lonestargpu-2.0:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/lonestargpu-2.0/"
+    execs:
+        # Needs Texture
+        - lonestar-bfs-atomic:
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
+#            - ./data/USA-road-d.FLA.gr
+#            - ./data/USA-road-d.USA.gr
+        - lonestar-bfs-wlw: 
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
+#            - ./data/USA-road-d.FLA.gr
+#            - ./data/USA-road-d.USA.gr
+        - lonestar-bfs-wla: 
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
+        # bad regs
+#        - lonestar-sssp:
+#            - ./data/r4-2e20.gr
+#            - ./data/rmat20.gr
+#            - ./data/USA-road-d.NY.gr
+        - lonestar-sssp-wlc:
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            #deadlock
+#            - ./data/USA-road-d.NY.gr
+        # Needs Texture
+        - lonestar-sssp-wln: 
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
+            - ./data/USA-road-d.FLA.gr
+            - ./data/USA-road-d.USA.gr
+        # Some register sizing problems
+#        - lonestar-bfs-wlc: 
+#            - ./data/r4-2e20.gr
+#            - ./data/rmat20.gr
+#            - ./data/USA-road-d.NY.gr
+#            - ./data/USA-road-d.FLA.gr
+#            - ./data/USA-road-d.USA.gr
+        - lonestar-bh:
+            - 30000 50 0
+            - 300000 10 0
+            - 3000000 2 0
+        - lonestar-dmr:
+            - ./data/250k.2 20
+            - ./data/r1M 20
+            - ./data/r5M 12
+        # Needs Texture
+        - lonestar-mst:
+            - ./data/rmat12.sym.gr
+            - ./data/USA-road-d.FLA.sym.gr
+            - ./data/2d-2e20.sym.gr
+
+parboil:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/parboil/"
+    execs:
+        - parboil-sad:
+            - -i ./data/default/input/reference.bin,./data/default/input/frame.bin -o out.bin
+
+        - parboil-sgemm:
+            - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+
+        - parboil-stencil:
+            - -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
+
+        - parboil-cutcp:
+            - -i ./data/small/input/watbox.sl40.pqr -o lattice.dat
+
+        - parboil-mri-q:
+            - -i ./data/small/input/32_32_32_dataset.bin -o 32_32_32_dataset.out
+
+        - parboil-lbm:
+            -  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
+
+        - parboil-histo:
+            - -i ./data/default/input/img.bin -o ref.bmp -- 20 4
+
+        - parboil-spmv:
+            - -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
+
+        - parboil-mri-gridding:
+            - -i ./data/small/input/small.uks -o output.txt -- 32 0
+        
+        - parboil-bfs:
+            - -i ./data/1M/input/graph_input.dat -o bfs-1M.out
+            - -i ./data/NY/input/graph_input.dat -o bfs-NY.out
+            - -i ./data/SF/input/graph_input.dat -o bfs-SF.out
+            - -i ./data/UT/input/graph_input.dat -o bfs-UT.out
+
+        - parboil-tpacf:
+            - -i ./data/large/input/Datapnts.1,./data/large/input/Randompnts.1,./data/large/input/Randompnts.2,./data/large/input/Randompnts.3,./data/large/input/Randompnts.4,./data/large/input/Randompnts.5,./data/large/input/Randompnts.6,./data/large/input/Randompnts.7,./data/large/input/Randompnts.8,./data/large/input/Randompnts.9,./data/large/input/Randompnts.10,./data/large/input/Randompnts.11,./data/large/input/Randompnts.12,./data/large/input/Randompnts.13,./data/large/input/Randompnts.14,./data/large/input/Randompnts.15,./data/large/input/Randompnts.16,./data/large/input/Randompnts.17,./data/large/input/Randompnts.18,./data/large/input/Randompnts.19,./data/large/input/Randompnts.20,./data/large/input/Randompnts.21,./data/large/input/Randompnts.22,./data/large/input/Randompnts.23,./data/large/input/Randompnts.24,./data/large/input/Randompnts.25,./data/large/input/Randompnts.26,./data/large/input/Randompnts.27,./data/large/input/Randompnts.28,./data/large/input/Randompnts.29,./data/large/input/Randompnts.30,./data/large/input/Randompnts.31,./data/large/input/Randompnts.32,./data/large/input/Randompnts.33,./data/large/input/Randompnts.34,./data/large/input/Randompnts.35,./data/large/input/Randompnts.36,./data/large/input/Randompnts.37,./data/large/input/Randompnts.38,./data/large/input/Randompnts.39,./data/large/input/Randompnts.40,./data/large/input/Randompnts.41,./data/large/input/Randompnts.42,./data/large/input/Randompnts.43,./data/large/input/Randompnts.44,./data/large/input/Randompnts.45,./data/large/input/Randompnts.46,./data/large/input/Randompnts.47,./data/large/input/Randompnts.48,./data/large/input/Randompnts.49,./data/large/input/Randompnts.50,./data/large/input/Randompnts.51,./data/large/input/Randompnts.52,./data/large/input/Randompnts.53,./data/large/input/Randompnts.54,./data/large/input/Randompnts.55,./data/large/input/Randompnts.56,./data/large/input/Randompnts.57,./data/large/input/Randompnts.58,./data/large/input/Randompnts.59,./data/large/input/Randompnts.60,./data/large/input/Randompnts.61,./data/large/input/Randompnts.62,./data/large/input/Randompnts.63,./data/large/input/Randompnts.64,./data/large/input/Randompnts.65,./data/large/input/Randompnts.66,./data/large/input/Randompnts.67,./data/large/input/Randompnts.68,./data/large/input/Randompnts.69,./data/large/input/Randompnts.70,./data/large/input/Randompnts.71,./data/large/input/Randompnts.72,./data/large/input/Randompnts.73,./data/large/input/Randompnts.74,./data/large/input/Randompnts.75,./data/large/input/Randompnts.76,./data/large/input/Randompnts.77,./data/large/input/Randompnts.78,./data/large/input/Randompnts.79,./data/large/input/Randompnts.80,./data/large/input/Randompnts.81,./data/large/input/Randompnts.82,./data/large/input/Randompnts.83,./data/large/input/Randompnts.84,./data/large/input/Randompnts.85,./data/large/input/Randompnts.86,./data/large/input/Randompnts.87,./data/large/input/Randompnts.88,./data/large/input/Randompnts.89,./data/large/input/Randompnts.90,./data/large/input/Randompnts.91,./data/large/input/Randompnts.92,./data/large/input/Randompnts.93,./data/large/input/Randompnts.94,./data/large/input/Randompnts.95,./data/large/input/Randompnts.96,./data/large/input/Randompnts.97,./data/large/input/Randompnts.98,./data/large/input/Randompnts.99,./data/large/input/Randompnts.100 -o tpacf.out -- -n 100 -p 10391
+
+
+polybench:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - polybench-2DConvolution:
+            - 
+        - polybench-2mm:
+            - 
+        - polybench-3DConvolution:
+            -
+        - polybench-3mm:
+            - 
+        - polybench-atax:
+            -
+        - polybench-bicg:
+            -
+        - polybench-correlation:
+            -
+        - polybench-covariance:
+            -
+        - polybench-fdtd2d:
+            -
+        - polybench-gemm:
+            -
+        - polybench-gesummv:
+            - 
+        - polybench-gramschmidt:
+            -
+        - polybench-mvt:
+            -
+        - polybench-syr2k:
+            -
+        - polybench-syrk:
+            -
+
+shoc:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - shoc-BFS:
+            -
+        - shoc-BusSpeedDownload:
+            -
+        - shoc-BusSpeedReadback:
+            - 
+        - shoc-DeviceMemory:
+            -
+        - shoc-FFT:
+            -
+        - shoc-GEMM:
+            -
+        - shoc-MaxFlops:
+            -
+        - shoc-MD:
+            -
+        - shoc-MD5Hash:
+            -
+        - shoc-NeuralNet:
+            -
+        - shoc-QTC:
+            -
+        - shoc-Reduction:
+            -
+        - shoc-S3D:
+            -
+        - shoc-Scan:
+            -
+        - shoc-Sort:
+            -
+        - shoc-Spmv:
+            -
+        - shoc-Stability:
+            -
+        - shoc-Stencil2D:
+            -
+        - shoc-Triad:
+            -
+
+
+custom_apps:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - shoc-spmv-modified:
+            -
+        - rodinia-kmn-no-tex:
+            - -o -i ./data_dirs/cuda/rodinia/3.1/kmeans-rodinia-3.1/data/28k_4x_features.txt
+        - sdk-matrixMul-modified:
+            - 512
