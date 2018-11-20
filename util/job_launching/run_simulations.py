@@ -15,7 +15,7 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_so_name( so_path ):
-    objdump_out_filename = this_directory + "so_objdump_out.txt"
+    objdump_out_filename = this_directory + "so_objdump_out.{0}.txt".format(os.getpid())
     objdump_out_file = open(objdump_out_filename, 'w+')
     subprocess.call(["objdump", "-p", so_path], stdout=objdump_out_file)
     objdump_out_file.seek(0)
@@ -46,30 +46,27 @@ class ConfigurationSpec:
 
     def run(self, build_handle, benchmarks, run_directory, cuda_version, libdir):
         for dir_bench in benchmarks:
-            exec_dir, run_dir, benchmark, self.command_line_args_list = dir_bench
+            exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
             full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_run_dir = os.path.join( this_directory, run_dir, benchmark )
+            full_data_dir = os.path.join( this_directory, data_dir, benchmark.replace('/','_') )
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
-                if args == "" or args == None:
-                    self.benchmark_args_subdirs[args] = "NO_ARGS"
-                else:
-                    self.benchmark_args_subdirs[args] = re.sub(r"[^a-z^A-Z^0-9]", "_", args.strip())
+                self.benchmark_args_subdirs[args] = common.get_argfoldername( args )
 
 
             for args in self.command_line_args_list:
                 this_run_dir = run_directory +\
-                            "/" + benchmark + "/" + self.benchmark_args_subdirs[args] +\
+                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
                             "/" + self.run_subdir + "/"
-                self.setup_run_directory(full_run_dir, this_run_dir)
+                self.setup_run_directory(full_data_dir, this_run_dir, data_dir)
 
-                self.text_replace_torque_sim(full_run_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir)
-                self.append_gpgpusim_config(full_run_dir, this_run_dir, self.config_file)
+                self.text_replace_torque_sim(full_data_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
+                self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
-                    torque_out_filename = this_directory + "torque_out.txt"
+                    torque_out_filename = this_directory + "torque_out.{0}.txt".format(os.getpid())
                     torque_out_file = open(torque_out_filename, 'w+')
                     saved_dir = os.getcwd()
                     os.chdir(this_run_dir)
@@ -89,39 +86,45 @@ class ConfigurationSpec:
                     torque_out_file.close()
                     os.remove(torque_out_filename)
                     os.chdir(saved_dir)
-        
-                    # Dump the benchmark description to the logfile
-                    if not os.path.exists(this_directory + "logfiles/"):
-                        os.makedirs(this_directory + "logfiles/")
-                    now_time = datetime.datetime.now()
-                    day_string = now_time.strftime("%y.%m.%d-%A")
-                    time_string = now_time.strftime("%H:%M:%S")
-                    log_name = "sim_log.{0}".format(options.launch_name)
-                    logfile = open(this_directory +\
-                                   "logfiles/"+ log_name + "." +\
-                                   day_string + ".txt",'a')
-                    print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
-                           ( time_string ,\
-                           torque_out ,\
-                           benchmark ,\
-                           self.benchmark_args_subdirs[args] ,\
-                           self.run_subdir,\
-                           benchmark,\
-                           build_handle )
-                    logfile.close()
+
+                    if len(torque_out) > 0:
+                        # Dump the benchmark description to the logfile
+                        if not os.path.exists(this_directory + "logfiles/"):
+                            # In the very rare case that concurrent builds try to make the directory at the same time
+                            # (after the test to os.path.exists -- this has actually happened...)
+                            try:
+                                os.makedirs(this_directory + "logfiles/")
+                            except:
+                                pass
+                        now_time = datetime.datetime.now()
+                        day_string = now_time.strftime("%y.%m.%d-%A")
+                        time_string = now_time.strftime("%H:%M:%S")
+                        log_name = "sim_log.{0}".format(options.launch_name)
+                        logfile = open(this_directory +\
+                                       "logfiles/"+ log_name + "." +\
+                                       day_string + ".txt",'a')
+                        print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
+                               ( time_string ,\
+                               torque_out ,\
+                               benchmark ,\
+                               self.benchmark_args_subdirs[args] ,\
+                               self.run_subdir,\
+                               benchmark,\
+                               build_handle )
+                        logfile.close()
             self.benchmark_args_subdirs.clear()
 
     #########################################################################################
     # Internal utility methods
     #########################################################################################
     # copies and links the necessary files to the run directory
-    def setup_run_directory(self, full_bin_dir, this_run_dir):
+    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir):
         if not os.path.isdir(this_run_dir):
             os.makedirs(this_run_dir)
 
-        files_to_copy_to_run_dir = glob.glob(os.path.join(full_bin_dir, "*.ptx")) +\
-                                   glob.glob(os.path.join(full_bin_dir, "*.cl")) +\
-                                   glob.glob(os.path.join(full_bin_dir, "*.h")) +\
+        files_to_copy_to_run_dir = glob.glob(os.path.join(full_data_dir, "*.ptx")) +\
+                                   glob.glob(os.path.join(full_data_dir, "*.cl")) +\
+                                   glob.glob(os.path.join(full_data_dir, "*.h")) +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.icnt") +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
@@ -133,14 +136,20 @@ class ConfigurationSpec:
             shutil.copyfile(file_to_cp,new_file)
         
         # link the data directory
-        if os.path.isdir(os.path.join(full_bin_dir, "data")):
+        benchmark_data_dir = os.path.join(full_data_dir, "data")
+        if os.path.isdir(benchmark_data_dir):
             if os.path.lexists(os.path.join(this_run_dir, "data")):
                 os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(os.path.join(full_bin_dir, "data"), os.path.join(this_run_dir,"data"))
-
+            os.symlink(benchmark_data_dir, os.path.join(this_run_dir,"data"))
+        
+        all_data_link = os.path.join(this_run_dir,"data_dirs")
+        if os.path.lexists(all_data_link):
+            os.remove(all_data_link)
+        if os.path.exists(os.path.join(this_directory, data_dir)):
+            os.symlink(os.path.join(this_directory, data_dir), all_data_link)
     # replaces all the "REAPLCE_*" strings in the torque.sim file
     def text_replace_torque_sim( self,full_run_dir,this_run_dir,benchmark, cuda_version, command_line_args,
-                                 libpath, exec_dir ):
+                                 libpath, exec_dir, gpgpusim_build_handle ):
         # get the pre-launch sh commands
         prelaunch_filename =  full_run_dir +\
                              "benchmark_pre_launch_command_line.txt"
@@ -167,7 +176,13 @@ class ConfigurationSpec:
         else:
             txt_args = command_line_args
 
-        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args],
+        if os.getenv("TORQUE_QUEUE_NAME") == None:
+            queue_name = "batch"
+        else:
+            queue_name = os.getenv("TORQUE_QUEUE_NAME")
+
+        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
+                                gpgpusim_build_handle,
                             "NODES":"1", 
                             "GPGPUSIM_ROOT":os.getenv("GPGPUSIM_ROOT"),
                             "LIBPATH": libpath,
@@ -176,6 +191,7 @@ class ConfigurationSpec:
                             "BENCHMARK_SPECIFIC_COMMAND":benchmark_command_line,
                             "PATH":os.getenv("PATH"),
                             "EXEC_NAME":exec_name,
+                            "QUEUE_NAME":queue_name,
                             "COMMAND_LINE":txt_args}
         torque_text = open(this_directory + "torque.sim").read().strip()
         for entry in replacement_dict:
@@ -185,12 +201,13 @@ class ConfigurationSpec:
         open(this_run_dir + "torque.sim", 'w').write(torque_text)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
-    def append_gpgpusim_config(self,full_bin_dir,this_run_dir, config_text_file):
-        benchmark_spec_opts_file = os.path.join( full_bin_dir, "benchmark_options.txt" )
+    def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
+        benchmark_spec_opts_file = os.path.join( this_directory, "..", "..", "benchmarks",
+            "app-specific-gpgpu-sim-options", bench_name, "benchmark_options.txt" )
         benchmark_spec_opts = ""
         if(os.path.isfile(benchmark_spec_opts_file)):
             f = open(benchmark_spec_opts_file)
-            benchmark_spec_opts_line_args = f.read().strip()
+            benchmark_spec_opts = f.read().strip()
             f.close()
 
         config_text = open(config_text_file).read()
@@ -207,7 +224,7 @@ if str(os.getenv("GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN")) != "1":
     sys.exit("ERROR - Please run setup_environment before running this script")
 
 
-cuda_version = common.get_cuda_version()
+cuda_version = common.get_cuda_version( this_directory )
 
 if options.run_directory == "":
     options.run_directory = os.path.join(this_directory, "../../sim_run_%s"%cuda_version)
@@ -223,17 +240,16 @@ so_path = os.path.join( options.so_dir, "libcudart.so" )
 version_string = extract_so_name( so_path )
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
-    os.makedirs( running_so_dir )
+    # In the very rare case that concurrent builds try to make the directory at the same time
+    # (after the test to os.path.exists -- this has actually happened...)
+    try:
+        os.makedirs( running_so_dir )
+    except:
+        pass
     shutil.copy( so_path, running_so_dir )
 options.so_dir = running_so_dir
 
-options.benchmark_file = common.file_option_test(options.benchmark_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "benchmarks.yml"),
-    this_directory )
-options.configs_file = common.file_option_test(options.configs_file,
-    os.path.join( this_directory, "regression_recipies", "rodinia_2.0-ft", "configs.yml"),
-    this_directory )
-
+common.load_defined_yamls()
 
 # Test for the existance of torque on the system
 if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").split(os.pathsep)]):
@@ -242,16 +258,18 @@ if not any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").s
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
     exit("ERROR - Cannot find nvcc PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
 
-benchmarks = common.parse_app_yml( options.benchmark_file )
 
-cfgs = common.parse_config_yml( options.configs_file )
+benchmarks = []
+benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
+
+cfgs = common.gen_configs_from_list( options.configs_list.split(",") )
 configurations = []
 for config in cfgs:
     configurations.append( ConfigurationSpec( config ) )
 
 print("Running Simulations with GPGPU-Sim built from \n{0}\n ".format(version_string) +
-      "\nUsing configs_file " + options.configs_file +
-      "\nBenchmark File " + options.benchmark_file)
+      "\nUsing configs: " + options.configs_list +
+      "\nBenchmark: " + options.benchmark_list)
 
 for config in configurations:
     config.my_print()

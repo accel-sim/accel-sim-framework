@@ -1,0 +1,54 @@
+# Basefile Configs
+
+# Volta
+TITANV:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV/gpgpusim.config"
+
+# Fermi
+GTX480:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
+############################################################################
+
+# Extra configs - these are composable.
+# The names here will be appended to the basefile name with hyphens
+#   For example TITANX-L1ON-PTXPLUS
+PTXPLUS:
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
+
+SM_2:
+    extra_params: "-gpgpu_ptx_force_max_capability 20"
+
+L1ON:
+    extra_params: "-gmem_skip_L1D 0"
+
+COPYK:
+    extra_params: "-perf_sim_memcpy 1"
+
+2B:
+    extra_params: "-gpgpu_max_insn 2000000000"
+
+1B:
+    extra_params: "-gpgpu_max_insn 1000000000"
+
+100M:
+    extra_params: "-gpgpu_max_insn 100000000"
+
+FLUSHL1:
+    extra_params: "-gpgpu_flush_l1_cache 1"
+
+# Experimental - for SM 60 PTXplus support
+PTXPLUS_SM6:
+    extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
+
+
+##############################################################################
+##############################################################################
+# Deprecated files in the public repo
+QUADROFX5600:
+    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM1_QFX5600/gpgpusim.config"
+
+QUADROFX5800:
+    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM1_QFX5800/gpgpusim.config"
+
+TESLAC2050:
+    base_file: "$GPGPUSIM_ROOT/configs/4.x-cfgs/SM2_C2050/gpgpusim.config"
