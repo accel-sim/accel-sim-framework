@@ -1,0 +1,21 @@
+# As of May 19, 2018 these are the configs in the public repo
+# Pascal
+PUB_GTX1080:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX1080Ti/gpgpusim.config"
+
+PUB_TITANX:
+    base_file: "$GPGPUSIM_ROOT/configs/SM6_TITANX/gpgpusim.config"
+
+# Maxwell
+# Note: This is small card that takes ~2x as long to simulate...
+PUB_GTX750:
+    base_file: "$GPGPUSIM_ROOT/configs/GeForceGTX750Ti/gpgpusim.config"
+
+# Kepler
+# We have not correlated any Kepler cards
+
+# Fermi
+PUB_GTX480:
+    base_file: "$GPGPUSIM_ROOT/configs/GTX480/gpgpusim.config"
+
+############################################################################
