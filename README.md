@@ -16,10 +16,17 @@ The repository provides 3 things:
 
 ### How do I quickly just run what Travis runs?
 
+Travis uses a docker image that has a copy of this repository on it.
+Each time travis runs will pulls the lastest version of this repo (this is defined in the .travis.yml file for gpgpusim\_distribution.
+You can quickly just run what travis runs by copying the command line from the last line
+of the file: https://github.com/gpgpu-sim/gpgpu-sim\_distribution/blob/dev/.travis.yml
+
+### Running test generally
+
 The scripts here provide a set of defaults that make it relatively painless to run the default regression test.
 Remember, the following things should be setup:
 
-1. CUDA toolkit installed (currently GPGPU-Sim runs reliably using CUDA 4.2)
+1. CUDA toolkit installed
 2. nvcc is in the path
 3. Torque is installed (even if you are not on a cluster, installing this locally is required).
 4. You have sourced the `setup_environment` file inside the GPGPU-Sim dev branch (and built the simulator).
