@@ -36,10 +36,12 @@ COPYK:
 FLUSHL1:
     extra_params: "-gpgpu_flush_l1_cache 1"
 
+PWR_ENABLE:
+    extra_params: "-power_simulation_enabled 1"
+
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
-
 
 ##############################################################################
 ##############################################################################

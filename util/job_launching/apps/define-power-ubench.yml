@@ -1,0 +1,470 @@
+power_ubench_sim:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - add_mem_2-SM:
+            -
+        - BE_L1D_HIT-SM:
+            -
+        - BE_L1D_MISS_L2D_HIT-SM:
+            -
+        - BE_MEM_ACCESS-SM:
+            -
+        - BE_MEM_CNST_Acss-SM:
+            -
+        - BE_MEM_SHRD_Acss-SM:
+            -
+        - BE_SFU-SM:
+            -
+        - BE_SP_FP-SM:
+            -
+        - BE_SP_FP_ADD_l12-SM:
+            -
+        - BE_SP_FP_ADD_l16-SM:
+            -
+        - BE_SP_FP_ADD_l20-SM:
+            -
+        - BE_SP_FP_ADD_l24-SM:
+            -
+        - BE_SP_FP_ADD_l28-SM:
+            -
+        - BE_SP_FP_ADD_l32-SM:
+            -
+        - BE_SP_FP_ADD_l4-SM:
+            -
+        - BE_SP_FP_ADD_l8-SM:
+            -
+        - BE_SP_FP_ADD_leven-SM:
+            -
+        - BE_SP_FP_ADD_lodd-SM:
+            -
+        - BE_SP_FP_DIV_l1-SM:
+            -
+        - BE_SP_FP_DIV_l12-SM:
+            -
+        - BE_SP_FP_DIV_l16-SM:
+            -
+        - BE_SP_FP_DIV_l20-SM:
+            -
+        - BE_SP_FP_DIV_l24-SM:
+            -
+        - BE_SP_FP_DIV_l28-SM:
+            -
+        - BE_SP_FP_DIV_l32-SM:
+            -
+        - BE_SP_FP_DIV_l4-SM:
+            -
+        - BE_SP_FP_DIV_l8-SM:
+            -
+        - BE_SP_FP_DIV_leve-SMn:
+            -
+        - BE_SP_FP_DIV_lodd-SM:
+            -
+        - BE_SP_FP_MUL1-SM:
+            -
+        - BE_SP_FP_MUL10-SM:
+            -
+        - BE_SP_FP_MUL11-SM:
+            -
+        - BE_SP_FP_MUL12-SM:
+            -
+        - BE_SP_FP_MUL13-SM:
+            -
+        - BE_SP_FP_MUL14-SM:
+            -
+        - BE_SP_FP_MUL15-SM:
+            -
+        - BE_SP_FP_MUL2-SM:
+            -
+        - BE_SP_FP_MUL3-SM:
+            -
+        - BE_SP_FP_MUL4-SM:
+            -
+        - BE_SP_FP_MUL5-SM:
+            -
+        - BE_SP_FP_MUL6-SM:
+            -
+        - BE_SP_FP_MUL7-SM:
+            -
+        - BE_SP_FP_MUL8-SM:
+            -
+        - BE_SP_FP_MUL9-SM:
+            -
+        - BE_SP_FP_MUL_l1-SM:
+            -
+        - BE_SP_FP_MUL_l12-SM:
+            -
+        - BE_SP_FP_MUL_l16-SM:
+            -
+        - BE_SP_FP_MUL_l20-SM:
+            -
+        - BE_SP_FP_MUL_l24-SM:
+            -
+        - BE_SP_FP_MUL_l28-SM:
+            -
+        - BE_SP_FP_MUL_l32-SM:
+            -
+        - BE_SP_FP_MUL_l4-SM:
+            -
+        - BE_SP_FP_MUL_l8-SM:
+            -
+        - BE_SP_FP_MUL_leven-SM:
+            -
+        - BE_SP_FP_MUL_lodd-SM:
+            -
+        - BE_SP_INT-SM:
+            -
+        - BE_TEXTUREACCESS-SM:
+            -
+        - BE_TEXTURE_ACCESS_2-SM:
+            -
+        - BRANCHING1-SM:
+            -
+        - BRANCHING2-SM:
+            -
+        - BRANCHING3-SM:
+            -
+        - BRANCHING4-SM:
+            -
+        - BRANCHING5-SM:
+            -
+        - const_mul-SM:
+            -
+        - dram_r1-SM:
+            -
+        - dram_r10-SM:
+            -
+        - dram_r11-SM:
+            -
+        - dram_r12-SM:
+            -
+        - dram_r2-SM:
+            -
+        - dram_r3-SM:
+            -
+        - dram_r4-SM:
+            -
+        - dram_r5-SM:
+            -
+        - dram_r6-SM:
+            -
+        - dram_r7-SM:
+            -
+        - dram_r8-SM:
+            -
+        - dram_r9-SM:
+            -
+        - dram_w1-SM:
+            -
+        - dram_w10-SM:
+            -
+        - dram_w12-SM:
+            -
+        - dram_w2-SM:
+            -
+        - dram_w3-SM:
+            -
+        - dram_w4-SM:
+            -
+        - dram_w5-SM:
+            -
+        - dram_w6-SM:
+            -
+        - dram_w7-SM:
+            -
+        - dram_w8-SM:
+            -
+        - dram_w9-SM:
+            -
+        - FE_INST_CASH_HIT-SM:
+            -
+        - FE_INST_CASH_MISS-SM:
+            -
+        - immediates_constant-SM:
+            -
+        - immediates_texture-SM:
+            -
+        - l1d_stress-SM:
+            -
+        - mix1-SM:
+            -
+        - mix10-SM:
+            -
+        - mix11-SM:
+            -
+        - mix12-SM:
+            -
+        - mix13-SM:
+            -
+        - mix14-SM:
+            -
+        - mix15-SM:
+            -
+        - mix17-SM:
+            -
+        - mix18-SM:
+            -
+        - mix19-SM:
+            -
+        - mix2-SM:
+            -
+        - mix20-SM:
+            -
+        - mix3-SM:
+            -
+        - mix4-SM:
+            -
+        - mix5-SM:
+            -
+        - mix6-SM:
+            -
+        - mix8-SM:
+            -
+        - mix9-SM:
+            -
+        - mul_add_tex_1-SM:
+            -
+        - mul_add_tex_2-SM:
+            -
+        - mul_mem_1-SM:
+            -
+        - mul_mem_2-SM:
+            -
+        - SHRD_TEX_SFU-SM:
+            -
+
+
+power_ubench_hw:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - add_mem_2-HW:
+            -
+        - BE_L1D_HIT-HW:
+            -
+        - BE_L1D_MISS_L2D_HIT-HW:
+            -
+        - BE_MEM_ACCESS-HW:
+            -
+        - BE_MEM_CNST_Acss-HW:
+            -
+        - BE_MEM_SHRD_Acss-HW:
+            -
+        - BE_SFU-HW:
+            -
+        - BE_SP_FP-HW:
+            -
+        - BE_SP_FP_ADD_l12-HW:
+            -
+        - BE_SP_FP_ADD_l16-HW:
+            -
+        - BE_SP_FP_ADD_l20-HW:
+            -
+        - BE_SP_FP_ADD_l24-HW:
+            -
+        - BE_SP_FP_ADD_l28-HW:
+            -
+        - BE_SP_FP_ADD_l32-HW:
+            -
+        - BE_SP_FP_ADD_l4-HW:
+            -
+        - BE_SP_FP_ADD_l8-HW:
+            -
+        - BE_SP_FP_ADD_leven-HW:
+            -
+        - BE_SP_FP_ADD_lodd-HW:
+            -
+        - BE_SP_FP_DIV_l1-HW:
+            -
+        - BE_SP_FP_DIV_l12-HW:
+            -
+        - BE_SP_FP_DIV_l16-HW:
+            -
+        - BE_SP_FP_DIV_l20-HW:
+            -
+        - BE_SP_FP_DIV_l24-HW:
+            -
+        - BE_SP_FP_DIV_l28-HW:
+            -
+        - BE_SP_FP_DIV_l32-HW:
+            -
+        - BE_SP_FP_DIV_l4-HW:
+            -
+        - BE_SP_FP_DIV_l8-HW:
+            -
+        - BE_SP_FP_DIV_leve-HWn:
+            -
+        - BE_SP_FP_DIV_lodd-HW:
+            -
+        - BE_SP_FP_MUL1-HW:
+            -
+        - BE_SP_FP_MUL10-HW:
+            -
+        - BE_SP_FP_MUL11-HW:
+            -
+        - BE_SP_FP_MUL12-HW:
+            -
+        - BE_SP_FP_MUL13-HW:
+            -
+        - BE_SP_FP_MUL14-HW:
+            -
+        - BE_SP_FP_MUL15-HW:
+            -
+        - BE_SP_FP_MUL2-HW:
+            -
+        - BE_SP_FP_MUL3-HW:
+            -
+        - BE_SP_FP_MUL4-HW:
+            -
+        - BE_SP_FP_MUL5-HW:
+            -
+        - BE_SP_FP_MUL6-HW:
+            -
+        - BE_SP_FP_MUL7-HW:
+            -
+        - BE_SP_FP_MUL8-HW:
+            -
+        - BE_SP_FP_MUL9-HW:
+            -
+        - BE_SP_FP_MUL_l1-HW:
+            -
+        - BE_SP_FP_MUL_l12-HW:
+            -
+        - BE_SP_FP_MUL_l16-HW:
+            -
+        - BE_SP_FP_MUL_l20-HW:
+            -
+        - BE_SP_FP_MUL_l24-HW:
+            -
+        - BE_SP_FP_MUL_l28-HW:
+            -
+        - BE_SP_FP_MUL_l32-HW:
+            -
+        - BE_SP_FP_MUL_l4-HW:
+            -
+        - BE_SP_FP_MUL_l8-HW:
+            -
+        - BE_SP_FP_MUL_leven-HW:
+            -
+        - BE_SP_FP_MUL_lodd-HW:
+            -
+        - BE_SP_INT-HW:
+            -
+        - BE_TEXTUREACCESS-HW:
+            -
+        - BE_TEXTURE_ACCESS_2-HW:
+            -
+        - BRANCHING1-HW:
+            -
+        - BRANCHING2-HW:
+            -
+        - BRANCHING3-HW:
+            -
+        - BRANCHING4-HW:
+            -
+        - BRANCHING5-HW:
+            -
+        - const_mul-HW:
+            -
+        - dram_r1-HW:
+            -
+        - dram_r10-HW:
+            -
+        - dram_r11-HW:
+            -
+        - dram_r12-HW:
+            -
+        - dram_r2-HW:
+            -
+        - dram_r3-HW:
+            -
+        - dram_r4-HW:
+            -
+        - dram_r5-HW:
+            -
+        - dram_r6-HW:
+            -
+        - dram_r7-HW:
+            -
+        - dram_r8-HW:
+            -
+        - dram_r9-HW:
+            -
+        - dram_w1-HW:
+            -
+        - dram_w10-HW:
+            -
+        - dram_w12-HW:
+            -
+        - dram_w2-HW:
+            -
+        - dram_w3-HW:
+            -
+        - dram_w4-HW:
+            -
+        - dram_w5-HW:
+            -
+        - dram_w6-HW:
+            -
+        - dram_w7-HW:
+            -
+        - dram_w8-HW:
+            -
+        - dram_w9-HW:
+            -
+        - FE_INST_CASH_HIT-HW:
+            -
+        - FE_INST_CASH_MISS-HW:
+            -
+        - immediates_constant-HW:
+            -
+        - immediates_texture-HW:
+            -
+        - l1d_stress-HW:
+            -
+        - mix1-HW:
+            -
+        - mix10-HW:
+            -
+        - mix11-HW:
+            -
+        - mix12-HW:
+            -
+        - mix13-HW:
+            -
+        - mix14-HW:
+            -
+        - mix15-HW:
+            -
+        - mix17-HW:
+            -
+        - mix18-HW:
+            -
+        - mix19-HW:
+            -
+        - mix2-HW:
+            -
+        - mix20-HW:
+            -
+        - mix3-HW:
+            -
+        - mix4-HW:
+            -
+        - mix5-HW:
+            -
+        - mix6-HW:
+            -
+        - mix8-HW:
+            -
+        - mix9-HW:
+            -
+        - mul_add_tex_1-HW:
+            -
+        - mul_add_tex_2-HW:
+            -
+        - mul_mem_1-HW:
+            -
+        - mul_mem_2-HW:
+            -
+        - SHRD_TEX_SFU-HW:
+            -
