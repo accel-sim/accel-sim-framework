@@ -7,6 +7,10 @@ TITANV:
 # Fermi
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
+
+# Volta-LocalXbar
+TITANV-localxbar:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV_fastlocalxbar/gpgpusim.config"
 ############################################################################
 
 # Extra configs - these are composable.
