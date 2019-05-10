@@ -111,7 +111,6 @@ while True:
         print "All {0} Tests Done.".format(total)
         if num_error == 0:
             print "Congratulations! All Tests Pass!"
-            exit(0)
         else:
             print "Something did not pass."
 
