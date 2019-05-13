@@ -8,9 +8,6 @@ TITANV:
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
 
-# Volta-LocalXbar
-TITANV-localxbar:
-    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV_fastlocalxbar/gpgpusim.config"
 ############################################################################
 
 # Extra configs - these are composable.
@@ -42,6 +39,9 @@ FLUSHL1:
 
 PWR_ENABLE:
     extra_params: "-power_simulation_enabled 1"
+
+LOCALXBAR:
+    extra_params: "-network_mode 2 -inct_in_buffer_limit 512  -inct_out_buffer_limit 512  -inct_subnets 2"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
