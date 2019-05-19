@@ -18,6 +18,14 @@ def print_statsfile(options, this_directory):
     print get_stats_out_file.read()
     get_stats_out_file.close()
 
+def handle_exit():
+        if num_error == 0 or options.ignore_failures:
+            if options.verbose and options.statsfile:
+                print_statsfile(options, this_directory)
+            exit(0)
+        else:
+            exit(1)
+
 #*********************************************************--
 # main script start
 #*********************************************************--
@@ -43,11 +51,13 @@ parser.add_option("-S", "--sleep_time", dest="sleep_time", default="30",
                   help="Time to sleep in (s) - default is 30.")
 parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
                   help="If some of the runs have errors - do not return an error code.")
+parser.add_option("-T", "--timeout", dest="timeout", default="99999",
+                  help="Maximum number of hours to run the monitor for. If time is exceeded, exit with error code.")
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.sim_name = options.sim_name.strip()
-
+options.timeout = float(options.timeout) * 60 * 60
 
 jobstatus_out_filename = os.path.join(this_directory, "job_status_out-{0}.txt".format(os.getpid()))
 failed_job_file = None
@@ -114,12 +124,11 @@ while True:
         else:
             print "Something did not pass."
 
-        if num_error == 0 or options.ignore_failures:
-            if options.verbose and options.statsfile:
-                print_statsfile(options, this_directory)
-            exit(0)
-        else:
-            exit(1)
+        handle_exit()
     else:
         print "Sleeping for {0}s".format(options.sleep_time)
         time.sleep(int(options.sleep_time))
+        options.timeout -= float(options.sleep_time)
+        if options.timeout <= 0:
+            print "Monitor has timed-out"
+            handle_exit()
