@@ -144,7 +144,8 @@ status_strings = { "passed" : "FUNC_TEST_PASSED",
 # Also searches the output files for these stats and prints them in the log
 stats_to_pull = { "SIM_TIME": "gpgpu_simulation_time\s*=[^1-9]*(.*)",
                   "TOT_INSN" : "gpu_tot_sim_insn\s*=\s*(.*)",
-                  "TOT_IPC" : "gpu_tot_ipc\s*=\s*(.*)" }
+                  "TOT_IPC" : "gpu_tot_ipc\s*=\s*(.*)",
+                  "SIMRATE_IPS" : "gpgpu_simulation_rate\s*=\s*(.*)\s*\(inst/sec\)" }
 
 ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t" +\
              "{gpusim_version:20.20}\t{config:20.20}\t{running_time:15}\t{status:40.40}\t"+\
