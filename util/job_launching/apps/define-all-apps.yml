@@ -347,10 +347,10 @@ lonestargpu-2.0:
             - ./data/rmat20.gr
             - ./data/USA-road-d.NY.gr
         # bad regs
-#        - lonestar-sssp:
-#            - ./data/r4-2e20.gr
-#            - ./data/rmat20.gr
-#            - ./data/USA-road-d.NY.gr
+        - lonestar-sssp:
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
         - lonestar-sssp-wlc:
             - ./data/r4-2e20.gr
             - ./data/rmat20.gr
@@ -364,10 +364,10 @@ lonestargpu-2.0:
             - ./data/USA-road-d.FLA.gr
             - ./data/USA-road-d.USA.gr
         # Some register sizing problems
-#        - lonestar-bfs-wlc: 
-#            - ./data/r4-2e20.gr
-#            - ./data/rmat20.gr
-#            - ./data/USA-road-d.NY.gr
+        - lonestar-bfs-wlc: 
+            - ./data/r4-2e20.gr
+            - ./data/rmat20.gr
+            - ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
         - lonestar-bh:
