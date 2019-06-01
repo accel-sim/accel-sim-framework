@@ -105,7 +105,7 @@ exes_and_args = []
 specific_jobIds = {}
 
 stats_to_pull = {}
-stats_yaml = yaml.load(open(options.stats_yml))
+stats_yaml = yaml.load(open(options.stats_yml), Loader=yaml.FullLoader )
 stats= {}
 for stat in stats_yaml['collect']:
     stats_to_pull[stat] = re.compile(stat)
