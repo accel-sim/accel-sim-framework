@@ -52,10 +52,7 @@ for bench in benchmarks:
     edir, ddir, exe, argslist = bench
     ddir = os.path.join(this_directory,ddir,exe)
     for args in argslist:
-        if args == "" or args == None:
-            run_name= os.path.join(exe,"NO_ARGS")
-        else:
-            run_name = os.path.join(exe, re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip()))
+        run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
         this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
         if not os.path.exists(this_run_dir):

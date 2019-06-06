@@ -4,6 +4,7 @@ P100_PASCAL_DATA=$DATA_ROOT/TESLA-P100
 FERMI_GTX480_DATA=$DATA_ROOT/GTX480
 TI1080_DATA=$DATA_ROOT/1080TI_PASCAL
 TITANV_DATA=$DATA_ROOT/TITANV
+QUADRO_V100_DATA=$DATA_ROOT/QUADRO-V100
 
 if [ ! -d $TITANX_PASCAL_DATA ]; then
     wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/pascal.titanx.cycle.tgz
@@ -33,4 +34,11 @@ if [ ! -d $TITANV_DATA ]; then
     wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/volta.titanv.tgz
     tar -xzvf volta.titanv.tgz -C $DATA_ROOT
     rm volta.titanv.tgz
+fi
+
+if [ ! -d $QUADRO_V100_DATA ]; then
+    TARFILE=quadro.v100.cycle.tgz
+    wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/$TARFILE
+    tar -xzvf $TARFILE -C $DATA_ROOT
+    rm $TARFILE
 fi
