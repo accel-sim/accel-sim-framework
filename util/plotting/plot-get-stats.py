@@ -110,7 +110,7 @@ for stat,value in all_stats.iteritems():
         )
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = stat
+    figure_name = stat.replace("\/", "-")
     print "plotting: " + figure_name
     outdir = (os.path.join(this_directory,"htmls", options.basename))
     if not os.path.exists( outdir ):
