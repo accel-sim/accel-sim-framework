@@ -9,6 +9,8 @@ make -j -i all # This will make everything possible to make on your machine
 ls ../../benchmarks/bin/<cuda-version>/release | wc # this will tell you how many apps built successfully. It should be somewhere between 150 and 200
 ```
 * Run the hardware correl
+
+```bash
 cd ../../util/correlation
 # In this folder there are shell scripts that kick off the hardware exectuion, bundle the resutls then publish them online.
 # Obviously your commands will not be exact. The most imporant part of this file is the ./run_hw.py command. It takes the exact same benchmark
