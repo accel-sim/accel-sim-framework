@@ -54,7 +54,7 @@ def make_submission_quality_image(image_type, traces):
     print_anno = ""
     applist_file_contents = ""
     kernellist_file_contents = ""
-    for trace, layout, cfg, anno, plotfile, err_dropped, apps_included in traces:
+    for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         trace.error_x.color = trace.marker.color
@@ -387,6 +387,11 @@ parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type=
                   default=3)
 parser.add_option("-L", "--linearplot", dest="linearplot", action="store_true",
                   help="By default, plots are log/log. Set -L for linear x/y axises")
+parser.add_option("-b", "--blacklist", dest="blacklist", default="",
+                  help="A comma seperated list of appnames that should be excluded. Useful for removing random"+\
+                       " toy apps from the correlation.")
+parser.add_option("-n", "--noanno", dest="noanno", action="store_true",
+                  help="Turn off plot annotations")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -394,6 +399,7 @@ common.load_defined_yamls()
 benchmarks = []
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
 options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
+blacklist = options.blacklist.split(',')
 
 logger = Logger(options.verbose)
 
@@ -458,6 +464,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         apps_included = {}
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
+                if appargs in blacklist:
+                    continue
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
                 if len(sim_klist) <= len(hw_klist):
