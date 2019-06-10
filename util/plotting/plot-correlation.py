@@ -23,6 +23,12 @@ import ast
 import numpy
 import datetime
 
+def isAppBanned( appargs, blacklist ):
+    for bannedname in blacklist:
+        if bannedname.match(appargs):
+            return True
+    return False
+
 def make_pretty_app_list(apps_included):
     ret_str = "Application + Arguments :: Number Kernels Launched :: Average Error\n\n"
     kernel_str = "Application + Arguments :: kname :: Error vs. hardware\n\n"
@@ -54,58 +60,60 @@ def make_submission_quality_image(image_type, traces):
     print_anno = ""
     applist_file_contents = ""
     kernellist_file_contents = ""
-    for trace, layout, cfg, anno, plotfile, err_dropped, apps_included in traces:
+
+    for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
         trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         trace.error_x.color = trace.marker.color
+        
         # Set the alpha on the error bars to be 30%
         trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
         data.append(trace)
         annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
-        print_anno += anno + " :: {0} high error points dropped from Err calc\n".format(err_dropped)
+        print_anno += anno + " :: {0} high error points dropped from Err calc. {1} dropped for HW too low (>{2})\n".format(
+            err_dropped, hw_low_drop, correlmap.drophwnumbelow)
         agg_cfg += "." + cfg
         app_str, kernel_str = make_pretty_app_list(apps_included)
         applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         count += 1
 
-    layout.annotations=annotations
+    if not options.noanno:
+        layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
     plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
     appsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".appsincluded.txt")
     kernelsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".kernelsincluded.txt")
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
-    f = open(appsinludedname, 'w')
+    f = open(appsinludedname[:200] + ".apps.txt", 'w')
     f.write(applist_file_contents)
     f.close()
-    f = open(kernelsinludedname, 'w')
+    f = open(kernelsinludedname[:200] + ".kernel.txt", 'w')
     f.write(kernellist_file_contents)
     f.close()
 
     print "Plotting {0}: {1}\n{2}Apps included listed in {3}\nKerenels included listed in {4}\n"\
         .format(plotname, layout.title, print_anno, appsinludedname, kernelsinludedname)
-    TEXT_SIZE=22
+    TEXT_SIZE=30
 
 
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
     for anno in png_layout.annotations:
-        anno.font=Font(size=16,color='black')
+        anno.font=Font(size=22,color='black')
     png_layout.xaxis.titlefont.size = TEXT_SIZE
     png_layout.xaxis.titlefont.color='black'
-    png_layout.xaxis.tickfont.size=TEXT_SIZE
+    png_layout.xaxis.tickfont.size=20
     png_layout.xaxis.tickfont.color='black'
-    if not options.linearplot:
-        png_layout.xaxis.type="log"
+    png_layout.xaxis.type=correlmap.plottype
     png_layout.xaxis.autorange=True
 
     png_layout.yaxis.titlefont.size = TEXT_SIZE
-    png_layout.yaxis.tickfont.size = TEXT_SIZE
+    png_layout.yaxis.tickfont.size = 20
     png_layout.yaxis.titlefont.color='black'
     png_layout.yaxis.tickfont.color='black'
-    if not options.linearplot:
-        png_layout.yaxis.type="log"
+    png_layout.yaxis.type=correlmap.plottype
     png_layout.yaxis.autorange=True
 
     png_layout.margin.t = 100
@@ -116,7 +124,7 @@ def make_submission_quality_image(image_type, traces):
         traceorder='normal',
         font=dict(
             family='sans-serif',
-            size=16,
+            size=25,
             color='#000'
         ),
         bgcolor='#E2E2E2',
@@ -124,16 +132,16 @@ def make_submission_quality_image(image_type, traces):
         borderwidth=2
     )
 
-    xyline = go.Scatter(x=[1, layout.xaxis.range[1]],y=[1,layout.xaxis.range[1]],showlegend=False,mode="lines")
+    xyline = go.Scatter(x=[5000, layout.xaxis.range[1]],y=[5000,layout.xaxis.range[1]],showlegend=False,mode="lines")
     xyline.line.color = 'rgba(255,0,0,.7)'
     data.append(xyline)
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
     if image_type != "":
         png_name = plotname[:-5].replace(".", "_") + "." + image_type
-        py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1124)
+        py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1024)
     # This generates the html
-    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname, auto_open=False)
+    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname[:200] + ".html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
     return Annotation(
@@ -387,6 +395,11 @@ parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type=
                   default=3)
 parser.add_option("-L", "--linearplot", dest="linearplot", action="store_true",
                   help="By default, plots are log/log. Set -L for linear x/y axises")
+parser.add_option("-b", "--blacklist", dest="blacklist", default="",
+                  help="File that contains regex expressions on each line for what apps should be excluded." +\
+                       " Useful for removing random toy apps from the correlation.")
+parser.add_option("-n", "--noanno", dest="noanno", action="store_true",
+                  help="Turn off plot annotations")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -394,6 +407,13 @@ common.load_defined_yamls()
 benchmarks = []
 options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
 options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
+options.blacklist = common.file_option_test( options.blacklist, "", this_directory )
+
+blacklist = []
+if options.blacklist != "":
+    for bannedname in open(options.blacklist).readlines():
+        bannedname = bannedname.strip()
+        blacklist.append(re.compile(bannedname))
 
 logger = Logger(options.verbose)
 
@@ -454,10 +474,15 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
         hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
         max_axis_val = 0.0
+        min_axis_val = 99999999999999999999999999999.9
         err_dropped_stats = 0
+        hw_low_drop_stats = 0
         apps_included = {}
         for appargs,sim_klist in sim_for_cfg.iteritems():
             if appargs in hw_data[hw_cfg]:
+                if (isAppBanned( appargs, blacklist )):
+                    continue
+
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
                 if len(sim_klist) <= len(hw_klist):
@@ -474,6 +499,13 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
                             count += 1
                             continue
+
+                        if hw_array[-1] < correl.drophwnumbelow:
+                            hw_low_drop_stats += 1
+                            hw_array = hw_array[:-1]
+                            count += 1
+                            continue
+
                         try:
                             sim_array.append(eval(correl.sim_eval))
                         except KeyError as e:
@@ -499,26 +531,28 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         if appargs not in apps_included:
                             apps_included[appargs] = [];
 
-                        kernelcount += 1
                         processAnyKernels = True
                         err = 99999
+                        hw_high = 0
+                        hw_low = 999999999999
 
-                        if hw_array[-1] > 0:
-                            err = sim_array[-1] - hw_array[-1]
-                            hw_high = (hw_error[-1]/hw_array[-1]) * 100
-                            hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
-                            err = (err / hw_array[-1]) * 100
-                            if abs(err) < 1.0:
-                                num_less_than_one_percent += 1
-                            elif err > 0:
-                                num_over += 1
-                            else:
-                                num_under += 1
-                            if abs(err) < options.err_calc_threadhold:
-                                errs.append(abs(err))
-                                apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
-                            else:
-                                err_dropped_stats += 1
+                        kernelcount += 1
+                        err = sim_array[-1] - hw_array[-1]
+                        hw_high = (hw_error[-1]/hw_array[-1]) * 100
+                        hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
+                        err = (err / hw_array[-1]) * 100
+                        if abs(err) < 1.0:
+                            num_less_than_one_percent += 1
+                        elif err > 0:
+                            num_over += 1
+                        else:
+                            num_under += 1
+                        if abs(err) < options.err_calc_threadhold:
+                            errs.append(abs(err))
+                            apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
+                        else:
+                            err_dropped_stats += 1
+
                         label_array.append(appargs + "--" + sim_klist[count]["Kernel"] +
                             " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
                         count += 1
@@ -526,6 +560,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             max_axis_val = hw_array[-1]
                         if sim_array[-1] > max_axis_val:
                             max_axis_val = sim_array[-1]
+
+                        if hw_array[-1] < min_axis_val:
+                            min_axis_val = hw_array[-1]
+                        if sim_array[-1] < min_axis_val:
+                            min_axis_val = sim_array[-1]
 
                 else:
                     logger.log("For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2} and software has more than hardware\n"\
@@ -561,14 +600,18 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             name=cfg,
         )
         if not options.err_off:
+#            anno = " [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+#            anno = cfg + " ({1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
             anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
         else:
+#            anno = " [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+#            anno = cfg + " ({1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
             anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
                 title='Hardware {0} {1}'.format(hw_cfg, correl.chart_name),
-                range=[0,max_axis_val*1.1]
+                range=[0 ,max_axis_val*1.1]
             ),
             yaxis=dict(
                 title='GPGPU-Sim {0}'.format(correl.chart_name),
@@ -579,7 +622,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         if correl.plotfile + hw_cfg not in fig_data:
             fig_data[ correl.plotfile + hw_cfg ] = []
-        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included))
+        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included, correl, hw_low_drop_stats))
 
 
 for hw_cfg, traces in fig_data.iteritems():
