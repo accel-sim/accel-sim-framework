@@ -13,6 +13,7 @@ config_maps = \
     "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
     "GTX1080Ti" : "GeForce GTX 1080 Ti",
+    "QV100" : "Quadro GV100"
 }
 
 
@@ -67,6 +68,16 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="GeForce GTX 1080 Ti"
     ),
+    # 1132 MHz
+    CorrelStat(chart_name="Cycles",
+        plotfile="gv100-cycles.html",
+        hw_eval="np.average(hw[\"Duration\"])*1132",
+        hw_error="np.max(hw[\"Duration\"])*1132 - np.average(hw[\"Duration\"])*1132,"+\
+                 "np.average(hw[\"Duration\"])*1132 - np.min(hw[\"Duration\"])*1132",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Quadro GV100"
+    ),
+
 
     # Common, non-cycle stats
     CorrelStat(chart_name="Warp Instructions",

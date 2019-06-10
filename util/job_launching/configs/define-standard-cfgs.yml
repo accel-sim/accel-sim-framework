@@ -34,6 +34,9 @@ COPYK:
 1B:
     extra_params: "-gpgpu_max_insn 1000000000"
 
+5B:
+    extra_params: "-gpgpu_max_insn 5000000000"
+
 100M:
     extra_params: "-gpgpu_max_insn 100000000"
 
