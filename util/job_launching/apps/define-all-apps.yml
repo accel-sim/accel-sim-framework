@@ -112,8 +112,10 @@ sdk-4.2:
             -
         - simpleTemplates:
             -
-        - simpleVoteIntrinsics:
-            -
+        # CUDA 10 has issues with the vot intrinsics for 4.2's SDK.
+        # Not worth continued support
+#        - simpleVoteIntrinsics:
+#            -
         - simpleZeroCopy:
             -
         - sortingNetworks:
