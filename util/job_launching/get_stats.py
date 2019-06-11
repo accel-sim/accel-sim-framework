@@ -82,6 +82,8 @@ parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="sto
                   help="instread of apps as rows in the csv, make configs as rows.")
 parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
                   help="If an app crashed, still collect its data")
+parser.add_option("-A", "--do_averages", dest="do_averages", action="store_true",
+                  help="If an app crashed, still collect its data")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -334,14 +336,18 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
     csv_str = ""
     DIVISION = "-" * 100
     csv_str += DIVISION + "\n"
-    csv_str += stat_name + "\n,"
+    running_total = 0
+    total_num = 0
     if cfg_as_rows:
+        csv_str += stat_name + "\nCFG,"
         for appargs in apps_and_args:
             knames = all_named_kernels[appargs]
             for kname in knames:
                 if kname == "":
                     continue
                 csv_str += appargs + "--" + kname + ","
+            if options.do_averages:
+                csv_str += "AVG,"
 
         csv_str = csv_str[:-1]
         csv_str += "\n"
@@ -354,13 +360,30 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                         continue
                     if kname + appargs + config + stat_name in stat_map:
                         csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
                     else:
                         csv_str += "NA,"
+            if options.do_averages:
+                if total_num != 0:
+                    csv_str += "{0:.1f},".format(running_total/total_num)
+                else:
+                    csv_str += "NA,"
+            running_total = 0
+            total_num = 0
             csv_str = csv_str[:-1]
             csv_str += "\n"
+
     else:
+        csv_str += stat_name + "\nAPPS,"
         for config in configs:
             csv_str += config + ","
+
+        if options.do_averages:
+            csv_str += "AVG,"
         csv_str = csv_str[:-1]
         csv_str += "\n"
         for appargs in apps_and_args:
@@ -372,8 +395,21 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                 for config in configs:
                     if kname + appargs + config + stat_name in stat_map:
                         csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
                     else:
                         csv_str += "NA,"
+
+                if options.do_averages:
+                    if total_num != 0:
+                        csv_str += "{0:.1f},".format(running_total/total_num)
+                    else:
+                        csv_str += "NA,"
+                running_total = 0
+                total_num = 0
                 csv_str = csv_str[:-1]
                 csv_str += "\n"
 
