@@ -3,7 +3,7 @@
 * Make sure CUDA\_INSTALL\_PATH is set and bin/lib directories are in PATH and LD\_LIBRARY\_PATH
 * This is reliant on:
     * The benchmarks have been run using the job\_launching.py script
-    * The hardware apps have been run using the run\_hw.py script (or you are validating against apps/machines that are already on posted on https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw\_data/)
+    * The hardware apps have been run using the run\_hw.py script (or you are validating against apps/machines that are already on posted on https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/)
     * Plottly is installed
         ```bash
         pip install --target=~/python-package plotly
