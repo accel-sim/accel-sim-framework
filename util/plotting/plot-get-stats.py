@@ -123,7 +123,7 @@ for stat,value in all_stats.iteritems():
 
 
 shutil.copy2(options.csv_file, outdir)
-if options.publish_path != None:
+if options.publish_path != None and options.publish_path != "":
     files = glob.glob(os.path.join(outdir, "*"))
     if subprocess.call(["scp"] + files + [options.publish_path]) != 0:
         print "Error Publishing via scp"
