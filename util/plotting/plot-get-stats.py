@@ -76,6 +76,9 @@ parser.add_option("-w", "--publish_web", dest="publish_web",
                   help="After the htmls are generated - they will get published here."+\
                   " Assumes you can scp to this directory.",
                   default="")
+parser.add_option("-P", "--plotname", dest="plotname",
+                  help="String appended to the filenames",
+                  default="")
 (options, args) = parser.parse_args()
 options.csv_file = common.file_option_test( options.csv_file, "", this_directory )
 
@@ -110,7 +113,7 @@ for stat,value in all_stats.iteritems():
         )
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = stat.replace("\/", "-")
+    figure_name = stat.replace("\/", "-") + "-" + options.plotname
     print "plotting: " + figure_name
     outdir = (os.path.join(this_directory,"htmls", options.basename))
     if not os.path.exists( outdir ):
