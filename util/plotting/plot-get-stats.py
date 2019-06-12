@@ -115,7 +115,7 @@ for stat,value in all_stats.iteritems():
     fig = Figure(data=data, layout=layout)
     figure_name = stat.replace("\/", "-") + "-" + options.plotname
     print "plotting: " + figure_name
-    outdir = (os.path.join(this_directory,"htmls", options.basename))
+    outdir = (os.path.join(this_directory,"htmls"))
     if not os.path.exists( outdir ):
         os.makedirs(outdir)
     plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
