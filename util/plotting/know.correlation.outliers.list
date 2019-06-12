@@ -1,0 +1,13 @@
+.*polybench-gramschmidt.*
+.*polybench-3DConvolution.*
+.*color_maxmin.*
+.*color_max.*
+.*fastWalshTransform.*
+.*lulesh.*
+.*parboil-stencil.*
+.*parboil-sad.*
+.*srad_v2-rodinia-2.0-ft.*
+.*parboil-mri-q.*
+.*simpleAtomic.*
+.*heartwall-rodinia-2.0-ft.*
+.*__data_256_16384_gr.*
