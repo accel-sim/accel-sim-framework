@@ -58,7 +58,10 @@ def get_csv_data_for_merge(filepath):
                                 appargs = appargs_kname[ :first_delimiter ]
                                 kname = appargs_kname[ first_delimiter + 2: ]
                                 if current_stat == "GPGPU-Sim-build":
-                                    build_num = data[config][count][21:28]
+                                    if len(data[config][count]) > 28:
+                                        build_num = data[config][count][21:28]
+                                    else:
+                                        build_num = data[config][count-1][21:28]
                                     build_nums.add(build_num)
                                 stat_map[kname + appargs + config + current_stat ] = data[config][count]
                                 count += 1
