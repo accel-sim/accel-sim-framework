@@ -69,7 +69,7 @@ def make_submission_quality_image(image_type, traces):
         # Set the alpha on the error bars to be 30%
         trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
         data.append(trace)
-        annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
+        annotations.append(make_anno1(anno,5,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc. {1} dropped for HW too low (>{2})\n".format(
             err_dropped, hw_low_drop, correlmap.drophwnumbelow)
         agg_cfg += "." + cfg
@@ -127,7 +127,7 @@ def make_submission_quality_image(image_type, traces):
         traceorder='normal',
         font=dict(
             family='sans-serif',
-            size=25,
+            size=15,
             color='#000'
         ),
         bgcolor='#E2E2E2',
