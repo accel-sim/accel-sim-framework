@@ -346,8 +346,8 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
                 if kname == "":
                     continue
                 csv_str += appargs + "--" + kname + ","
-            if options.do_averages:
-                csv_str += "AVG,"
+        if options.do_averages:
+            csv_str += "AVG,"
 
         csv_str = csv_str[:-1]
         csv_str += "\n"
