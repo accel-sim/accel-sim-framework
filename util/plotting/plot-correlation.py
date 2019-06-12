@@ -303,9 +303,9 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         continue
                     if processedCycle:
                         count = 0
-			if kcount < len(kdata):
+                        if kcount < len(kdata):
                             logger.log("Warning - number of kernels in cycle file mismatches kernels in the stats file:\n{0}".format(csv_file))
-			    continue
+                            continue
                         for elem in row:
                             if header[count] not in kdata[kcount]:
                                 kdata[kcount][header[count]] = []
