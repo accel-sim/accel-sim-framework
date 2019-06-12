@@ -81,8 +81,12 @@ def make_submission_quality_image(image_type, traces):
     if not options.noanno:
         layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
-    plotname = os.path.join(correl_outdir,plotfile + agg_cfg)[:200]
+    if options.plotname == "":
+        plotname = plotfile + agg_cfg
+    else:
+        plotname = plotfile + "." + options.plotname
 
+    plotname = os.path.join(correl_outdir, plotname)[:200]
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
     f = open(plotname + ".apps.txt", 'w')
@@ -93,7 +97,7 @@ def make_submission_quality_image(image_type, traces):
     f.close()
 
     print "Plotting {0}: {1}\n{2}"\
-        .format(plotname, layout.title, print_anno)
+        .format(plotname + ".html", layout.title, print_anno)
     TEXT_SIZE=30
 
 
@@ -137,10 +141,10 @@ def make_submission_quality_image(image_type, traces):
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
     if image_type != "":
-        png_name = plotname[:-5].replace(".", "_") + "." + image_type
+        png_name = plotname.replace(".", "_") + "." + image_type
         py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1024)
     # This generates the html
-    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname[:200] + ".html", auto_open=False)
+    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname + ".html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
     return Annotation(
@@ -397,6 +401,9 @@ parser.add_option("-b", "--blacklist", dest="blacklist", default="",
                        " Useful for removing random toy apps from the correlation.")
 parser.add_option("-n", "--noanno", dest="noanno", action="store_true",
                   help="Turn off plot annotations")
+parser.add_option("-p", "--plotname", dest="plotname", default="",
+                  help="string put in the middle of the output files. If nothing is provided, then" +\
+                       "a concatination of all the configs in the graph are used.")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()

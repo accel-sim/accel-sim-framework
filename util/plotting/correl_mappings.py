@@ -26,7 +26,7 @@ correl_list = \
 [
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
-        plotfile="titanv-cycles.html",
+        plotfile="titanv-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1200",
         hw_error="np.max(hw[\"Duration\"])*1200 - np.average(hw[\"Duration\"])*1200,"+\
                  "np.average(hw[\"Duration\"])*1200 - np.min(hw[\"Duration\"])*1200",
@@ -37,7 +37,7 @@ correl_list = \
     ),
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
-        plotfile="titanx-p102-cycles.html",
+        plotfile="titanx-p102-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1417",
         hw_error="np.max(hw[\"Duration\"])*1417 - np.average(hw[\"Duration\"])*1417,"+\
                  "np.average(hw[\"Duration\"])*1417 - np.min(hw[\"Duration\"])*1417",
@@ -48,7 +48,7 @@ correl_list = \
     ),
     # (1400 MHz - 16-wide SIMD)
     CorrelStat(chart_name="Cycles",
-        plotfile="gtx480-cycles.html",
+        plotfile="gtx480-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1400",
         hw_error="np.max(hw[\"Duration\"])*1400 - np.average(hw[\"Duration\"])*1400,"+\
                  "np.average(hw[\"Duration\"])*1400 - np.min(hw[\"Duration\"])*1400",
@@ -59,7 +59,7 @@ correl_list = \
     ),
     # 1480 MHz
     CorrelStat(chart_name="Cycles",
-        plotfile="p100-cycles.html",
+        plotfile="p100-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1480",
         hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
                  "np.average(hw[\"Duration\"])*1480 - np.min(hw[\"Duration\"])*1480",
@@ -70,7 +70,7 @@ correl_list = \
     ),
     # 1480 MHz
     CorrelStat(chart_name="Cycles",
-        plotfile="1080ti-cycles.html",
+        plotfile="1080ti-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1480",
         hw_error="np.max(hw[\"Duration\"])*1480 - np.average(hw[\"Duration\"])*1480,"+\
                  "np.average(hw[\"Duration\"])*1480 - np.min(hw[\"Duration\"])*1480",
@@ -82,7 +82,7 @@ correl_list = \
 
     # Common, non-cycle stats
     CorrelStat(chart_name="Warp Instructions",
-        plotfile="warp-inst.html",
+        plotfile="warp-inst",
         hw_eval="np.average(hw[\"inst_executed\"])",
         hw_error=None,
         sim_eval="float(sim[\"gpgpu_n_tot_w_icount\s*=\s*(.*)\"])",
@@ -91,7 +91,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="L2 read hits",
-        plotfile="l2-read-hits.html",
+        plotfile="l2-read-hits",
         hw_eval="np.average(hw[\"l2_tex_read_transactions\"])*np.average(hw[\"l2_tex_read_hit_rate\"])/100",
         hw_error=None,
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])",
@@ -100,7 +100,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="L2 read transactions",
-        plotfile="l2-read-transactions.html",
+        plotfile="l2-read-transactions",
         hw_eval="np.average(hw[\"l2_tex_read_transactions\"])",
         hw_error=None,
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
@@ -109,7 +109,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="DRAM read transactions",
-        plotfile="dram-read-transactions.html",
+        plotfile="dram-read-transactions",
         hw_eval="np.average(hw[\"dram_read_transactions\"])",
         hw_error=None,
 #        sim_eval="float(sim[\"Read\s*=\s*(.*)\"])+float(sim[\"L2_Alloc\s*=\s*(.*)\"])*24",
@@ -119,7 +119,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="L2 write transactions",
-        plotfile="l2-write-transactions.html",
+        plotfile="l2-write-transactions",
         hw_eval="np.average(hw[\"l2_tex_write_transactions\"])",
         hw_error=None,
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
@@ -128,7 +128,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="L2 Write Hits",
-        plotfile="l2-write-hits.html",
+        plotfile="l2-write-hits",
         hw_eval="np.average(hw[\"l2_tex_write_transactions\"]) * np.average(hw[\"l2_tex_write_hit_rate\"]) / 100.0",
         hw_error=None,
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])",
@@ -137,7 +137,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="DRAM Reads",
-        plotfile="dram-read-transactions.html",
+        plotfile="dram-read-transactions",
         hw_eval="np.average(hw[\"dram_read_transactions\"])",
         hw_error=None,
         sim_eval="float(sim[\".*n_rd\s*=\s*([0-9]+).*\"])*12",
@@ -146,7 +146,7 @@ correl_list = \
         plottype="log"
     ),
     CorrelStat(chart_name="L2 BW",
-        plotfile="l2_bw.html",
+        plotfile="l2_bw",
         hw_eval="np.average(hw[\"l2_tex_read_throughput\"])",
         hw_error=None,
         sim_eval="float(sim[\"L2_BW\s*=\s*(.*)GB/Sec\"])",
@@ -155,7 +155,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="L2 read Hit rate",
-        plotfile="l2-read-hitrate.html",
+        plotfile="l2-read-hitrate",
         hw_eval="np.average(hw[\"l2_tex_read_hit_rate\"])",
         hw_error=None,
         sim_eval=
@@ -166,7 +166,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="L2 write Hit rate",
-        plotfile="l2-write-hitrate.html",
+        plotfile="l2-write-hitrate",
         hw_eval="np.average(hw[\"l2_tex_write_hit_rate\"])",
         hw_error=None,
         sim_eval=
@@ -177,7 +177,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="Occupancy",
-        plotfile="occupancy.html",
+        plotfile="occupancy",
         hw_eval="np.average(hw[\"achieved_occupancy\"])*100",
         hw_error=None,
         sim_eval="float(sim[\"gpu_occupancy\s*=\s*(.*)%\"])",
@@ -186,7 +186,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="L1 Cache Hit Rate",
-        plotfile="l1hitrate.html",
+        plotfile="l1hitrate",
         hw_eval="np.average(hw[\"tex_cache_hit_rate\"])",
         hw_error=None,
         sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])" +\
@@ -197,7 +197,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="L1 Cache Hit Rate (global_hit_rate match)",
-        plotfile="l1hitrate.golbal.html",
+        plotfile="l1hitrate.golbal",
         hw_eval="np.average(hw[\"global_hit_rate\"])",
         hw_error=None,
         sim_eval="(float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])" +\
@@ -209,7 +209,7 @@ correl_list = \
         plottype="linear"
     ),
     CorrelStat(chart_name="L1 Cache Read Access",
-        plotfile="l1readaccess.html",
+        plotfile="l1readaccess",
         hw_eval="np.average(hw[\"gld_transactions\"])",
         hw_error=None,
         sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
