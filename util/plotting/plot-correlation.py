@@ -81,20 +81,19 @@ def make_submission_quality_image(image_type, traces):
     if not options.noanno:
         layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
-    plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
-    appsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".appsincluded.txt")
-    kernelsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".kernelsincluded.txt")
+    plotname = os.path.join(correl_outdir,plotfile + agg_cfg)[:200]
+
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
-    f = open(appsinludedname[:200] + ".apps.txt", 'w')
+    f = open(plotname + ".apps.txt", 'w')
     f.write(applist_file_contents)
     f.close()
-    f = open(kernelsinludedname[:200] + ".kernel.txt", 'w')
+    f = open(plotname + ".kernel.txt", 'w')
     f.write(kernellist_file_contents)
     f.close()
 
-    print "Plotting {0}: {1}\n{2}Apps included listed in {3}\nKerenels included listed in {4}\n"\
-        .format(plotname, layout.title, print_anno, appsinludedname, kernelsinludedname)
+    print "Plotting {0}: {1}\n{2}"\
+        .format(plotname, layout.title, print_anno)
     TEXT_SIZE=30
 
 
@@ -393,8 +392,6 @@ parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type=
                        " N runs defined by this variable. This helps to eliminate HW cycle error caused"+\
                        " by DVFS",
                   default=3)
-parser.add_option("-L", "--linearplot", dest="linearplot", action="store_true",
-                  help="By default, plots are log/log. Set -L for linear x/y axises")
 parser.add_option("-b", "--blacklist", dest="blacklist", default="",
                   help="File that contains regex expressions on each line for what apps should be excluded." +\
                        " Useful for removing random toy apps from the correlation.")
