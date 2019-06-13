@@ -23,6 +23,16 @@ import ast
 import numpy
 import datetime
 
+def getCorrelCsvRaw(trace):
+    out_csv = "Kernel,Hardware,Simulator,Sim/HW\n"
+    count = 0
+    for label in trace.text:
+        out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
+            .format(label, trace.x[count], trace.y[count],\
+                trace.y[count]/trace.x[count])
+        count += 1
+    return out_csv
+
 def isAppBanned( appargs, blacklist ):
     for bannedname in blacklist:
         if bannedname.match(appargs):
@@ -60,6 +70,7 @@ def make_submission_quality_image(image_type, traces):
     print_anno = ""
     applist_file_contents = ""
     kernellist_file_contents = ""
+    csv_file_contents = ""
 
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
         trace.marker = markers[count %len(markers)]
@@ -76,6 +87,7 @@ def make_submission_quality_image(image_type, traces):
         app_str, kernel_str = make_pretty_app_list(apps_included)
         applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
+        csv_file_contents += "{0}\n\n".format(getCorrelCsvRaw(trace))
         count += 1
 
     if not options.noanno:
@@ -94,6 +106,9 @@ def make_submission_quality_image(image_type, traces):
     f.close()
     f = open(plotname + ".kernel.txt", 'w')
     f.write(kernellist_file_contents)
+    f.close()
+    f = open(plotname + ".raw.csv", 'w')
+    f.write(csv_file_contents)
     f.close()
 
     print "Plotting {0}: {1}\n{2}"\
