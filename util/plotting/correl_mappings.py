@@ -34,7 +34,7 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN V",
         drophwnumbelow=8000,
-        plottype="log"
+		plottype="log"
     ),
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
@@ -87,7 +87,9 @@ correl_list = \
         hw_error="np.max(hw[\"Duration\"])*1132 - np.average(hw[\"Duration\"])*1132,"+\
                  "np.average(hw[\"Duration\"])*1132 - np.min(hw[\"Duration\"])*1132",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
-        hw_name="Quadro GV100"
+        hw_name="Quadro GV100",
+        drophwnumbelow=8000,
+        plottype="log"
     ),
 
 
