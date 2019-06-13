@@ -76,6 +76,9 @@ parser.add_option("-w", "--publish_web", dest="publish_web",
                   help="After the htmls are generated - they will get published here."+\
                   " Assumes you can scp to this directory.",
                   default="")
+parser.add_option("-P", "--plotname", dest="plotname",
+                  help="String appended to the filenames",
+                  default="")
 (options, args) = parser.parse_args()
 options.csv_file = common.file_option_test( options.csv_file, "", this_directory )
 
@@ -110,9 +113,9 @@ for stat,value in all_stats.iteritems():
         )
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = stat.replace("\/", "-")
+    figure_name = stat.replace("\/", "-") + "-" + options.plotname
     print "plotting: " + figure_name
-    outdir = (os.path.join(this_directory,"htmls", options.basename))
+    outdir = (os.path.join(this_directory,"htmls"))
     if not os.path.exists( outdir ):
         os.makedirs(outdir)
     plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
@@ -120,7 +123,7 @@ for stat,value in all_stats.iteritems():
 
 
 shutil.copy2(options.csv_file, outdir)
-if options.publish_path != "":
+if options.publish_path != None and options.publish_path != "":
     files = glob.glob(os.path.join(outdir, "*"))
     if subprocess.call(["scp"] + files + [options.publish_path]) != 0:
         print "Error Publishing via scp"

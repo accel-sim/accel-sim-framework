@@ -57,7 +57,7 @@ def get_csv_data_for_merge(filepath):
                                 first_delimiter = appargs_kname.find("--")
                                 appargs = appargs_kname[ :first_delimiter ]
                                 kname = appargs_kname[ first_delimiter + 2: ]
-                                if current_stat == "GPGPU-Sim-build":
+                                if current_stat == "GPGPU-Sim-build" and data[config][count] != "NA":
                                     build_num = data[config][count][21:28]
                                     build_nums.add(build_num)
                                 stat_map[kname + appargs + config + current_stat ] = data[config][count]
