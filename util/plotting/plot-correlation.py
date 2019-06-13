@@ -23,6 +23,16 @@ import ast
 import numpy
 import datetime
 
+def getCorrelCsvRaw(trace):
+    out_csv = "Kernel,Hardware,Simulator,Sim/HW\n"
+    count = 0
+    for label in trace.text:
+        out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
+            .format(label, trace.x[count], trace.y[count],\
+                trace.y[count]/trace.x[count])
+        count += 1
+    return out_csv
+
 def isAppBanned( appargs, blacklist ):
     for bannedname in blacklist:
         if bannedname.match(appargs):
@@ -60,6 +70,7 @@ def make_submission_quality_image(image_type, traces):
     print_anno = ""
     applist_file_contents = ""
     kernellist_file_contents = ""
+    csv_file_contents = ""
 
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
         trace.marker = markers[count %len(markers)]
@@ -69,32 +80,39 @@ def make_submission_quality_image(image_type, traces):
         # Set the alpha on the error bars to be 30%
         trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
         data.append(trace)
-        annotations.append(make_anno1(anno,10,0,1.115 - count * 0.05))
+        annotations.append(make_anno1(anno,5,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc. {1} dropped for HW too low (>{2})\n".format(
             err_dropped, hw_low_drop, correlmap.drophwnumbelow)
         agg_cfg += "." + cfg
         app_str, kernel_str = make_pretty_app_list(apps_included)
         applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
+        csv_file_contents += "{0}\n\n".format(getCorrelCsvRaw(trace))
         count += 1
 
     if not options.noanno:
         layout.annotations=annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
-    plotname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".html")
-    appsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".appsincluded.txt")
-    kernelsinludedname = filename=os.path.join(correl_outdir,plotfile + agg_cfg + ".kernelsincluded.txt")
+    if options.plotname == "":
+        plotname = plotfile + agg_cfg
+    else:
+        plotname = plotfile + "." + options.plotname
+
+    plotname = os.path.join(correl_outdir, plotname)[:200]
     if not os.path.isdir(correl_outdir):
         os.makedirs(correl_outdir)
-    f = open(appsinludedname[:200] + ".apps.txt", 'w')
+    f = open(plotname + ".apps.txt", 'w')
     f.write(applist_file_contents)
     f.close()
-    f = open(kernelsinludedname[:200] + ".kernel.txt", 'w')
+    f = open(plotname + ".kernel.txt", 'w')
     f.write(kernellist_file_contents)
     f.close()
+    f = open(plotname + ".raw.csv", 'w')
+    f.write(csv_file_contents)
+    f.close()
 
-    print "Plotting {0}: {1}\n{2}Apps included listed in {3}\nKerenels included listed in {4}\n"\
-        .format(plotname, layout.title, print_anno, appsinludedname, kernelsinludedname)
+    print "Plotting {0}: {1}\n{2}"\
+        .format(plotname + ".html", layout.title, print_anno)
     TEXT_SIZE=30
 
 
@@ -124,7 +142,7 @@ def make_submission_quality_image(image_type, traces):
         traceorder='normal',
         font=dict(
             family='sans-serif',
-            size=25,
+            size=15,
             color='#000'
         ),
         bgcolor='#E2E2E2',
@@ -138,10 +156,10 @@ def make_submission_quality_image(image_type, traces):
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
     if image_type != "":
-        png_name = plotname[:-5].replace(".", "_") + "." + image_type
+        png_name = plotname.replace(".", "_") + "." + image_type
         py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1024)
     # This generates the html
-    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname[:200] + ".html", auto_open=False)
+    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname + ".html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
     return Annotation(
@@ -300,9 +318,9 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         continue
                     if processedCycle:
                         count = 0
-			if kcount < len(kdata):
+                        if kcount < len(kdata):
                             logger.log("Warning - number of kernels in cycle file mismatches kernels in the stats file:\n{0}".format(csv_file))
-			    continue
+                            continue
                         for elem in row:
                             if header[count] not in kdata[kcount]:
                                 kdata[kcount][header[count]] = []
@@ -393,13 +411,14 @@ parser.add_option("-B", "--cycle_runs_to_burn", dest="cycle_runs_to_burn", type=
                        " N runs defined by this variable. This helps to eliminate HW cycle error caused"+\
                        " by DVFS",
                   default=3)
-parser.add_option("-L", "--linearplot", dest="linearplot", action="store_true",
-                  help="By default, plots are log/log. Set -L for linear x/y axises")
 parser.add_option("-b", "--blacklist", dest="blacklist", default="",
                   help="File that contains regex expressions on each line for what apps should be excluded." +\
                        " Useful for removing random toy apps from the correlation.")
 parser.add_option("-n", "--noanno", dest="noanno", action="store_true",
                   help="Turn off plot annotations")
+parser.add_option("-p", "--plotname", dest="plotname", default="",
+                  help="string put in the middle of the output files. If nothing is provided, then" +\
+                       "a concatination of all the configs in the graph are used.")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()

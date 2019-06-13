@@ -11,7 +11,7 @@ import time
 def print_statsfile(options, this_directory):
     get_stats_out_file = open(options.statsfile, 'w+')
     print "Calling get_stats.py"
-    if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name],
+    if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name, "-A"],
         stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
         print "Error Launching get_stats.py"
     get_stats_out_file.seek(0)
