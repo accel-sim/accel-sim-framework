@@ -23,13 +23,34 @@ import ast
 import numpy
 import datetime
 
-def getCorrelCsvRaw(trace):
-    out_csv = "Kernel,Hardware,Simulator,Sim/HW\n"
+def getAppData(kernels, x, y):
     count = 0
-    for label in trace.text:
+    app_map = {}
+    apps = []
+    newx = []
+    newy = []
+    for kernel in kernels:
+        app_name = kernel.split("--")[0]
+        if app_name in app_map:
+            tx,ty = app_map[app_name]
+            app_map[app_name] = ( tx + x[count], ty + y[count] )
+        else:
+            app_map[app_name] = (x[count], y[count])
+        count += 1
+    for k,v in app_map.iteritems():
+        apps.append(k)
+        x1,y1 = v
+        newx.append(x1)
+        newy.append(y1)
+    return apps, newx, newy
+
+def getCorrelCsvRaw((names, x, y)):
+    out_csv = "Name,Hardware,Simulator,Sim/HW\n"
+    count = 0
+    for k in names:
         out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
-            .format(label, trace.x[count], trace.y[count],\
-                trace.y[count]/trace.x[count])
+            .format(k, x[count], y[count],\
+                y[count]/x[count])
         count += 1
     return out_csv
 
@@ -70,7 +91,8 @@ def make_submission_quality_image(image_type, traces):
     print_anno = ""
     applist_file_contents = ""
     kernellist_file_contents = ""
-    csv_file_contents = ""
+    kernel_csv_file_contents = ""
+    app_csv_file_contents = ""
 
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
         trace.marker = markers[count %len(markers)]
@@ -87,7 +109,10 @@ def make_submission_quality_image(image_type, traces):
         app_str, kernel_str = make_pretty_app_list(apps_included)
         applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
-        csv_file_contents += "{0}\n\n".format(getCorrelCsvRaw(trace))
+        kernel_csv_file_contents += "{0}\n\n"\
+            .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
+        app_csv_file_contents += "{0}\n\n"\
+            .format(getCorrelCsvRaw(getAppData(trace.text, trace.x, trace.y)))
         count += 1
 
     if not options.noanno:
@@ -107,8 +132,11 @@ def make_submission_quality_image(image_type, traces):
     f = open(plotname + ".kernel.txt", 'w')
     f.write(kernellist_file_contents)
     f.close()
-    f = open(plotname + ".raw.csv", 'w')
-    f.write(csv_file_contents)
+    f = open(plotname + ".kernel.raw.csv", 'w')
+    f.write(kernel_csv_file_contents)
+    f.close()
+    f = open(plotname + ".app.raw.csv", 'w')
+    f.write(app_csv_file_contents)
     f.close()
 
     print "Plotting {0}: {1}\n{2}"\
