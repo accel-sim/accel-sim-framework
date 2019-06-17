@@ -176,9 +176,9 @@ def make_submission_quality_image(image_type, traces):
         bgcolor='#E2E2E2',
         bordercolor='#FFFFFF',
         borderwidth=2
-    )
-
-    xyline = go.Scatter(x=[5000, layout.xaxis.range[1]],y=[5000,layout.xaxis.range[1]],showlegend=False,mode="lines")
+   )
+    xyline = go.Scatter(x=[layout.xaxis.range[0] + 1, layout.xaxis.range[1]],
+        y=[layout.xaxis.range[0] + 1,layout.xaxis.range[1]],showlegend=False,mode="lines")
     xyline.line.color = 'rgba(255,0,0,.7)'
     data.append(xyline)
     # plotly will only let you do .pdf if you pay for it - I have.
@@ -658,11 +658,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             title=correl.chart_name,
              xaxis=dict(
                 title='Hardware {0} {1}'.format(hw_cfg, correl.chart_name),
-                range=[0 ,max_axis_val*1.1]
+                range=[min_axis_val * 0.9 ,max_axis_val*1.1]
             ),
             yaxis=dict(
                 title='GPGPU-Sim {0}'.format(correl.chart_name),
-                range=[0,max_axis_val*1.1]
+                range=[min_axis_val * 0.9 ,max_axis_val*1.1]
             ),
         )
         data = [trace]
