@@ -20,12 +20,15 @@ collect_aggregate:
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
     - 'gpgpu_n_tot_w_icount\s*=\s*(.*)'
+    - 'total dram reads\s*=\s*(.*)'
+    - 'total dram writes\s*=\s*(.*)'
 
 # These stats are reset each kernel and should not be diff'd
 # They cannot be used is only collecting the final_kernel stats
 collect_abs:
     - 'gpu_ipc\s*=\s*(.*)'
     - 'gpu_occupancy\s*=\s*(.*)%'
+    - 'L2_BW\s*=\s*(.*)+GB\/Sec'
 
 # These stats are rates that aggregate - but cannot be diff'd
 # Only valid as a snapshot and most useful for the final kernel launch
