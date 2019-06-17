@@ -258,7 +258,8 @@ for idx, app_and_args in enumerate(apps_and_args):
             lines = f.readlines()
             for line in reversed(lines):
                 # pull out some stats
-                for stat_name, token in stats_to_pull.iteritems():
+                for stat_name, tup in stats_to_pull.iteritems():
+                    token, statType = tup
                     if stat_name in stat_found:
                         continue
                     existance_test = token.search( line.rstrip() )
