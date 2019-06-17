@@ -74,8 +74,6 @@ parser.add_option("-s", "--stats_yml", dest="stats_yml", default="",
                        " by default it uses stats/example_stats.yml")
 parser.add_option("-k", "--per_kernel", dest="per_kernel", action="store_true",
                   help="Aggregate the statistics for each named kernel")
-parser.add_option("-n", "--no_kernel_delta", dest="no_kernel_delta", action="store_true",
-                  help="Don't take the difference when doing per kernel launch")
 parser.add_option("-K", "--kernel_instance", dest="kernel_instance", action="store_true",
                   help="Print stats for each individual kernel the statistics for each named kernel")
 parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="store_true",
@@ -109,8 +107,15 @@ specific_jobIds = {}
 stats_to_pull = {}
 stats_yaml = yaml.load(open(options.stats_yml), Loader=yaml.FullLoader )
 stats= {}
-for stat in stats_yaml['collect']:
-    stats_to_pull[stat] = re.compile(stat)
+for stat in stats_yaml['collect_aggregate']:
+    stats_to_pull[stat] = re.compile(stat), "agg"
+
+for stat in stats_yaml['collect_abs']:
+    stats_to_pull[stat] = re.compile(stat), "abs"
+
+for stat in stats_yaml['collect_rates']:
+    stats_to_pull[stat] = re.compile(stat), "rate"
+
 
 if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
@@ -253,7 +258,8 @@ for idx, app_and_args in enumerate(apps_and_args):
             lines = f.readlines()
             for line in reversed(lines):
                 # pull out some stats
-                for stat_name, token in stats_to_pull.iteritems():
+                for stat_name, tup in stats_to_pull.iteritems():
+                    token, statType = tup
                     if stat_name in stat_found:
                         continue
                     existance_test = token.search( line.rstrip() )
@@ -305,12 +311,13 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_map[current_kernel + app_and_args + config + "k-count"] = 1
                     continue
 
-                for stat_name, token in stats_to_pull.iteritems():
+                for stat_name, tup in stats_to_pull.iteritems():
+                    token, statType = tup
                     existance_test = token.search( line.rstrip() )
                     if existance_test != None:
                         stat_found.add(stat_name)
                         number = existance_test.group(1).strip()
-                        if options.no_kernel_delta:
+                        if statType != "agg":
                             stat_map[current_kernel + app_and_args + config + stat_name] = number
                         elif current_kernel + app_and_args + config + stat_name in stat_map:
                             if stat_name in raw_last:
@@ -424,7 +431,9 @@ for appargs in apps_and_args:
 
 print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
 
-for stat_name in stats_yaml['collect']:
+for stat_name in ( stats_yaml['collect_aggregate'] +\
+                   stats_yaml['collect_abs'] +\
+                   stats_yaml['collect_rates'] ):
     print_stat( stat_name, all_named_kernels, options.configs_as_rows )
 
 duration = time.time() - start_time

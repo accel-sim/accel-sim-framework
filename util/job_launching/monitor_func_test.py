@@ -8,6 +8,42 @@ import sys
 import common
 import time
 
+def getColId(colHeader, headerLine):
+    name_line_match = re.match(colHeader, headerLine)
+    if name_line_match != None:
+        return name_line_match.group(1).count('\t')
+    return None
+
+def kill_all_running_jobs(jobstatus_out_filename):
+    jobstatus_out_file = open(jobstatus_out_filename, 'r')
+    jobStatusCol = None
+    torqueJobCol = None
+    appCol = None
+    appArgsCol = None
+    nodeCol = None
+    for line in jobstatus_out_file.readlines():
+        if jobStatusCol == None:
+            jobStatusCol = getColId("(.*)JobStatus.*", line)
+            torqueJobCol = getColId("(.*)TorqueJob.*", line)
+            appCol = getColId("(.*)App\s+.*", line)
+            appArgsCol = getColId("(.*)AppArgs.*", line)
+            nodeCol = getColId("(.*)Node.*", line)
+        else:
+            tokens = line.split('\t')
+            if len(tokens) > jobStatusCol:
+                status = tokens[jobStatusCol].strip()
+                if status == "RUNNING" or status == "WAITING_TO_RUN":
+                    torqueID = tokens[torqueJobCol].strip()
+                    app = tokens[appCol].strip()
+                    appArgs = tokens[appArgsCol].strip()
+                    nodeName = tokens[nodeCol].strip()
+                    print "Calling qdel {0}: {1}/{2} ({3})".format(torqueID, app, appArgs, nodeName)
+                    if subprocess.call( ["qdel" , torqueID] ) != 0:
+                        print "WARNING error calling qdel"
+    print "Sleeping 30s to wait for the file system to calm down"
+    time.sleep(30)
+    jobstatus_out_file.close()
+
 def print_statsfile(options, this_directory):
     get_stats_out_file = open(options.statsfile, 'w+')
     print "Calling get_stats.py"
@@ -18,13 +54,14 @@ def print_statsfile(options, this_directory):
     print get_stats_out_file.read()
     get_stats_out_file.close()
 
-def handle_exit():
-        if num_error == 0 or options.ignore_failures:
-            if options.verbose and options.statsfile:
-                print_statsfile(options, this_directory)
-            exit(0)
-        else:
-            exit(1)
+def handle_exit(jobstatus_out_filename):
+    os.remove(jobstatus_out_filename)
+    if num_error == 0 or options.ignore_failures:
+        if options.verbose and options.statsfile:
+            print_statsfile(options, this_directory)
+        exit(0)
+    else:
+        exit(1)
 
 #*********************************************************--
 # main script start
@@ -53,6 +90,8 @@ parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="sto
                   help="If some of the runs have errors - do not return an error code.")
 parser.add_option("-T", "--timeout", dest="timeout", default="99999",
                   help="Maximum number of hours to run the monitor for. If time is exceeded, exit with error code.")
+parser.add_option("-K", "--killwhentimedout", dest="killwhentimedout", action="store_true",
+                  help="Kill all the jobs still running if the monitor times out.")
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
@@ -64,7 +103,6 @@ failed_job_file = None
 
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
-
     if options.verbose:
         print "Calling job_status.py"
     if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
@@ -84,10 +122,7 @@ while True:
             if options.verbose:
                 print line.strip()
             if jobStatusCol == None:
-                name_line_match = re.match("(.*)JobStatus.*", line)
-                if name_line_match != None:
-                    jobStatusCol = name_line_match.group(1).count('\t')
-                    continue
+                jobStatusCol = getColId("(.*)JobStatus.*", line)
             else:
                 tokens = line.split('\t')
                 fail_match = re.match("failed job log written to (.*)", line)
@@ -107,7 +142,6 @@ while True:
                         num_error += 1
 
         jobstatus_out_file.close()
-        os.remove(jobstatus_out_filename)
     
     total = num_passed + num_running + num_waiting + num_error + num_no_err
     print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Running:{4}/{1}, Waiting:{5}/{1}"\
@@ -124,11 +158,13 @@ while True:
         else:
             print "Something did not pass."
 
-        handle_exit()
+        handle_exit(jobstatus_out_filename)
     else:
         print "Sleeping for {0}s".format(options.sleep_time)
         time.sleep(int(options.sleep_time))
         options.timeout -= float(options.sleep_time)
         if options.timeout <= 0:
             print "Monitor has timed-out"
-            handle_exit()
+            if options.killwhentimedout:
+                kill_all_running_jobs(jobstatus_out_filename)
+            handle_exit(jobstatus_out_filename)
