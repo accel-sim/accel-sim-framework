@@ -5,13 +5,30 @@
 # Here is a handy regex tester that helps get the thing right faster without re-running stuff:
 #   http://www.regexpal.com/
 
-collect:
+# These stats are continuously aggregated - even between kerenels and should
+# be diff'd to get the per-kernel stats
+collect_aggregate:
     - 'gpu_tot_sim_insn\s*=\s*(.*)'
     - 'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'
-    - 'gpu_tot_ipc\s*=\s*(.*)'
     - 'gpu_tot_sim_cycle\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
+    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
+    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
+    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
+    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
+    - 'gpgpu_n_tot_w_icount\s*=\s*(.*)'
+
+# These stats are reset each kernel and should not be diff'd
+# They cannot be used is only collecting the final_kernel stats
+collect_abs:
+    - 'gpu_ipc\s*=\s*(.*)'
+    - 'gpu_occupancy\s*=\s*(.*)%'
+
+# These stats are rates that aggregate - but cannot be diff'd
+# Only valid as a snapshot and most useful for the final kernel launch
+collect_rates:
     - 'gpgpu_simulation_rate\s+=\s+(.*)\s+\(inst\/sec\)'
+    - 'gpu_tot_ipc\s*=\s*(.*)'
