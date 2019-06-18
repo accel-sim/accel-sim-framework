@@ -47,3 +47,4 @@ benchmarks/src/cuda/shoc-master/src/opencl/level1/triad/Triad
 benchmarks/src/cuda/shoc-master/src/opencl/level1/triad/epmpi/Triad
 benchmarks/src/cuda/shoc-master/src/opencl/level2/s3d/S3D
 benchmarks/src/cuda/shoc-master/src/opencl/level2/s3d/epmpi/S3D
+benchmarks/src/cuda/cudnn/mnist/mnistCUDNN
