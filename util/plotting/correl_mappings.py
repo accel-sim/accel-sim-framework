@@ -15,6 +15,7 @@ config_maps = \
     "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
     "GTX1080Ti" : "GeForce GTX 1080 Ti",
+    "QV100" : "Quadro GV100"
 }
 
 
@@ -33,7 +34,7 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN V",
         drophwnumbelow=8000,
-        plottype="log"
+		plottype="log"
     ),
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
@@ -79,6 +80,18 @@ correl_list = \
         drophwnumbelow=8000,
         plottype="log"
     ),
+    # 1132 MHz
+    CorrelStat(chart_name="Cycles",
+        plotfile="gv100-cycles",
+        hw_eval="np.average(hw[\"Duration\"])*1132",
+        hw_error="np.max(hw[\"Duration\"])*1132 - np.average(hw[\"Duration\"])*1132,"+\
+                 "np.average(hw[\"Duration\"])*1132 - np.min(hw[\"Duration\"])*1132",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Quadro GV100",
+        drophwnumbelow=8000,
+        plottype="log"
+    ),
+
 
     # Common, non-cycle stats
     CorrelStat(chart_name="Warp Instructions",
@@ -108,16 +121,6 @@ correl_list = \
         drophwnumbelow=0,
         plottype="log"
     ),
-    CorrelStat(chart_name="DRAM read transactions",
-        plotfile="dram-read-transactions",
-        hw_eval="np.average(hw[\"dram_read_transactions\"])",
-        hw_error=None,
-#        sim_eval="float(sim[\"Read\s*=\s*(.*)\"])+float(sim[\"L2_Alloc\s*=\s*(.*)\"])*24",
-        sim_eval="float(sim[\".*n_rd\s*=\s*([0-9]+).*\"])*24",
-        hw_name="all",
-        drophwnumbelow=1000,
-        plottype="log"
-    ),
     CorrelStat(chart_name="L2 write transactions",
         plotfile="l2-write-transactions",
         hw_eval="np.average(hw[\"l2_tex_write_transactions\"])",
@@ -136,20 +139,11 @@ correl_list = \
         drophwnumbelow=0,
         plottype="log"
     ),
-    CorrelStat(chart_name="DRAM Reads",
-        plotfile="dram-read-transactions",
-        hw_eval="np.average(hw[\"dram_read_transactions\"])",
-        hw_error=None,
-        sim_eval="float(sim[\".*n_rd\s*=\s*([0-9]+).*\"])*12",
-        hw_name="all",
-        drophwnumbelow=0,
-        plottype="log"
-    ),
     CorrelStat(chart_name="L2 BW",
         plotfile="l2_bw",
         hw_eval="np.average(hw[\"l2_tex_read_throughput\"])",
         hw_error=None,
-        sim_eval="float(sim[\"L2_BW\s*=\s*(.*)GB/Sec\"])",
+        sim_eval="float(sim[\"L2_BW\s*=\s*(.*)GB\/Sec\"])",
         hw_name="all",
         drophwnumbelow=0,
         plottype="linear"
@@ -217,4 +211,43 @@ correl_list = \
         drophwnumbelow=0,
         plottype="log"
     ),
+	CorrelStat(chart_name="L1 BW",
+        plotfile="l1_bw",
+        hw_eval="np.average(hw[\"tex_cache_throughput\"])",
+        hw_error=None,
+        sim_eval="((float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])" +\
+                " + float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])) * 32 * 1.132)/" +\
+				"float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Quadro GV100",
+        drophwnumbelow=0,
+        plottype="linear"
+    ),
+	CorrelStat(chart_name="DRAM read transactions",
+        plotfile="dram-read-transactions",
+        hw_eval="np.average(hw[\"dram_read_transactions\"])",
+        hw_error=None,
+#        sim_eval="float(sim[\"Read\s*=\s*(.*)\"])+float(sim[\"L2_Alloc\s*=\s*(.*)\"])*24",
+        sim_eval="float(sim[\"total dram reads\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=1000,
+        plottype="log"
+    ),
+	CorrelStat(chart_name="DRAM write transactions",
+        plotfile="dram-write-transactions",
+        hw_eval="np.average(hw[\"dram_write_transactions\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"total dram writes\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log"
+    ),
+#    CorrelStat(chart_name="DRAM Reads",
+#        plotfile="dram-read-transactions",
+#        hw_eval="np.average(hw[\"dram_read_transactions\"])",
+#        hw_error=None,
+#        sim_eval="float(sim[\"total dram reads\s*=\s*(.*)\"])",
+#        hw_name="all",
+#        drophwnumbelow=0,
+#        plottype="log"
+#    ),
 ]

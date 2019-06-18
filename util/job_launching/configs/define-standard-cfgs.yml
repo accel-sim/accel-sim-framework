@@ -4,6 +4,9 @@
 TITANV:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV/gpgpusim.config"
 
+QV100:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100/gpgpusim.config"
+
 # Fermi
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
@@ -31,6 +34,9 @@ COPYK:
 1B:
     extra_params: "-gpgpu_max_insn 1000000000"
 
+5B:
+    extra_params: "-gpgpu_max_insn 5000000000"
+
 100M:
     extra_params: "-gpgpu_max_insn 100000000"
 
@@ -42,6 +48,21 @@ PWR_ENABLE:
 
 LOCALXBAR:
     extra_params: "-network_mode 2 -inct_in_buffer_limit 512  -inct_out_buffer_limit 512  -inct_subnets 2"
+
+BOOKSIM:
+    extra_params: "-network_mode 1 -inter_config_file config_volta_islip.icnt"
+
+1455MHZ:
+    extra_params: "-gpgpu_clock_domains 1455.0:1455.0:1455.0:850.0"
+
+1132MHZ:
+    extra_params: "-gpgpu_clock_domains 1132.0:1132.0:1132.0:850.0"
+
+NORM:
+    extra_params: "-memory_partition_indexing 0"
+
+RANDOM:
+    extra_params: "-memory_partition_indexing 4"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
