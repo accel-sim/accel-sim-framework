@@ -505,6 +505,12 @@ shoc:
         - shoc-Triad:
             -
 
+deeplearning:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - mnistCUDNN:
+            -
 
 custom_apps:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
