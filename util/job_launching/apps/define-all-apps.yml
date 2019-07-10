@@ -512,6 +512,13 @@ deeplearning:
         - mnistCUDNN:
             -
 
+cutlass:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
+
 custom_apps:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/"
