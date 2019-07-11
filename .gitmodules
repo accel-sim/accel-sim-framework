@@ -1,0 +1,3 @@
+[submodule "benchmarks/src/cuda/cutlass-bench/tools/external/googletest"]
+	path = benchmarks/src/cuda/cutlass-bench/tools/external/googletest
+	url = https://github.com/google/googletest.git
