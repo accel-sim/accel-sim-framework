@@ -53,6 +53,8 @@ GPU_Microbenchmark:
             -
         - l2_bw_64f:
             -
+        - l2_bw_128:
+            -
         - l2_lat:
             -
         - mem_bw:
