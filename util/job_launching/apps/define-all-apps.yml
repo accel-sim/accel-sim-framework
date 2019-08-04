@@ -44,6 +44,31 @@ test:
         - vectorAdd:
             - --size 5000
 
+GPU_Microbenchmark:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/GPU-Microbenchmark/"
+    execs:
+        - l1_bw_32f:
+            -
+        - l1_bw_64f:
+            -
+        - l1_bw_128:
+            -
+        - l1_lat:
+            -
+        - l2_bw_32f:
+            -
+        - l2_bw_64f:
+            -
+        - l2_bw_128:
+            -
+        - l2_lat:
+            -
+        - mem_bw:
+            -
+        - mem_lat:
+            -
+
 sdk-4.2-scaled:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
@@ -143,8 +168,7 @@ microbench:
     data_dirs: "../../benchmarks/src/microbench/"
     execs:
         - microbench-oo-vfunc-test:
-            - 
-
+            -
 
 ### Apps without FTs
 
@@ -263,6 +287,8 @@ rodinia-3.1:
             - -f ./data/matrix4.txt
             - -s 16
             - -f ./data/matrix208.txt
+            - -s 64
+            - -s 256
         - heartwall-rodinia-3.1:
             - ./data/test.avi 1
             - ./data/test.avi 20
@@ -281,6 +307,7 @@ rodinia-3.1:
         - kmeans-rodinia-3.1:
             - -o -i ./data/28k_4x_features.txt
             - -o -i ./data/kdd_cup
+            - -o -i ./data/819200.txt
         - lavaMD-rodinia-3.1:
             - -boxes1d 10
         - leukocyte-rodinia-3.1:
@@ -535,290 +562,290 @@ cutlass:
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test:
-            - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=7133 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=7133 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=7133 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=7133 --k=4096 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=7435 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=5481 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=1 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=2 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=4 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=1 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=2 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=4 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=1500 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=3000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=6000 --k=1024 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=1 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=1 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=1 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=2 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=2 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=2 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=4 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=4 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=4 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=5124 --n=9124 --k=1760 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=5124 --n=9124 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=5124 --n=9124 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=5124 --n=9124 --k=4096 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=1 --providers=cutlass
-            - --seed=2020  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=1 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7133 --k=1760 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7133 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7133 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7133 --k=4096 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=7435 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=5481 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=1 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=2 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=4 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=1 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=2 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=4 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=1500 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=3000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=6000 --k=1024 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=1 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=1 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=1 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=2 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=2 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=2 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=4 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=4 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=4 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=1760 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=4096 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
 
 custom_apps:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
