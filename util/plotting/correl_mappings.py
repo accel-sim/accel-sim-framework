@@ -15,7 +15,8 @@ config_maps = \
     "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
     "GTX1080Ti" : "GeForce GTX 1080 Ti",
-    "QV100" : "Quadro GV100"
+    "QV100" : "Quadro GV100",
+	"QV100_old" : "Quadro GV100"
 }
 
 
@@ -88,7 +89,7 @@ correl_list = \
                  "np.average(hw[\"Duration\"])*1132 - np.min(hw[\"Duration\"])*1132",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Quadro GV100",
-        drophwnumbelow=8000,
+        drophwnumbelow=100,
         plottype="log"
     ),
 
