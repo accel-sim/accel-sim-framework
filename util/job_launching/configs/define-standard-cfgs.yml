@@ -4,8 +4,15 @@
 TITANV:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV/gpgpusim.config"
 
+# Volta
+TITANV_OLD:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV_OLD/gpgpusim.config"
+
 QV100:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100/gpgpusim.config"
+
+QV100_old:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_old/gpgpusim.config"
 
 # Fermi
 GTX480:
