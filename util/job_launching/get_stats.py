@@ -335,8 +335,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                             stat_map[current_kernel + app_and_args + config + stat_name] = ( float(number) - stat_last_kernel )
 # Just adding this in here since it is a special case and is not parsed like everything else, because you need
 # to read from the beginning not the end
-if options.per_kernel and not options.kernel_instance:
-    stats_yaml['collect'].append("k-count")
+#if options.per_kernel and not options.kernel_instance:
+#    stats_yaml['collect'].append("k-count")
 
 # After collection, spew out the tables
 def print_stat(stat_name, all_named_kernels, cfg_as_rows):
