@@ -557,7 +557,7 @@ cutlass-test:
         - cutlass_perf_test:
             - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
 
-cutlass_10:
+cutlass:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
@@ -847,7 +847,7 @@ cutlass_10:
             - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
             - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=3 --providers=cutlass
 
-cutlass:
+cutlass_10:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
