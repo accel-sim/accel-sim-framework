@@ -36,4 +36,6 @@ collect_abs:
 # Only valid as a snapshot and most useful for the final kernel launch
 collect_rates:
     - 'gpgpu_simulation_rate\s+=\s+(.*)\s+\(inst\/sec\)'
+    - 'gpgpu_simulation_rate\s+=\s+(.*)\s+\(cycle\/sec\)'
+    - 'gpgpu_silicon_slowdown\s*=\s*(.*)x'
     - 'gpu_tot_ipc\s*=\s*(.*)'
