@@ -69,6 +69,20 @@ GPU_Microbenchmark:
         - mem_lat:
             -
 
+Deepbench_nvidia:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/Deepbench/"
+    execs:
+        - conv_bench:
+            - train half 7 7 832 16 128 5 5 2 2 1 1
+            - inference half 700 161 1 1 32 20 5 0 0 2 2
+        - gemm_bench:
+            - train half 1760 7000 1760 0 0
+            - inference half 5124 1500 2048 0 0
+        - rnn_bench:
+            - inference half 512 1 25 lstm
+            - inference half 512 1 1 gru
+
 sdk-4.2-scaled:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/sdk/4.2/"
@@ -315,8 +329,8 @@ rodinia-3.1:
         - lud-rodinia-3.1:
             - -s 256 -v
             - -i ./data/512.dat
-        - mummergpu-rodinia-3.1:
-            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
+#        - mummergpu-rodinia-3.1:
+#            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
         - mycyocte-rodinia-3.1:
             - 100 1 0
         - nn-rodinia-3.1:
@@ -333,9 +347,9 @@ rodinia-3.1:
             - 100 0.5 502 458
         - srad_v2-rodinia-3.1:
             - 2048 2048 0 127 0 127 0.5 2
-        - streamcluster-rodinia-3.1:
-            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
-            - 10 20 256 65536 65536 1000 none output.txt 1
+#        - streamcluster-rodinia-3.1:
+#            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
+#            - 10 20 256 65536 65536 1000 none output.txt 1
 
 ispass-2009:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
