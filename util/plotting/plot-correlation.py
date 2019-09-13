@@ -543,7 +543,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         try:
                             logger.log("Evaluaing HW: {0}".format(correl.hw_eval))
                             hw_array.append(eval(correl.hw_eval))
-                        except KeyError as e:
+                        except:
+			    e = sys.exc_info()[0]
                             logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
                             count += 1
                             continue
