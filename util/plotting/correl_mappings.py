@@ -89,7 +89,7 @@ correl_list = \
                  "np.average(hw[\"Duration\"])*1132 - np.min(hw[\"Duration\"])*1132",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Quadro GV100",
-        drophwnumbelow=100,
+        drophwnumbelow=8000,
         plottype="log"
     ),
 
