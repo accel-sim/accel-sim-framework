@@ -428,6 +428,11 @@ parser.add_option("-e", "--err_off", dest="err_off",
 parser.add_option("-E", "--err_calc_threadhold", dest="err_calc_threadhold",
                   help="Do not include data points with an error higher than this in the error calculation.",
                   type="float", default="9999999.0")
+parser.add_option("-t", "--hw_err_tolerance", dest="hw_err_tolerance",
+                  help="Do not plot the correlation of HW values that very by more than hw_err_tolerance (as a percentage)."+\
+                        " If the hardware numbers vary this much then it does not make much sense to use them to correlate "+\
+                        " simulation.",
+                  type="float", default="30.0")
 parser.add_option("-i", "--image_type", dest="image_type",
                   help="Generate a pdf/png image alongside the html. Note that your plotly account must be setup"+\
                        " and have the ability to plot PDFs. i.e. be paid for. Professor Rogers has such an account"+\
@@ -596,7 +601,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             num_over += 1
                         else:
                             num_under += 1
-                        if abs(err) < options.err_calc_threadhold:
+                        if abs(err) < options.err_calc_threadhold and \
+                           hw_high < options.hw_err_tolerance and \
+                           hw_low < options.hw_err_tolerance:
                             errs.append(abs(err))
                             apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
                         else:
