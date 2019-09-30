@@ -1,7 +1,7 @@
 #PBS -S /bin/bash
 #PBS -N REPLACE_NAME
 #PBS -l nodes=REPLACE_NODES
-#PBS -l walltime=200:00:00,mem=2000mb
+#PBS -l walltime=200:00:00,mem=5000mb
 #PBS -q REPLACE_QUEUE_NAME
 #PBS -m ea
 #PBS -V

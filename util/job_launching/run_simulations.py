@@ -72,7 +72,7 @@ class ConfigurationSpec:
                     os.chdir(this_run_dir)
                     if subprocess.call(["qsub",\
                                         "-W", "umask=022",\
-                                       this_run_dir + "torque.sim"],\
+                                       os.path.join(this_run_dir , "torque.sim")],\
                                        stdout=torque_out_file) < 0:
                         exit("Error Launching Torque Job")
                     else:
@@ -213,7 +213,7 @@ class ConfigurationSpec:
             torque_text = re.sub("REPLACE_" + entry,
                                  str(replacement_dict[entry]),
                                  torque_text)
-        open(this_run_dir + "torque.sim", 'w').write(torque_text)
+        open(os.path.join(this_run_dir , "torque.sim"), 'w').write(torque_text)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
     def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
