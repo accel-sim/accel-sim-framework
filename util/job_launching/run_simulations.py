@@ -189,7 +189,7 @@ class ConfigurationSpec:
 		else:
 			txt_args = command_line_args
 	else:
-		txt_args = " -config ./gpgpusim.config -inter_config_file  ./config_volta_islip.icnt -trace ./traces/kernelslist.g -trace_driven_mode 1"
+		txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g -trace_driven_mode 1"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
