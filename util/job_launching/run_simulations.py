@@ -129,8 +129,8 @@ class ConfigurationSpec:
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
         for file_to_cp in files_to_copy_to_run_dir:
-            new_file = this_run_dir +\
-                       os.path.basename(this_directory + file_to_cp)
+            new_file = os.path.join(this_run_dir ,
+                       os.path.basename(this_directory + file_to_cp))
             if os.path.isfile(new_file):
                 os.remove(new_file)
             shutil.copyfile(file_to_cp,new_file)
@@ -183,10 +183,13 @@ class ConfigurationSpec:
             exit("\nERROR - Specify GPGPUSIM_CONFIG prior to running this script")
 
         # do the text replacement for the torque.sim file
-        if command_line_args == None:
-            txt_args = ""
-        else:
-            txt_args = command_line_args
+	if options.trace_dir == "":
+		if command_line_args == None:
+			txt_args = ""
+		else:
+			txt_args = command_line_args
+	else:
+		txt_args = " -config ./gpgpusim.config -inter_config_file  ./config_volta_islip.icnt -trace ./traces/kernelslist.g -trace_driven_mode 1"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
@@ -225,7 +228,7 @@ class ConfigurationSpec:
         config_text = open(config_text_file).read()
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params
 
-        open(this_run_dir + "gpgpusim.config", 'w').write(config_text)
+        open(os.path.join(this_run_dir , "gpgpusim.config"), 'w').write(config_text)
 
 #-----------------------------------------------------------
 # main script start
