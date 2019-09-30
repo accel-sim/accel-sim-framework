@@ -56,10 +56,10 @@ class ConfigurationSpec:
 
 
             for args in self.command_line_args_list:
-                this_run_dir = run_directory +\
-                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
-                            "/" + self.run_subdir + "/"
-                self.setup_run_directory(full_data_dir, this_run_dir, data_dir)
+                appargs_run_subdir = os.path.join( benchmark.replace('/','_'),
+                                self.benchmark_args_subdirs[args] )
+                this_run_dir = os.path.join( run_directory, appargs_run_subdir, self.run_subdir )
+                self.setup_run_directory(full_data_dir, this_run_dir, data_dir, appargs_run_subdir)
 
                 self.text_replace_torque_sim(full_data_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
@@ -118,7 +118,7 @@ class ConfigurationSpec:
     # Internal utility methods
     #########################################################################################
     # copies and links the necessary files to the run directory
-    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir):
+    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir, appargs_subdir):
         if not os.path.isdir(this_run_dir):
             os.makedirs(this_run_dir)
 
@@ -141,7 +141,15 @@ class ConfigurationSpec:
             if os.path.lexists(os.path.join(this_run_dir, "data")):
                 os.remove(os.path.join(this_run_dir, "data"))
             os.symlink(benchmark_data_dir, os.path.join(this_run_dir,"data"))
-        
+
+        # link the traces directory
+        if options.trace_dir != "":
+            benchmark_trace_dir = os.path.join(options.trace_dir, appargs_subdir, "traces")
+            if os.path.isdir(benchmark_trace_dir):
+                if os.path.lexists(os.path.join(this_run_dir, "traces")):
+                    os.remove(os.path.join(this_run_dir, "traces"))
+                os.symlink(benchmark_trace_dir, os.path.join(this_run_dir,"traces"))
+
         all_data_link = os.path.join(this_run_dir,"data_dirs")
         if os.path.lexists(all_data_link):
             os.remove(all_data_link)
@@ -158,9 +166,13 @@ class ConfigurationSpec:
             f = open(prelaunch_filename)
             benchmark_command_line = f.read().strip()
             f.close()
-        
-        exec_name = options.benchmark_exec_prefix + " " +\
+            
+        if options.trace_dir == "":
+            exec_name = options.benchmark_exec_prefix + " " +\
                     os.path.join(this_directory, exec_dir, benchmark)
+        else:
+            exec_name = options.benchmark_exec_prefix + " " +\
+                    os.path.join(libpath, "gpgpusim.out")
 
         # Test the existance of required env variables
         if str(os.getenv("GPGPUSIM_ROOT")) == "None":
@@ -236,8 +248,12 @@ else:
 options.so_dir = common.dir_option_test(
     options.so_dir, os.path.join( os.getenv("GPGPUSIM_ROOT"), "lib", os.getenv("GPGPUSIM_CONFIG") ),
     this_directory )
-so_path = os.path.join( options.so_dir, "libcudart.so" )
-version_string = extract_so_name( so_path )
+if options.trace_dir == "":
+    so_path = os.path.join( options.so_dir, "libcudart.so" )
+    version_string = extract_so_name( so_path )
+else:
+    so_path = os.path.join( options.so_dir, "gpgpusim.out" )
+    version_string = "version_todo"
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
     # In the very rare case that concurrent builds try to make the directory at the same time
