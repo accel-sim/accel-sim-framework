@@ -189,10 +189,12 @@ for logfile in parsed_logfiles:
                 continue
 
             num_jobs += 1
+            torquefile_base = re.sub(r".*\.(libcudart.*)", r"\1", jobname)
+            torquefile_base = re.sub(r".*\.(version.*)", r"\1", torquefile_base)
             errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
-                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "e" + jobId)
+                torquefile_base + "." + "e" + jobId)
             outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
-                re.sub(r".*\.(libcudart.*)", r"\1", jobname) + "." + "o" + jobId)
+                torquefile_base + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""
