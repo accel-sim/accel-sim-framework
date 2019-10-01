@@ -171,7 +171,8 @@ def parse_run_simulations_options():
     
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
-    options.trace_dir = dir_option_test( options.trace_dir.strip(), "", this_directory )
+    if options.trace_dir != "":
+        options.trace_dir = dir_option_test( options.trace_dir.strip(), "", this_directory )
     options.configs_list = options.configs_list.strip()
     options.benchmark_exec_prefix = options.benchmark_exec_prefix.strip()
     options.benchmark_list = options.benchmark_list.strip()
