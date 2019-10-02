@@ -56,10 +56,10 @@ class ConfigurationSpec:
 
 
             for args in self.command_line_args_list:
-                this_run_dir = run_directory +\
-                            "/" + benchmark.replace('/','_') + "/" + self.benchmark_args_subdirs[args] +\
-                            "/" + self.run_subdir + "/"
-                self.setup_run_directory(full_data_dir, this_run_dir, data_dir)
+                appargs_run_subdir = os.path.join( benchmark.replace('/','_'),
+                                self.benchmark_args_subdirs[args] )
+                this_run_dir = os.path.join( run_directory, appargs_run_subdir, self.run_subdir )
+                self.setup_run_directory(full_data_dir, this_run_dir, data_dir, appargs_run_subdir)
 
                 self.text_replace_torque_sim(full_data_dir,this_run_dir,benchmark,cuda_version, args, libdir, full_exec_dir,build_handle)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
@@ -72,7 +72,7 @@ class ConfigurationSpec:
                     os.chdir(this_run_dir)
                     if subprocess.call(["qsub",\
                                         "-W", "umask=022",\
-                                       this_run_dir + "torque.sim"],\
+                                       os.path.join(this_run_dir , "torque.sim")],\
                                        stdout=torque_out_file) < 0:
                         exit("Error Launching Torque Job")
                     else:
@@ -118,7 +118,7 @@ class ConfigurationSpec:
     # Internal utility methods
     #########################################################################################
     # copies and links the necessary files to the run directory
-    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir):
+    def setup_run_directory(self, full_data_dir, this_run_dir, data_dir, appargs_subdir):
         if not os.path.isdir(this_run_dir):
             os.makedirs(this_run_dir)
 
@@ -129,8 +129,8 @@ class ConfigurationSpec:
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
         for file_to_cp in files_to_copy_to_run_dir:
-            new_file = this_run_dir +\
-                       os.path.basename(this_directory + file_to_cp)
+            new_file = os.path.join(this_run_dir ,
+                       os.path.basename(this_directory + file_to_cp))
             if os.path.isfile(new_file):
                 os.remove(new_file)
             shutil.copyfile(file_to_cp,new_file)
@@ -141,7 +141,15 @@ class ConfigurationSpec:
             if os.path.lexists(os.path.join(this_run_dir, "data")):
                 os.remove(os.path.join(this_run_dir, "data"))
             os.symlink(benchmark_data_dir, os.path.join(this_run_dir,"data"))
-        
+
+        # link the traces directory
+        if options.trace_dir != "":
+            benchmark_trace_dir = os.path.join(options.trace_dir, appargs_subdir, "traces")
+            if os.path.isdir(benchmark_trace_dir):
+                if os.path.lexists(os.path.join(this_run_dir, "traces")):
+                    os.remove(os.path.join(this_run_dir, "traces"))
+                os.symlink(benchmark_trace_dir, os.path.join(this_run_dir,"traces"))
+
         all_data_link = os.path.join(this_run_dir,"data_dirs")
         if os.path.lexists(all_data_link):
             os.remove(all_data_link)
@@ -158,9 +166,13 @@ class ConfigurationSpec:
             f = open(prelaunch_filename)
             benchmark_command_line = f.read().strip()
             f.close()
-        
-        exec_name = options.benchmark_exec_prefix + " " +\
+            
+        if options.trace_dir == "":
+            exec_name = options.benchmark_exec_prefix + " " +\
                     os.path.join(this_directory, exec_dir, benchmark)
+        else:
+            exec_name = options.benchmark_exec_prefix + " " +\
+                    os.path.join(libpath, "gpgpusim.out")
 
         # Test the existance of required env variables
         if str(os.getenv("GPGPUSIM_ROOT")) == "None":
@@ -171,10 +183,13 @@ class ConfigurationSpec:
             exit("\nERROR - Specify GPGPUSIM_CONFIG prior to running this script")
 
         # do the text replacement for the torque.sim file
-        if command_line_args == None:
-            txt_args = ""
-        else:
-            txt_args = command_line_args
+	if options.trace_dir == "":
+		if command_line_args == None:
+			txt_args = ""
+		else:
+			txt_args = command_line_args
+	else:
+		txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g -trace_driven_mode 1"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
@@ -198,7 +213,7 @@ class ConfigurationSpec:
             torque_text = re.sub("REPLACE_" + entry,
                                  str(replacement_dict[entry]),
                                  torque_text)
-        open(this_run_dir + "torque.sim", 'w').write(torque_text)
+        open(os.path.join(this_run_dir , "torque.sim"), 'w').write(torque_text)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
     def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
@@ -213,7 +228,7 @@ class ConfigurationSpec:
         config_text = open(config_text_file).read()
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params
 
-        open(this_run_dir + "gpgpusim.config", 'w').write(config_text)
+        open(os.path.join(this_run_dir , "gpgpusim.config"), 'w').write(config_text)
 
 #-----------------------------------------------------------
 # main script start
@@ -236,8 +251,12 @@ else:
 options.so_dir = common.dir_option_test(
     options.so_dir, os.path.join( os.getenv("GPGPUSIM_ROOT"), "lib", os.getenv("GPGPUSIM_CONFIG") ),
     this_directory )
-so_path = os.path.join( options.so_dir, "libcudart.so" )
-version_string = extract_so_name( so_path )
+if options.trace_dir == "":
+    so_path = os.path.join( options.so_dir, "libcudart.so" )
+    version_string = extract_so_name( so_path )
+else:
+    so_path = os.path.join( options.so_dir, "gpgpusim.out" )
+    version_string = "version_todo"
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
     # In the very rare case that concurrent builds try to make the directory at the same time
