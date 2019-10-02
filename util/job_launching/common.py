@@ -165,9 +165,14 @@ def parse_run_simulations_options():
     parser.add_option("-N", "--launch_name", dest="launch_name", default="",
                   help="Pass if you want to name the launch. This will determine the name of the logfile.\n" +\
                        "If you do not name the file, it will just use the current date/time.")
+    parser.add_option("-T", "--trace_dir", dest="trace_dir", default="",
+                  help="Pass this option to run the simulator in trace-driven mode."+\
+                        " The directory passed should be the root of all the trace files.")
     
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
+    if options.trace_dir != "":
+        options.trace_dir = dir_option_test( options.trace_dir.strip(), "", this_directory )
     options.configs_list = options.configs_list.strip()
     options.benchmark_exec_prefix = options.benchmark_exec_prefix.strip()
     options.benchmark_list = options.benchmark_list.strip()
