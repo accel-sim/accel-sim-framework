@@ -35,6 +35,9 @@ L1ON:
 COPYK:
     extra_params: "-perf_sim_memcpy 1"
 
+5B:
+    extra_params: "-gpgpu_max_insn 5000000000"
+
 2B:
     extra_params: "-gpgpu_max_insn 2000000000"
 
@@ -70,6 +73,9 @@ NORM:
 
 RANDOM:
     extra_params: "-memory_partition_indexing 4"
+
+TRACE:
+    extra_params: "-trace_driven_mode 1"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
