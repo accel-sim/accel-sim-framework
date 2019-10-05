@@ -25,6 +25,8 @@ import datetime
 
 def getAppData(kernels, x, y):
     count = 0
+    appmax = 0
+    appmin = 99999999999999999999.9
     app_map = {}
     apps = []
     newx = []
@@ -42,6 +44,7 @@ def getAppData(kernels, x, y):
         x1,y1 = v
         newx.append(x1)
         newy.append(y1)
+
     return apps, newx, newy
 
 def getCorrelCsvRaw((names, x, y)):
@@ -79,7 +82,10 @@ def make_pretty_app_list(apps_included):
     return ret_str, kernel_str
 
 def make_submission_quality_image(image_type, traces):
-    data = []
+    kernel_data = []
+    app_data = []
+    app_min = 0
+    app_max = 999999999999999999999999999999999.9
     markers =[dict(size = 14,color = 'rgba(210,105,30, .4)'),
               dict(size = 3, color = 'rgba(0, 0, 0, 1.0)'),
               dict(size = 10,color = 'rgba(0, 182, 0, .9)'),
@@ -101,7 +107,6 @@ def make_submission_quality_image(image_type, traces):
         
         # Set the alpha on the error bars to be 30%
         trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
-        data.append(trace)
         annotations.append(make_anno1(anno,5,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc. {1} dropped for HW too low (>{2})\n".format(
             err_dropped, hw_low_drop, correlmap.drophwnumbelow)
@@ -111,8 +116,23 @@ def make_submission_quality_image(image_type, traces):
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
+        apps,appx,appy = getAppData(trace.text, trace.x, trace.y)
+        
+        app_max = max ( max(appx), max(appy) )
+        app_min = min ( min(appx), min(appy) )
+
         app_csv_file_contents += "{0}\n\n"\
-            .format(getCorrelCsvRaw(getAppData(trace.text, trace.x, trace.y)))
+            .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
+        kernel_data.append(trace)
+
+        app_trace = go.Scatter(
+            x = appx,
+            y = appy,
+            mode = 'markers',
+            text=apps,
+            name=cfg,
+        )
+        app_data.append(app_trace)
         count += 1
 
     if not options.noanno:
@@ -180,14 +200,39 @@ def make_submission_quality_image(image_type, traces):
     xyline = go.Scatter(x=[layout.xaxis.range[0] + 1, layout.xaxis.range[1]],
         y=[layout.xaxis.range[0] + 1,layout.xaxis.range[1]],showlegend=False,mode="lines")
     xyline.line.color = 'rgba(255,0,0,.7)'
-    data.append(xyline)
+    kernel_data.append(xyline)
+
+    app_layout = Layout(
+            title="Per App" + correl.chart_name,
+            xaxis=dict(
+                title=layout.xaxis.title,
+                range=[app_min * 0.9 ,app_max*1.1]
+            ),
+            yaxis=dict(
+                title='GPGPU-Sim {0}'.format(correl.chart_name),
+                range=[app_min * 0.9 ,app_max*1.1]
+            ),
+        )
+    app_xyline = go.Scatter(
+        x=[app_layout.xaxis.range[0] + 1,
+            app_layout.xaxis.range[1]],
+        y=[app_layout.xaxis.range[0] + 1,
+            app_layout.xaxis.range[1]],
+            showlegend=False,mode="lines")
+    app_data.append(app_xyline)
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
     if image_type != "":
         png_name = plotname.replace(".", "_") + "." + image_type
-        py.image.save_as(Figure(data=data,layout=png_layout), png_name, height=1024, width=1024)
+        py.image.save_as(Figure(data=kernel_data,layout=png_layout), \
+            png_name, height=1024, width=1024)
+
+        png_name = plotname.replace(".", "_") + ".per-app." + image_type
+        py.image.save_as(Figure(data=app_data,layout=app_layout), \
+            png_name, height=1024, width=1024)
     # This generates the html
-    plotly.offline.plot(Figure(data=data,layout=png_layout), filename=plotname + ".html", auto_open=False)
+    plotly.offline.plot(Figure(data=app_data,layout=png_layout), \
+        filename= plotname + ".per-app.html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
     return Annotation(
