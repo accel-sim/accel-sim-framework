@@ -14,12 +14,12 @@ import common
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
-def extract_so_name( so_path ):
+def extract_version( exec_path ):
     objdump_out_filename = this_directory + "so_objdump_out.{0}.txt".format(os.getpid())
     objdump_out_file = open(objdump_out_filename, 'w+')
-    subprocess.call(["objdump", "-p", so_path], stdout=objdump_out_file)
+    subprocess.call(["strings", exec_path], stdout=objdump_out_file)
     objdump_out_file.seek(0)
-    returnStr = re.sub( r".*SONAME\s+([^\s]+).*", r"\1", objdump_out_file.read().strip().replace("\n", " ") )
+    returnStr = re.sub( r".*(gpgpu-sim_git-commit[^\s]+).*", r"\1", objdump_out_file.read().strip().replace("\n", " ") )
     objdump_out_file.close()
     os.remove(objdump_out_filename)
     return returnStr
@@ -253,10 +253,10 @@ options.so_dir = common.dir_option_test(
     this_directory )
 if options.trace_dir == "":
     so_path = os.path.join( options.so_dir, "libcudart.so" )
-    version_string = extract_so_name( so_path )
 else:
     so_path = os.path.join( options.so_dir, "gpgpusim.out" )
-    version_string = "version_todo"
+
+version_string = extract_version( so_path )
 running_so_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_so_dir ):
     # In the very rare case that concurrent builds try to make the directory at the same time
@@ -265,6 +265,8 @@ if not os.path.exists( running_so_dir ):
         os.makedirs( running_so_dir )
     except:
         pass
+
+if not os.path.exists(os.path.join(running_so_dir,os.path.basename(so_path))):
     shutil.copy( so_path, running_so_dir )
 options.so_dir = running_so_dir
 
