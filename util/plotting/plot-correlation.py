@@ -654,7 +654,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         else:
                             err_dropped_stats += 1
 
-                        label_array.append(appargs + "--" + sim_klist[count]["Kernel"] +
+                        label_array.append(appargs[0:150] + "--" + sim_klist[count]["Kernel"] +
                             " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
                         count += 1
                         if hw_array[-1] > max_axis_val:
