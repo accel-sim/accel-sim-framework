@@ -231,7 +231,9 @@ def make_submission_quality_image(image_type, traces):
         py.image.save_as(Figure(data=app_data,layout=app_layout), \
             png_name, height=1024, width=1024)
     # This generates the html
-    plotly.offline.plot(Figure(data=app_data,layout=png_layout), \
+    plotly.offline.plot(Figure(data=kernel_data,layout=png_layout), \
+        filename= plotname + ".per-kernel.html", auto_open=False)
+    plotly.offline.plot(Figure(data=app_data,layout=app_layout), \
         filename= plotname + ".per-app.html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
