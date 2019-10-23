@@ -183,13 +183,15 @@ class ConfigurationSpec:
             exit("\nERROR - Specify GPGPUSIM_CONFIG prior to running this script")
 
         # do the text replacement for the torque.sim file
-	if options.trace_dir == "":
-		if command_line_args == None:
-			txt_args = ""
-		else:
-			txt_args = command_line_args
-	else:
-		txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g -trace_driven_mode 1"
+        if options.trace_dir == "":
+            if command_line_args == None:
+                txt_args = ""
+            else:
+                txt_args = command_line_args
+            mem_usage = "2000mb"
+        else:
+            txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g -trace_driven_mode 1"
+            mem_usage = "5000mb"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
@@ -207,7 +209,9 @@ class ConfigurationSpec:
                             "PATH":os.getenv("PATH"),
                             "EXEC_NAME":exec_name,
                             "QUEUE_NAME":queue_name,
-                            "COMMAND_LINE":txt_args}
+                            "COMMAND_LINE":txt_args,
+                            "MEM_USAGE": mem_usage
+                            }
         torque_text = open(this_directory + "torque.sim").read().strip()
         for entry in replacement_dict:
             torque_text = re.sub("REPLACE_" + entry,
