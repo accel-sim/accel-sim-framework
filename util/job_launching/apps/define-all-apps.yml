@@ -60,8 +60,8 @@ GPU_Microbenchmark:
             -
         - l2_bw_64f:
             -
-        - l2_bw_128:
-            -
+#        - l2_bw_128:
+#            -
         - l2_lat:
             -
         - mem_bw:
@@ -593,7 +593,44 @@ cutlass-test:
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test:
-            - --seed=2020  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=1 --providers=cutlass
+            -
+
+cutlass_5_trace:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+
 
 cutlass_5:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
