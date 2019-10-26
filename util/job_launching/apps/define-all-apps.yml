@@ -102,10 +102,10 @@ Deepbench_nvidia:
             - inference half 256 4 150 lstm
             - inference half 1536 1 50 lstm
             - inference half 512 1 1 gru
-            - inference half 1024 1 1500 gru
+            - inference half 512 2 1 gru
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
-            - inference half 1024 1 1500 gru
+            - inference half 256 1 150 lstm
 
 sdk-4.2-scaled:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -116,7 +116,7 @@ sdk-4.2-scaled:
             - --size 6000000
         - convolutionSeparable:
             - --size 3072
-            - --size 30720
+#            - --size 30720 #500G too big
         - fastWalshTransform:
             - -logK 7 -logD 21
             - -logK 11 -logD 19
