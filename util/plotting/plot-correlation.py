@@ -488,7 +488,6 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
         no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
         elapsed_name = no_cycle_filename + ".elapsed_cycles_sm.{0}".format(cycle_file_count)
         if ( elapsed_name not in processed_files and os.path.exists(elapsed_name) ):
-            print "Processing {0}".format(elapsed_name)
             csv_file = elapsed_name
         else:
             cycle_file_count += 1
