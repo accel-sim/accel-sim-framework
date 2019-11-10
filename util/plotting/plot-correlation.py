@@ -492,7 +492,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
         else:
             cycle_file_count += 1
             possible_stats_fnames = [no_cycle_filename, no_cycle_filename + ".0"]
-            next_cycle_filename = re.sub(r'(.*\.cycle).*', r'\1', csv_file) + ".{0}".format(cycle_file_count)
+            next_cycle_filename = re.sub(r'(.*\.csv).*', r'\1.cycle', csv_file) + ".{0}".format(cycle_file_count)
             if os.path.exists(next_cycle_filename):
                 csv_file = next_cycle_filename
             elif not processedCycle and len(kdata) > 0:
