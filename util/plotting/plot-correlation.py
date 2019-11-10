@@ -423,6 +423,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         state = "header_proc"
                     continue
                 if state == "header_proc":
+                    if "Event result" in row[0]:
+                        continue
                     header = row
                     count = 0
 
@@ -432,18 +434,23 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                             cfg_col = count
                         count += 1
 
-                    state = "blanc_proc"
-                    continue
-                if state == "blanc_proc":
                     state = "kernel_proc"
                     continue
+#                if state == "blanc_proc":
+#                    state = "kernel_proc"
+#                    continue
                 if state == "kernel_proc":
-                    # skip the memcopies
-                    if "[CUDA " in "".join(row):
-                        continue
                     if len(row) == 1:
                         logger.log("Bad line - possibly the app failed -- {0}".format(row))
                         continue
+
+                    # skip the memcopies
+                    if "[CUDA " in "".join(row):
+                        continue
+                    # Skip lines without a device listed
+                    if row[cfg_col] == "":
+                        continue
+
                     if processedCycle:
                         count = 0
                         if kcount >= len(kdata):
