@@ -708,13 +708,8 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         else:
                             num_under += 1
 
-                        if abs(err) < options.err_calc_threadhold and \
-                           hw_high < options.hw_err_tolerance and \
-                           hw_low < options.hw_err_tolerance:
-                            errs.append(abs(err))
-                            apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
-                        else:
-                            err_dropped_stats += 1
+                        errs.append(abs(err))
+                        apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
 
                         label_array.append((appargs + "--" + sim_klist[count]["Kernel"])[0:100] +
                             " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
@@ -741,6 +736,36 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         if len(errs) == 0:
             continue
+
+        # Filter out bad errors
+        new_hw_array = []
+        new_hw_error = []
+        new_hw_error_min = []
+        new_sim_array = []
+        new_label_array = []
+        new_errs = []
+        for i in range(len(hw_array)):
+            hw_high = (hw_error[i]/hw_array[i]) * 100
+            hw_low = (hw_error_min[i]/hw_array[i]) * 100
+            err = errs[i]
+
+            if abs(err) < options.err_calc_threadhold and \
+                hw_high < options.hw_err_tolerance and \
+                hw_low < options.hw_err_tolerance:
+                    new_hw_array.append(hw_array[i])
+                    new_hw_error.append(hw_error[i])
+                    new_hw_error_min.append(hw_error_min[i])
+                    new_label_array.append(label_array[i])
+                    new_sim_array.append(sim_array[i])
+                    new_errs.append(errs[i])
+            else:
+                err_dropped_stats += 1
+        hw_array = new_hw_array
+        hw_error = new_hw_error
+        hw_error_min = new_hw_error_min
+        sim_array = new_sim_array
+        label_array = new_label_array
+        errs = new_errs
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
