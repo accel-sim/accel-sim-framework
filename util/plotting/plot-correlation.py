@@ -224,13 +224,13 @@ def make_submission_quality_image(image_type, traces):
     kernel_data.append(xyline)
 
     app_layout = Layout(
-            title="Per App " + correl.chart_name,
+            title="Per App " + layout.title,
             xaxis=dict(
                 title=layout.xaxis.title,
                 range=[app_min * 0.9 ,app_max*1.1]
             ),
             yaxis=dict(
-                title='GPGPU-Sim {0}'.format(correl.chart_name),
+                title=layout.yaxis.title,
                 range=[app_min * 0.9 ,app_max*1.1]
             ),
         legend=dict(
