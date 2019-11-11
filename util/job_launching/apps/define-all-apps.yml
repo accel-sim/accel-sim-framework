@@ -68,6 +68,18 @@ GPU_Microbenchmark:
             -
         - mem_lat:
             -
+        - shared_bw:
+            -
+        - shared_lat:
+            -
+        - MaxFlops:
+            -
+        - l1_shared_bw:
+            -
+        - l1_bw_32f_unroll:
+            -
+        - l1_bw_32f_unroll_large:
+            -
 
 Deepbench_nvidia:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
