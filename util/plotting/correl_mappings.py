@@ -16,7 +16,9 @@ config_maps = \
     "GTX480" : "GeForce GTX 480",
     "GTX1080Ti" : "GeForce GTX 1080 Ti",
     "QV100" : "Quadro GV100",
-	"QV100_old" : "Quadro GV100"
+	"QV100_old" : "Quadro GV100",
+	"QV100_SASS" : "Quadro GV100"
+
 }
 
 
