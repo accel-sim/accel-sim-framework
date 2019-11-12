@@ -118,6 +118,39 @@ Deepbench_nvidia:
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
             - inference half 256 1 150 lstm
+        - conv_bench-tencore:
+            - train half 7 7 832 16 128 5 5 2 2 1 1
+            - train half 7 7 512 8 512 1 1 0 0 1 1
+            - train half 7 7 832 16 256 1 1 0 0 1 1
+            - train half 7 7 512 8 512 3 3 1 1 1 1
+            - train half 14 14 512 16 512 3 3 1 1 1 1
+            - inference half 700 161 1 1 32 20 5 0 0 2 2
+            - inference half 700 161 1 2 32 20 5 0 0 2 2
+            - inference half 341 79 32 1 32 10 5 0 0 2 2
+            - inference half 341 79 32 2 32 10 5 0 0 2 2
+            - inference half 480 48 1 1 16 3 3 1 1 1 1
+        - gemm_bench-tencore:
+            - train half 1760 7000 1760 0 0
+            - train half 2048 128 2048 0 0
+            - train half 1760 7000 1760 1 0
+            - train half 2048 64 2048 1 0
+            - train half 1760 7133 1760 0 1
+            - inference half 5124 1500 2048 0 0
+            - inference half 7680 1 2560 0 0
+            - inference half 6144 4 2048 0 0
+            - inference half 512 3000 1536 0 0
+            - inference half 35 1500 2560 0 0
+        - rnn_bench-tencore:
+            - inference half 512 1 25 lstm
+            - inference half 512 2 25 lstm
+            - inference half 1024 1 25 lstm
+            - inference half 256 4 150 lstm
+            - inference half 1536 1 50 lstm
+            - inference half 512 1 1 gru
+            - inference half 512 2 1 gru
+            - inference half 512 4 1 gru
+            - inference half 1536 1 750 gru
+            - inference half 256 1 150 lstm
 
 sdk-4.2-scaled:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
