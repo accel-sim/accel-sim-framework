@@ -31,6 +31,10 @@ def getAppData(kernels, x, y):
     apps = []
     newx = []
     newy = []
+    total_err = 0.0
+    num_over = 0
+    num_under = 0
+    num_less_than_one_percent = 0
     for kernel in kernels:
         app_name = kernel.split("--")[0]
         if app_name in app_map:
@@ -44,8 +48,18 @@ def getAppData(kernels, x, y):
         x1,y1 = v
         newx.append(x1)
         newy.append(y1)
-
-    return apps, newx, newy
+        if (y1 > x1):
+            num_over += 1
+        elif (y1 < x1):
+            num_under += 1
+        err = abs(y1-x1) / x1 * 100
+        total_err += err
+        if err < 1.0:
+            num_less_than_one_percent += 1
+    
+    total_err = total_err / len(newx)
+    correl_co = numpy.corrcoef(newx, newy)[0][1]
+    return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent
 
 def getCorrelCsvRaw((names, x, y)):
     out_csv = "Name,Hardware,Simulator,Sim/HW\n"
@@ -92,7 +106,8 @@ def make_submission_quality_image(image_type, traces):
               dict(size = 10,color = 'rgba(0, 0, 193, .9)'),
               dict(size = 10,color = 'rgba(155, 155, 155, .9)')]
     count = 0
-    annotations = []
+    kernel_annotations = []
+    app_annotations = []
     agg_cfg = ""
     print_anno = ""
     applist_file_contents = ""
@@ -107,7 +122,7 @@ def make_submission_quality_image(image_type, traces):
         
         # Set the alpha on the error bars to be 30%
         trace.error_x.color =  re.sub(r"(,.*,.*),.*\)",r"\1,0.3)", trace.error_x.color)
-        annotations.append(make_anno1(anno,5,0,1.115 - count * 0.05))
+        kernel_annotations.append(make_anno1(anno,22,0,1.115 - count * 0.05))
         print_anno += anno + " :: {0} high error points dropped from Err calc. {1} dropped for HW too low (>{2})\n".format(
             err_dropped, hw_low_drop, correlmap.drophwnumbelow)
         agg_cfg += "." + cfg
@@ -116,7 +131,7 @@ def make_submission_quality_image(image_type, traces):
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
-        apps,appx,appy = getAppData(trace.text, trace.x, trace.y)
+        apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent = getAppData(trace.text, trace.x, trace.y)
         
         app_max = max ( max(appx), max(appy) )
         app_min = min ( min(appx), min(appy) )
@@ -125,18 +140,24 @@ def make_submission_quality_image(image_type, traces):
             .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
         kernel_data.append(trace)
 
+        app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over)) [Correl={1:.4} Err={2:.2f}%]"\
+            .format(appcount, correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+        app_annotations.append(make_anno1(app_anno,22,0,1.115 - count * 0.05))
+        print_anno += "Per-App :: " + app_anno + "\n"
+
         app_trace = go.Scatter(
             x = appx,
             y = appy,
             mode = 'markers',
             text=apps,
+            marker = markers[count %len(markers)],
             name=cfg,
         )
         app_data.append(app_trace)
         count += 1
 
     if not options.noanno:
-        layout.annotations=annotations
+        layout.annotations=kernel_annotations
     correl_outdir = os.path.join(this_directory, "correl-html")
     if options.plotname == "":
         plotname = plotfile + agg_cfg
@@ -203,22 +224,53 @@ def make_submission_quality_image(image_type, traces):
     kernel_data.append(xyline)
 
     app_layout = Layout(
-            title="Per App" + correl.chart_name,
+            title="Per App " + layout.title,
             xaxis=dict(
                 title=layout.xaxis.title,
                 range=[app_min * 0.9 ,app_max*1.1]
             ),
             yaxis=dict(
-                title='GPGPU-Sim {0}'.format(correl.chart_name),
+                title=layout.yaxis.title,
                 range=[app_min * 0.9 ,app_max*1.1]
             ),
+        legend=dict(
+            x=0,
+            y=1,
+            traceorder='normal',
+            font=dict(
+                family='sans-serif',
+                size=15,
+                color='#000'
+            ),
+            bgcolor='#E2E2E2',
+            bordercolor='#FFFFFF',
+            borderwidth=2
         )
+   )
+
+    app_layout.xaxis.titlefont.size = TEXT_SIZE
+    app_layout.xaxis.titlefont.color='black'
+    app_layout.xaxis.tickfont.size=20
+    app_layout.xaxis.tickfont.color='black'
+    app_layout.xaxis.type=correlmap.plottype
+    app_layout.xaxis.autorange=True
+
+    app_layout.yaxis.titlefont.size = TEXT_SIZE
+    app_layout.yaxis.tickfont.size = 20
+    app_layout.yaxis.titlefont.color='black'
+    app_layout.yaxis.tickfont.color='black'
+    app_layout.yaxis.type=correlmap.plottype
+    app_layout.yaxis.autorange=True
+
+    if not options.noanno:
+        app_layout.annotations=app_annotations
     app_xyline = go.Scatter(
         x=[app_layout.xaxis.range[0] + 1,
             app_layout.xaxis.range[1]],
         y=[app_layout.xaxis.range[0] + 1,
             app_layout.xaxis.range[1]],
             showlegend=False,mode="lines")
+    app_xyline.line.color = xyline.line.color
     app_data.append(app_xyline)
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
@@ -243,12 +295,12 @@ def make_anno1(text, fontsize, x, y):
         yref='paper',  #   for both x and y coords
         x=x,           # x and y position 
         y=y,           #   in norm. coord. 
-        font=Font(size=fontsize),  # text font size
+        font=Font(size=fontsize,color='Black'),  # text font size
         showarrow=False,       # no arrow (default is True)
         bgcolor='#F5F3F2',     # light grey background color
         bordercolor='#FFFFFF', # white borders
         borderwidth=1,         # border width
-        borderpad=fontsize     # set border/text space to 1 fontsize
+        borderpad=5     # set border/text space to 1 fontsize
     )
 
 class Logger:
@@ -357,6 +409,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
 
     if os.path.exists(csv_file + ".{0}".format(cycle_file_count)):
         csv_file = csv_file + ".{0}".format(cycle_file_count)
+    processed_files = set()
     while processFiles:
         with open(csv_file, 'r') as data_file:
             logger.log("Parsing HW csv file {0}".format(csv_file))
@@ -370,6 +423,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         state = "header_proc"
                     continue
                 if state == "header_proc":
+                    if "Event result" in row[0]:
+                        continue
                     header = row
                     count = 0
 
@@ -379,18 +434,23 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                             cfg_col = count
                         count += 1
 
-                    state = "blanc_proc"
-                    continue
-                if state == "blanc_proc":
                     state = "kernel_proc"
                     continue
+#                if state == "blanc_proc":
+#                    state = "kernel_proc"
+#                    continue
                 if state == "kernel_proc":
-                    # skip the memcopies
-                    if "[CUDA " in "".join(row):
-                        continue
                     if len(row) == 1:
                         logger.log("Bad line - possibly the app failed -- {0}".format(row))
                         continue
+
+                    # skip the memcopies
+                    if "[CUDA " in "".join(row):
+                        continue
+                    # Skip lines without a device listed
+                    if row[cfg_col] == "":
+                        continue
+
                     if processedCycle:
                         count = 0
                         if kcount >= len(kdata):
@@ -430,23 +490,28 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                         kcount += 1
                     continue
         logger.log("Kernels found: {0}".format(kcount))
+        processed_files.add(csv_file)
         # Drop the .cycle off the name
-        cycle_file_count += 1
         no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
-        possible_stats_fnames = [no_cycle_filename, no_cycle_filename + ".0"]
-        next_cycle_filename = re.sub(r'(.*\.cycle).*', r'\1', csv_file) + ".{0}".format(cycle_file_count)
-        if os.path.exists(next_cycle_filename):
-            csv_file = next_cycle_filename
-        elif not processedCycle and len(kdata) > 0:
-            for name in possible_stats_fnames:
-                if os.path.exists(name):
-                    processedCycle = True
-                    csv_file = name
-                    break
-            if not processedCycle:
-                processFiles = False
+        elapsed_name = no_cycle_filename + ".elapsed_cycles_sm.{0}".format(cycle_file_count)
+        if ( elapsed_name not in processed_files and os.path.exists(elapsed_name) ):
+            csv_file = elapsed_name
         else:
-            processFiles = False
+            cycle_file_count += 1
+            possible_stats_fnames = [no_cycle_filename, no_cycle_filename + ".0"]
+            next_cycle_filename = re.sub(r'(.*\.csv).*', r'\1.cycle', csv_file) + ".{0}".format(cycle_file_count)
+            if os.path.exists(next_cycle_filename):
+                csv_file = next_cycle_filename
+            elif not processedCycle and len(kdata) > 0:
+                for name in possible_stats_fnames:
+                    if os.path.exists(name):
+                        processedCycle = True
+                        csv_file = name
+                        break
+                if not processedCycle:
+                    processFiles = False
+            else:
+                processFiles = False
 
     if cfg != "" and cfg != None:
         if cfg not in hw_data:
@@ -596,7 +661,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             logger.log("Evaluaing HW: {0}".format(correl.hw_eval))
                             hw_array.append(eval(correl.hw_eval))
                         except:
-			    e = sys.exc_info()[0]
+                            e = sys.exc_info()[0]
                             logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
                             count += 1
                             continue
@@ -648,15 +713,11 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             num_over += 1
                         else:
                             num_under += 1
-                        if abs(err) < options.err_calc_threadhold and \
-                           hw_high < options.hw_err_tolerance and \
-                           hw_low < options.hw_err_tolerance:
-                            errs.append(abs(err))
-                            apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
-                        else:
-                            err_dropped_stats += 1
 
-                        label_array.append(appargs[0:150] + "--" + sim_klist[count]["Kernel"] +
+                        errs.append(abs(err))
+                        apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
+
+                        label_array.append((appargs + "--" + sim_klist[count]["Kernel"])[0:100] +
                             " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
                         count += 1
                         if hw_array[-1] > max_axis_val:
@@ -681,6 +742,36 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         if len(errs) == 0:
             continue
+
+        # Filter out bad errors
+        new_hw_array = []
+        new_hw_error = []
+        new_hw_error_min = []
+        new_sim_array = []
+        new_label_array = []
+        new_errs = []
+        for i in range(len(hw_array)):
+            hw_high = (hw_error[i]/hw_array[i]) * 100
+            hw_low = (hw_error_min[i]/hw_array[i]) * 100
+            err = errs[i]
+
+            if abs(err) < options.err_calc_threadhold and \
+                hw_high < options.hw_err_tolerance and \
+                hw_low < options.hw_err_tolerance:
+                    new_hw_array.append(hw_array[i])
+                    new_hw_error.append(hw_error[i])
+                    new_hw_error_min.append(hw_error_min[i])
+                    new_label_array.append(label_array[i])
+                    new_sim_array.append(sim_array[i])
+                    new_errs.append(errs[i])
+            else:
+                err_dropped_stats += 1
+        hw_array = new_hw_array
+        hw_error = new_hw_error
+        hw_error_min = new_hw_error_min
+        sim_array = new_sim_array
+        label_array = new_label_array
+        errs = new_errs
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
