@@ -83,6 +83,15 @@ TRACE:
 EXEC:
     extra_params: "-trace_driven_mode 0"
 
+RR:
+    extra_params: "-gpgpu_scheduler lrr"
+
+128B:
+    extra_params: "-gpgpu_mem_addr_mapping dramid@7;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCC.BCCSSSSS"
+
+256B:
+    extra_params: "-gpgpu_mem_addr_mapping dramid@8;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCB.CCCSSSSS"
+
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
