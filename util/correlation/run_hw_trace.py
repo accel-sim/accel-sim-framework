@@ -56,7 +56,7 @@ for bench in benchmarks:
     for args in argslist:
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
-        this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
+        this_run_dir = os.path.join(this_directory, "..", "..", "run_hw","traces","device-" + options.device_num, cuda_version, run_name)
         if not os.path.exists(this_run_dir):
             os.makedirs(this_run_dir)
 
@@ -84,13 +84,13 @@ for bench in benchmarks:
         if not options.cycle_only:
             sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
                 "LD_PRELOAD=" + os.path.join(nvbit_path, "tools", "traceall", "traceall.so") + " " + os.path.join(this_directory, edir,exe) +\
-                " " + str(args) + " ; " + os.path.join(nvbit_path, "traces-processing", "post-traces-processing") + " " +\
+                " " + str(args) + " ; " + os.path.join(nvbit_path, "tools", "traceall", "traces-processing", "post-traces-processing") + " " +\
                 os.path.join(this_run_dir, "traces", "kernelslist") + " ; rm " + os.path.join(this_run_dir, "traces") + "/*.trace "
 
         for i in range(int(options.repeat_cycle)):
             sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
                 "LD_PRELOAD=" + os.path.join(nvbit_path, "tools", "traceall", "traceall.so") + " " + os.path.join(this_directory, edir,exe) +\
-                " " + str(args) + " ; " + os.path.join(nvbit_path, "traces-processing", "post-traces-processing") + " " +\
+                " " + str(args) + " ; " + os.path.join(nvbit_path, "tools", "traceall", "traces-processing", "post-traces-processing") + " " +\
                 os.path.join(this_run_dir, "traces", "kernelslist") + " ; rm " + os.path.join(this_run_dir, "traces") + "/*.trace"
                 
         print ("sh_contents: ", sh_contents)
