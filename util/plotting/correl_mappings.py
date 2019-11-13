@@ -92,6 +92,16 @@ correl_list = \
         drophwnumbelow=8000,
         plottype="log"
     ),
+    CorrelStat(chart_name="QV100 SM Cycles",
+        plotfile="qv100_sm_cycles",
+        hw_eval="np.average(hw[\"elapsed_cycles_sm\"])/80",
+        hw_error="np.max(hw[\"elapsed_cycles_sm\"])/80 - np.average(hw[\"elapsed_cycles_sm\"])/80,"+\
+                 "np.average(hw[\"elapsed_cycles_sm\"])/80 - np.min(hw[\"elapsed_cycles_sm\"])/80",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Quadro GV100",
+        drophwnumbelow=8000,
+        plottype="log"
+    ),
 
 
     # Common, non-cycle stats
@@ -242,13 +252,5 @@ correl_list = \
         drophwnumbelow=0,
         plottype="log"
     ),
-#    CorrelStat(chart_name="DRAM Reads",
-#        plotfile="dram-read-transactions",
-#        hw_eval="np.average(hw[\"dram_read_transactions\"])",
-#        hw_error=None,
-#        sim_eval="float(sim[\"total dram reads\s*=\s*(.*)\"])",
-#        hw_name="all",
-#        drophwnumbelow=0,
-#        plottype="log"
-#    ),
+
 ]
