@@ -32,10 +32,19 @@ parser.add_option("-c", "--cycle_only", dest="cycle_only", action="store_true",
                  help="Just get Kernel Duration")
 parser.add_option("-R", "--repeat_cycle", dest="repeat_cycle", default=1,
                  help="When running the cycle tests, do them this many times (good when DVFS is enabled)")
+parser.add_option("-N", "--nsight_profiler", dest="nsight_profiler", action="store_true",
+                 help="use the new nsight cli profiler")
+parser.add_option("-d", "--disable_nvprof", dest="disable_nvprof", action="store_true",
+                 help="do not use nvprof (decrecated in Turing+)")
 (options, args) = parser.parse_args()
 
-if not any([os.path.isfile(os.path.join(p, "nvprof")) for p in os.getenv("PATH").split(os.pathsep)]):
-    exit("ERROR - Cannot find nvprof PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
+if not options.disable_nvprof:
+    if not any([os.path.isfile(os.path.join(p, "nvprof")) for p in os.getenv("PATH").split(os.pathsep)]):
+        exit("ERROR - Cannot find nv-nsight-cu-cli PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
+
+if options.nsight_profiler:
+    if not any([os.path.isfile(os.path.join(p, "nv-nsight-cu-cli")) for p in os.getenv("PATH").split(os.pathsep)]):
+        exit("ERROR - Cannot find nv-nsight-cu-cli PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
 
 common.load_defined_yamls()
 
@@ -69,18 +78,29 @@ for bench in benchmarks:
 
         sh_contents = ""
         if not options.cycle_only:
-            sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
-            os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
+            if not options.disable_nvprof:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
+                    os.path.join(this_run_dir,logfile) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
+            if options.nsight_profiler:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nv-nsight-cu-cli --csv " +\
+                    " " + os.path.join(this_directory, edir,exe) + " " + str(args) +\
+                    " | tee " + os.path.join(this_run_dir,logfile + ".nsight")
 
         for i in range(int(options.repeat_cycle)):
-            sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                "\" ; timeout 5m nvprof --unified-memory-profiling off --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
-                os.path.join(this_run_dir,logfile + ".cycle.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
-
-            sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace --events elapsed_cycles_sm --demangling off --csv --log-file " +\
-            os.path.join(this_run_dir,logfile + ".elapsed_cycles_sm.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
+            if not options.disable_nvprof:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nvprof --unified-memory-profiling off --concurrent-kernels off --print-gpu-trace -u us --demangling off --csv --log-file " +\
+                    os.path.join(this_run_dir,logfile + ".cycle.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args)
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace --events elapsed_cycles_sm --demangling off --csv --log-file " +\
+                    os.path.join(this_run_dir,logfile + ".elapsed_cycles_sm.{0}".format(i)) + " " + os.path.join(this_directory, edir,exe) + " " + str(args) + " "
+            if options.nsight_profiler:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nv-nsight-cu-cli --metrics gpc__cycles_elapsed.avg --csv " +\
+                        os.path.join(this_directory, edir,exe) + " " + str(args) + " | tee " +\
+                        os.path.join(this_run_dir,logfile + ".gpc__cycles_elapsed.{0}".format(i))
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
