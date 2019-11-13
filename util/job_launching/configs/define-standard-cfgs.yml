@@ -11,6 +11,9 @@ TITANV_OLD:
 QV100:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100/gpgpusim.config"
 
+QV100_SASS:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_SASS/gpgpusim.config"
+
 QV100_old:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_old/gpgpusim.config"
 
@@ -76,6 +79,18 @@ RANDOM:
 
 TRACE:
     extra_params: "-trace_driven_mode 1"
+
+EXEC:
+    extra_params: "-trace_driven_mode 0"
+
+RR:
+    extra_params: "-gpgpu_scheduler lrr"
+
+128B:
+    extra_params: "-gpgpu_mem_addr_mapping dramid@7;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCC.BCCSSSSS"
+
+256B:
+    extra_params: "-gpgpu_mem_addr_mapping dramid@8;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCB.CCCSSSSS"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:

@@ -188,10 +188,10 @@ class ConfigurationSpec:
                 txt_args = ""
             else:
                 txt_args = command_line_args
-            mem_usage = "2000mb"
+            mem_usage = "4000mb"
         else:
             txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g -trace_driven_mode 1"
-            mem_usage = "5000mb"
+            mem_usage = "20000mb"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
