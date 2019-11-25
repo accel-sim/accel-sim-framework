@@ -127,7 +127,6 @@ def make_submission_quality_image(image_type, traces):
             err_dropped, hw_low_drop, correlmap.drophwnumbelow)
         agg_cfg += "." + cfg
         app_str, kernel_str = make_pretty_app_list(apps_included)
-        applist_file_contents += "{0}\n{1}\n\n".format(anno, app_str)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
@@ -142,6 +141,7 @@ def make_submission_quality_image(image_type, traces):
 
         app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over)) [Correl={1:.4} Err={2:.2f}%]"\
             .format(appcount, correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+        applist_file_contents += "{0}\n{1}\n\n".format(app_anno, app_str)
         app_annotations.append(make_anno1(app_anno,22,0,1.115 - count * 0.05))
         print_anno += "Per-App :: " + app_anno + "\n"
 
