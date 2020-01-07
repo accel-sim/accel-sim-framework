@@ -442,7 +442,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, logger):
                 if state == "kernel_proc":
                     if len(row) == 1:
                         logger.log("Bad line - possibly the app failed -- {0}".format(row))
-                        continue
+                        break
 
                     # skip the memcopies
                     if "[CUDA " in "".join(row):
