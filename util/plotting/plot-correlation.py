@@ -25,7 +25,7 @@ import datetime
 import time
 import math
 
-def getAppData(kernels, x, y, xaxis_title):
+def getAppData(kernels, x, y, xaxis_title, correlmap):
     count = 0
     appmax = 0
     appmin = 99999999999999999999.9
@@ -51,8 +51,8 @@ def getAppData(kernels, x, y, xaxis_title):
     rpds = []
     mse_num = 0
 
-
-    if "L1 Cache" in xaxis_title or "Occupancy" in xaxis_title:
+    # For rates, take the average across all the kernels in the app
+    if correlmap.stattype == "rate":
         new_map = {}
         for k,v in app_map.iteritems():
             x1,y1,numk = v
@@ -170,7 +170,7 @@ def make_submission_quality_image(image_type, traces):
             .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
 
         apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
-            = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title)
+            = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title, correlmap)
 
         app_max = max ( max(appx), max(appy) )
         app_min = min ( min(appx), min(appy) )
