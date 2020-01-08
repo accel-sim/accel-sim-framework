@@ -25,7 +25,7 @@ config_maps = \
 # Every stat you want to correlate gets an entry here.
 #   For cycles, the math is different for every card so we have differnt stats baed on the hardware.
 import collections
-CorrelStat = collections.namedtuple('CorrelStat', 'chart_name hw_eval hw_error sim_eval hw_name plotfile drophwnumbelow plottype')
+CorrelStat = collections.namedtuple('CorrelStat', 'chart_name hw_eval hw_error sim_eval hw_name plotfile drophwnumbelow plottype stattype')
 correl_list = \
 [
     # 1417 MHz
@@ -37,7 +37,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN V",
         drophwnumbelow=8000,
-		plottype="log"
+		plottype="log",
+        stattype="counter"
     ),
     # 1417 MHz
     CorrelStat(chart_name="Cycles",
@@ -48,7 +49,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="TITAN X (Pascal)",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     # (1400 MHz - 16-wide SIMD)
     CorrelStat(chart_name="Cycles",
@@ -59,7 +61,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])*2",
         hw_name="GeForce GTX 480",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     # 1480 MHz
     CorrelStat(chart_name="Cycles",
@@ -70,7 +73,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla P100",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     # 1480 MHz
     CorrelStat(chart_name="Cycles",
@@ -81,7 +85,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="GeForce GTX 1080 Ti",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     # 1132 MHz
     CorrelStat(chart_name="Cycles",
@@ -92,7 +97,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Quadro GV100",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="QV100 SM Cycles",
         plotfile="qv100_sm_cycles",
@@ -102,7 +108,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Quadro GV100",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
 
 
@@ -114,7 +121,8 @@ correl_list = \
         sim_eval="float(sim[\"gpgpu_n_tot_w_icount\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="L2 read hits",
         plotfile="l2-read-hits",
@@ -123,7 +131,8 @@ correl_list = \
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="L2 read transactions",
         plotfile="l2-read-transactions",
@@ -132,7 +141,8 @@ correl_list = \
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="L2 write transactions",
         plotfile="l2-write-transactions",
@@ -141,7 +151,8 @@ correl_list = \
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="L2 Write Hits",
         plotfile="l2-write-hits",
@@ -150,7 +161,8 @@ correl_list = \
         sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="L2 BW",
         plotfile="l2_bw",
@@ -159,7 +171,8 @@ correl_list = \
         sim_eval="float(sim[\"L2_BW\s*=\s*(.*)GB\/Sec\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="L2 read Hit rate",
         plotfile="l2-read-hitrate",
@@ -170,7 +183,8 @@ correl_list = \
             "float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="L2 write Hit rate",
         plotfile="l2-write-hitrate",
@@ -181,7 +195,8 @@ correl_list = \
             "float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="Occupancy",
         plotfile="occupancy",
@@ -190,7 +205,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_occupancy\s*=\s*(.*)%\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="L1 Cache Hit Rate",
         plotfile="l1hitrate",
@@ -201,7 +217,8 @@ correl_list = \
                  "+float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"]) + 1) * 100",
         hw_name="all",
         drophwnumbelow=-1,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="L1 Cache Hit Rate (global_hit_rate match)",
         plotfile="l1hitrate.golbal",
@@ -213,7 +230,8 @@ correl_list = \
                  "+float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"]) + 1) * 100",
         hw_name="all",
         drophwnumbelow=-1,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
     CorrelStat(chart_name="L1 Cache Read Access",
         plotfile="l1readaccess",
@@ -222,7 +240,8 @@ correl_list = \
         sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
 	CorrelStat(chart_name="L1 BW",
         plotfile="l1_bw",
@@ -233,7 +252,8 @@ correl_list = \
 				"float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Quadro GV100",
         drophwnumbelow=0,
-        plottype="linear"
+        plottype="linear",
+        stattype="rate"
     ),
 	CorrelStat(chart_name="DRAM read transactions",
         plotfile="dram-read-transactions",
@@ -243,7 +263,8 @@ correl_list = \
         sim_eval="float(sim[\"total dram reads\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=1000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
 	CorrelStat(chart_name="DRAM write transactions",
         plotfile="dram-write-transactions",
@@ -252,7 +273,8 @@ correl_list = \
         sim_eval="float(sim[\"total dram writes\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
 
 ]
