@@ -22,8 +22,10 @@ import copy
 import ast
 import numpy
 import datetime
+import time
+import math
 
-def getAppData(kernels, x, y):
+def getAppData(kernels, x, y, xaxis_title):
     count = 0
     appmax = 0
     appmin = 99999999999999999999.9
@@ -35,31 +37,60 @@ def getAppData(kernels, x, y):
     num_over = 0
     num_under = 0
     num_less_than_one_percent = 0
+    num_less_than_ten_percent = 0
     for kernel in kernels:
         app_name = kernel.split("--")[0]
         if app_name in app_map:
-            tx,ty = app_map[app_name]
-            app_map[app_name] = ( tx + x[count], ty + y[count] )
+            tx,ty,oldk = app_map[app_name]
+            app_map[app_name] = ( tx + x[count], ty + y[count],oldk+1 )
         else:
-            app_map[app_name] = (x[count], y[count])
+            app_map[app_name] = (x[count], y[count],1)
         count += 1
+    tot_err_num = 0
+    tot_x = 0
+    rpds = []
+    mse_num = 0
+
+
+    if "L1 Cache" in xaxis_title or "Occupancy" in xaxis_title:
+        new_map = {}
+        for k,v in app_map.iteritems():
+            x1,y1,numk = v
+            new_map[k] = (x1 / numk, y1 / numk, numk)
+        app_map = new_map
+
     for k,v in app_map.iteritems():
         apps.append(k)
-        x1,y1 = v
+        x1,y1,numk = v
         newx.append(x1)
         newy.append(y1)
+        tot_err_num += abs(y1 - x1)
+        tot_x += x1
         if (y1 > x1):
             num_over += 1
         elif (y1 < x1):
             num_under += 1
         err = abs(y1-x1) / x1 * 100
+        mse_num += (y1-x1)**2
         total_err += err
+        if x1 + y1 == 0:
+            rpds.append(0)
+        else:
+            rpds.append(abs(y1-x1) /(x1 + y1) * 2)
         if err < 1.0:
             num_less_than_one_percent += 1
+        if err < 10.0:
+            num_less_than_ten_percent += 1
     
+
     total_err = total_err / len(newx)
+    aggregate_err = tot_err_num / tot_x * 100
     correl_co = numpy.corrcoef(newx, newy)[0][1]
-    return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent
+    tot_rpd = 0
+    for num in rpds:
+        tot_rpd += num
+    return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, (tot_rpd/len(rpds))*100,\
+        num_less_than_ten_percent,(math.sqrt(mse_num/(len(newx))))/(tot_x/len(newx))
 
 def getCorrelCsvRaw((names, x, y)):
     out_csv = "Name,Hardware,Simulator,Sim/HW\n"
@@ -101,8 +132,8 @@ def make_submission_quality_image(image_type, traces):
     app_min = 0
     app_max = 999999999999999999999999999999999.9
     markers =[dict(size = 14,color = 'rgba(210,105,30, .4)'),
-              dict(size = 3, color = 'rgba(0, 0, 0, 1.0)'),
-              dict(size = 10,color = 'rgba(0, 182, 0, .9)'),
+              dict(size = 5, color = 'rgba(0, 0, 0, .7)'),
+              dict(size = 10,color = 'rgba(0, 182, 0, .4)'),
               dict(size = 10,color = 'rgba(0, 0, 193, .9)'),
               dict(size = 10,color = 'rgba(155, 155, 155, .9)')]
     count = 0
@@ -115,8 +146,15 @@ def make_submission_quality_image(image_type, traces):
     kernel_csv_file_contents = ""
     app_csv_file_contents = ""
 
+    renames = options.rename_data.split(',')
+    marker_order = options.marker_order.split(',')
     for trace, layout, cfg, anno, plotfile, err_dropped, apps_included, correlmap, hw_low_drop in traces:
-        trace.marker = markers[count %len(markers)]
+        if len(traces) == len(renames):
+            trace.name = renames[count]
+        if count < len(marker_order) and marker_order[0] != "":
+            trace.marker = markers[int(marker_order[count])]
+        else:
+            trace.marker = markers[count %len(markers)]
         trace.mode = "markers"
         trace.error_x.color = trace.marker.color
         
@@ -130,8 +168,10 @@ def make_submission_quality_image(image_type, traces):
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
-        apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent = getAppData(trace.text, trace.x, trace.y)
-        
+
+        apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
+            = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title)
+
         app_max = max ( max(appx), max(appy) )
         app_min = min ( min(appx), min(appy) )
 
@@ -139,19 +179,25 @@ def make_submission_quality_image(image_type, traces):
             .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
         kernel_data.append(trace)
 
-        app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over)) [Correl={1:.4} Err={2:.2f}%]"\
-            .format(appcount, correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+        app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over, {8} < 10% Err)) [Correl={1:.4} Err={2:.2f}% Agg_Err={6:.2f}% RPD={7:.2f}%,NMSE={9:.2f}]"\
+            .format(len(apps), correl_co, avg_err,num_under,num_over,num_less_than_one_percent,agg_err,rpd,nltenp,nmse)
         applist_file_contents += "{0}\n{1}\n\n".format(app_anno, app_str)
+        applist_file_contents += "apps:\n{0}\n\n".format(apps)
         app_annotations.append(make_anno1(app_anno,22,0,1.115 - count * 0.05))
         print_anno += "Per-App :: " + app_anno + "\n"
+
+        if "Cycles" in layout.xaxis.title:
+            name_text = "<b>" + trace.name + " [Correl={0:.3} MAE={1:.1f}%]</b>".format(correl_co, avg_err, nmse)
+        else:
+            name_text = "<b>" + trace.name + " [Correl={0:.3} NRMSE={1:.2f}]</b>".format(correl_co, nmse)
 
         app_trace = go.Scatter(
             x = appx,
             y = appy,
             mode = 'markers',
             text=apps,
-            marker = markers[count %len(markers)],
-            name=cfg,
+            marker = trace.marker,
+            name=name_text,
         )
         app_data.append(app_trace)
         count += 1
@@ -191,13 +237,13 @@ def make_submission_quality_image(image_type, traces):
         anno.font=Font(size=22,color='black')
     png_layout.xaxis.titlefont.size = TEXT_SIZE
     png_layout.xaxis.titlefont.color='black'
-    png_layout.xaxis.tickfont.size=20
+    png_layout.xaxis.tickfont.size=15
     png_layout.xaxis.tickfont.color='black'
     png_layout.xaxis.type=correlmap.plottype
     png_layout.xaxis.autorange=True
 
     png_layout.yaxis.titlefont.size = TEXT_SIZE
-    png_layout.yaxis.tickfont.size = 20
+    png_layout.yaxis.tickfont.size = 15
     png_layout.yaxis.titlefont.color='black'
     png_layout.yaxis.tickfont.color='black'
     png_layout.yaxis.type=correlmap.plottype
@@ -206,12 +252,12 @@ def make_submission_quality_image(image_type, traces):
     png_layout.margin.t = 100
 
     png_layout.legend=dict(
-        x=0,
-        y=1,
+        x=-.1,
+        y=1.2,
         traceorder='normal',
         font=dict(
             family='sans-serif',
-            size=15,
+            size=10,
             color='#000'
         ),
         bgcolor='#E2E2E2',
@@ -234,29 +280,31 @@ def make_submission_quality_image(image_type, traces):
                 range=[app_min * 0.9 ,app_max*1.1]
             ),
         legend=dict(
-            x=0,
-            y=1,
+            x=-.2,
+            y=options.legend,
             traceorder='normal',
             font=dict(
                 family='sans-serif',
-                size=15,
+                size=20,
                 color='#000'
             ),
-            bgcolor='#E2E2E2',
+            bgcolor='#FFFFFF',
             bordercolor='#FFFFFF',
             borderwidth=2
         )
    )
 
+
+    app_layout.title=None
     app_layout.xaxis.titlefont.size = TEXT_SIZE
     app_layout.xaxis.titlefont.color='black'
-    app_layout.xaxis.tickfont.size=20
+    app_layout.xaxis.tickfont.size=15
     app_layout.xaxis.tickfont.color='black'
     app_layout.xaxis.type=correlmap.plottype
     app_layout.xaxis.autorange=True
 
     app_layout.yaxis.titlefont.size = TEXT_SIZE
-    app_layout.yaxis.tickfont.size = 20
+    app_layout.yaxis.tickfont.size = 15
     app_layout.yaxis.titlefont.color='black'
     app_layout.yaxis.tickfont.color='black'
     app_layout.yaxis.type=correlmap.plottype
@@ -277,16 +325,22 @@ def make_submission_quality_image(image_type, traces):
     if image_type != "":
         png_name = plotname.replace(".", "_") + "." + image_type
         py.image.save_as(Figure(data=kernel_data,layout=png_layout), \
-            png_name, height=1024, width=1024)
+            png_name, height=512.0*1.05, width=512)
+        time.sleep(2)
 
         png_name = plotname.replace(".", "_") + ".per-app." + image_type
         py.image.save_as(Figure(data=app_data,layout=app_layout), \
-            png_name, height=1024, width=1024)
+            png_name, height=512.0*1.05, width=512)
+        time.sleep(2)
+
+
     # This generates the html
     plotly.offline.plot(Figure(data=kernel_data,layout=png_layout), \
         filename= plotname + ".per-kernel.html", auto_open=False)
+    time.sleep(2)
     plotly.offline.plot(Figure(data=app_data,layout=app_layout), \
         filename= plotname + ".per-app.html", auto_open=False)
+    time.sleep(2)
 
 def make_anno1(text, fontsize, x, y):
     return Annotation(
@@ -561,6 +615,14 @@ parser.add_option("-b", "--blacklist", dest="blacklist", default="",
                        " Useful for removing random toy apps from the correlation.")
 parser.add_option("-n", "--noanno", dest="noanno", action="store_true",
                   help="Turn off plot annotations")
+parser.add_option("-r", "--rename_data", dest="rename_data", default="",
+                  help="Rename the data series")
+parser.add_option("-m", "--marker_order", dest="marker_order", default="",
+                  help="Reorder the markers used for each config")
+parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
+                  help="Reorder the markers used for each config")
+#parser.add_option("-R", "--rename_axis", dest="rename_axis", default="",
+#                  help="the x,y axises. Formar x,y")
 parser.add_option("-p", "--plotname", dest="plotname", default="",
                   help="string put in the middle of the output files. If nothing is provided, then" +\
                        "a concatination of all the configs in the graph are used.")
@@ -632,6 +694,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         appcount = 0
         kernelcount = 0
         num_less_than_one_percent = 0
+        num_less_than_ten_percent = 0
         num_under = 0
         num_over = 0
         errs = []
@@ -707,8 +770,13 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         hw_high = (hw_error[-1]/hw_array[-1]) * 100
                         hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
                         err = (err / hw_array[-1]) * 100
+
+                        if abs(err) < 10.0:
+                            num_less_than_ten_percent += 1
+
                         if abs(err) < 1.0:
                             num_less_than_one_percent += 1
+
                         elif err > 0:
                             num_over += 1
                         else:
@@ -717,7 +785,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                         errs.append(abs(err))
                         apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
 
-                        label_array.append((appargs + "--" + sim_klist[count]["Kernel"])[0:100] +
+                        label_array.append((appargs + "--" + sim_klist[count]["Kernel"]) +
                             " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(err, hw_high,hw_low))
                         count += 1
                         if hw_array[-1] > max_axis_val:
@@ -743,35 +811,9 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         if len(errs) == 0:
             continue
 
-        # Filter out bad errors
-        new_hw_array = []
-        new_hw_error = []
-        new_hw_error_min = []
-        new_sim_array = []
-        new_label_array = []
-        new_errs = []
         for i in range(len(hw_array)):
             hw_high = (hw_error[i]/hw_array[i]) * 100
             hw_low = (hw_error_min[i]/hw_array[i]) * 100
-            err = errs[i]
-
-            if abs(err) < options.err_calc_threadhold and \
-                hw_high < options.hw_err_tolerance and \
-                hw_low < options.hw_err_tolerance:
-                    new_hw_array.append(hw_array[i])
-                    new_hw_error.append(hw_error[i])
-                    new_hw_error_min.append(hw_error_min[i])
-                    new_label_array.append(label_array[i])
-                    new_sim_array.append(sim_array[i])
-                    new_errs.append(errs[i])
-            else:
-                err_dropped_stats += 1
-        hw_array = new_hw_array
-        hw_error = new_hw_error
-        hw_error_min = new_hw_error_min
-        sim_array = new_sim_array
-        label_array = new_label_array
-        errs = new_errs
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
@@ -794,24 +836,24 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             name=cfg,
         )
         if not options.err_off:
-#            anno = " [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
-#            anno = cfg + " ({1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
-            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4} Err={3:.2f}%]"\
+                .format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent, num_less_than_ten_percent)
         else:
-#            anno = " [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
-#            anno = cfg + " ({1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
-            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]".format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent)
+            anno = cfg + " ({0} apps, {1} kernels ({6} < 1% Err, {4} under, {5} over)) [Correl={2:.4}]"\
+                .format(appcount, kernelcount,correl_co, avg_err,num_under,num_over,num_less_than_one_percent, num_less_than_ten_percent)
+
         layout = Layout(
             title=correl.chart_name,
              xaxis=dict(
-                title='Hardware {0} {1}'.format(hw_cfg, correl.chart_name),
+                title='Hardware {1}'.format(hw_cfg, correl.chart_name),
                 range=[min_axis_val * 0.9 ,max_axis_val*1.1]
             ),
             yaxis=dict(
-                title='GPGPU-Sim {0}'.format(correl.chart_name),
+                title='Simulation {0}'.format(correl.chart_name),
                 range=[min_axis_val * 0.9 ,max_axis_val*1.1]
             ),
         )
+
         data = [trace]
 
         if correl.plotfile + hw_cfg not in fig_data:
