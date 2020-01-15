@@ -18,7 +18,9 @@ config_maps = \
     "QV100" : "Quadro GV100",
 	"QV100_old" : "Quadro GV100",
 	"QV100_SASS" : "Quadro GV100"
-
+#    "QV100" : "Tesla V100-SXM2-32GB",
+#	"QV100_old" : "Tesla V100-SXM2-32GB",
+#	"QV100_SASS" : "Tesla V100-SXM2-32GB"
 }
 
 
@@ -104,12 +106,33 @@ correl_list = \
         drophwnumbelow=8000,
         plottype="log"
     ),
+	# 1455 MHz
+    CorrelStat(chart_name="Cycles",
+        plotfile="tv100-cycles",
+        hw_eval="np.average(hw[\"Duration\"])*1455",
+        hw_error="np.max(hw[\"Duration\"])*1455 - np.average(hw[\"Duration\"])*1455,"+\
+                 "np.average(hw[\"Duration\"])*1455 - np.min(hw[\"Duration\"])*1455",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Tesla V100-SXM2-32GB",
+        drophwnumbelow=8000,
+        plottype="log"
+    ),
+    CorrelStat(chart_name="TESLA V100 SM Cycles",
+        plotfile="tv100_sm_cycles",
+        hw_eval="np.average(hw[\"elapsed_cycles_sm\"])/80",
+        hw_error="np.max(hw[\"elapsed_cycles_sm\"])/80 - np.average(hw[\"elapsed_cycles_sm\"])/80,"+\
+                 "np.average(hw[\"elapsed_cycles_sm\"])/80 - np.min(hw[\"elapsed_cycles_sm\"])/80",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="Tesla V100-SXM2-32GB",
+        drophwnumbelow=8000,
+        plottype="log"
+    ),
 
 
     # Common, non-cycle stats
     CorrelStat(chart_name="Warp Instructions",
         plotfile="warp-inst",
-        hw_eval="np.average(hw[\"inst_executed\"])",
+        hw_eval="np.average(hw[\"inst_issued\"])",
         hw_error=None,
         sim_eval="float(sim[\"gpgpu_n_tot_w_icount\s*=\s*(.*)\"])",
         hw_name="all",
