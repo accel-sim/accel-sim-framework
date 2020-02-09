@@ -122,7 +122,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla V100-SXM2-32GB",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
     CorrelStat(chart_name="TESLA V100 SM Cycles",
         plotfile="tv100_sm_cycles",
@@ -132,7 +133,8 @@ correl_list = \
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
         hw_name="Tesla V100-SXM2-32GB",
         drophwnumbelow=8000,
-        plottype="log"
+        plottype="log",
+        stattype="counter"
     ),
 
 
