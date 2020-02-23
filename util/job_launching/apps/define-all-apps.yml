@@ -80,6 +80,12 @@ GPU_Microbenchmark:
             -
         - l1_bw_32f_unroll_large:
             -
+        - atomic_add_bw:
+            -
+        - atomic_add_bw_conflict:
+            -
+        - atomic_add_lat:
+            -
 
 Deepbench_nvidia:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
