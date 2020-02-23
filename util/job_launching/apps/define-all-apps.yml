@@ -709,6 +709,24 @@ cutlass_5_trace:
             - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
             - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
 
+cutlass_5_trace_sgemm:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+
 
 cutlass_5:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
