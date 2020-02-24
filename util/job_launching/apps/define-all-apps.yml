@@ -658,6 +658,76 @@ deeplearning:
         - mnistCUDNN:
             -
 
+hetrosync:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - allSyncPrims-1kernel
+            - atomicTreeBarrUniq 10 2 10
+            - atomicTreeBarrUniq 10 4 10
+            - atomicTreeBarrUniq 10 8 10
+            - atomicTreeBarrUniq 10 16 10
+            - atomicTreeBarrUniqLocalExch 10 2 10
+            - atomicTreeBarrUniqLocalExch 10 4 10
+            - atomicTreeBarrUniqLocalExch 10 8 10
+            - atomicTreeBarrUniqLocalExch 10 16 10
+            - lfTreeBarrUniq 10 2 10
+            - lfTreeBarrUniq 10 4 10
+            - lfTreeBarrUniq 10 8 10
+            - lfTreeBarrUniq 10 16 10
+            - lfTreeBarrUniqLocalExch 10 2 10
+            - lfTreeBarrUniqLocalExch 10 4 10
+            - lfTreeBarrUniqLocalExch 10 8 10
+            - lfTreeBarrUniqLocalExch 10 16 10
+            - spinMutex 10 2 10
+            - spinMutex 10 4 10
+            - spinMutex 10 8 10
+            - spinMutex 10 16 10
+            - spinMutexEBO 10 2 10
+            - spinMutexEBO 10 4 10
+            - spinMutexEBO 10 8 10
+            - spinMutexEBO 10 16 10
+            - faMutex 10 2 10
+            - faMutex 10 4 10
+            - faMutex 10 8 10
+            - faMutex 10 16 10
+            - sleepMutex 10 2 10
+            - sleepMutex 10 4 10
+            - sleepMutex 10 8 10
+            - sleepMutex 10 16 10
+            - spinSem10 10 2 10
+            - spinSem10 10 4 10
+            - spinSem10 10 8 10
+            - spinSem10 10 16 10
+            - spinSemEBO10 10 2 10
+            - spinSemEBO10 10 4 10
+            - spinSemEBO10 10 8 10
+            - spinSemEBO10 10 16 10
+            - spinMutexUniq 10 2 10
+            - spinMutexUniq 10 4 10
+            - spinMutexUniq 10 8 10
+            - spinMutexUniq 10 16 10
+            - spinMutexEBOUniq 10 2 10
+            - spinMutexEBOUniq 10 4 10
+            - spinMutexEBOUniq 10 8 10
+            - spinMutexEBOUniq 10 16 10
+            - faMutexUniq 10 2 10
+            - faMutexUniq 10 4 10
+            - faMutexUniq 10 8 10
+            - faMutexUniq 10 16 10
+            - sleepMutexUniq 10 2 10
+            - sleepMutexUniq 10 4 10
+            - sleepMutexUniq 10 8 10
+            - sleepMutexUniq 10 16 10
+            - spinSemUniq10 10 2 10
+            - spinSemUniq10 10 4 10
+            - spinSemUniq10 10 8 10
+            - spinSemUniq10 10 16 10
+            - spinSemEBOUniq10 10 2 10
+            - spinSemEBOUniq10 10 4 10
+            - spinSemEBOUniq10 10 8 10
+            - spinSemEBOUniq10 10 16 10
+
 cutlass-test:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/"
