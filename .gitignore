@@ -49,3 +49,4 @@ benchmarks/src/cuda/shoc-master/src/opencl/level2/s3d/S3D
 benchmarks/src/cuda/shoc-master/src/opencl/level2/s3d/epmpi/S3D
 benchmarks/src/cuda/cudnn/mnist/mnistCUDNN
 othersruns/
+benchmarks/src/cuda/heterosync
