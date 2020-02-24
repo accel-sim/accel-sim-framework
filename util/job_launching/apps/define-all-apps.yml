@@ -664,11 +664,11 @@ deeplearning:
         - mnistCUDNN:
             -
 
-hetrosync:
+heterosync:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
-        - allSyncPrims-1kernel
+        - allSyncPrims-1kernel:
             - atomicTreeBarrUniq 10 2 10
             - atomicTreeBarrUniq 10 4 10
             - atomicTreeBarrUniq 10 8 10
