@@ -45,7 +45,7 @@ day_string = now_time.strftime("%y.%m.%d-%A")
 time_string = now_time.strftime("%H:%M:%S")
 logfile = day_string + "--" + time_string + ".csv"
 
-nvbit_path = os.path.join(this_directory, "tracer_tool")
+nvbit_tracer_path = os.path.join(this_directory, "tracer_tool")
 
 for bench in benchmarks:
     edir, ddir, exe, argslist = bench
@@ -69,8 +69,8 @@ for bench in benchmarks:
         sh_contents = ""
         
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "LD_PRELOAD=" + os.path.join(nvbit_path, "tools", "traceall", "traceall.so") + " " + os.path.join(this_directory, edir,exe) +\
-            " " + str(args) + " ; " + os.path.join(nvbit_path, "tools", "traceall", "traces-processing", "post-traces-processing") + " " +\
+            "LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " + os.path.join(this_directory, edir,exe) +\
+            " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_run_dir, "traces", "kernelslist") + " ; rm " + os.path.join(this_run_dir, "traces") + "/*.trace "
 
         print ("sh_contents: ", sh_contents)

@@ -41,9 +41,6 @@ using namespace std;
 /* nvbit interface file */
 #include "nvbit.h"
 
-/* for GET_VAR*  macros */
-#include "macros.h"
-
 /* provide some __device__ functions */
 #include "utils/utils.h"
 
