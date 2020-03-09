@@ -1,4 +1,4 @@
-# Instructions on using tracer nvbit tool for GPGPU-sim 
+# Instructions on using tracer tools for GPGPU-sim 
 
 * First insall the nvbit tool:
     ```bash
