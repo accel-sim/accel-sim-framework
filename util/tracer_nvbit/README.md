@@ -15,4 +15,7 @@
     the traces will be found in ../../run_hw/traces/device-0/
 
 * To generate silicon checkpoints for execution-driven:
-    //TO DO
+    ```bash
+    # TO DO
+    ```
+
