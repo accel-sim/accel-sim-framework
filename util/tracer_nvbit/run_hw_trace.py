@@ -31,9 +31,6 @@ parser.add_option("-n", "--norun", dest="norun", action="store_true",
 
 (options, args) = parser.parse_args()
 
-if not any([os.path.isfile(os.path.join(p, "nvprof")) for p in os.getenv("PATH").split(os.pathsep)]):
-    exit("ERROR - Cannot find nvprof PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
-
 common.load_defined_yamls()
 
 benchmarks = []
@@ -68,6 +65,9 @@ for bench in benchmarks:
 
         sh_contents = ""
         
+	# first we generate the traces (.trace and kernelslist files)
+	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
+	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
             "LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " + os.path.join(this_directory, edir,exe) +\
             " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
