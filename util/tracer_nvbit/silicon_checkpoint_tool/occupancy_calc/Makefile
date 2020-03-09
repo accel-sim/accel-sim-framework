@@ -1,5 +1,5 @@
 NVCC=nvcc -ccbin=`which gcc` -D_FORCE_INLINES
-NVBIT_PATH=../nvbit_release/core
+NVBIT_PATH=../../nvbit_release/core
 INCLUDES=-I$(NVBIT_PATH)
 LIBS=-L$(NVBIT_PATH) -lnvbit
 NVCC_PATH=-L $(subst bin/nvcc,lib64,$(shell which nvcc | tr -s /))

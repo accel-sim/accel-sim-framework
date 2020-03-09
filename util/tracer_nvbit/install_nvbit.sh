@@ -7,3 +7,5 @@ if [ ! -d $DATA_ROOT ]; then
     tar -xf nvbit-Linux-x86_64-1.1.tar.bz2 -C $BASH_ROOT
     rm nvbit-Linux-x86_64-1.1.tar.bz2
 fi
+
+
