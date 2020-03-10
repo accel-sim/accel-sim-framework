@@ -3,7 +3,7 @@
 * First insall the nvbit tool:
     ```bash
     # Insall the nvbit
-    ./install_nvbit
+    ./install_nvbit.sh
     # compile the tools
     ./make
     ```
