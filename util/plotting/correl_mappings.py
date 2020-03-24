@@ -7,6 +7,7 @@ config_maps = \
     "PUB_TITANX": "TITAN X (Pascal)",
     "TITANX_P102": "TITAN X (Pascal)",
     "TITANX": "TITAN X (Pascal)",
+	"TITANXX": "TITAN X (Pascal)",
     "TITANX_OLD": "TITAN X (Pascal)",
     "TITANV": "TITAN V",
     "TITANV_OLD": "TITAN V",
@@ -15,9 +16,11 @@ config_maps = \
     "P100_HBM" : "Tesla P100",
     "GTX480" : "GeForce GTX 480",
     "GTX1080Ti" : "GeForce GTX 1080 Ti",
+	"TITANK" : "GeForce GTX TITAN",
     "QV100" : "Quadro GV100",
 	"QV100_old" : "Quadro GV100",
-	"QV100_SASS" : "Quadro GV100"
+	"QV100_SASS" : "Quadro GV100",
+	"RTX2060" : "GeForce RTX 2060"
 #    "QV100" : "Tesla V100-SXM2-32GB",
 #	"QV100_old" : "Tesla V100-SXM2-32GB",
 #	"QV100_SASS" : "Tesla V100-SXM2-32GB"
@@ -30,7 +33,7 @@ import collections
 CorrelStat = collections.namedtuple('CorrelStat', 'chart_name hw_eval hw_error sim_eval hw_name plotfile drophwnumbelow plottype stattype')
 correl_list = \
 [
-    # 1417 MHz
+    # 1200 MHz
     CorrelStat(chart_name="Cycles",
         plotfile="titanv-cycles",
         hw_eval="np.average(hw[\"Duration\"])*1200",
@@ -136,9 +139,43 @@ correl_list = \
         plottype="log",
         stattype="counter"
     ),
+	#837 MHZ
+    CorrelStat(chart_name="Cycles",
+        plotfile="kepler-cycles",
+        hw_eval="np.average(hw[\"Duration\"])*837",
+        hw_error="np.max(hw[\"Duration\"])*837 - np.average(hw[\"Duration\"])*837,"+\
+                 "np.average(hw[\"Duration\"])*837 - np.min(hw[\"Duration\"])*837",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="GeForce GTX TITAN",
+        drophwnumbelow=8000,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="TITAN KEPLER Cycles",
+        plotfile="kepler_sm_cycles",
+        hw_eval="np.average(hw[\"elapsed_cycles_sm\"])/14",
+        hw_error="np.max(hw[\"elapsed_cycles_sm\"])/14 - np.average(hw[\"elapsed_cycles_sm\"])/14,"+\
+                 "np.average(hw[\"elapsed_cycles_sm\"])/14 - np.min(hw[\"elapsed_cycles_sm\"])/14",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="GeForce GTX TITAN",
+        drophwnumbelow=8000,
+        plottype="log",
+        stattype="counter"
+    ),
+	#Turing
+    CorrelStat(chart_name="TITAN TURING Cycles",
+        plotfile="turing_sm_cycles",
+        hw_eval="np.average(hw[\"gpc__cycles_elapsed.avg\"])",
+        hw_error="np.max(hw[\"gpc__cycles_elapsed.avg\"]) - np.average(hw[\"gpc__cycles_elapsed.avg\"]),"+\
+                 "np.average(hw[\"gpc__cycles_elapsed.avg\"]) - np.min(hw[\"gpc__cycles_elapsed.avg\"])",
+        sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
+        hw_name="GeForce RTX 2060",
+        drophwnumbelow=8000,
+        plottype="log",
+        stattype="counter"
+    ),
 
-
-    # Common, non-cycle stats
+    # Common, non-cycle stats for nvprof
     CorrelStat(chart_name="Warp Instructions",
         plotfile="warp-inst",
         hw_eval="np.average(hw[\"inst_issued\"])",
@@ -294,6 +331,164 @@ correl_list = \
 	CorrelStat(chart_name="DRAM write transactions",
         plotfile="dram-write-transactions",
         hw_eval="np.average(hw[\"dram_write_transactions\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"total dram writes\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+	
+	
+	 ### Common, non-cycle stats for nvsight
+    CorrelStat(chart_name="Warp Instructions",
+        plotfile="warp-inst",
+        hw_eval="np.average(hw[\"smsp__inst_executed.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"gpgpu_n_tot_w_icount\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L2 read hits",
+        plotfile="l2-read-hits",
+        hw_eval="np.average(hw[\"lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L2 read transactions",
+        plotfile="l2-read-transactions",
+        hw_eval="np.average(hw[\"lts__t_sectors_srcunit_tex_op_read.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L2 write transactions",
+        plotfile="l2-write-transactions",
+        hw_eval="np.average(hw[\"lts__t_sectors_srcunit_tex_op_write.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L2 Write Hits",
+        plotfile="l2-write-hits",
+        hw_eval="np.average(hw[\"lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L2 BW",
+        plotfile="l2_bw",
+        hw_eval="np.average(hw[\"lts__t_sectors_srcunit_tex_op_read.sum.per_second\"] * 32)",
+        hw_error=None,
+        sim_eval="float(sim[\"L2_BW\s*=\s*(.*)GB\/Sec\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="linear",
+        stattype="rate"
+    ),
+    CorrelStat(chart_name="L2 read Hit rate",
+        plotfile="l2-read-hitrate",
+        hw_eval="np.average(hw[\"lts__t_sector_op_read_hit_rate.pct\"])",
+        hw_error=None,
+        sim_eval=
+            "100*float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])/"+\
+            "float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="linear",
+        stattype="rate"
+    ),
+    CorrelStat(chart_name="L2 write Hit rate",
+        plotfile="l2-write-hitrate",
+        hw_eval="np.average(hw[\"lts__t_sector_op_write_hit_rate.pct\"])",
+        hw_error=None,
+        sim_eval=
+            "100*float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])/"+\
+            "float(sim[\"\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="linear",
+        stattype="rate"
+    ),
+    CorrelStat(chart_name="Occupancy",
+        plotfile="occupancy",
+        hw_eval="np.average(hw[\"sm__warps_active.avg.pct_of_peak_sustained_active\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"gpu_occupancy\s*=\s*(.*)%\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="linear",
+        stattype="rate"
+    ),
+    CorrelStat(chart_name="L1 Cache Read Hits",
+        plotfile="l1hitreads",
+        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=-1,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L1 Cache Write Hits",
+        plotfile="l1hitwrites",
+        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_st_ld_lookup_hit.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=-1,
+        plottype="log",
+        stattype="counter"
+    ),
+    CorrelStat(chart_name="L1 Cache Read Access",
+        plotfile="l1readaccess",
+        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+	CorrelStat(chart_name="L1 Cache Write Access",
+        plotfile="l1writeaccess",
+        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+	CorrelStat(chart_name="DRAM read transactions",
+        plotfile="dram-read-transactions",
+        hw_eval="np.average(hw[\"dram__sectors_read.sum\"])",
+        hw_error=None,
+#        sim_eval="float(sim[\"Read\s*=\s*(.*)\"])+float(sim[\"L2_Alloc\s*=\s*(.*)\"])*24",
+        sim_eval="float(sim[\"total dram reads\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=1000,
+        plottype="log",
+        stattype="counter"
+    ),
+	CorrelStat(chart_name="DRAM write transactions",
+        plotfile="dram-write-transactions",
+        hw_eval="np.average(hw[\"dram__sectors_write.sum\"])",
         hw_error=None,
         sim_eval="float(sim[\"total dram writes\s*=\s*(.*)\"])",
         hw_name="all",
