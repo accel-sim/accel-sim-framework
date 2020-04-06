@@ -445,6 +445,57 @@ def get_sim_csv_data(filepath, logger):
             del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
+def parse_hw_csv_2(csv_file, hw_data, appargs, logger, cfg):
+    kdata = []
+    processFiles = True
+    processedCycle = False
+    cfg_col = None
+
+    cycle_file_count = 0
+    if os.path.exists(csv_file[:-2] + ".{0}".format(cycle_file_count)):
+        csv_file = csv_file[:-2] + ".{0}".format(cycle_file_count)
+    processed_files = set()
+    while processFiles:
+        with open(csv_file, 'rU') as data_file:
+            logger.log("Parsing HW csv file {0}".format(csv_file))
+            reader = csv.reader(data_file)        # define reader object
+            state = "start"
+            header = []
+            kcount = 0
+            for row in reader:                    # loop through rows in csv file
+                if state == "start":
+                    if len(row) == 0:
+                        continue
+                    if "ID" == row[0]:
+                        state = "kernel_proc"
+                    continue
+                if state == "kernel_proc":
+                    if len(row) == 1:
+                        logger.log("Bad line - possibly the app failed -- {0}".format(row))
+                        break
+
+                    kcount = int(row[0])
+                    metric = row[-3]
+                    value = float(row[-1].replace(",",""))
+#                    print "kcount={0}, metric={1}, value={2}".format(kcount,metric,value)
+#                    exit(1)
+                    if len(kdata) <= kcount:
+                        kdata.append({})
+                    if metric not in kdata[kcount]:
+                        kdata[kcount][metric] = []
+                    kdata[kcount][metric].append(value)
+
+        logger.log("Kernels found: {0}".format(kcount))
+        processed_files.add(csv_file)
+        cycle_file_count += 1
+        csv_file = csv_file[:-1] + str(cycle_file_count)
+        if not os.path.exists(csv_file):
+            break
+    if cfg != "" and cfg != None:
+        if cfg not in hw_data:
+            hw_data[cfg] = {}
+        hw_data[cfg][appargs] = kdata
+
 def parse_hw_csv(csv_file, hw_data, appargs, logger):
     kdata = []
     processFiles = True
@@ -626,6 +677,8 @@ parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
 parser.add_option("-p", "--plotname", dest="plotname", default="",
                   help="string put in the middle of the output files. If nothing is provided, then" +\
                        "a concatination of all the configs in the graph are used.")
+parser.add_option("-D", "--devicename", dest="devicename", default="",
+                  help="Used right now to provide a device name for turing")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -655,6 +708,14 @@ for root, dirs, files in os.walk(options.hardware_dir):
             # Pass in the lexiconically sorted newest file name. Cannot use getm/ctime because these files are
             # created at the same time on the local file system from a tarbal;.
             parse_hw_csv(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger)
+
+        csvs = glob.glob(os.path.join(csv_dir,"*.gpc__cycles_elapsed*"))
+        logger.log("Found HW gpc__cycles_elapsed {0} csvs in {1}\n".format(len(csvs),csv_dir))
+        if len(csvs) > 0:
+            # Pass in the lexiconically sorted newest file name. Cannot use getm/ctime because these files are
+            # created at the same time on the local file system from a tarbal;.
+            parse_hw_csv_2(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger, options.devicename)
+
 
 
 #Get the simulator data
