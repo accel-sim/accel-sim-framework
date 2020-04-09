@@ -714,7 +714,8 @@ for root, dirs, files in os.walk(options.hardware_dir):
         if len(csvs) > 0:
             # Pass in the lexiconically sorted newest file name. Cannot use getm/ctime because these files are
             # created at the same time on the local file system from a tarbal;.
-            parse_hw_csv_2(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger, options.devicename)
+            logger.log("Ignoring HW file {0}".format(sorted(csvs)[-1]))
+            #parse_hw_csv_2(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger, options.devicename)
 
 
 
