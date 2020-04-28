@@ -695,9 +695,9 @@ for root, dirs, files in os.walk(options.hardware_dir):
         csvs = sorted(glob.glob(os.path.join(csv_dir,"*.csv*")))
         if len(csvs) == 0:
             continue
-        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
-        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
-        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
+#        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
+#        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
+#        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
         kdata = []
         for csvf in csvs:
             if "gpc__cycles_elapsed" in csvf:
