@@ -20,8 +20,8 @@ config_maps = \
     "QV100" : "Quadro GV100",
 	"QV100_old" : "Quadro GV100",
 	"QV100_SASS" : "Quadro GV100",
-	"RTX2060" : "GeForce RTX 2060"
-#    "QV100" : "Tesla V100-SXM2-32GB",
+	"RTX2060" : "GeForce RTX 2060",
+ #   "QV100" : "Tesla V100-SXM2-32GB",
 #	"QV100_old" : "Tesla V100-SXM2-32GB",
 #	"QV100_SASS" : "Tesla V100-SXM2-32GB"
 }
