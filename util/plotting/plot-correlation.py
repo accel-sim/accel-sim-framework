@@ -358,14 +358,18 @@ def make_anno1(text, fontsize, x, y):
     )
 
 class Logger:
-    def __init__(self, verbose):
+    def __init__(self, verbose, channel):
         self.correl_log = ""
         self.verbose = verbose
+        self.channel = channel
 
     def log(self, msg):
         if self.verbose:
             print msg
-            self.correl_log += msg + "\n"
+
+    def logchan(self, msg, channel):
+        if self.verbose or channel == self.channel:
+            print msg
 
     def write_log(self):
         now_time = datetime.datetime.now()
@@ -469,9 +473,13 @@ def parse_hw_csv_2(csv_file, hw_data, appargs, kdata, logger):
                 if metric == "device__attribute_display_name":
                     cfg = row[-1]
                     continue
-                value = float(row[-1].replace(",",""))
-#                print "kcount={0}, metric={1}, value={2}".format(kcount,metric,value)
-#                exit(1)
+
+                try:
+                    value = float(row[-1].replace(",",""))
+                except ValueError:
+                    logger.log("Bad line - possibly the app failed -- {0}".format(row))
+                    continue
+
                 if len(kdata) <= kcount:
                     kdata.append({})
                 if metric not in kdata[kcount]:
@@ -566,6 +574,44 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
             hw_data[cfg] = {}
         hw_data[cfg][appargs] = kdata
 
+def summarize_hw_data(hw_data, logger):
+    print("-----------------------------------------------------------------")
+    for device,appargslist in hw_data.iteritems():
+        print("All Card Summary:")
+        print("HW Summary for {0} [Contains {1} Apps]:"
+            .format(device,len(appargslist)))
+    print("----------------------------------------------------------------\n\n")
+    
+    # Print HW data summary
+    for device,appargslist in hw_data.iteritems():
+        logger.logchan("-----------------------------------------------------------------","hwsummary")
+        logger.logchan("HW Summary for {0} [Contains {1} Apps]:"
+            .format(device,len(appargslist)), "hwsummary")
+        for appargs,kdata in appargslist.iteritems():
+            logger.logchan("\t{0}:".format(appargs), "hwsummary")
+            logger.logchan("\t\tContatins {0} kernels:".format(len(kdata)), "hwsummary")
+    
+            if "Name" in kdata[0]:
+                logger.logchan("\t\t\tSample Kernel 0 [{0}]:".format(kdata[0]["Name"][0][0:64]), "hwsummary")
+            elif "Kernel Name" in kdata[0]:
+                logger.logchan("\t\t\tSample Kernel 0 [{0}]:".format(kdata[0]["Kernel Name"][0][0:64]), "hwsummary")
+    
+            sample_stats = [
+                "Duration",
+                "gpc__cycles_elapsed.avg",
+                "elapsed_cycles_sm",
+                "inst_issued",
+                "smsp__inst_executed.sum" ]
+            nothere = set()
+            for stat in sample_stats:
+                if stat in kdata[0]:
+                    logger.logchan("\t\t\t\t{0}: Numsamples={1} [min={2},max={3}]".format(stat, len(kdata[0][stat]),
+                        min(kdata[0][stat]), max(kdata[0][stat])), "hwsummary")
+                else:
+                    nothere.add(stat)
+            logger.logchan("\t\t\t\t{0} not gathered in this kernel".format(nothere), "hwsummary")
+        logger.logchan("-----------------------------------------------------------------\n\n","hwsummary")
+
 # Our big correlations are blowing up the csv package :)
 csv.field_size_limit(sys.maxsize)
 parser = OptionParser()
@@ -620,8 +666,9 @@ parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
 parser.add_option("-p", "--plotname", dest="plotname", default="",
                   help="string put in the middle of the output files. If nothing is provided, then" +\
                        "a concatination of all the configs in the graph are used.")
-parser.add_option("-D", "--devicename", dest="devicename", default="",
-                  help="Used right now to provide a device name for turing")
+parser.add_option("-C", "--logchannel", dest="logchannel", default="",
+                  help="Turn on minimal logging. Right now \"hwsummary\" supported.")
+
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -637,7 +684,7 @@ if options.blacklist != "":
         bannedname = bannedname.strip()
         blacklist.append(re.compile(bannedname))
 
-logger = Logger(options.verbose)
+logger = Logger(options.verbose, options.logchannel)
 
 # Get the hardware Data
 logger.log("Getting HW data\n")
@@ -648,16 +695,17 @@ for root, dirs, files in os.walk(options.hardware_dir):
         csvs = sorted(glob.glob(os.path.join(csv_dir,"*.csv*")))
         if len(csvs) == 0:
             continue
-        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
-        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
-        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
+#        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
+#        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
+#        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
         kdata = []
         for csvf in csvs:
             if "gpc__cycles_elapsed" in csvf:
                 parse_hw_csv_2(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
             else:
                 parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
-#            print hw_data
+
+summarize_hw_data(hw_data,logger)
 
 #Get the simulator data
 logger.log("Processing simulator data\n")
@@ -809,8 +857,6 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                     appcount += 1
         logger.log("Sim apps no HW:\n{0}\nHW apps no sim data:\n{1}"\
             .format(sim_appargs_leftover, hw_appargs_leftover))
-
-        logger.write_log()
 
         if len(errs) == 0:
             continue
