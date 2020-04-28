@@ -2,7 +2,7 @@
 
 from optparse import OptionParser
 import plotly
-import plotly.plotly as py
+import chart_studio.plotly as py
 import plotly.tools as tls
 from plotly.graph_objs import *
 import os
@@ -70,7 +70,7 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
             num_over += 1
         elif (y1 < x1):
             num_under += 1
-        err = abs(y1-x1) / x1 * 100
+        err = abs(y1-x1) / (x1+0.0000001) * 100
         mse_num += (y1-x1)**2
         total_err += err
         if x1 + y1 == 0:
@@ -98,7 +98,7 @@ def getCorrelCsvRaw((names, x, y)):
     for k in names:
         out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
             .format(k, x[count], y[count],\
-                y[count]/x[count])
+                y[count]/(x[count]+0.000001))
         count += 1
     return out_csv
 
@@ -126,7 +126,7 @@ def make_pretty_app_list(apps_included):
             kernel_str += "{0} :: No kernels included in error calc".format(app)
     return ret_str, kernel_str
 
-def make_submission_quality_image(image_type, traces):
+def make_submission_quality_image(image_type, traces, hw_cfg):
     kernel_data = []
     app_data = []
     app_min = 0
@@ -226,15 +226,15 @@ def make_submission_quality_image(image_type, traces):
     f.write(app_csv_file_contents)
     f.close()
 
-    print "Plotting {0}: {1}\n{2}"\
-        .format(plotname + ".html", layout.title, print_anno)
+    print "Plotting {0} : [{1}]\n{2}"\
+        .format(hw_cfg, layout.title.text, print_anno)
     TEXT_SIZE=30
 
 
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
     for anno in png_layout.annotations:
-        anno.font=Font(size=22,color='black')
+        anno.font= Font(size=22,color='black')
     png_layout.xaxis.titlefont.size = TEXT_SIZE
     png_layout.xaxis.titlefont.color='black'
     png_layout.xaxis.tickfont.size=15
@@ -270,7 +270,7 @@ def make_submission_quality_image(image_type, traces):
     kernel_data.append(xyline)
 
     app_layout = Layout(
-            title="Per App " + layout.title,
+            title="Per App " + layout.title.text,
             xaxis=dict(
                 title=layout.xaxis.title,
                 range=[app_min * 0.9 ,app_max*1.1]
@@ -343,7 +343,7 @@ def make_submission_quality_image(image_type, traces):
     time.sleep(2)
 
 def make_anno1(text, fontsize, x, y):
-    return Annotation(
+    return plotly.graph_objs.layout.Annotation(
         text=text,   # annotation text
         xref='paper',  # use paper coordinates
         yref='paper',  #   for both x and y coords
@@ -445,128 +445,122 @@ def get_sim_csv_data(filepath, logger):
             del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
-def parse_hw_csv(csv_file, hw_data, appargs, logger):
-    kdata = []
-    processFiles = True
-    processedCycle = False
+def parse_hw_csv_2(csv_file, hw_data, appargs, kdata, logger):
+    cfg = None
+
+    with open(csv_file, 'rU') as data_file:
+        logger.log("Parsing HW csv file {0}".format(csv_file))
+        reader = csv.reader(data_file)        # define reader object
+        state = "start"
+        header = []
+        kcount = 0
+        for row in reader:                    # loop through rows in csv file
+            if state == "start":
+                if len(row) == 0:
+                    continue
+                if "ID" == row[0]:
+                    state = "kernel_proc"
+                continue
+            if state == "kernel_proc":
+                if len(row) == 1:
+                    logger.log("Bad line - possibly the app failed -- {0}".format(row))
+                    break
+                metric = row[-3]
+                if metric == "device__attribute_display_name":
+                    cfg = row[-1]
+                    continue
+                value = float(row[-1].replace(",",""))
+#                print "kcount={0}, metric={1}, value={2}".format(kcount,metric,value)
+#                exit(1)
+                if len(kdata) <= kcount:
+                    kdata.append({})
+                if metric not in kdata[kcount]:
+                    kdata[kcount][metric] = []
+                kdata[kcount][metric].append(value)
+                kcount = int(row[0]) + 1
+
+        logger.log("Kernels found: {0}".format(kcount))
+
+    if cfg != "" and cfg != None:
+        if cfg not in hw_data:
+            hw_data[cfg] = {}
+        hw_data[cfg][appargs] = kdata
+
+def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
     cfg = ""
     cfg_col = None
-    cycle_file_count = options.cycle_runs_to_burn # Start at 3 - assume we burn the first 3 runs to get DVFS scaled up
 
-    # The filename passed in is from the groups of latest collected CSVs, but it is not the .3 file -
-    # this little piece of code makes sure we start at the .3 filename
-    beginning_file = csv_file[:-1] + str(options.cycle_runs_to_burn)
-    if os.path.exists(beginning_file):
-        csv_file = beginning_file
-    else:
-        print "WARNING -- {0} does not exist - using {1} instead.".format(beginning_file, csv_file)
+    with open(csv_file, 'rU') as data_file:
+        logger.log("Parsing HW csv file {0}".format(csv_file))
+        reader = csv.reader(data_file)        # define reader object
+        state = "start"
+        header = []
+        kcount = 0
+        for row in reader:
+            # Begin by searching for the text line that indicates the beginning of the profile dump
+            if state == "start" and len(row) > 0:
+                if "Profiling result" in row[0] or "==PROF== Disconnected" in row[0]:
+                    state = "header_proc"
+                continue
 
-    if os.path.exists(csv_file + ".{0}".format(cycle_file_count)):
-        csv_file = csv_file + ".{0}".format(cycle_file_count)
-    processed_files = set()
-    while processFiles:
-        with open(csv_file, 'r') as data_file:
-            logger.log("Parsing HW csv file {0}".format(csv_file))
-            reader = csv.reader(data_file)        # define reader object
-            state = "start"
-            header = []
-            kcount = 0
-            for row in reader:                    # loop through rows in csv file
-                if state == "start":
-                    if "Profiling result" in row[0]:
-                        state = "header_proc"
+            # The frist line is a header line what indicates the place of each stat on the next line
+            if state == "header_proc":
+                if "Event result" in row[0]:
                     continue
-                if state == "header_proc":
-                    if "Event result" in row[0]:
-                        continue
-                    header = row
-                    count = 0
+                header = row
+                count = 0
 
-                    # get the device column
-                    for elem in row:
-                        if elem == "Device":
-                            cfg_col = count
-                        count += 1
+                # get the device name column - which is a special attribute
+                for elem in row:
+                    if elem == "Device":
+                        cfg_col = count
+                    elif elem == "device__attribute_display_name":
+                        cfg_col = count
+                    count += 1
 
-                    state = "kernel_proc"
+                state = "kernel_proc"
+                continue
+
+            # The next sequence of lines are all the kernel launches with the values for each stat
+            if state == "kernel_proc":
+                if len(row) == 1:
+                    logger.log("Bad line - possibly the app failed -- {0}".format(row))
+                    break
+
+                # skip the memcopies
+                if "[CUDA " in "".join(row):
                     continue
-#                if state == "blanc_proc":
-#                    state = "kernel_proc"
-#                    continue
-                if state == "kernel_proc":
-                    if len(row) == 1:
-                        logger.log("Bad line - possibly the app failed -- {0}".format(row))
-                        break
 
-                    # skip the memcopies
-                    if "[CUDA " in "".join(row):
-                        continue
-                    # Skip lines without a device listed
-                    if row[cfg_col] == "":
-                        continue
-
-                    if processedCycle:
-                        count = 0
-                        if kcount >= len(kdata):
-                            logger.log("Warning - number of kernels in cycle file mismatches kernels in the stats file:\n{0}".format(csv_file))
-                            continue
-                        for elem in row:
-                            if header[count] not in kdata[kcount]:
-                                kdata[kcount][header[count]] = []
-                            try:
-                                kdata[kcount][header[count]].append(float(elem))
-                            except ValueError:
-                                kdata[kcount][header[count]].append(elem)
-                            count += 1
-                        kname = kdata[kcount]["Kernel"]
-                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kname))
-                        kcount += 1
-                    else:
-                        # Set the Device
-                        if cfg != "" and cfg != row[cfg_col]:
-                            print "data for more than one device in {0}..{1}:{2}"\
-                                .format(csv_file,cfg,elem)
-                            exit()
-                        cfg = row[cfg_col]
-
-                        count = 0
-                        if len(kdata) <= kcount:
-                            kdata.append({})
-                        for elem in row:
-                            if header[count] not in kdata[kcount]:
-                                kdata[kcount][header[count]] = []
-                            try:
-                                kdata[kcount][header[count]].append(float(elem))
-                            except ValueError:
-                                kdata[kcount][header[count]].append(elem)
-                            count += 1
-                        #logger.log("Kernel Launch {0}: HW Kernel {1} found".format(kcount,kdata[kcount]["Name"]))
-                        kcount += 1
+                if cfg_col == None:
                     continue
+
+                # Skip lines without a device listed
+                if row[cfg_col] == "":
+                    continue
+
+                # Set the Device
+                if cfg != "" and cfg != row[cfg_col]:
+                    print "data for more than one device in {0}..{1}:{2}"\
+                        .format(csv_file,cfg,elem)
+                    exit()
+
+                cfg = row[cfg_col]
+                count = 0
+                if len(kdata) <= kcount:
+                    kdata.append({})
+                for elem in row:
+                    if header[count] not in kdata[kcount]:
+                        kdata[kcount][header[count]] = []
+                    try:
+                        value = float(elem.replace(",",""))
+                        kdata[kcount][header[count]].append(value)
+                    except ValueError:
+                        kdata[kcount][header[count]].append(elem)
+                    count += 1
+#                logger.log("Kernel Launch {0}: HW Kernel found".format(kcount))
+                kcount += 1
+                continue
         logger.log("Kernels found: {0}".format(kcount))
-        processed_files.add(csv_file)
-        # Drop the .cycle off the name
-        no_cycle_filename = re.sub(r'(.*\.csv).*', r'\1', csv_file)
-        elapsed_name = no_cycle_filename + ".elapsed_cycles_sm.{0}".format(cycle_file_count)
-        if ( elapsed_name not in processed_files and os.path.exists(elapsed_name) ):
-            csv_file = elapsed_name
-        else:
-            cycle_file_count += 1
-            possible_stats_fnames = [no_cycle_filename, no_cycle_filename + ".0"]
-            next_cycle_filename = re.sub(r'(.*\.csv).*', r'\1.cycle', csv_file) + ".{0}".format(cycle_file_count)
-            if os.path.exists(next_cycle_filename):
-                csv_file = next_cycle_filename
-            elif not processedCycle and len(kdata) > 0:
-                for name in possible_stats_fnames:
-                    if os.path.exists(name):
-                        processedCycle = True
-                        csv_file = name
-                        break
-                if not processedCycle:
-                    processFiles = False
-            else:
-                processFiles = False
-
     if cfg != "" and cfg != None:
         if cfg not in hw_data:
             hw_data[cfg] = {}
@@ -626,6 +620,8 @@ parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
 parser.add_option("-p", "--plotname", dest="plotname", default="",
                   help="string put in the middle of the output files. If nothing is provided, then" +\
                        "a concatination of all the configs in the graph are used.")
+parser.add_option("-D", "--devicename", dest="devicename", default="",
+                  help="Used right now to provide a device name for turing")
 
 (options, args) = parser.parse_args()
 common.load_defined_yamls()
@@ -649,13 +645,19 @@ hw_data = {}
 for root, dirs, files in os.walk(options.hardware_dir):
     for d in dirs:
         csv_dir = os.path.join(root, d)
-        csvs = glob.glob(os.path.join(csv_dir,"*.cycle*"))
-        logger.log("Found HW cycle {0} csvs in {1}\n".format(len(csvs),csv_dir))
-        if len(csvs) > 0:
-            # Pass in the lexiconically sorted newest file name. Cannot use getm/ctime because these files are
-            # created at the same time on the local file system from a tarbal;.
-            parse_hw_csv(sorted(csvs)[-1],hw_data, os.path.join(os.path.basename(root),d), logger)
-
+        csvs = sorted(glob.glob(os.path.join(csv_dir,"*.csv*")))
+        if len(csvs) == 0:
+            continue
+        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
+        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
+        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
+        kdata = []
+        for csvf in csvs:
+            if "gpc__cycles_elapsed" in csvf:
+                parse_hw_csv_2(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
+            else:
+                parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
+#            print hw_data
 
 #Get the simulator data
 logger.log("Processing simulator data\n")
@@ -721,11 +723,13 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                     for sim in sim_klist:
                         hw = hw_klist[count]
                         try:
-                            logger.log("Evaluaing HW: {0}".format(correl.hw_eval))
+                            logger.log("Evaluating HW: {0}".format(correl.hw_eval))
                             hw_array.append(eval(correl.hw_eval))
                         except:
                             e = sys.exc_info()[0]
-                            logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
+#                            print("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
+#                            print hw
+#                            exit(1)
                             count += 1
                             continue
 
@@ -856,11 +860,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
         data = [trace]
 
-        if correl.plotfile + hw_cfg not in fig_data:
-            fig_data[ correl.plotfile + hw_cfg ] = []
-        fig_data[correl.plotfile + hw_cfg].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included, correl, hw_low_drop_stats))
+        if (correl.plotfile, hw_cfg) not in fig_data:
+            fig_data[ (correl.plotfile, hw_cfg) ] = []
+        fig_data[ (correl.plotfile, hw_cfg) ].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included, correl, hw_low_drop_stats))
 
 
-for hw_cfg, traces in fig_data.iteritems():
-    print "Plotting HW cfg: {0}".format(hw_cfg)
-    make_submission_quality_image(options.image_type, traces)
+for (plotfile,hw_cfg), traces in fig_data.iteritems():
+    make_submission_quality_image(options.image_type, traces, hw_cfg)
