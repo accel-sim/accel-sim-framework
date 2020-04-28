@@ -122,7 +122,7 @@ correl_list = \
         hw_error="np.max(hw[\"gpc__cycles_elapsed.avg\"]) - np.average(hw[\"gpc__cycles_elapsed.avg\"]),"+\
                  "np.average(hw[\"gpc__cycles_elapsed.avg\"]) - np.min(hw[\"gpc__cycles_elapsed.avg\"])",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
-        hw_name="RTX2060",
+        hw_name="GeForce RTX 2060",
         drophwnumbelow=0,
         plottype="log",
         stattype="counter"
