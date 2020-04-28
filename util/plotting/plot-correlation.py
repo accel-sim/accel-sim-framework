@@ -84,7 +84,10 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     
 
     total_err = total_err / len(newx)
-    aggregate_err = tot_err_num / tot_x * 100
+    if tot_x > 0:
+        aggregate_err = tot_err_num / tot_x * 100
+    else:
+        aggregate_err = 0
     correl_co = numpy.corrcoef(newx, newy)[0][1]
     tot_rpd = 0
     for num in rpds:
