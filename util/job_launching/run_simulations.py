@@ -222,6 +222,10 @@ class ConfigurationSpec:
                                  str(replacement_dict[entry]),
                                  torque_text)
         open(os.path.join(this_run_dir , "torque.sim"), 'w').write(torque_text)
+        exec_line = torque_text.splitlines()[-1]
+        justrunfile = os.path.join(this_run_dir , "justrun.sh")
+        open(justrunfile, 'w').write(exec_line + " | tee gpgpu-sim-out_`date '+%b_%d_%H:%M.%S'`.txt")
+        os.chmod(justrunfile, 0o744)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
     def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
