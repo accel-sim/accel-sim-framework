@@ -1,5 +1,21 @@
 # Basefile Configs
 
+# Pascal
+TITANX:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM6_TITANX/gpgpusim.config"
+
+TITANXX:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/TITANX-pascal/gpgpusim.config"
+
+#Kepler
+TITANK:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM3_KEPLER_TITAN/gpgpusim.config"
+
+
+#Turing
+RTX2060:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/Turing_RTX2060/gpgpusim.config"
+
 # Volta
 TITANV:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_TITANV/gpgpusim.config"
@@ -10,6 +26,10 @@ TITANV_OLD:
 
 QV100:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100/gpgpusim.config"
+
+QV100_64SM:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_SMs/gpgpusim.config"
+
 
 QV100_SASS:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_SASS/gpgpusim.config"
@@ -26,6 +46,10 @@ GTX480:
 # Extra configs - these are composable.
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
+
+64SM:
+    extra_params: "-gpgpu_n_clusters 64"
+
 PTXPLUS:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 10"
 
@@ -37,6 +61,9 @@ L1ON:
 
 COPYK:
     extra_params: "-perf_sim_memcpy 1"
+
+NCOPYK:
+    extra_params: "-perf_sim_memcpy 0"
 
 5B:
     extra_params: "-gpgpu_max_insn 5000000000"
@@ -74,8 +101,17 @@ BOOKSIM:
 NORM:
     extra_params: "-memory_partition_indexing 0"
 
+XOR:
+    extra_params: "-memory_partition_indexing 1"
+
 RANDOM:
     extra_params: "-memory_partition_indexing 4"
+
+PAE:
+    extra_params: "-memory_partition_indexing 3"
+
+IPOLY:
+    extra_params: "-memory_partition_indexing 2"
 
 TRACE:
     extra_params: "-trace_driven_mode 1"
@@ -91,6 +127,12 @@ RR:
 
 256B:
     extra_params: "-gpgpu_mem_addr_mapping dramid@8;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCB.CCCSSSSS"
+
+FRFCFS:
+    extra_params: "-gpgpu_dram_scheduler 1"
+
+FCFS:
+    extra_params: "-gpgpu_dram_scheduler 0"
 
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
