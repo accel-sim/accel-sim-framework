@@ -233,8 +233,8 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
 
     png_layout = copy.deepcopy(layout)
     png_layout.title=None
-    for anno in png_layout.annotations:
-        anno.font= Font(size=22,color='black')
+#    for anno in png_layout.annotations:
+#        anno.font= Font(size=22,color='black')
     png_layout.xaxis.titlefont.size = TEXT_SIZE
     png_layout.xaxis.titlefont.color='black'
     png_layout.xaxis.tickfont.size=15
@@ -349,7 +349,7 @@ def make_anno1(text, fontsize, x, y):
         yref='paper',  #   for both x and y coords
         x=x,           # x and y position 
         y=y,           #   in norm. coord. 
-        font=Font(size=fontsize,color='Black'),  # text font size
+#        font=Font(size=fontsize,color='Black'),  # text font size
         showarrow=False,       # no arrow (default is True)
         bgcolor='#F5F3F2',     # light grey background color
         bordercolor='#FFFFFF', # white borders
@@ -819,9 +819,16 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
                         kernelcount += 1
                         err = sim_array[-1] - hw_array[-1]
-                        hw_high = (hw_error[-1]/hw_array[-1]) * 100
-                        hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
-                        err = (err / hw_array[-1]) * 100
+
+                        if hw_array[-1] != 0:
+                            hw_high = (hw_error[-1]/hw_array[-1]) * 100
+                            hw_low = (hw_error_min[-1]/hw_array[-1]) * 100
+                            err = (err / hw_array[-1]) * 100
+                        else:
+                            hw_high = 0
+                            hw_low = 0
+                            err = 0
+
 
                         if abs(err) < 10.0:
                             num_less_than_ten_percent += 1
@@ -862,8 +869,12 @@ for cfg,sim_for_cfg in sim_data.iteritems():
             continue
 
         for i in range(len(hw_array)):
-            hw_high = (hw_error[i]/hw_array[i]) * 100
-            hw_low = (hw_error_min[i]/hw_array[i]) * 100
+            if hw_array[i] != 0:
+                hw_high = (hw_error[i]/hw_array[i]) * 100
+                hw_low = (hw_error_min[i]/hw_array[i]) * 100
+            else:
+                hw_high = 0
+                hw_low = 0
 
         correl_co = numpy.corrcoef(hw_array, sim_array)[0][1]
         avg_err = 0
