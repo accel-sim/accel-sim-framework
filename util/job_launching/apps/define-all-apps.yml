@@ -44,12 +44,10 @@ test:
         - vectorAdd:
             - --size 5000
 
-mem_test:
+maxflop_test:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/GPU-Microbenchmark/"
     execs:
-        - mem_lat:
-            -  
         - MaxFlops:
             -
 
@@ -62,6 +60,17 @@ atomic:
         - atomic_add_bw_conflict:
             -
         - atomic_add_lat:
+            -
+
+l2_bw:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/GPU-Microbenchmark/"
+    execs:
+        - l2_bw_32f:
+            -
+        - l2_bw_64f:
+            -
+        - l2_bw_128:
             -
 
 GPU_Microbenchmark:
@@ -99,12 +108,6 @@ GPU_Microbenchmark:
         - l1_bw_32f_unroll:
             -
         - l1_bw_32f_unroll_large:
-            -
-        - atomic_add_bw:
-            -
-        - atomic_add_bw_conflict:
-            -
-        - atomic_add_lat:
             -
 
 Deepbench_nvidia_tencore:
@@ -144,8 +147,30 @@ Deepbench_nvidia_tencore:
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
             - inference half 256 1 150 lstm
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
 
-Deepbench_nvidia_failing:
+Deepbench_nvidia_rnn_train:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/cuda/Deepbench/"
+    execs:
+        - rnn_bench-tencore:
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
+        - rnn_bench:
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
+
+Deepbench_nvidia_normal:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/Deepbench/"
     execs:
@@ -160,11 +185,17 @@ Deepbench_nvidia_failing:
             - inference half 341 79 32 1 32 10 5 0 0 2 2
             - inference half 341 79 32 2 32 10 5 0 0 2 2
             - inference half 480 48 1 1 16 3 3 1 1 1 1
-
-rnn_failing:
-    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/Deepbench/"
-    execs:
+        - gemm_bench:
+            - train half 1760 7000 1760 0 0
+            - train half 2048 128 2048 0 0
+            - train half 1760 7000 1760 1 0
+            - train half 2048 64 2048 1 0
+            - train half 1760 7133 1760 0 1
+            - inference half 5124 1500 2048 0 0
+            - inference half 7680 1 2560 0 0
+            - inference half 6144 4 2048 0 0
+            - inference half 512 3000 1536 0 0
+            - inference half 35 1500 2560 0 0
         - rnn_bench:
             - inference half 512 1 25 lstm
             - inference half 512 2 25 lstm
@@ -175,7 +206,11 @@ rnn_failing:
             - inference half 512 2 1 gru
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
-            - inference half 256 1 150 lstm
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
 
 Deepbench_nvidia:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -214,6 +249,11 @@ Deepbench_nvidia:
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
             - inference half 256 1 150 lstm
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
         - conv_bench-tencore:
             - train half 7 7 832 16 128 5 5 2 2 1 1
             - train half 7 7 512 8 512 1 1 0 0 1 1
@@ -247,6 +287,11 @@ Deepbench_nvidia:
             - inference half 512 4 1 gru
             - inference half 1536 1 750 gru
             - inference half 256 1 150 lstm
+            - train half 128 32 15 lstm
+            - train half 128 64 15 lstm
+            - train half 128 32 1 lstm
+            - train half 128 64 1 gru
+            - train half 128 32 1 gru
 
 sdk-4.2-scaled:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -457,25 +502,6 @@ srad_v1:
             - 100 0.5 502 458
 
 rodinia-3.1-large:
-    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/3.1/"
-    execs:
-        - heartwall-rodinia-3.1:
-            - ./data/test.avi 1
-            - ./data/test.avi 20
-        - hotspot3D-rodinia-3.1:
-            - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
-        - leukocyte-rodinia-3.1:
-            - ./data/testfile.avi 5
-        - mummergpu-rodinia-3.1:
-            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
-        - srad_v2-rodinia-3.1:
-            - 2048 2048 0 127 0 127 0.5 2
-        - streamcluster-rodinia-3.1:
-            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
-            - 10 20 256 65536 65536 1000 none output.txt 1
-
-rodinia-missing:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
@@ -916,16 +942,16 @@ cutlass_5_trace_short:
     data_dirs: "../../benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+
+cutlass_5_trace_fail:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+
 
 cutlass_5_sgemm:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
@@ -944,6 +970,22 @@ cutlass_5_sgemm:
             - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
             - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
             - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+
+cutlass_5_trace_wmma:
+    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "../../benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
 
 cutlass_5_trace:
     exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
