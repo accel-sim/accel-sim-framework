@@ -92,8 +92,11 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     tot_rpd = 0
     for num in rpds:
         tot_rpd += num
-    return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, (tot_rpd/len(rpds))*100,\
-        num_less_than_ten_percent,(math.sqrt(mse_num/(len(newx))))/(tot_x/len(newx))
+    rmse = (math.sqrt(mse_num/(len(newx))))/(tot_x/len(newx))
+    ret_rpd = (tot_rpd/len(rpds))*100
+
+    return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, ret_rpd,\
+        num_less_than_ten_percent,rmse
 
 def getCorrelCsvRaw((names, x, y)):
     out_csv = "Name,Hardware,Simulator,Sim/HW\n"
