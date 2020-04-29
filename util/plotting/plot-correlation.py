@@ -92,7 +92,7 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     tot_rpd = 0
     for num in rpds:
         tot_rpd += num
-    rmse = (math.sqrt(mse_num/(len(newx))))/(tot_x/len(newx))
+    rmse = (math.sqrt(mse_num/(len(newx))))/((tot_x+0.000001)/len(newx))
     ret_rpd = (tot_rpd/len(rpds))*100
 
     return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, ret_rpd,\
@@ -569,7 +569,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
                         value = float(elem.replace(",",""))
                         kdata[kcount][header[count]].append(value)
                     except ValueError:
-                        kdata[kcount][header[count]].append(elem)
+                        if "n/a" != elem:
+                            kdata[kcount][header[count]].append(elem)
                     count += 1
 #                logger.log("Kernel Launch {0}: HW Kernel found".format(kcount))
                 kcount += 1
@@ -781,7 +782,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
                             hw_array.append(eval(correl.hw_eval))
                         except:
                             e = sys.exc_info()[0]
-#                            print("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
+                            logger.log("Potentially uncollected stat in {0}.Error: {1}".format(correl.hw_eval, e))
 #                            print hw
 #                            exit(1)
                             count += 1
