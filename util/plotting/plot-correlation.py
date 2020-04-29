@@ -496,6 +496,7 @@ def parse_hw_csv_2(csv_file, hw_data, appargs, kdata, logger):
         logger.log("Kernels found: {0}".format(kcount))
 
     if cfg != "" and cfg != None:
+        cfg = re.sub(r" \(\d+\)$","", cfg) # Strip off the (0), (1), etc that some profiler versions put on the end of the device name
         if cfg not in hw_data:
             hw_data[cfg] = {}
         hw_data[cfg][appargs] = kdata
@@ -577,6 +578,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
                 continue
         logger.log("Kernels found: {0}".format(kcount))
     if cfg != "" and cfg != None:
+        cfg = re.sub(r" \(\d+\)$","", cfg) # Strip off the (0), (1), etc that some profiler versions put on the end of the device name
         if cfg not in hw_data:
             hw_data[cfg] = {}
         hw_data[cfg][appargs] = kdata
