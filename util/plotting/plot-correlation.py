@@ -2,11 +2,14 @@
 
 from optparse import OptionParser
 import plotly
-import chart_studio.plotly as py
+#import chart_studio.plotly as py
+import plotly.io as pio
+pio.orca.config.use_xvfb = True
 import plotly.tools as tls
 from plotly.graph_objs import *
 import os
 import plotly.graph_objs as go
+import pickle
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -135,13 +138,14 @@ def make_pretty_app_list(apps_included):
 def make_submission_quality_image(image_type, traces, hw_cfg):
     kernel_data = []
     app_data = []
-    app_min = 0
-    app_max = 999999999999999999999999999999999.9
-    markers =[dict(size = 14,color = 'rgba(210,105,30, .4)'),
-              dict(size = 5, color = 'rgba(0, 0, 0, .7)'),
-              dict(size = 10,color = 'rgba(0, 182, 0, .4)'),
+    app_min = 999999999999999999999999999999999.9
+    app_max = 0
+    markers =[dict(size = 10, color = 'rgba(0, 0, 200, .5)'),
+              dict(size = 10, color = 'rgba(0, 0, 0, .5)'),
+              dict(size = 10, color = 'rgba(0, 182, 0, .4)'),
               dict(size = 10,color = 'rgba(0, 0, 193, .9)'),
               dict(size = 10,color = 'rgba(155, 155, 155, .9)')]
+    marker_sym =['x', 'circle', 'circle', 'circle', 'circle']
     count = 0
     kernel_annotations = []
     app_annotations = []
@@ -159,8 +163,10 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
             trace.name = renames[count]
         if count < len(marker_order) and marker_order[0] != "":
             trace.marker = markers[int(marker_order[count])]
+            trace.marker.symbol = marker_sym[int(marker_order[count])]
         else:
             trace.marker = markers[count %len(markers)]
+            trace.marker.symbol = marker_sym[count %len(markers)]
         trace.mode = "markers"
         trace.error_x.color = trace.marker.color
         
@@ -178,8 +184,8 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
             = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title, correlmap)
 
-        app_max = max ( max(appx), max(appy) )
-        app_min = min ( min(appx), min(appy) )
+        app_max = max ( app_max, max(appx), max(appy) )
+        app_min = min ( app_min, min(appx), min(appy) )
 
         app_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
@@ -192,10 +198,10 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_annotations.append(make_anno1(app_anno,22,0,1.115 - count * 0.05))
         print_anno += "Per-App :: " + app_anno + "\n"
 
-        if "Cycles" in layout.xaxis.title:
-            name_text = "<b>" + trace.name + " [Correl={0:.3} MAE={1:.1f}%]</b>".format(correl_co, avg_err, nmse)
+        if "Cycles" in layout.xaxis.title.text or "IPC" in layout.xaxis.title.text or "Instructions" in layout.xaxis.title.text:
+            name_text = "<b>" + trace.name + " [Correl={0:.2} MAE={1:.0f}%]</b>".format(correl_co, avg_err, nmse)
         else:
-            name_text = "<b>" + trace.name + " [Correl={0:.3} NRMSE={1:.2f}]</b>".format(correl_co, nmse)
+            name_text = "<b>" + trace.name + " [Correl={0:.2} NRMSE={1:.2f}]</b>".format(correl_co, nmse)
 
         app_trace = go.Scatter(
             x = appx,
@@ -234,7 +240,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
 
     print "Plotting {0} : [{1}]\n{2}"\
         .format(hw_cfg, layout.title.text, print_anno)
-    TEXT_SIZE=30
+    TEXT_SIZE=25
 
 
     png_layout = copy.deepcopy(layout)
@@ -258,7 +264,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     png_layout.margin.t = 100
 
     png_layout.legend=dict(
-        x=-.1,
+        x=-.2,
         y=1.2,
         traceorder='normal',
         font=dict(
@@ -275,29 +281,52 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     xyline.line.color = 'rgba(255,0,0,.7)'
     kernel_data.append(xyline)
 
+    if "linear" == correlmap.plottype:
+        app_min = -5
+        legypos = float(options.legend)*.95
+        legxpos = -.25
+        axisrange=[app_min*.95, app_max*1.05]
+    else:
+        legypos = float(options.legend)
+        legxpos = -.35
+        if app_min == 0:
+            rmin = np.log10(0.9)
+        else:
+            rmin = np.log10(app_min)*.98
+        if app_max == 0:
+            rmax = 0
+        else:
+            rmax = np.log10(app_max)*1.02
+        axisrange=[rmin, rmax]
+
     app_layout = Layout(
             title="Per App " + layout.title.text,
             xaxis=dict(
                 title=layout.xaxis.title,
-                range=[app_min * 0.9 ,app_max*1.1]
+                range=axisrange,
+                gridcolor="rgba(128,128,128,.4)",
+                zerolinecolor="rgba(128,128,128,.4)"
             ),
             yaxis=dict(
                 title=layout.yaxis.title,
-                range=[app_min * 0.9 ,app_max*1.1]
+                range=axisrange,
+                gridcolor="rgba(128,128,128,.4)",
+                zerolinecolor="rgba(128,128,128,.4)"
             ),
         legend=dict(
-            x=-.2,
-            y=options.legend,
+            x=legxpos,
+            y=legypos,
             traceorder='normal',
             font=dict(
                 family='sans-serif',
-                size=20,
+                size=15,
                 color='#000'
             ),
-            bgcolor='#FFFFFF',
-            bordercolor='#FFFFFF',
+            bgcolor='rgba(255,255,255,0.0)',
+            bordercolor='rgba(255,255,255,0.0)',
             borderwidth=2
-        )
+        ),
+        plot_bgcolor='#FFFFFF'
    )
 
 
@@ -307,46 +336,41 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     app_layout.xaxis.tickfont.size=15
     app_layout.xaxis.tickfont.color='black'
     app_layout.xaxis.type=correlmap.plottype
-    app_layout.xaxis.autorange=True
+#    app_layout.xaxis.autorange=True
 
     app_layout.yaxis.titlefont.size = TEXT_SIZE
     app_layout.yaxis.tickfont.size = 15
     app_layout.yaxis.titlefont.color='black'
     app_layout.yaxis.tickfont.color='black'
     app_layout.yaxis.type=correlmap.plottype
-    app_layout.yaxis.autorange=True
+#    app_layout.yaxis.autorange=True
 
     if not options.noanno:
         app_layout.annotations=app_annotations
     app_xyline = go.Scatter(
-        x=[app_layout.xaxis.range[0] + 1,
-            app_layout.xaxis.range[1]],
-        y=[app_layout.xaxis.range[0] + 1,
-            app_layout.xaxis.range[1]],
+        x=[app_min + 1,
+            app_max],
+        y=[app_min + 1,
+            app_max],
             showlegend=False,mode="lines")
     app_xyline.line.color = xyline.line.color
     app_data.append(app_xyline)
     # plotly will only let you do .pdf if you pay for it - I have.
     # To get this to work for free change the extension to .png
     if image_type != "":
-        png_name = plotname.replace(".", "_") + "." + image_type
-        py.image.save_as(Figure(data=kernel_data,layout=png_layout), \
-            png_name, height=512.0*1.05, width=512)
-        time.sleep(2)
+#        png_name = plotname.replace(".", "_") + "." + image_type
+#        Figure(data=kernel_data,layout=png_layout).write_image(png_name, height=512.0*1.05, width=512)
 
         png_name = plotname.replace(".", "_") + ".per-app." + image_type
-        py.image.save_as(Figure(data=app_data,layout=app_layout), \
-            png_name, height=512.0*1.05, width=512)
-        time.sleep(2)
+        Figure(data=app_data,layout=app_layout).write_image(png_name, height=512.0*1.05, width=512)
 
 
     # This generates the html
     plotly.offline.plot(Figure(data=kernel_data,layout=png_layout), \
         filename= plotname + ".per-kernel.html", auto_open=False)
-    time.sleep(2)
+
     plotly.offline.plot(Figure(data=app_data,layout=app_layout), \
         filename= plotname + ".per-app.html", auto_open=False)
-    time.sleep(2)
 
 def make_anno1(text, fontsize, x, y):
     return plotly.graph_objs.layout.Annotation(
@@ -628,6 +652,9 @@ parser = OptionParser()
 parser.add_option("-H", "--hardware_dir", dest="hardware_dir",
                   help="The hardware stats directories",
                   default="")
+parser.add_option("-D", "--hardware_dict", dest="hardware_dict",
+                  help="A serialized version of the hw_data dictionary. If used - it will skip -H arguments.",
+                  default=None)
 parser.add_option("-c", "--csv_file", dest="csv_file",
                   help="File to parse",
                   default="")
@@ -668,7 +695,7 @@ parser.add_option("-r", "--rename_data", dest="rename_data", default="",
                   help="Rename the data series")
 parser.add_option("-m", "--marker_order", dest="marker_order", default="",
                   help="Reorder the markers used for each config")
-parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
+parser.add_option("-L", "--legend", dest="legend", default=float(1.2),
                   help="Reorder the markers used for each config")
 #parser.add_option("-R", "--rename_axis", dest="rename_axis", default="",
 #                  help="the x,y axises. Formar x,y")
@@ -698,23 +725,31 @@ logger = Logger(options.verbose, options.logchannel)
 # Get the hardware Data
 logger.log("Getting HW data\n")
 hw_data = {}
-for root, dirs, files in os.walk(options.hardware_dir):
-    for d in dirs:
-        csv_dir = os.path.join(root, d)
-        csvs = sorted(glob.glob(os.path.join(csv_dir,"*.csv*")))
-        if len(csvs) == 0:
-            continue
-#        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
-#        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
-#        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
-        kdata = []
-        for csvf in csvs:
-            if "gpc__cycles_elapsed" in csvf:
-                parse_hw_csv_2(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
-            else:
-                parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
-
+if options.hardware_dict == None:
+    for root, dirs, files in os.walk(options.hardware_dir):
+        for d in dirs:
+            csv_dir = os.path.join(root, d)
+            csvs = sorted(glob.glob(os.path.join(csv_dir,"*.csv*")))
+            if len(csvs) == 0:
+                continue
+    #        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
+    #        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
+    #        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
+            kdata = []
+            for csvf in csvs:
+                if "gpc__cycles_elapsed" in csvf:
+                    parse_hw_csv_2(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
+                else:
+                    parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
+else:
+    print "Begin pickle.load"
+    with open(options.hardware_dict, 'rb') as hw_dictionary_file:
+        hw_data = pickle.load(hw_dictionary_file)
+    print "End pickle.load"
 summarize_hw_data(hw_data,logger)
+#with open('hwdata.{0}.dictionary'.format(options.hardware_dir).replace('/','_'),
+#            'wb') as hw_dictionary_file:
+#     pickle.dump(hw_data, hw_dictionary_file)
 
 #Get the simulator data
 logger.log("Processing simulator data\n")
