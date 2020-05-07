@@ -59,6 +59,9 @@ SM_2:
 L1ON:
     extra_params: "-gmem_skip_L1D 0"
 
+L1OFF:
+    extra_params: "-gmem_skip_L1D 1"
+
 COPYK:
     extra_params: "-perf_sim_memcpy 1"
 
