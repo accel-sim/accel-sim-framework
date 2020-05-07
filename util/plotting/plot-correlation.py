@@ -138,13 +138,13 @@ def make_pretty_app_list(apps_included):
 def make_submission_quality_image(image_type, traces, hw_cfg):
     kernel_data = []
     app_data = []
-    app_min = 0
-    app_max = 999999999999999999999999999999999.9
-    markers =[dict(size = 7, color = 'rgba(0,0,200, .4)'),
-              dict(size = 7, color = 'rgba(0, 0, 0, .7)'),
-              dict(size = 7,color = 'rgba(0, 182, 0, .4)'),
-              dict(size = 7,color = 'rgba(0, 0, 193, .9)'),
-              dict(size = 7,color = 'rgba(155, 155, 155, .9)')]
+    app_min = 999999999999999999999999999999999.9
+    app_max = 0
+    markers =[dict(size = 10, color = 'rgba(0, 0, 200, .5)'),
+              dict(size = 10, color = 'rgba(0, 0, 0, .5)'),
+              dict(size = 10, color = 'rgba(0, 182, 0, .4)'),
+              dict(size = 10,color = 'rgba(0, 0, 193, .9)'),
+              dict(size = 10,color = 'rgba(155, 155, 155, .9)')]
     marker_sym =['x', 'circle', 'circle', 'circle', 'circle']
     count = 0
     kernel_annotations = []
@@ -184,8 +184,8 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
             = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title, correlmap)
 
-        app_max = max ( max(appx), max(appy) )
-        app_min = min ( min(appx), min(appy) )
+        app_max = max ( app_max, max(appx), max(appy) )
+        app_min = min ( app_min, min(appx), min(appy) )
 
         app_csv_file_contents += "{0}\n\n"\
             .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
@@ -198,10 +198,10 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_annotations.append(make_anno1(app_anno,22,0,1.115 - count * 0.05))
         print_anno += "Per-App :: " + app_anno + "\n"
 
-        if "Cycles" in layout.xaxis.title.text or "IPC" in layout.xaxis.title.text:
-            name_text = "<b>" + trace.name + " [Correl={0:.3} MAE={1:.1f}%]</b>".format(correl_co, avg_err, nmse)
+        if "Cycles" in layout.xaxis.title.text or "IPC" in layout.xaxis.title.text or "Instructions" in layout.xaxis.title.text:
+            name_text = "<b>" + trace.name + " [Correl={0:.2} MAE={1:.0f}%]</b>".format(correl_co, avg_err, nmse)
         else:
-            name_text = "<b>" + trace.name + " [Correl={0:.3} NRMSE={1:.2f}]</b>".format(correl_co, nmse)
+            name_text = "<b>" + trace.name + " [Correl={0:.2} NRMSE={1:.2f}]</b>".format(correl_co, nmse)
 
         app_trace = go.Scatter(
             x = appx,
@@ -281,29 +281,52 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     xyline.line.color = 'rgba(255,0,0,.7)'
     kernel_data.append(xyline)
 
+    if "linear" == correlmap.plottype:
+        app_min = -5
+        legypos = float(options.legend)*.95
+        legxpos = -.25
+        axisrange=[app_min*.95, app_max*1.05]
+    else:
+        legypos = float(options.legend)
+        legxpos = -.35
+        if app_min == 0:
+            rmin = np.log10(0.9)
+        else:
+            rmin = np.log10(app_min)*.98
+        if app_max == 0:
+            rmax = 0
+        else:
+            rmax = np.log10(app_max)*1.02
+        axisrange=[rmin, rmax]
+
     app_layout = Layout(
             title="Per App " + layout.title.text,
             xaxis=dict(
                 title=layout.xaxis.title,
-                range=[app_min * 0.9 ,app_max*1.1]
+                range=axisrange,
+                gridcolor="rgba(128,128,128,.4)",
+                zerolinecolor="rgba(128,128,128,.4)"
             ),
             yaxis=dict(
                 title=layout.yaxis.title,
-                range=[app_min * 0.9 ,app_max*1.1]
+                range=axisrange,
+                gridcolor="rgba(128,128,128,.4)",
+                zerolinecolor="rgba(128,128,128,.4)"
             ),
         legend=dict(
-            x=-.3,
-            y=float(options.legend),
+            x=legxpos,
+            y=legypos,
             traceorder='normal',
             font=dict(
                 family='sans-serif',
-                size=20,
+                size=15,
                 color='#000'
             ),
-            bgcolor='#FFFFFF',
-            bordercolor='#FFFFFF',
+            bgcolor='rgba(255,255,255,0.0)',
+            bordercolor='rgba(255,255,255,0.0)',
             borderwidth=2
-        )
+        ),
+        plot_bgcolor='#FFFFFF'
    )
 
 
@@ -313,22 +336,22 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     app_layout.xaxis.tickfont.size=15
     app_layout.xaxis.tickfont.color='black'
     app_layout.xaxis.type=correlmap.plottype
-    app_layout.xaxis.autorange=True
+#    app_layout.xaxis.autorange=True
 
     app_layout.yaxis.titlefont.size = TEXT_SIZE
     app_layout.yaxis.tickfont.size = 15
     app_layout.yaxis.titlefont.color='black'
     app_layout.yaxis.tickfont.color='black'
     app_layout.yaxis.type=correlmap.plottype
-    app_layout.yaxis.autorange=True
+#    app_layout.yaxis.autorange=True
 
     if not options.noanno:
         app_layout.annotations=app_annotations
     app_xyline = go.Scatter(
-        x=[app_layout.xaxis.range[0] + 1,
-            app_layout.xaxis.range[1]],
-        y=[app_layout.xaxis.range[0] + 1,
-            app_layout.xaxis.range[1]],
+        x=[app_min + 1,
+            app_max],
+        y=[app_min + 1,
+            app_max],
             showlegend=False,mode="lines")
     app_xyline.line.color = xyline.line.color
     app_data.append(app_xyline)
@@ -343,11 +366,11 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
 
 
     # This generates the html
-#    plotly.offline.plot(Figure(data=kernel_data,layout=png_layout), \
-#        filename= plotname + ".per-kernel.html", auto_open=False)
+    plotly.offline.plot(Figure(data=kernel_data,layout=png_layout), \
+        filename= plotname + ".per-kernel.html", auto_open=False)
 
-#    plotly.offline.plot(Figure(data=app_data,layout=app_layout), \
-#        filename= plotname + ".per-app.html", auto_open=False)
+    plotly.offline.plot(Figure(data=app_data,layout=app_layout), \
+        filename= plotname + ".per-app.html", auto_open=False)
 
 def make_anno1(text, fontsize, x, y):
     return plotly.graph_objs.layout.Annotation(
@@ -672,7 +695,7 @@ parser.add_option("-r", "--rename_data", dest="rename_data", default="",
                   help="Rename the data series")
 parser.add_option("-m", "--marker_order", dest="marker_order", default="",
                   help="Reorder the markers used for each config")
-parser.add_option("-L", "--legend", dest="legend", default=float(1.25),
+parser.add_option("-L", "--legend", dest="legend", default=float(1.2),
                   help="Reorder the markers used for each config")
 #parser.add_option("-R", "--rename_axis", dest="rename_axis", default="",
 #                  help="the x,y axises. Formar x,y")
