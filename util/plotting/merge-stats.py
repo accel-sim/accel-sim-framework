@@ -1,10 +1,6 @@
 #!/usr/bin/env python
 
 from optparse import OptionParser
-import plotly
-import plotly.plotly as py
-import plotly.tools as tls
-from plotly.graph_objs import *
 import os
 import subprocess
 import shutil
