@@ -19,7 +19,7 @@ pipeline {
                 sh '''#!/bin/bash
                 source ./env-setup/11.0_env_setup.sh
                 source gpu-simulator/setup_environment.sh
-                make -j -C gpu-simulator'''
+                make -C gpu-simulator'''
             }
         }
     }
