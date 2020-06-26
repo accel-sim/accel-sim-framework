@@ -17,10 +17,9 @@ pipeline {
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash
-                cd gpu-simulator
                 source ./env-setup/11.0_env_setup.sh
-                source setup_environment.sh
-                make'''
+                source gpu-simulator/setup_environment.sh
+                make -j -C gpu-simulator'''
             }
         }
     }
