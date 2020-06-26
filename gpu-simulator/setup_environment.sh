@@ -36,12 +36,13 @@ else
 fi
 
 if [ ! -d "gpgpu-sim" ] ; then
-    git clone git@github.com:accel-sim/gpgpu-sim-4.x-prerelease.git gpgpu-sim
+    git clone git@github.com:accel-sim/gpgpu-sim-4.x-prerelease.git $(ACCELSIM_ROOT)/gpgpu-sim
 fi
 
 if [ ! "$GPGPUSIM_ROOT" = "$ACCELSIM_ROOT/gpgpu-sim" ]; then
     source gpgpu-sim/setup_environment $ACCELSIM_CONFIG
 fi
+
 
 
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
