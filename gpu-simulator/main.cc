@@ -10,13 +10,13 @@
 #include <string>
 #include <vector>
 
-#include "../../libcuda/gpgpu_context.h"
-#include "../abstract_hardware_model.h"
-#include "../cuda-sim/cuda-sim.h"
-#include "../gpgpu-sim/gpu-sim.h"
-#include "../gpgpu-sim/icnt_wrapper.h"
-#include "../gpgpusim_entrypoint.h"
-#include "../option_parser.h"
+#include "gpgpu_context.h"
+#include "abstract_hardware_model.h"
+#include "cuda-sim/cuda-sim.h"
+#include "gpgpu-sim/gpu-sim.h"
+#include "gpgpu-sim/icnt_wrapper.h"
+#include "gpgpusim_entrypoint.h"
+#include "option_parser.h"
 #include "ISA_Def/trace_opcode.h"
 #include "trace_driven.h"
 
