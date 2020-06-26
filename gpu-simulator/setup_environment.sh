@@ -1,3 +1,4 @@
+#!/bin/bash
 # Copyright (c) 2020 Timothy Rogers, Purdue University
 # All rights reserved.
 #
@@ -24,57 +25,23 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=
+export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 
-BIN_DIR=./bin/$(ACCELSIM_CONFIG)
-BUILD_DIR=./build/$(ACCELSIM_CONFIG)
-
-ifeq ($(ACCELSIM_CONFIG), debug)
-	export DEBUG=1
+if [ $# = '1' ] ;
+then
+    export ACCELSIM_CONFIG=$1
 else
-	export DEBUG=0
-endif
+    export ACCELSIM_CONFIG=release
+fi
 
-ifeq ($(DEBUG),1)
-	CXXFLAGS = -Wall -O0 -g3 -fPIC
-else
-	CXXFLAGS = -Wall -O3 -g3 -fPIC
-endif
+if [ ! -d "gpgpu-sim" ] ; then
+    git clone git@github.com:accel-sim/gpgpu-sim-4.x-prerelease.git gpgpu-sim
+fi
 
-all: $(BIN_DIR)/accel-sim.out
-
-$(BUILD_DIR)/main.makedepend: depend makedirs
-
-makedirs:
-	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
-	if [ ! -d $(BUILD_DIR) ]; then mkdir -p $(BUILD_DIR); fi;
-
-gpgpu-sim: checkenv makedirs
-	$(MAKE) -C gpgpu-sim
-
-checkenv: makedirs
-	 @if [ ! -n "$(ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN)" ]; then \
-		echo "ERROR *** run 'source setup_environment.sh' before 'make'; please see README."; \
-		exit 1; \
-	fi
-
-$(BIN_DIR)/accel-sim.out: trace-driven gpgpu-sim makedirs $(BUILD_DIR)/main.o
-	$(CXX) -std=c++0x -o $(BIN_DIR)/accel-sim.out  -L$(GPGPUSIM_ROOT)/lib/$(GPGPUSIM_CONFIG)/ -lcudart -lm -lz -lGL -pthread $(BUILD_DIR)/*.o
-
-$(BUILD_DIR)/main.o: main.cc
-	$(CXX) $(CXXFLAGS)  -I./trace-driven -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -c main.cc -o $(BUILD_DIR)/main.o
-
-depend: checkenv makedirs
-	touch $(BUILD_DIR)/main.makedepend
-	makedepend -f$(BUILD_DIR)/main.makedepend -p$(BUILD_DIR)/ main.cc 2> /dev/null
-
-trace-driven: checkenv makedirs
-	$(MAKE) -C trace-driven depend
-	$(MAKE) -C trace-driven
-
-clean:
-	rm -rf $(BIN_DIR)
-	rm -rf $(BUILD_DIR)
-	$(MAKE) clean -C gpgpu-sim
+if [ ! "$GPGPUSIM_ROOT" = "$ACCELSIM_ROOT/gpgpu-sim" ]; then
+    source gpgpu-sim/setup_environment $ACCELSIM_CONFIG
+fi
 
 
-include $(BUILD_DIR)/main.makedepend
+export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
