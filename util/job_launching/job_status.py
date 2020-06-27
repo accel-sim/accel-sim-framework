@@ -8,8 +8,8 @@ import sys
 import common
 import math
 
-# uses torque's tracejob to determine the job status
-def get_job_status( jobId ):
+
+def get_qstat_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
                    "exec_host" : "UNKNOWN",
                    "running_time": "UNKNOWN",
@@ -38,6 +38,35 @@ def get_job_status( jobId ):
             time_match = re.search( "resources_used.walltime\s=\s([^\s]*)", trace_out )
             if time_match != None:
                 job_status[ "running_time" ] = time_match.group(1)
+        trace_out_file.close()
+        os.remove(trace_out_filename)
+    return job_status
+
+# uses squeue to determine job status
+def get_squeue_status( jobId ):
+    job_status = { "state" : "WAITING_TO_RUN",
+                   "exec_host" : "UNKNOWN",
+                   "running_time": "UNKNOWN",
+                   "mem_used" : "UNKNOWN" }
+    trace_out_filename = os.path.join(this_directory, "trace_out-{0}.txt".format(os.getpid()))
+    trace_out_file = open(trace_out_filename, 'w+')
+    if subprocess.call(["squeue" ,"-o", "%t,%N,%M", "-j", jobId],
+        stdout=trace_out_file, stderr=trace_out_file) < 0:
+        exit("Error Launching Tracejob Job")
+    else:
+        # Parse the squeue output
+        trace_out_file.seek(0)
+        trace_out = trace_out_file.readlines()
+        if len(trace_out) > 1:
+            trace_out = trace_out[1]
+            state_match = re.search( "(.*),(.*),(.*)", trace_out )
+            if state_match != None:
+                if (state_match.group(1) == 'R' or state_match.group(1) == 'CG'):
+                    job_status[ "state" ] = "RUNNING"
+                elif state_match.group(1) == 'CD':
+                    job_status[ "state" ] = "COMPLETE_NO_OTHER_INFO"
+                job_status[ "exec_host" ] = state_match.group(2)
+                job_status[ "running_time" ] = state_match.group(3)
         trace_out_file.close()
         os.remove(trace_out_filename)
     return job_status
@@ -93,6 +122,15 @@ options.run_dir = options.run_dir.strip()
 options.sim_name = options.sim_name.strip()
 
 cuda_version = common.get_cuda_version( this_directory )
+
+job_manager = None
+if any([os.path.isfile(os.path.join(p, "squeue")) for p in os.getenv("PATH").split(os.pathsep)]):
+    job_manager = "squeue"
+elif any([os.path.isfile(os.path.join(p, "qstat")) for p in os.getenv("PATH").split(os.pathsep)]):
+    job_manager = "qstat"
+
+if job_manager == None:
+    exit("ERROR - Cannot find squeue or qstat in PATH... Is one of slurm or torque installed on this machine?")
 
 parsed_logfiles = []
 logfiles_directory = this_directory + "../job_launching/logfiles/"
@@ -152,7 +190,7 @@ stats_to_pull = { "SIM_TIME": "gpgpu_simulation_time\s*=[^1-9]*(.*)",
                   "SIMRATE_IPS" : "gpgpu_simulation_rate\s*=\s*(.*)\s*\(inst/sec\)" }
 
 ROW_STRING = "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t" +\
-             "{gpusim_version:20.20}\t{config:20.20}\t{running_time:15}\t{mem_used:6}\t{status:40.40}\t"+\
+             "{version:20.20}\t{config:20.20}\t{running_time:15}\t{mem_used:6}\t{status:40.40}\t"+\
              "{stat:50}\t"
 
 # At this point we have the logfile we want to get a synopsis for.
@@ -168,7 +206,7 @@ for logfile in parsed_logfiles:
     errs = ""
     with open( logfile ) as f:
         header = ROW_STRING.format( jobId="TorqueJob",exec_node="Node",app="App",args="AppArgs",
-                gpusim_version="GPGPU-SimVersion",config="GPGPU-SimConfig",
+                version="Version",config="GPGPU-SimConfig",
                 status="JobStatus", stat="Basic GPGPU-Sim Stats", running_time="RunningTime",
                 mem_used="Mem")
         print header
@@ -194,7 +232,9 @@ for logfile in parsed_logfiles:
                 continue
 
             num_jobs += 1
-            torquefile_base = re.sub(r".*\.(gpgpu-sim_git-commit.*)", r"\1", jobname)
+            torquefile_base = re.sub(r".*\.([^\s]*-commit.*)", r"\1", jobname)
+#            print torquefile_base
+#            exit(1)
             errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
                 torquefile_base + "." + "e" + jobId)
             outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
@@ -205,7 +245,11 @@ for logfile in parsed_logfiles:
             stat_found = set()
             status_found = set()
 
-            job_status = get_job_status( jobId )
+            if job_manager == "squeue":
+                job_status = get_squeue_status( jobId )
+            elif job_manager == "qstat":
+                job_status = get_qstat_status( jobId )
+
             if ( job_status[ "state" ] == "WAITING_TO_RUN" or job_status[ "state" ] == "RUNNING" ) \
                 and not os.path.isfile( outfile ):
                 files_to_check = []
@@ -263,10 +307,10 @@ for logfile in parsed_logfiles:
             elif os.path.exists( errfile ) and os.stat( errfile ).st_size > 0:
                 status_string = "COMPLETE_ERR_FILE_HAS_CONTENTS"
 
-            gpgpu_git_commit = re.sub(r".*-commit-([^_]{7})[^_]+_(.*)\.so", r"\1-\2", jobname)
+            git_commit = re.sub(r".*-commit-([^_]{7})[^_]+_(.*)\.so", r"\1-\2", jobname)
             job_summary = ROW_STRING.format( jobId=jobId, exec_node=exec_node, app=app, args=args,
                             config=config, status=status_string, stat=additional_stats,
-                            gpusim_version=gpgpu_git_commit, running_time=running_time, mem_used=mem_used )
+                            version=git_commit, running_time=running_time, mem_used=mem_used )
             print job_summary
 
             if ("FUNC_TEST_PASSED" not in status_found \

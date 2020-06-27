@@ -28,6 +28,8 @@
 BIN_DIR=./bin/$(ACCELSIM_CONFIG)
 BUILD_DIR=./build/$(ACCELSIM_CONFIG)
 
+include version_detection.mk
+
 ifeq ($(ACCELSIM_CONFIG), debug)
 	export DEBUG=1
 else
@@ -57,11 +59,14 @@ checkenv: makedirs
 		exit 1; \
 	fi
 
-$(BIN_DIR)/accel-sim.out: trace-driven gpgpu-sim makedirs $(BUILD_DIR)/main.o
+$(BIN_DIR)/accel-sim.out: trace-driven gpgpu-sim makedirs $(BUILD_DIR)/main.o version
 	$(CXX) -std=c++0x -o $(BIN_DIR)/accel-sim.out  -L$(GPGPUSIM_ROOT)/lib/$(GPGPUSIM_CONFIG)/ -lcudart -lm -lz -lGL -pthread $(BUILD_DIR)/*.o
 
-$(BUILD_DIR)/main.o: main.cc
-	$(CXX) $(CXXFLAGS)  -I./trace-driven -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -c main.cc -o $(BUILD_DIR)/main.o
+$(BUILD_DIR)/main.o: main.cc version
+	$(CXX) $(CXXFLAGS)  -I$(BUILD_DIR) -I./trace-driven -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -c main.cc -o $(BUILD_DIR)/main.o
+
+version:
+	echo "const char *g_accelsim_version=\"$(ACCELSIM_BUILD)\";" > $(BUILD_DIR)/accelsim_version.h
 
 depend: checkenv makedirs
 	touch $(BUILD_DIR)/main.makedepend

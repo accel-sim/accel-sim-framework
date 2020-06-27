@@ -10,8 +10,8 @@
 
 # Rodinia 2.0 implemented with a pass/fail functional test
 rodinia_2.0-ft:
-    exec_dir: "../../benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "../../benchmarks/data_dirs/cuda/rodinia/2.0-ft/"
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/2.0-ft/"
     execs:
         - backprop-rodinia-2.0-ft:
             - 4096 ./data/result-4096.txt
