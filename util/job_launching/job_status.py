@@ -4,10 +4,11 @@ from optparse import OptionParser
 import re
 import os
 import subprocess
+from subprocess import Popen, PIPE
 import sys
 import common
 import math
-
+import json
 
 def get_qstat_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
@@ -61,7 +62,7 @@ def get_slurm_memsize( state, jobId ):
         return "UNKOWN"
 
 # uses squeue to determine job status
-def get_squeue_status( jobId ):
+def get_squeue_status( jobId, node_details ):
     job_status = { "state" : "UNKNOWN",
                    "exec_host" : "UNKNOWN",
                    "running_time": "UNKNOWN",
@@ -70,7 +71,7 @@ def get_squeue_status( jobId ):
     trace_out_file = open(trace_out_filename, 'w+')
     if subprocess.call(["squeue" ,"-o", "%t,%N,%M", "-j", jobId],
         stdout=trace_out_file, stderr=trace_out_file) < 0:
-        exit("Error Launching Tracejob Job")
+        exit("Error Launching squeue")
     else:
         # Parse the squeue output
         trace_out_file.seek(0)
@@ -91,8 +92,19 @@ def get_squeue_status( jobId ):
                 job_status[ "mem_used" ] = get_slurm_memsize( job_status[ "state" ], jobId )
                 job_status[ "exec_host" ] = state_match.group(2)
                 job_status[ "running_time" ] = state_match.group(3)
-        trace_out_file.close()
-        os.remove(trace_out_filename)
+                node_details[jobId] = (job_status[ "exec_host" ],job_status[ "mem_used" ])
+        else:
+            # no squeue output
+            out, err = Popen(["sacct" ,"--format", "Elapsed", "-j", jobId],stdout=PIPE).communicate()
+            outlines = out.split("\n")
+            if outlines > 2:
+                job_status[ "running_time" ] = outlines[2].strip()
+            if jobId in node_details:
+               job_status[ "exec_host" ], job_status[ "mem_used" ] = node_details[jobId]
+
+
+    trace_out_file.close()
+    os.remove(trace_out_filename)
     return job_status
 
 def isNumber( s ):
@@ -231,9 +243,14 @@ for logfile in parsed_logfiles:
     if not os.path.isfile(logfile):
         exit("Cannot open Logfile " + logfile)
 
-
-    # Create the output file
-    base_logname = os.path.basename(logfile)
+    # create dict and file for persistently stroing some node details
+    # that disappear after the job stops
+    node_details = {}
+    node_details_file = re.sub("sim_log", "node_details", logfile)
+    if os.path.isfile(node_details_file):
+        node_details = json.load(open(node_details_file))
+    else:
+        json.dump(node_details, open(node_details_file, "w+"))
 
     # Parse the logfile for job ids
     errs = ""
@@ -277,7 +294,7 @@ for logfile in parsed_logfiles:
             status_found = set()
 
             if job_manager == "squeue":
-                job_status = get_squeue_status( jobId )
+                job_status = get_squeue_status( jobId, node_details )
             elif job_manager == "qstat":
                 job_status = get_qstat_status( jobId )
 
@@ -396,3 +413,4 @@ for logfile in parsed_logfiles:
             failed_job_file.close()
             print "failed job log written to {0}".format(failed_job_filename)
 
+    json.dump(node_details,open(node_details_file,"w+"))
