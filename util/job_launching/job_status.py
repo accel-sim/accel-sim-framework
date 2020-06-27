@@ -92,7 +92,7 @@ def get_squeue_status( jobId, node_details ):
                 job_status[ "mem_used" ] = get_slurm_memsize( job_status[ "state" ], jobId )
                 job_status[ "exec_host" ] = state_match.group(2)
                 job_status[ "running_time" ] = state_match.group(3)
-                node_details[jobId] = (job_status[ "exec_host" ],job_status[ "mem_used" ])
+                node_details[jobId] = (job_status[ "exec_host" ],job_status[ "mem_used" ],job_status[ "running_time" ])
         else:
             # no squeue output
             out, err = Popen(["sacct" ,"--format", "Elapsed", "-j", jobId],stdout=PIPE).communicate()
@@ -100,7 +100,7 @@ def get_squeue_status( jobId, node_details ):
             if outlines > 2:
                 job_status[ "running_time" ] = outlines[2].strip()
             if jobId in node_details:
-               job_status[ "exec_host" ], job_status[ "mem_used" ] = node_details[jobId]
+               job_status[ "exec_host" ],job_status[ "mem_used" ],timeStamp = node_details[jobId]
 
 
     trace_out_file.close()
