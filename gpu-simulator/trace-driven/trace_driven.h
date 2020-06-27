@@ -7,8 +7,8 @@
 #ifndef TRACE_DRIVEN_H
 #define TRACE_DRIVEN_H
 
-#include "../abstract_hardware_model.h"
-#include "../gpgpu-sim/shader.h"
+#include "abstract_hardware_model.h"
+#include "gpgpu-sim/shader.h"
 #include "ISA_Def/trace_opcode.h"
 
 class trace_function_info : public function_info {
