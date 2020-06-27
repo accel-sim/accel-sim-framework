@@ -16,7 +16,7 @@ copy_output() {
     mv /tmp/REPLACE_NAME.o$SLURM_JOB_ID ./REPLACE_NAME.o$SLURM_JOB_ID
 }
 
-trap "copy_output" ERR
+trap copy_output ERR
 
 set -e
 
