@@ -19,6 +19,7 @@
 #include "option_parser.h"
 #include "ISA_Def/trace_opcode.h"
 #include "trace_driven.h"
+#include "accelsim_version.h"
 
 /* TO DO:
  * NOTE: the current version of trace-driven is functionally working fine,
