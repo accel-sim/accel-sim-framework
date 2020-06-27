@@ -24,62 +24,43 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+DEBUG?=0
 
-BIN_DIR=./bin/$(ACCELSIM_CONFIG)
-BUILD_DIR=./build/$(ACCELSIM_CONFIG)
 
-include version_detection.mk
-
-ifeq ($(ACCELSIM_CONFIG), debug)
-	export DEBUG=1
-else
-	export DEBUG=0
-endif
+BUILD_DIR=../build/$(ACCELSIM_CONFIG)
 
 ifeq ($(DEBUG),1)
-	CXXFLAGS = -Wall -O0 -g3 -fPIC
+	CXXFLAGS = -Wall -DDEBUG
 else
-	CXXFLAGS = -Wall -O3 -g3 -fPIC
+	CXXFLAGS = -Wall
 endif
 
-all: $(BIN_DIR)/accel-sim.out
+ifeq ($(GNUC_CPP0X), 1)
+    CXXFLAGS += -std=c++0x
+endif
 
-$(BUILD_DIR)/main.makedepend: depend makedirs
+ifneq ($(DEBUG),1)
+	OPTFLAGS += -O3
+else
+	CXXFLAGS += 
+endif
 
-makedirs:
-	if [ ! -d $(BIN_DIR) ]; then mkdir -p $(BIN_DIR); fi;
-	if [ ! -d $(BUILD_DIR) ]; then mkdir -p $(BUILD_DIR); fi;
+OPTFLAGS += -g3 -fPIC
 
-gpgpu-sim: checkenv makedirs
-	$(MAKE) -C gpgpu-sim
+SRCS = $(shell ls *.cc)
+EXCLUDES = 
+CSRCS = $(filter-out $(EXCLUDES), $(SRCS))
+OBJS = $(CSRCS:%.cc=$(BUILD_DIR)/%.o)
 
-checkenv: makedirs
-	 @if [ ! -n "$(ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN)" ]; then \
-		echo "ERROR *** run 'source setup_environment.sh' before 'make'; please see README."; \
-		exit 1; \
-	fi
+trace-driven:$(OBJS)
 
-$(BIN_DIR)/accel-sim.out: trace-driven gpgpu-sim makedirs $(BUILD_DIR)/main.o version
-	$(CXX) -std=c++0x -o $(BIN_DIR)/accel-sim.out  -L$(GPGPUSIM_ROOT)/lib/$(GPGPUSIM_CONFIG)/ -lcudart -lm -lz -lGL -pthread $(BUILD_DIR)/*.o
+$(BUILD_DIR)/%.o: %.cc
+	$(CXX) $(OPTFLAGS) $(CXXFLAGS) -I$(CUDA_INSTALL_PATH)/include -I. -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -c $*.cc -o $(BUILD_DIR)/$*.o 
 
-$(BUILD_DIR)/main.o: main.cc version
-	$(CXX) $(CXXFLAGS)  -I$(BUILD_DIR) -I./trace-driven -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -c main.cc -o $(BUILD_DIR)/main.o
+$(BUILD_DIR)/trace-driven.Makefile.makedepend: depend
 
-version:
-	echo "const char *g_accelsim_version=\"$(ACCELSIM_BUILD)\";" > $(BUILD_DIR)/accelsim_version.h
+depend:
+	touch $(BUILD_DIR)/trace-driven.Makefile.makedepend
+	makedepend -f$(BUILD_DIR)/trace-driven.Makefile.makedepend -p$(BUILD_DIR)/ $(CSRCS) 2> /dev/null
 
-depend: checkenv makedirs
-	touch $(BUILD_DIR)/main.makedepend
-	makedepend -f$(BUILD_DIR)/main.makedepend -p$(BUILD_DIR)/ main.cc 2> /dev/null
-
-trace-driven: checkenv makedirs
-	$(MAKE) -C trace-driven depend
-	$(MAKE) -C trace-driven
-
-clean:
-	rm -rf $(BIN_DIR)
-	rm -rf $(BUILD_DIR)
-	$(MAKE) clean -C gpgpu-sim
-
-
-include $(BUILD_DIR)/main.makedepend
+include $(BUILD_DIR)/trace-driven.Makefile.makedepend

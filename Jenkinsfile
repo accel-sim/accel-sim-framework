@@ -8,25 +8,27 @@ pipeline {
     }
 
     stages {
-        stage('setup-data') {
+        stage('setup-env') {
             steps{
-                sh 'ln -sf /home/tgrogers-raid/a/common/data_dirs ./benchmarks/'
+                sh 'rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git &&\
+                    cd env-setup && git checkout cluster-ubuntu'
             }
         }
-        stage('4.2-simulations-build'){
+        stage('accel-sim-build'){
             steps{
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/4.2_env_setup.sh &&\
-                source ./benchmarks/src/setup_environment &&\
-                make -C ./benchmarks/src clean &&\
-                make -C ./benchmarks/src all'
+                sh '''#!/bin/bash
+                source ./env-setup/11.0_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                make -j -C gpu-simulator'''
             }
         }
-        stage('9.1-simulations-build'){
+        stage('rodinia_2.0-ft'){
             steps{
-                sh 'source /home/tgrogers-raid/a/common/gpgpu-sim-setup/9.1_env_setup.sh &&\
-                source ./benchmarks/src/setup_environment && \
-                make -C ./benchmarks/src clean && \
-                make -C ./benchmarks/src all'
+                sh '''#!/bin/bash
+                source ./env-setup/11.0_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100 -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$'''
             }
         }
     }

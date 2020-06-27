@@ -126,12 +126,13 @@ def file_option_test(name, default, this_directory):
     return name
 
 def dir_option_test(name, default, this_directory):
+    name = os.path.expandvars(name)
     if name == "":
         name = os.path.join(this_directory, default)
     if not os.path.isdir(name):
         name = os.path.join(os.getcwd(), name)
         if not os.path.isdir(name):
-            exit("Error - cannot open file {0}".format(name))
+            exit("Error - directory test fails for {0}".format(name))
     return name
 
 def parse_run_simulations_options():
@@ -158,9 +159,9 @@ def parse_run_simulations_options():
                   " This can be useful when you want to create a new" +\
                   " configuration, but want to test it locally before "+\
                   " launching a bunch of jobs.")
-    parser.add_option("-s", "--so_dir", dest="so_dir",
+    parser.add_option("-s", "--simulator_dir", dest="simulator_dir",
                   help="Point this to the directory that your .so is stored in. If nothing is input here - "+\
-                       "the scripts will assume that you are using the so built in GPGPUSIM_ROOT.",
+                       "the scripts will assume that you are using the so built in GPGPUSIM_ROOT or ACCELSIM_ROOT.",
                        default="")
     parser.add_option("-N", "--launch_name", dest="launch_name", default="",
                   help="Pass if you want to name the launch. This will determine the name of the logfile.\n" +\
@@ -169,8 +170,8 @@ def parse_run_simulations_options():
                   help="Pass this option to run the simulator in trace-driven mode."+\
                         " The directory passed should be the root of all the trace files.")
     parser.add_option("-M", "--job_mem", dest="job_mem", default="",
-                  help="Memory usgae of the job in MB.")
-						
+                  help="Memory usgae of the job be sure to specify the units i.e. 4G, 900M, etc..")
+
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
     if options.trace_dir != "":
@@ -179,7 +180,7 @@ def parse_run_simulations_options():
     options.benchmark_exec_prefix = options.benchmark_exec_prefix.strip()
     options.benchmark_list = options.benchmark_list.strip()
     options.run_directory = options.run_directory.strip()
-    options.so_dir = options.so_dir.strip()
+    options.simulator_dir = options.simulator_dir.strip()
     options.launch_name = options.launch_name.strip()
     options.job_mem = options.job_mem.strip()
     return (options, args)
