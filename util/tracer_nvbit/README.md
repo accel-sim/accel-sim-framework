@@ -17,6 +17,7 @@
 * To generate traces for specific individual application:
     ```bash
     # example: to run the tracer on hardware device 0 for vecadd app
+    export CUDA_VISIBLE_DEVICES=0
     LD_PRELOAD=./tracer_tool/tracer_tool.so ./nvbit_release/test-apps/vectoradd/vectoradd
     ```
     the traces will be found in "traces" folder, This folder will contain:
