@@ -17,6 +17,7 @@ import stat
 import time
 import psutil
 import shutil
+import datetime
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -28,16 +29,21 @@ class Job:
         self.command = command
         self.procId = None
         self.POpenObj = None
+        self.maxVmSize = 0
+        self.runningTime = 0
         self.status = "NOT_STARTED"
 
     def string(self):
-        return "procId={0},outf={1},errf={2},workingDir={3},command={4},status={5}"\
-            .format(self.procId,
+        return "status={0}: [procId={1},maxVmSize={2},runningTime={3},outf={4}," \
+            "errf={5},workingDir={6},command={7}]"\
+            .format(self.status,
+                    self.procId,
+                    self.maxVmSize,
+                    self.runningTime,
                     self.outf,
                     self.errf,
                     self.workingDir,
-                    self.command,
-                    self.status)
+                    self.command)
 
     def __str___(self):
         return self.string()
@@ -95,7 +101,17 @@ class ProcMan:
                 except OSError:
                     jobActive = False
 
-            if not jobActive:
+            if jobActive:
+                try:
+                    p = psutil.Process(activeJob.procId)
+                    activeJob.maxVmSize = max(p.memory_info().vms, activeJob.maxVmSize)
+                    activeJob.runningTime = \
+                        datetime.datetime.now() \
+                            - datetime.datetime.fromtimestamp(p.create_time())
+                    activeJob.runningTime = str(activeJob.runningTime).split('.')[0]
+                except (psutil.NoSuchProcess,psutil.AccessDenied) as e:
+                    print e
+            else:
                 activeJob.status = "COMPLETE"
                 self.completeJobs.append(activeJob)
                 del self.activeJobs[idx]
@@ -138,9 +154,9 @@ def selfTest():
     testOutFile = os.path.join(testPath, "procman.pickle")
 
     jobScript = os.path.join(testPath, "testScript.sh")
+    open(jobScript,"w+").write("#!/bin/bash\nsleep 20s")
     st = os.stat(jobScript)
     os.chmod(jobScript, st.st_mode | stat.S_IEXEC)
-    open(jobScript,"w+").write("#!/bin/bash\nsleep 10s")
 
     print "Starting synchronous selfTest"
     procMan = ProcMan(4)
