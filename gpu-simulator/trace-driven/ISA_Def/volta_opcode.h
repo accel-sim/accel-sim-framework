@@ -4,9 +4,9 @@
 #ifndef VOLTA_OPCODE_H
 #define VOLTA_OPCODE_H
 
+#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
-#include "trace_opcode.h"
 
 #define VOLTA_BINART_VERSION 70
 #define VOLTA_SHARED_MEMORY_VIRTIAL_ADDRESS_START 0x00007f2c60000000

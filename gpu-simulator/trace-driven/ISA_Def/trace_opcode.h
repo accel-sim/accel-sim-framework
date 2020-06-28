@@ -4,6 +4,7 @@
 #ifndef TRACE_OPCODE_H
 #define TRACE_OPCODE_H
 
+#include "../../abstract_hardware_model.h"
 #include <string>
 #include <unordered_map>
 

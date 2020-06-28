@@ -1,13 +1,13 @@
 // developed by Mahmoud Khairy, Purdue Univ
 // abdallm@purdue.edu
 
-#include <math.h>
-#include <stdio.h>
-#include <time.h>
 #include <fstream>
 #include <iostream>
+#include <math.h>
 #include <sstream>
+#include <stdio.h>
 #include <string>
+#include <time.h>
 #include <vector>
 
 #include "gpgpu_context.h"
@@ -34,15 +34,15 @@
  * index info in the traces header) 5- Get rid off traces intermediate files -
  * change the tracer
  */
-gpgpu_sim* gpgpu_trace_sim_init_perf_model(int argc, const char* argv[],
-                                           gpgpu_context* m_gpgpu_context,
-                                           class trace_config* m_config);
+gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
+                                           gpgpu_context *m_gpgpu_context,
+                                           class trace_config *m_config);
 
-int main(int argc, const char** argv) {
-  gpgpu_context* m_gpgpu_context = new gpgpu_context();
+int main(int argc, const char **argv) {
+  gpgpu_context *m_gpgpu_context = new gpgpu_context();
   trace_config tconfig;
 
-  gpgpu_sim* m_gpgpu_sim =
+  gpgpu_sim *m_gpgpu_sim =
       gpgpu_trace_sim_init_perf_model(argc, argv, m_gpgpu_context, &tconfig);
   m_gpgpu_sim->init();
 
@@ -60,7 +60,7 @@ int main(int argc, const char** argv) {
   std::vector<std::string> commandlist = tracer.parse_kernellist_file();
 
   for (unsigned i = 0; i < commandlist.size(); ++i) {
-    trace_kernel_info_t* kernel_info = NULL;
+    trace_kernel_info_t *kernel_info = NULL;
     if (commandlist[i].substr(0, 6) == "Memcpy") {
       size_t addre, Bcount;
       tracer.parse_memcpy_info(commandlist[i], addre, Bcount);
@@ -77,7 +77,8 @@ int main(int argc, const char** argv) {
     bool break_limit = false;
 
     do {
-      if (!m_gpgpu_sim->active()) break;
+      if (!m_gpgpu_sim->active())
+        break;
 
       // performance simulation
       if (m_gpgpu_sim->active()) {
@@ -107,9 +108,8 @@ int main(int argc, const char** argv) {
     }
 
     if (break_limit) {
-      printf(
-          "GPGPU-Sim: ** break due to reaching the maximum cycles (or "
-          "instructions) **\n");
+      printf("GPGPU-Sim: ** break due to reaching the maximum cycles (or "
+             "instructions) **\n");
       fflush(stdout);
       exit(1);
     }
@@ -123,9 +123,9 @@ int main(int argc, const char** argv) {
   return 1;
 }
 
-gpgpu_sim* gpgpu_trace_sim_init_perf_model(int argc, const char* argv[],
-                                           gpgpu_context* m_gpgpu_context,
-                                           trace_config* m_config) {
+gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
+                                           gpgpu_context *m_gpgpu_context,
+                                           trace_config *m_config) {
   srand(1);
   print_splash();
 
@@ -139,10 +139,10 @@ gpgpu_sim* gpgpu_trace_sim_init_perf_model(int argc, const char* argv[],
   m_gpgpu_context->the_gpgpusim->g_the_gpu_config =
       new gpgpu_sim_config(m_gpgpu_context);
   m_gpgpu_context->the_gpgpusim->g_the_gpu_config->reg_options(
-      opp);  // register GPU microrachitecture options
+      opp); // register GPU microrachitecture options
   m_config->reg_options(opp);
 
-  option_parser_cmdline(opp, argc, argv);  // parse configuration options
+  option_parser_cmdline(opp, argc, argv); // parse configuration options
   fprintf(stdout, "GPGPU-Sim: Configuration options:\n\n");
   option_parser_print(opp, stdout);
   // Set the Numeric locale to a standard locale where a decimal point is a
@@ -158,7 +158,7 @@ gpgpu_sim* gpgpu_trace_sim_init_perf_model(int argc, const char* argv[],
       new stream_manager((m_gpgpu_context->the_gpgpusim->g_the_gpu),
                          m_gpgpu_context->func_sim->g_cuda_launch_blocking);
 
-  m_gpgpu_context->the_gpgpusim->g_simulation_starttime = time((time_t*)NULL);
+  m_gpgpu_context->the_gpgpusim->g_simulation_starttime = time((time_t *)NULL);
 
   return m_gpgpu_context->the_gpgpusim->g_the_gpu;
 }
