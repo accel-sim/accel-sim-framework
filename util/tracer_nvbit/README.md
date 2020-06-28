@@ -20,9 +20,9 @@
     LD_PRELOAD=./tracer_tool/tracer_tool.so ./nvbit_release/test-apps/vectoradd/vectoradd
     ```
     the traces will be found in "traces" folder, This folder will contain:
-    1- kernel traces files with .trace (one file per kernel), e.g. kernel-1.trace, kernel-2.trace, etc.
-    2- kernelslist (one file), this contains the kernel files list that have been traced along with the cuda memcpy commands
-    3- stats.csv (one file), this contains the statistcs of the kernels, e.g. how many kernels traced, traced intructions, etc.
+    * 1- kernel traces files with .trace (one file per kernel), e.g. kernel-1.trace, kernel-2.trace, etc.
+    * 2- kernelslist (one file), this contains the kernel files list that have been traced along with the cuda memcpy commands
+    * 3- stats.csv (one file), this contains the statistcs of the kernels, e.g. how many kernels traced, traced intructions, etc.
 
     Next, you will have to do post processing for the traces. The generated traces above are not structured, we have to group them by thread block Id. To do this, run the following:
 
@@ -41,13 +41,13 @@
 
 * Tracing Specific kernels (kernel-based checkpointing):
 
-    This wil only report kernels 3,4,5.
+    Set enviroment variables as below wil only report kernels 3,4,5.
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=3
     export DYNAMIC_KERNEL_LIMIT_END=5
     ```
 
-    This will report kernel 3 only.
+    Set enviroment variables as below wil only report kernel 3 only
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=3
     export DYNAMIC_KERNEL_LIMIT_END=3
