@@ -58,12 +58,12 @@ class ProcMan:
     def queueJob(self, job):
         self.queuedJobs.append(job)
 
-    def spawnProcMan(self, outFile):
+    def spawnProcMan(self, outFile, sleepTime):
         if self.spawned:
             exit("Error - can only spawn the procman once")
         else:
-            pickle.dump(self,open("test.txt", "w+"))
-            p = Popen([__file__,"-f", "test.txt"],
+            pickle.dump(self,open("procman.pickle", "w+"))
+            p = Popen([__file__,"-f", "procman.pickle", "-t", str(sleepTime)],
                 stdout=open(outFile,"w+"),
                 cwd=this_directory
             )
@@ -173,7 +173,7 @@ def selfTest():
                 command=jobScript
                 )
         )
-    procMan.spawnProcMan(testOutFile)
+    procMan.spawnProcMan(testOutFile, 3)
     # check the output file for complete
     done = False
     while not done:
@@ -192,6 +192,9 @@ def main():
                   help="launched the selftester.", action="store_true")
     parser.add_option("-f", "--file", dest="file",
                   help="File with the processes to manage.", default="")
+    parser.add_option("-t", "--sleepTime", dest="sleepTime",
+                  help="Tune how often. ProcMan looks for completed jobs",
+                  type=int, default=30)
     (options, args) = parser.parse_args()
 
     if options.selfTest:
@@ -204,7 +207,7 @@ def main():
         while not procMan.complete():
             procMan.tick()
             print procMan.getState()
-            time.sleep(3)
+            time.sleep(options.sleepTime)
         print "All Jobs Complete"
 
 if __name__ == '__main__':
