@@ -15,6 +15,8 @@ import common
 import os, signal
 import stat
 import time
+import psutil
+import shutil
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -62,9 +64,9 @@ class ProcMan:
         if self.spawned:
             exit("Error - can only spawn the procman once")
         else:
-            pickle.dump(self,open("procman.pickle", "w+"))
-            p = Popen([__file__,"-f", "procman.pickle", "-t", str(sleepTime)],
-                stdout=open(outFile,"w+"),
+            with open(outFile, "w+") as f:
+                pickle.dump(self,f)
+            p = Popen([__file__,"-f", outFile, "-t", str(sleepTime)],
                 cwd=this_directory
             )
             print "ProcMan spawned [pid={0}]".format(p.pid)
@@ -110,9 +112,6 @@ class ProcMan:
             newJob.status = "RUNNING"
             self.activeJobs.append(newJob)
 
-    def updateDisk(self):
-        pass
-
     def getState(self):
         string = "queuedJobs={0}, activeJobs={1}, completeJobs={2}\n"\
             .format(len(self.queuedJobs), len(self.activeJobs), len(self.completeJobs))
@@ -136,7 +135,7 @@ def selfTest():
     testPath = os.path.join(this_directory, "test")
     if not os.path.isdir(testPath):
         os.makedirs(testPath)
-    testOutFile = os.path.join(testPath, "testout.txt")
+    testOutFile = os.path.join(testPath, "procman.pickle")
 
     jobScript = os.path.join(testPath, "testScript.sh")
     st = os.stat(jobScript)
@@ -174,16 +173,13 @@ def selfTest():
                 )
         )
     procMan.spawnProcMan(testOutFile, 3)
-    # check the output file for complete
-    done = False
-    while not done:
-        lines = open(testOutFile, "r").readlines()
-        if len(lines) > 0:
-            lastLine = lines[-1]
-            if "All Jobs Complete" == lastLine.strip():
-                done = True
+
+    while not procMan.complete():
+        procMan = pickle.load(open(testOutFile))
+        print procMan.getState()
         time.sleep(3)
     print "Passed asynchronous selfTest"
+    shutil.rmtree(testPath)
 
 
 def main():
@@ -206,9 +202,8 @@ def main():
         procMan = pickle.load(open(options.file))
         while not procMan.complete():
             procMan.tick()
-            print procMan.getState()
+            pickle.dump(procMan, open(options.file, "w+"))
             time.sleep(options.sleepTime)
-        print "All Jobs Complete"
 
 if __name__ == '__main__':
     main()
