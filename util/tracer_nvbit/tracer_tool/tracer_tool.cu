@@ -141,16 +141,15 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       nvbit_add_call_arg_const_val32(instr, opcode_id);
       nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
 
-      /* check all operands
-         For now, we ignore constant, TEX, predicates and unified registers.
-         We only report regisers */
+      /* check all operands. For now, we ignore constant, TEX, predicates and
+       * unified registers. We only report vector regisers */
       int src_oprd[MAX_SRC];
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
 
-      // find dst reg and handle the special case if the oprd[0] is mem (e.g.
-      // store and RED)
+      /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
+       * store and RED)*/
       if (instr->getNumOperands() > 0 &&
           instr->getOperand(0)->type == Instr::operandType::REG)
         dst_oprd = instr->getOperand(0)->u.reg.num;
@@ -159,54 +158,47 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         src_oprd[0] = instr->getOperand(0)->u.mref.ra_num;
         mem_oper_idx = 0;
         srcNum++;
-      } else
-        src_oprd[0] = -1;
+      }
 
       // find src regs and mem
-      assert(instr->getNumOperands() <= MAX_SRC);
       for (int i = 1; i < MAX_SRC; i++) {
         if (i < instr->getNumOperands()) {
           const Instr::operand_t *op = instr->getOperand(i);
           if (op->type == Instr::operandType::MREF) {
             // mem is found
-            src_oprd[i] = instr->getOperand(i)->u.mref.ra_num;
+            assert(srcNum < MAX_SRC);
+            src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
+            srcNum++;
             assert(mem_oper_idx == -1); // ensure one memory operand per inst
             mem_oper_idx = i;
-          } else if (op->type == Instr::operandType::REG)
-            src_oprd[i] = instr->getOperand(i)->u.reg.num;
-          else
-            src_oprd[i] = -1;
-
-          srcNum++;
-        } else
-          src_oprd[i] = -1;
+          } else if (op->type == Instr::operandType::REG) {
+            // reg is found
+            assert(srcNum < MAX_SRC);
+            src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
+            srcNum++;
+          }
+          // skip anything else (constant and predicates)
+        }
       }
 
       /* mem addresses info */
       if (mem_oper_idx >= 0) {
-        const Instr::operand_t *mem_op = instr->getOperand(mem_oper_idx);
-
         nvbit_add_call_arg_const_val32(instr, 1);
-        if (instr->isExtended()) {
-          nvbit_add_call_arg_reg_val(instr, (int)mem_op->u.mref.ra_num + 1);
-        } else {
-          nvbit_add_call_arg_reg_val(instr, (int)Instr::RZ);
-        }
-        nvbit_add_call_arg_reg_val(instr, (int)mem_op->u.mref.ra_num);
-        nvbit_add_call_arg_const_val32(instr, (int)mem_op->u.mref.imm);
+        nvbit_add_call_arg_mref_addr64(instr, 0);
         nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
       } else {
         nvbit_add_call_arg_const_val32(instr, 0);
-        nvbit_add_call_arg_const_val32(instr, -1);
-        nvbit_add_call_arg_const_val32(instr, -1);
-        nvbit_add_call_arg_const_val32(instr, -1);
+        nvbit_add_call_arg_const_val64(instr, -1);
         nvbit_add_call_arg_const_val32(instr, -1);
       }
 
       /* reg info */
       nvbit_add_call_arg_const_val32(instr, dst_oprd);
-      for (int i = 0; i < MAX_SRC; i++) {
+      for (int i = 0; i < srcNum; i++) {
         nvbit_add_call_arg_const_val32(instr, src_oprd[i]);
+      }
+      for (int i = srcNum; i < MAX_SRC; i++) {
+        nvbit_add_call_arg_const_val32(instr, -1);
       }
       nvbit_add_call_arg_const_val32(instr, srcNum);
 
@@ -437,6 +429,15 @@ unsigned get_datawidth_from_opcode(const std::vector<std::string> &opcode) {
   }
 
   return 4; // default is 4 bytes
+}
+
+bool check_opcode_contain(const std::vector<std::string> &opcode,
+                          std::string param) {
+  for (unsigned i = 0; i < opcode.size(); ++i)
+    if (opcode[i] == param)
+      return true;
+
+  return false;
 }
 
 void *recv_thread_fun(void *) {

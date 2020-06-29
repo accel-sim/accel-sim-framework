@@ -18,11 +18,10 @@
  *    To prevent "dead"-code elimination by the compiler.
  */
 extern "C" __device__ __noinline__ void instrument_inst(
-    int pred, int opcode_id, int32_t vpc, bool is_mem, uint32_t reg_high,
-    uint32_t reg_low, int32_t imm, int32_t width, int32_t desReg,
-    int32_t srcReg1, int32_t srcReg2, int32_t srcReg3, int32_t srcReg4,
-    int32_t srcReg5, int32_t srcNum, uint64_t pchannel_dev,
-    uint64_t ptotal_dynamic_instr_counter,
+    int pred, int opcode_id, int32_t vpc, bool is_mem, uint64_t addr,
+    int32_t width, int32_t desReg, int32_t srcReg1, int32_t srcReg2,
+    int32_t srcReg3, int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
+    uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
     uint64_t preported_dynamic_instr_counter, uint64_t pstop_report) {
 
   const int active_mask = __ballot(1);
@@ -41,8 +40,6 @@ extern "C" __device__ __noinline__ void instrument_inst(
 
   if (is_mem) {
     /* collect memory address information */
-    int64_t base_addr = (((uint64_t)reg_high) << 32) | ((uint64_t)reg_low);
-    uint64_t addr = base_addr + imm;
     for (int i = 0; i < 32; i++) {
       ma.addrs[i] = __shfl(addr, i);
     }
