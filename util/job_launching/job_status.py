@@ -27,7 +27,6 @@ def get_procman_status( jobId ):
         job_status[ "exec_host" ] = socket.gethostname().strip()
         job_status[ "running_time" ] = job.runningTime
         job_status[ "mem_used" ] = str(job.maxVmSize)
-        print job.maxVmSize
     return job_status
 
 def get_qstat_status( jobId ):
@@ -326,7 +325,8 @@ for logfile in parsed_logfiles:
             if ( job_status[ "state" ] == "WAITING_TO_RUN" or job_status[ "state" ] == "RUNNING" ):
                 files_to_check = []
                 status_string = job_status[ "state" ]
-            elif ( os.path.isfile( outfile ) and job_status[ "state" ] == "UNKNOWN" ):
+            elif ( os.path.isfile( outfile ) and
+                    (job_status[ "state" ] == "UNKNOWN" or job_status[ "state" ] == "COMPLETE_NO_OTHER_INFO" ) ):
                 files_to_check = [ outfile, errfile ]
                 status_string = "COMPLETE_NO_OTHER_INFO"
             else:
