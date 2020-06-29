@@ -18,13 +18,15 @@ import time
 import psutil
 import shutil
 import datetime
+import re
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+procManStateFile = os.path.join(this_directory,"procman.pickle")
 
 class Job:
-    def __init__(self, outf, errf, workingDir, command):
-        self.outf = outf
-        self.errf = errf
+    def __init__(self, outF, errF, workingDir, command):
+        self.outF = outF
+        self.errF = errF
         self.workingDir = workingDir
         self.command = command
         self.procId = None
@@ -32,18 +34,21 @@ class Job:
         self.maxVmSize = 0
         self.runningTime = 0
         self.status = "NOT_STARTED"
+        self.name = None
+        self.id = None
 
     def string(self):
-        return "status={0}: [procId={1},maxVmSize={2},runningTime={3},outf={4}," \
-            "errf={5},workingDir={6},command={7}]"\
+        return "status={0}: [name={8},procId={1},maxVmSize={2},runningTime={3},outF={4}," \
+            "errF={5},workingDir={6},command={7}]"\
             .format(self.status,
                     self.procId,
                     self.maxVmSize,
                     self.runningTime,
-                    self.outf,
-                    self.errf,
+                    self.outF,
+                    self.errF,
                     self.workingDir,
-                    self.command)
+                    self.command,
+                    self.name)
 
     def __str___(self):
         return self.string()
@@ -62,9 +67,13 @@ class ProcMan:
         self.completeJobs = []
         self.spawned = False
         self.jobLimit = jobLimit
+        self.nextJobId = 1
 
     def queueJob(self, job):
+        job.id = self.nextJobId
         self.queuedJobs.append(job)
+        self.nextJobId += 1
+        return job.id
 
     def spawnProcMan(self, outFile, sleepTime):
         if self.spawned:
@@ -76,13 +85,12 @@ class ProcMan:
                 cwd=this_directory
             )
             print "ProcMan spawned [pid={0}]".format(p.pid)
-        self.spawned = True
+            self.spawned = True
 
     def killJobs(self):
-        self.queueJob.clear()
-        for activeJob in activeJobs:
-            # kill the jobs
-            pass
+        del self.queuedJobs[:]
+        for activeJob in self.activeJobs:
+            os.kill(activeJob.procId,9)
 
     def tick(self):
         idx = 0
@@ -121,8 +129,8 @@ class ProcMan:
         while len(self.activeJobs) < self.jobLimit and len(self.queuedJobs) > 0:
             newJob = self.queuedJobs.pop(0)
             newJob.POpenObj = Popen(newJob.command,
-                stdout=open(newJob.outf,"w+"),
-                stderr=open(newJob.errf,"w+"),
+                stdout=open(newJob.outF,"w+"),
+                stderr=open(newJob.errF,"w+"),
                 cwd=newJob.workingDir)
             newJob.procId = newJob.POpenObj.pid
             newJob.status = "RUNNING"
@@ -163,8 +171,8 @@ def selfTest():
     for i in range(5):
         procMan.queueJob(
             Job(
-                outf=os.path.join(testPath, "out.{0}.txt".format(i)),
-                errf=os.path.join(testPath, "err.{0}.txt".format(i)),
+                outF=os.path.join(testPath, "out.{0}.txt".format(i)),
+                errF=os.path.join(testPath, "err.{0}.txt".format(i)),
                 workingDir=testPath,
                 command=jobScript
                 )
@@ -182,8 +190,8 @@ def selfTest():
     for i in range(5):
         procMan.queueJob(
             Job(
-                outf=os.path.join(testPath, "out.{0}.txt".format(i)),
-                errf=os.path.join(testPath, "err.{0}.txt".format(i)),
+                outF=os.path.join(testPath, "out.{0}.txt".format(i)),
+                errF=os.path.join(testPath, "err.{0}.txt".format(i)),
                 workingDir=testPath,
                 command=jobScript
                 )
@@ -207,10 +215,71 @@ def main():
     parser.add_option("-t", "--sleepTime", dest="sleepTime",
                   help="Tune how often. ProcMan looks for completed jobs",
                   type=int, default=30)
+    parser.add_option("-c", "--cores", dest="cores",
+                  help="how many cores to use",
+                  type=int, default=psutil.cpu_count())
+    parser.add_option("-S", "--start", dest="start",action="store_true",
+                  help="Just spawn the manager")
+    parser.add_option("-p", "--printState", dest="printState",action="store_true",
+                  help="Print the state of the manager")
+    parser.add_option("-k", "--kill", dest="kill",action="store_true",
+                  help="Kill all managed processes")
     (options, args) = parser.parse_args()
 
     if options.selfTest:
         selfTest()
+    elif options.kill:
+        if not os.path.exists(procManStateFile):
+             exit("Nothing to print {0} does not exist").format(procManStateFile)
+        procMan = pickle.load(open(procManStateFile))
+        procMan.killJobs()
+    elif options.printState:
+        if not os.path.exists(procManStateFile):
+             exit("Nothing to print {0} does not exist").format(procManStateFile)
+        procMan = pickle.load(open(procManStateFile))
+        print procMan.getState()
+    elif options.start:
+        if not os.path.exists(procManStateFile):
+             exit("Nothing to start {0} does not exist").format(procManStateFile)
+        procMan = pickle.load(open(procManStateFile))
+        procMan.spawnProcMan(procManStateFile, 10)
+    elif len(args) == 1:
+        # To make this work the same as torque and slurm - if you just give it one argument,
+        # we assume it's a pointer to a job file you want to submit.
+        if os.path.exists(procManStateFile):
+            procMan = pickle.load(open(procManStateFile))
+        else:
+            procMan = ProcMan(options.cores)
+        exec_file = args[0]
+        st = os.stat(exec_file)
+        os.chmod(exec_file, st.st_mode | stat.S_IEXEC)
+
+        # slurmToJob
+        job = Job("","",os.getcwd(),exec_file)
+        job.id = procMan.queueJob(job)
+        contents = ""
+        for line in open(exec_file).readlines():
+            if line.startswith("#SBATCH"):
+                nameMatch = re.match(r"#SBATCH -J (.*)", line.strip())
+                if nameMatch:
+                    job.name = nameMatch.group(1)
+                outFMatch = re.match(r"#SBATCH --output=(.*)", line.strip())
+                if outFMatch:
+                    job.outF = outFMatch.group(1)
+                errFMatch = re.match(r"#SBATCH --error=(.*)", line.strip())
+                if errFMatch:
+                    job.errF = errFMatch.group(1)
+            jIDToken = "$SLURM_JOB_ID"
+            if jIDToken in line:
+                line = re.sub(jIDToken, str(job.id), line)
+            contents += line
+        with open(exec_file, "w+") as f:
+            f.write(contents)
+
+        job.outF = re.sub("\%j", str(job.id), job.outF)
+        job.errF = re.sub("\%j", str(job.id), job.errF)
+        pickle.dump(procMan, open(procManStateFile,"w+"))
+        print job.id
     else:
         options.file = common.file_option_test( options.file, "", this_directory )
         if options.file == "":
