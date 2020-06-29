@@ -9,6 +9,26 @@ import sys
 import common
 import math
 import json
+from procman import ProcMan, Job
+import pickle
+import socket
+
+def get_procman_status( jobId ):
+    job_status = { "state" : "WAITING_TO_RUN",
+                   "exec_host" : "UNKNOWN",
+                   "running_time": "UNKNOWN",
+                   "mem_used" : "UNKNOWN" }
+
+    out,err = subprocess.Popen([os.path.join(this_directory, "procman.py"), "-P"],stdout=PIPE).communicate()
+    procMan = pickle.load(open(out.strip()))
+    job = procMan.getJob(int(jobId))
+    if job != None:
+        job_status[ "state" ] = job.status
+        job_status[ "exec_host" ] = socket.gethostname().strip()
+        job_status[ "running_time" ] = job.runningTime
+        job_status[ "mem_used" ] = str(job.maxVmSize)
+        print job.maxVmSize
+    return job_status
 
 def get_qstat_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
@@ -153,6 +173,9 @@ parser.add_option("-n", "--num_lines", dest="num_lines",
                         " Default is 10", default="10")
 parser.add_option("-r", "--run_dir", dest="run_dir",
                   help="The directory where the benchmark/config directories exist.", default="")
+parser.add_option("-j", "--job_manager", dest="job_manager",
+                  help="Pick between slurm, torque and out local procman. If not specified, "\
+                       "we will select it automatically.", default=None)
 parser.add_option("-N", "--sim_name", dest="sim_name",
                   help="If you are launchign run_simulations.py with the \"-N\" option" +\
                        " then you can run ./job_status.py with \"-N\" and it will" + \
@@ -167,14 +190,14 @@ options.sim_name = options.sim_name.strip()
 
 cuda_version = common.get_cuda_version( this_directory )
 
-job_manager = None
-if any([os.path.isfile(os.path.join(p, "squeue")) for p in os.getenv("PATH").split(os.pathsep)]):
+if options.job_manager != None:
+    job_manager = options.job_manager
+elif any([os.path.isfile(os.path.join(p, "squeue")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_manager = "squeue"
 elif any([os.path.isfile(os.path.join(p, "qstat")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_manager = "qstat"
-
-if job_manager == None:
-    exit("ERROR - Cannot find squeue or qstat in PATH... Is one of slurm or torque installed on this machine?")
+else:
+    job_manager = "procman"
 
 parsed_logfiles = []
 logfiles_directory = this_directory + "../job_launching/logfiles/"
@@ -297,6 +320,8 @@ for logfile in parsed_logfiles:
                 job_status = get_squeue_status( jobId, node_details )
             elif job_manager == "qstat":
                 job_status = get_qstat_status( jobId )
+            else:
+                job_status = get_procman_status( jobId )
 
             if ( job_status[ "state" ] == "WAITING_TO_RUN" or job_status[ "state" ] == "RUNNING" ):
                 files_to_check = []
