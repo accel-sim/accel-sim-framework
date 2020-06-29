@@ -39,6 +39,7 @@ pipeline {
             steps{
                 sh '''#!/bin/bash
                 source ./env-setup/10.1_env_setup.sh
+                rm -rf ./gpu-simulator/gpgpu-sim
                 source ./gpu-simulator/setup_environment.sh
                 make -j -C gpu-simulator'''
             }
