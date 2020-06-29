@@ -22,7 +22,7 @@ import re
 import socket
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-procManStateFile = os.path.join(this_directory,"procman.pickle")
+procManStateFile = os.path.join(this_directory,"procman.{0}.pickle".format(socket.gethostname().strip()))
 
 class Job:
     def __init__(self, outF, errF, workingDir, command):
@@ -254,17 +254,17 @@ def main():
         print procManStateFile
     elif options.kill:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist").format(procManStateFile)
+             exit("Nothing to print {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         procMan.killJobs()
     elif options.printState:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist").format(procManStateFile)
+             exit("Nothing to print {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         print procMan.getState()
     elif options.start:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to start {0} does not exist").format(procManStateFile)
+             exit("Nothing to start {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         procMan.spawnProcMan(procManStateFile, 10)
     elif len(args) == 1:
