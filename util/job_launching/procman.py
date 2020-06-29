@@ -269,9 +269,7 @@ def main():
                 errFMatch = re.match(r"#SBATCH --error=(.*)", line.strip())
                 if errFMatch:
                     job.errF = errFMatch.group(1)
-            jIDToken = "$SLURM_JOB_ID"
-            if jIDToken in line:
-                line = re.sub(jIDToken, str(job.id), line)
+            line = re.sub(r"\$SLURM_JOB_ID", str(job.id), line)
             contents += line
         with open(exec_file, "w+") as f:
             f.write(contents)
