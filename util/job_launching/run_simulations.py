@@ -73,6 +73,7 @@ class ConfigurationSpec:
                     torque_out_file = open(torque_out_filename, 'w+')
                     saved_dir = os.getcwd()
                     os.chdir(this_run_dir)
+                    print job_submit_call
                     if subprocess.call([job_submit_call,\
                                        os.path.join(this_run_dir , job_template)],\
                                        stdout=torque_out_file) < 0:
@@ -313,7 +314,7 @@ elif any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").spl
     job_template = "torque.sim"
 else:
     print "Cannot find a supported job management system. Spawning jobs locally."
-    job_submit_call = "./procman.py"
+    job_submit_call = os.path.join(this_directory, "procman.py")
     job_template = "slurm.sim"
 
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
@@ -336,4 +337,4 @@ for config in configurations:
     config.run(version_string, benchmarks, options.run_directory, cuda_version, options.simulator_dir)
 
 if "procman" in job_submit_call:
-    subprocess.call([options.launcher, "-S"])
+    subprocess.call([job_submit_call, "-S"])
