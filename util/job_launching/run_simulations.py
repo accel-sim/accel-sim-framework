@@ -76,7 +76,7 @@ class ConfigurationSpec:
                     if subprocess.call([job_submit_call,\
                                        os.path.join(this_run_dir , job_template)],\
                                        stdout=torque_out_file) < 0:
-                        exit("Error Launching Torque Job")
+                        exit("Error Launching Job")
                     else:
                         # Parse the torque output for just the numeric ID
                         torque_out_file.seek(0)
@@ -296,22 +296,28 @@ options.simulator_dir = running_sim_dir
 
 common.load_defined_yamls()
 
-# Test for the existance of torque on the system
+# Test for the existance of a cluster management system
 job_submit_call = None
 job_template = None
-if any([os.path.isfile(os.path.join(p, "sbatch")) for p in os.getenv("PATH").split(os.pathsep)]):
+if options.launcher != "":
+    job_submit_call = options.launcher
+    if options.launcher == "qsub":
+        job_template = "torque.sim"
+    else:
+        job_template = "slurm.sim"
+elif any([os.path.isfile(os.path.join(p, "sbatch")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_submit_call = "sbatch"
     job_template = "slurm.sim"
 elif any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_submit_call = "qsub"
     job_template = "torque.sim"
+else:
+    print "Cannot find a supported job management system. Spawning jobs locally."
+    job_submit_call = "./procman.py"
+    job_template = "slurm.sim"
 
 if not any([os.path.isfile(os.path.join(p, "nvcc")) for p in os.getenv("PATH").split(os.pathsep)]):
     exit("ERROR - Cannot find nvcc PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?")
-
-if job_submit_call == None:
-    exit("ERROR - Cannot find sbatch or qsub in PATH... Is one of slurm or torque installed on this machine?")
-
 
 benchmarks = []
 benchmarks = common.gen_apps_from_suite_list(options.benchmark_list.split(","))
@@ -328,3 +334,6 @@ print("Running Simulations with GPGPU-Sim built from \n{0}\n ".format(version_st
 for config in configurations:
     config.my_print()
     config.run(version_string, benchmarks, options.run_directory, cuda_version, options.simulator_dir)
+
+if "procman" in job_submit_call:
+    subprocess.call([options.launcher, "-S"])

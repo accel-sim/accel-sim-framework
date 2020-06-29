@@ -171,6 +171,10 @@ def parse_run_simulations_options():
                         " The directory passed should be the root of all the trace files.")
     parser.add_option("-M", "--job_mem", dest="job_mem", default="",
                   help="Memory usgae of the job be sure to specify the units i.e. 4G, 900M, etc..")
+    parser.add_option("-l", "--launcher", dest="launcher", default="",
+                  help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
+                        "local. By default, we test for slurm, then torque, then just use local if " \
+                        "you have neither.")
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
