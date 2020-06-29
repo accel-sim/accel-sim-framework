@@ -101,18 +101,20 @@ class ProcMan:
             # never dies. If ProcMan is launched with just a file (and
             # did not launch the processes itself, we can just use the kill
             # with CONT signal to see if its still alive.
-            if activeJob.POpenObj != None and activeJob.POpenObj.poll() != None:
+            if activeJob.POpenObj != None:
+                activeJob.POpenObj.poll()
+            try:
+                os.kill(activeJob.procId,signal.SIGCONT)
+            except OSError:
                 jobActive = False
-            else:
-                try:
-                    os.kill(activeJob.procId,signal.SIGCONT)
-                except OSError:
-                    jobActive = False
 
             if jobActive:
                 try:
                     p = psutil.Process(activeJob.procId)
-                    activeJob.maxVmSize = max(p.memory_full_info().vms, activeJob.maxVmSize)
+                    mem = p.memory_info().vms
+                    for child in p.children(recursive=True):
+                        mem += child.memory_info().vms
+                    activeJob.maxVmSize = max(mem, activeJob.maxVmSize)
                     activeJob.runningTime = \
                         datetime.datetime.now() \
                             - datetime.datetime.fromtimestamp(p.create_time())
@@ -120,7 +122,7 @@ class ProcMan:
                 except (psutil.NoSuchProcess,psutil.AccessDenied) as e:
                     print e
             else:
-                activeJob.status = "COMPLETE"
+                activeJob.status = "COMPLETE_NO_OTHER_INFO"
                 self.completeJobs[activeJob.id] = activeJob
                 jobsMoved.add(activeJob.id)
 
@@ -256,7 +258,6 @@ def main():
         if not os.path.exists(procManStateFile):
              exit("Nothing to print {0} does not exist").format(procManStateFile)
         procMan = pickle.load(open(procManStateFile))
-        procMan.tick()
         print procMan.getState()
     elif options.start:
         if not os.path.exists(procManStateFile):
