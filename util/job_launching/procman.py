@@ -19,9 +19,10 @@ import psutil
 import shutil
 import datetime
 import re
+import socket
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-procManStateFile = os.path.join(this_directory,"procman.pickle")
+procManStateFile = os.path.join(this_directory,"procman.{0}.pickle".format(socket.gethostname().strip()))
 
 class Job:
     def __init__(self, outF, errF, workingDir, command):
@@ -36,6 +37,7 @@ class Job:
         self.status = "WAITING_TO_RUN"
         self.name = None
         self.id = None
+        self.hostname = "UNKNOWN"
 
     def string(self):
         return "status={0}: [name={8},procId={1},maxVmSize={2},runningTime={3},outF={4}," \
@@ -137,6 +139,7 @@ class ProcMan:
                 stderr=open(newJob.errF,"w+"),
                 cwd=newJob.workingDir)
             newJob.procId = newJob.POpenObj.pid
+            newJob.hostname = socket.gethostname().strip()
             newJob.status = "RUNNING"
             self.activeJobs[newJob.id] = newJob
 
@@ -251,17 +254,17 @@ def main():
         print procManStateFile
     elif options.kill:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist").format(procManStateFile)
+             exit("Nothing to print {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         procMan.killJobs()
     elif options.printState:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist").format(procManStateFile)
+             exit("Nothing to print {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         print procMan.getState()
     elif options.start:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to start {0} does not exist").format(procManStateFile)
+             exit("Nothing to start {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         procMan.spawnProcMan(procManStateFile, 10)
     elif len(args) == 1:
