@@ -17,6 +17,7 @@ pipeline {
         stage('build-tracer'){
             steps{
                 sh '''#!/bin/bash
+                source ./env-setup/10.1_env_setup.sh
                 ./util/tracer_nvbit/install_nvbit.sh
                 make clean -C ./util/tracer_nvbit/
                 make -C ./util/tracer_nvbit/'''
