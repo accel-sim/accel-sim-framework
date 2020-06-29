@@ -33,8 +33,8 @@ pipeline {
                 make -C ./gpu-app-collection/src rodinia_2.0-ft'''
             }
         }
-#        stage('generate-rodinia_2.0-ft-traces'){
-#        }
+//        stage('generate-rodinia_2.0-ft-traces'){
+//        }
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash
