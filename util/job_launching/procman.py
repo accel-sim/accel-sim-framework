@@ -33,7 +33,7 @@ class Job:
         self.POpenObj = None
         self.maxVmSize = 0
         self.runningTime = 0
-        self.status = "NOT_STARTED"
+        self.status = "WAITING_TO_RUN"
         self.name = None
         self.id = None
 
@@ -63,8 +63,8 @@ class ProcMan:
 
     def initialize(self, jobLimit):
         self.queuedJobs = []
-        self.activeJobs = []
-        self.completeJobs = []
+        self.activeJobs = {}
+        self.completeJobs = {}
         self.spawned = False
         self.jobLimit = jobLimit
         self.nextJobId = 1
@@ -89,13 +89,13 @@ class ProcMan:
 
     def killJobs(self):
         del self.queuedJobs[:]
-        for activeJob in self.activeJobs:
+        for jid, activeJob in self.activeJobs.iteritems():
             os.kill(activeJob.procId,9)
 
     def tick(self):
-        idx = 0
         # test jobs for completion
-        for activeJob in self.activeJobs:
+        jobsMoved = set()
+        for jid, activeJob in self.activeJobs.iteritems():
             jobActive = True
             # for an active session, need to poll or else the thing
             # never dies. If ProcMan is launched with just a file (and
@@ -112,7 +112,7 @@ class ProcMan:
             if jobActive:
                 try:
                     p = psutil.Process(activeJob.procId)
-                    activeJob.maxVmSize = max(p.memory_info().vms, activeJob.maxVmSize)
+                    activeJob.maxVmSize = max(p.memory_full_info().vms, activeJob.maxVmSize)
                     activeJob.runningTime = \
                         datetime.datetime.now() \
                             - datetime.datetime.fromtimestamp(p.create_time())
@@ -121,9 +121,11 @@ class ProcMan:
                     print e
             else:
                 activeJob.status = "COMPLETE"
-                self.completeJobs.append(activeJob)
-                del self.activeJobs[idx]
-            idx += 1
+                self.completeJobs[activeJob.id] = activeJob
+                jobsMoved.add(activeJob.id)
+
+        for jobId in jobsMoved:
+            del self.activeJobs[jobId]
 
         # launch new jobs when old ones complete
         while len(self.activeJobs) < self.jobLimit and len(self.queuedJobs) > 0:
@@ -134,7 +136,7 @@ class ProcMan:
                 cwd=newJob.workingDir)
             newJob.procId = newJob.POpenObj.pid
             newJob.status = "RUNNING"
-            self.activeJobs.append(newJob)
+            self.activeJobs[newJob.id] = newJob
 
     def getState(self):
         string = "queuedJobs={0}, activeJobs={1}, completeJobs={2}\n"\
@@ -144,13 +146,24 @@ class ProcMan:
             string += "\t{0}\n".format(job)
 
         string += "\nactiveJobs:\n"
-        for job in self.activeJobs:
+        for jid,job in self.activeJobs.iteritems():
             string += "\t{0}\n".format(job)
 
         string += "\ncompleteJobs:\n"
-        for job in self.completeJobs:
+        for jid,job in self.completeJobs.iteritems():
             string += "\t{0}\n".format(job)
         return string
+
+    def getJob(self, jobId):
+        if jobId in self.activeJobs:
+            return self.activeJobs[jobId]
+        elif jobId in self.completeJobs:
+            return self.completeJobs[jobId]
+        else:
+            for job in self.queuedJobs:
+                if jobId == job.id:
+                    return job
+        return None
 
     def complete(self):
         return len(self.queuedJobs) == 0 and len(self.activeJobs) == 0
@@ -224,10 +237,16 @@ def main():
                   help="Print the state of the manager")
     parser.add_option("-k", "--kill", dest="kill",action="store_true",
                   help="Kill all managed processes")
+    parser.add_option("-P", "--pickleFileQuerry", dest="pickleFileQuerry",action="store_true",
+                  help="Return the path of the pickle file storing the persistent state. " \
+                       "This is useful if you want to create a copy of the ProcMan to look around " \
+                       "in another process" )
     (options, args) = parser.parse_args()
 
     if options.selfTest:
         selfTest()
+    elif options.pickleFileQuerry:
+        print procManStateFile
     elif options.kill:
         if not os.path.exists(procManStateFile):
              exit("Nothing to print {0} does not exist").format(procManStateFile)
