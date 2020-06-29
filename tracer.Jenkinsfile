@@ -30,6 +30,7 @@ pipeline {
                 rm -rf ./gpu-app-collection/
                 git clone git@github.com:accel-sim/gpu-app-collection.git
                 source ./gpu-app-collection/src/setup_environment
+                ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
                 make -C ./gpu-app-collection/src rodinia_2.0-ft'''
             }
         }
