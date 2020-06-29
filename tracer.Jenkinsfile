@@ -35,7 +35,7 @@ pipeline {
         }
         stage('generate-rodinia_2.0-ft-traces'){
             steps{
-                '''#!/bin/bash
+                sh '''#!/bin/bash
                 source ./env-setup/10.1_env_setup.sh
                 rm -rf ./run_hw/
                 ./run_hw_trace.py -B rodinia_2.0-ft -D 7
