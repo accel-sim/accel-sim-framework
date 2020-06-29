@@ -23,6 +23,35 @@ pipeline {
                 make -C ./util/tracer_nvbit/'''
             }
         }
+        stage('rodinia_2.0-ft-build'){
+            steps{
+                sh '''#!/bin/bash
+                source ./env-setup/10.1_env_setup.sh
+                rm -rf ./gpu-app-collection/
+                git clone git@github.com:accel-sim/gpu-app-collection.git
+                source ./gpu-app-collection/src/setup_environment
+                make -C ./gpu-app-collection/src rodinia_2.0-ft'''
+            }
+        }
+#        stage('generate-rodinia_2.0-ft-traces'){
+#        }
+        stage('accel-sim-build'){
+            steps{
+                sh '''#!/bin/bash
+                source ./env-setup/10.1_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                make -j -C gpu-simulator'''
+            }
+        }
+        stage('test-new-traces'){
+            steps{
+                sh '''#!/bin/bash
+                source ./env-setup/10.1_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100 -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$'''
+            }
+        }
     }
     post {
         success {
