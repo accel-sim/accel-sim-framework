@@ -148,7 +148,7 @@ while True:
         .format(num_passed, total, num_no_err, num_error, num_running, num_waiting)
     if num_error > 0:
         print "Contents {0}:".format(failed_job_file)
-        if options.verbose:
+        if options.verbose and os.path.exists(failed_job_file):
             print open(failed_job_file).read()
 
     if num_running + num_waiting == 0:
