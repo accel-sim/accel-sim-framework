@@ -256,6 +256,7 @@ def main():
         if not os.path.exists(procManStateFile):
              exit("Nothing to print {0} does not exist").format(procManStateFile)
         procMan = pickle.load(open(procManStateFile))
+        procMan.tick()
         print procMan.getState()
     elif options.start:
         if not os.path.exists(procManStateFile):
