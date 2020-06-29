@@ -11,7 +11,6 @@ import math
 import json
 from procman import ProcMan, Job
 import pickle
-import socket
 
 def get_procman_status( jobId ):
     job_status = { "state" : "WAITING_TO_RUN",
@@ -24,7 +23,7 @@ def get_procman_status( jobId ):
     job = procMan.getJob(int(jobId))
     if job != None:
         job_status[ "state" ] = job.status
-        job_status[ "exec_host" ] = socket.gethostname().strip()
+        job_status[ "exec_host" ] = job.hostname
         job_status[ "running_time" ] = job.runningTime
         job_status[ "mem_used" ] = str(job.maxVmSize)
     return job_status

@@ -73,7 +73,6 @@ class ConfigurationSpec:
                     torque_out_file = open(torque_out_filename, 'w+')
                     saved_dir = os.getcwd()
                     os.chdir(this_run_dir)
-                    print job_submit_call
                     if subprocess.call([job_submit_call,\
                                        os.path.join(this_run_dir , job_template)],\
                                        stdout=torque_out_file) < 0:

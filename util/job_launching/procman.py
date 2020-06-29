@@ -19,6 +19,7 @@ import psutil
 import shutil
 import datetime
 import re
+import socket
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 procManStateFile = os.path.join(this_directory,"procman.pickle")
@@ -36,6 +37,7 @@ class Job:
         self.status = "WAITING_TO_RUN"
         self.name = None
         self.id = None
+        self.hostname = "UNKNOWN"
 
     def string(self):
         return "status={0}: [name={8},procId={1},maxVmSize={2},runningTime={3},outF={4}," \
@@ -137,6 +139,7 @@ class ProcMan:
                 stderr=open(newJob.errF,"w+"),
                 cwd=newJob.workingDir)
             newJob.procId = newJob.POpenObj.pid
+            newJob.hostname = socket.gethostname().strip()
             newJob.status = "RUNNING"
             self.activeJobs[newJob.id] = newJob
 
