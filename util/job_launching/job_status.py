@@ -277,7 +277,7 @@ for logfile in parsed_logfiles:
     # Parse the logfile for job ids
     errs = ""
     with open( logfile ) as f:
-        header = ROW_STRING.format( jobId="TorqueJob",exec_node="Node",app="App",args="AppArgs",
+        header = ROW_STRING.format( jobId="{0}.id".format(job_manager),exec_node="Node",app="App",args="AppArgs",
                 version="Version",config="Config",
                 status="JobStatus", stat="Basic GPGPU-Sim Stats", running_time="RunningTime",
                 mem_used="Mem")
