@@ -52,7 +52,7 @@ for bench in benchmarks:
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
         this_run_dir = os.path.abspath(os.path.expandvars(
-            os.path.join("..", "..", "run_hw","traces","device-" + options.device_num, cuda_version, run_name)))
+            os.path.join(this_directory, "..", "..", "run_hw","traces","device-" + options.device_num, cuda_version, run_name)))
         this_trace_folder = os.path.join(this_run_dir, "traces")
         if not os.path.exists(this_run_dir):
             os.makedirs(this_run_dir)
