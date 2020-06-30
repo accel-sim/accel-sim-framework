@@ -20,6 +20,7 @@ import shutil
 import datetime
 import re
 import socket
+import sys
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 procManStateFile = os.path.join(this_directory,"procman.{0}.pickle".format(socket.gethostname().strip()))
@@ -52,7 +53,7 @@ class Job:
                     self.command,
                     self.name)
 
-    def __str___(self):
+    def __str__(self):
         return self.string()
 
     def __repr__(self):
@@ -67,34 +68,44 @@ class ProcMan:
         self.queuedJobs = []
         self.activeJobs = {}
         self.completeJobs = {}
-        self.spawned = False
         self.jobLimit = jobLimit
         self.nextJobId = 1
+        self.tickingProcess = None
+        self.mutable = True
 
     def queueJob(self, job):
+        if not self.mutable:
+            sys.exit("This ProcMan has already been started. No new jobs can be queued.")
         job.id = self.nextJobId
         self.queuedJobs.append(job)
         self.nextJobId += 1
         return job.id
 
-    def spawnProcMan(self, outFile, sleepTime):
-        if self.spawned:
-            exit("Error - can only spawn the procman once")
-        else:
-            with open(outFile, "w+") as f:
-                pickle.dump(self,f)
-            p = Popen([__file__,"-f", outFile, "-t", str(sleepTime)],
-                cwd=this_directory
-            )
-            print "ProcMan spawned [pid={0}]".format(p.pid)
-            self.spawned = True
+    def spawnProcMan(self, pickleFile, sleepTime):
+        if not self.mutable:
+            sys.exit("This ProcMan has already been started. No new spawning can occur.")
+        p = Popen([__file__,"-f", pickleFile, "-t", str(sleepTime)],
+            cwd=this_directory
+        )
+        print "ProcMan spawned [pid={0}]".format(p.pid)
 
     def killJobs(self):
-        del self.queuedJobs[:]
+        print "Killing {0} jobs".format(len(self.activeJobs))
         for jid, activeJob in self.activeJobs.iteritems():
-            os.kill(activeJob.procId,9)
+            try:
+                p = psutil.Process(activeJob.procId)
+            except (psutil.NoSuchProcess,psutil.AccessDenied) as e:
+               print e
+               continue
+            for child in p.children(recursive=True):
+                os.kill(child.pid,9)
+        os.kill(activeJob.procId,9)
 
     def tick(self):
+        if self.tickingProcess != None and self.tickingProcess != os.getpid():
+            sys.exit("To support concurrent ProcMans in different processes, each procman can only be ticked by one process")
+        self.tickingProcess = os.getpid()
+        self.mutable = False
         # test jobs for completion
         jobsMoved = set()
         for jid, activeJob in self.activeJobs.iteritems():
@@ -177,7 +188,6 @@ def selfTest():
     testPath = os.path.join(this_directory, "test")
     if not os.path.isdir(testPath):
         os.makedirs(testPath)
-    testOutFile = os.path.join(testPath, "procman.pickle")
 
     jobScript = os.path.join(testPath, "testScript.sh")
     open(jobScript,"w+").write("#!/bin/bash\nsleep 20s")
@@ -204,23 +214,36 @@ def selfTest():
     print "Passed synchronous selfTest"
 
     print "Starting asynchronous selfTest"
-    procMan = ProcMan(4)
     for i in range(5):
-        procMan.queueJob(
-            Job(
-                outF=os.path.join(testPath, "out.{0}.txt".format(i)),
-                errF=os.path.join(testPath, "err.{0}.txt".format(i)),
-                workingDir=testPath,
-                command=jobScript
-                )
-        )
-    procMan.spawnProcMan(testOutFile, 3)
+        jobScript = os.path.join(testPath, "testSlurm.{0}.sh".format(i))
+        open(jobScript,"w+").write("#!/bin/bash\n"\
+                                   "#SBATCH -J test.{0}\n".format(i) +\
+                                   "#SBATCH --output={0}\n".format(os.path.join(testPath, "out.{0}.txt".format(i))) +\
+                                   "#SBATCH --error={0}\n".format(os.path.join(testPath, "out.{0}.txt".format(i))) +\
+                                   "sleep 20s")
+        st = os.stat(jobScript)
+        os.chmod(jobScript, st.st_mode | stat.S_IEXEC)
+        out, err = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
+                                        jobScript], stdout=PIPE).communicate()
+        print "Launched Job {0}".format(out)
 
-    while not procMan.complete():
-        procMan = pickle.load(open(testOutFile))
-        print procMan.getState()
+    out, errt = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
+                                        "-S"], stdout=PIPE).communicate()
+    print out
+    err += errt
+
+    procmanfiles = glob.glob(os.path.join(testPath, "procMan.*.pickle.*"))
+    out = ""
+    while out != "Nothing Active":
         time.sleep(3)
-    print "Passed asynchronous selfTest"
+        out, errt = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
+                                        "-p"], stdout=PIPE).communicate()
+        print out
+        err += errt
+    if len(err) == 0:
+        print "Passed asynchronous selfTest"
+    else:
+        print "Asynchrnous seftTest failed. Errors:\n\n{0}".format(err)
     shutil.rmtree(testPath)
 
 
@@ -242,36 +265,41 @@ def main():
                   help="Print the state of the manager")
     parser.add_option("-k", "--kill", dest="kill",action="store_true",
                   help="Kill all managed processes")
-    parser.add_option("-P", "--pickleFileQuerry", dest="pickleFileQuerry",action="store_true",
-                  help="Return the path of the pickle file storing the persistent state. " \
-                       "This is useful if you want to create a copy of the ProcMan to look around " \
-                       "in another process" )
+#    parser.add_option("-P", "--pickleFileQuerry", dest="pickleFileQuerry",action="store_true",
+#                  help="Return the path of the pickle file storing the persistent state. " \
+#                       "This is useful if you want to create a copy of the ProcMan to look around " \
+#                       "in another process" )
     (options, args) = parser.parse_args()
 
     if options.selfTest:
         selfTest()
-    elif options.pickleFileQuerry:
-        print procManStateFile
     elif options.kill:
-        if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist".format(procManStateFile))
-        procMan = pickle.load(open(procManStateFile))
-        procMan.killJobs()
+        procmanfiles = glob.glob(procManStateFile + ".*")
+        for f in procmanfiles:
+            print "Killing active jobs in Procman: {0}".format(os.path.filename(f))
+            procMan = pickle.load(open(f))
+            procMan.killJobs()
     elif options.printState:
-        if not os.path.exists(procManStateFile):
-             exit("Nothing to print {0} does not exist".format(procManStateFile))
-        procMan = pickle.load(open(procManStateFile))
-        print procMan.getState()
+        procmanfiles = glob.glob(procManStateFile + ".*")
+        if len(procmanfiles) == 0:
+            print "Nothing Active"
+        for f in procmanfiles:
+            procMan = pickle.load(open(f))
+            print "Procman: {0}".format(os.path.filename(f))
+            print procMan.getState()
     elif options.start:
         if not os.path.exists(procManStateFile):
-             exit("Nothing to start {0} does not exist".format(procManStateFile))
+             sys.exit("Nothing to start {0} does not exist".format(procManStateFile))
         procMan = pickle.load(open(procManStateFile))
         procMan.spawnProcMan(procManStateFile, 10)
+        os.rm(procManStateFile)
     elif len(args) == 1:
         # To make this work the same as torque and slurm - if you just give it one argument,
         # we assume it's a pointer to a job file you want to submit.
         if os.path.exists(procManStateFile):
             procMan = pickle.load(open(procManStateFile))
+            if not procMan.mutable:
+                sys.exit("Error - this procman has already started")
         else:
             procMan = ProcMan(options.cores)
         exec_file = args[0]
@@ -305,12 +333,15 @@ def main():
     else:
         options.file = common.file_option_test( options.file, "", this_directory )
         if options.file == "":
-            exit("Please specify the file containing the processes to manage with -f.")
+            sys.exit("Please specify the file containing the processes to manage with -f.")
         procMan = pickle.load(open(options.file))
+        if procMan.tickingProcess!= None:
+            sys.exit("This procman is already running {0}".format(os.path.filename(options.file)))
         while not procMan.complete():
             procMan.tick()
-            pickle.dump(procMan, open(options.file, "w+"))
+            pickle.dump(procMan, open(options.file + ".{0}".format(procMan.tickingProcess), "w+"))
             time.sleep(options.sleepTime)
+        shutil.rm(options.file + ".{0}".format(procMan.tickingProcess))
 
 if __name__ == '__main__':
     main()
