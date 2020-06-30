@@ -99,7 +99,7 @@ options.sim_name = options.sim_name.strip()
 options.timeout = float(options.timeout) * 60 * 60
 
 jobstatus_out_filename = os.path.join(this_directory, "job_status_out-{0}.txt".format(os.getpid()))
-failed_job_file = None
+failed_job_file = ""
 
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
