@@ -1,3 +1,4 @@
 logfiles
 *.csv
 *.pickle*
+procman/
