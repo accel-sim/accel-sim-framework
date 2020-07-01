@@ -25,7 +25,8 @@ import glob
 import copy
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
-procManStateFile = os.path.join(this_directory,"procman.{0}.pickle".format(socket.gethostname().strip()))
+procManStateFolder = os.path.join(this_directory, "procman")
+procManStateFile = os.path.join(procManStateFolder, "procman.{0}.pickle".format(socket.gethostname().strip()))
 
 class Job:
     def __init__(self, outF, errF, workingDir, command):
@@ -405,4 +406,6 @@ def main():
             os.remove(procMan.pickleFile)
 
 if __name__ == '__main__':
+    if not os.path.exists(procManStateFolder):
+        os.makedirs(procManStateFolder)
     main()
