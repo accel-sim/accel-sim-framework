@@ -161,8 +161,10 @@ class ProcMan:
         for jobId in jobsMoved:
             del self.activeJobs[jobId]
 
+        othersCores = self.getCPUCountFromOtherProcMans()
+
         # launch new jobs when old ones complete
-        while len(self.activeJobs) < self.jobLimit and len(self.queuedJobs) > 0:
+        while (len(self.activeJobs) + othersCores) < self.jobLimit and len(self.queuedJobs) > 0:
             newJob = self.queuedJobs.pop(0)
             newJob.POpenObj = Popen(newJob.command,
                 stdout=open(newJob.outF,"w+"),
@@ -172,6 +174,14 @@ class ProcMan:
             newJob.hostname = socket.gethostname().strip()
             newJob.status = "RUNNING"
             self.activeJobs[newJob.id] = newJob
+
+    def getCPUCountFromOtherProcMans(self):
+        othersCores = 0
+        for pickleFile in glob.glob(os.path.join(os.path.dirname(self.pickleFile),"*pickle*")):
+            if pickleFile != self.pickleFile:
+                otherProcMan = pickle.load(open(pickleFile))
+                othersCores += len(otherProcMan.activeJobs)
+        return othersCores
 
     def getState(self):
         string = "queuedJobs={0}, activeJobs={1}, completeJobs={2}\n"\
@@ -233,7 +243,7 @@ def selfTest():
     print "Passed synchronous selfTest"
 
     print "Starting asynchronous selfTest"
-    for i in range(50):
+    for i in range(int(psutil.cpu_count()*1.2)):
         jobScript = os.path.join(testPath, "testSlurm.{0}.sh".format(i))
         open(jobScript,"w+").write("#!/bin/bash\n"\
                                    "#SBATCH -J test.{0}\n".format(i) +\
@@ -264,7 +274,7 @@ def selfTest():
 
 
     print "Starting multi ProcMan test"
-    JOBS_PER_PROCMAN = 10
+    JOBS_PER_PROCMAN = int(psutil.cpu_count()*1.2) / 4
     for j in range(4):
         for i in range(JOBS_PER_PROCMAN):
             jobNum = j*JOBS_PER_PROCMAN + i
@@ -330,13 +340,24 @@ def main():
             procMan = pickle.load(open(f))
             procMan.killJobs()
     elif options.printState:
+        numProcMans = 0
+        numQueued = 0
+        numActive = 0
+        numComplete = 0
         procmanfiles = glob.glob(options.file + ".*")
         if len(procmanfiles) == 0:
             print "Nothing Active"
-        for f in procmanfiles:
-            procMan = pickle.load(open(f))
-            print "Procman: {0}".format(os.path.basename(f))
-            print procMan.getState()
+        else:
+            for f in procmanfiles:
+                numProcMans += 1
+                procMan = pickle.load(open(f))
+                numQueued += len(procMan.queuedJobs)
+                numActive += len(procMan.activeJobs)
+                numComplete += len(procMan.completeJobs)
+                print "Procman: {0}".format(os.path.basename(f))
+                print procMan.getState()
+            print "Total Procmans={0}, Total Queued={1}, Total Running={2}, Total Complete={3}"\
+                .format(numProcMans, numQueued, numActive, numComplete)
     elif options.start:
         if not os.path.exists(options.file):
              sys.exit("Nothing to start {0} does not exist".format(options.file))
