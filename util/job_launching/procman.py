@@ -22,6 +22,7 @@ import re
 import socket
 import sys
 import glob
+import copy
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 procManStateFile = os.path.join(this_directory,"procman.{0}.pickle".format(socket.gethostname().strip()))
@@ -71,6 +72,11 @@ class ProcMan:
     def saveState(self):
         pickle.dump(self, open(self.pickleFile, "w+"))
 
+    def clear(self):
+        if not self.mutable or len(self.activeJobs) > 0 or len(self.completeJobs) > 0:
+            sys.exit("ProcMans that have been started should not be cleared")
+        del self.queuedJobs [:]
+
     def initialize(self, jobLimit, pickleFile):
         self.queuedJobs = []
         self.activeJobs = {}
@@ -89,11 +95,11 @@ class ProcMan:
         self.nextJobId += 1
         return job.id
 
-    def spawnProcMan(self, pickleFile, sleepTime):
+    def spawnProcMan(self, sleepTime):
         if not self.mutable:
             sys.exit("This ProcMan has already been started. No new spawning can occur.")
-        shutil.copy(pickleFile, pickleFile + ".tmp")
-        p = Popen([__file__,"-f", pickleFile + ".tmp", "-t", str(sleepTime)],
+        shutil.copy(self.pickleFile, self.pickleFile + ".tmp")
+        p = Popen([__file__,"-f", self.pickleFile + ".tmp", "-t", str(sleepTime)],
             cwd=this_directory
         )
         print "ProcMan spawned [pid={0}]".format(p.pid)
@@ -310,7 +316,7 @@ def main():
                   help="Print the state of the manager")
     parser.add_option("-k", "--kill", dest="kill",action="store_true",
                   help="Kill all managed processes")
-    parser.add_option("-j", "--procManForJob", dest="procManForJob",default=None,
+    parser.add_option("-j", "--procManForJob", dest="procManForJob",default=None, type=int,
                   help="Return the path of the pickle file for the ProcMan managing this job." )
     (options, args) = parser.parse_args()
 
@@ -334,14 +340,17 @@ def main():
         if not os.path.exists(options.file):
              sys.exit("Nothing to start {0} does not exist".format(options.file))
         procMan = pickle.load(open(options.file))
-        procMan.spawnProcMan(options.file, options.sleepTime)
-        os.remove(options.file)
+        procMan.spawnProcMan(options.sleepTime)
+        procMan.clear()
+        procMan.saveState()
     elif options.procManForJob != None:
         procmanfiles = glob.glob(options.file + ".*")
         for f in procmanfiles:
+            procMan = pickle.load(open(f))
             j = procMan.getJob(options.procManForJob)
             if j != None:
-                print procManForJob.pickleFile
+                print procMan.pickleFile
+                break
     elif len(args) == 1:
         # To make this work the same as torque and slurm - if you just give it one argument,
         # we assume it's a pointer to a job file you want to submit.
@@ -384,15 +393,16 @@ def main():
         if options.file == "":
             sys.exit("Please specify the file containing the processes to manage with -f.")
         procMan = pickle.load(open(options.file))
-        procMan.pickleFile = options.file
-        os.remove(options.file)
         if procMan.tickingProcess!= None:
             sys.exit("This procman is already running {0}".format(os.path.basename(options.file)))
-        while not procMan.complete():
-            procMan.tick()
-            procMan.saveState()
-            time.sleep(options.sleepTime)
-        os.remove(procMan.pickleFile)
+        procMan.pickleFile = options.file
+        os.remove(options.file)
+        if len(procMan.queuedJobs) > 0:
+            while not procMan.complete():
+                procMan.tick()
+                procMan.saveState()
+                time.sleep(options.sleepTime)
+            os.remove(procMan.pickleFile)
 
 if __name__ == '__main__':
     main()

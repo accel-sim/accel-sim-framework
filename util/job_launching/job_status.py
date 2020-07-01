@@ -12,20 +12,28 @@ import json
 from procman import ProcMan, Job
 import pickle
 
-def get_procman_status( jobId ):
-    job_status = { "state" : "WAITING_TO_RUN",
+def get_procman_status( jobId, node_details ):
+    job_status = { "state" : "UNKNOWN",
                    "exec_host" : "UNKNOWN",
                    "running_time": "UNKNOWN",
                    "mem_used" : "UNKNOWN" }
 
-    out,err = subprocess.Popen([os.path.join(this_directory, "procman.py"), "-P"],stdout=PIPE).communicate()
-    procMan = pickle.load(open(out.strip()))
-    job = procMan.getJob(int(jobId))
-    if job != None:
-        job_status[ "state" ] = job.status
-        job_status[ "exec_host" ] = job.hostname
-        job_status[ "running_time" ] = job.runningTime
-        job_status[ "mem_used" ] = str(job.maxVmSize)
+    out,err = subprocess.Popen([os.path.join(this_directory, "procman.py"), "-j", jobId],stdout=PIPE).communicate()
+    if out != None:
+        try:
+            procMan = pickle.load(open(out.strip()))
+        except Exception as e:
+            return job_status
+        job = procMan.getJob(int(jobId))
+        if job != None:
+            job_status[ "state" ] = job.status
+            job_status[ "exec_host" ] = job.hostname
+            job_status[ "running_time" ] = job.runningTime
+            job_status[ "mem_used" ] = str(job.maxVmSize)
+            node_details[jobId] = (job_status[ "exec_host" ],job_status[ "mem_used" ],job_status[ "running_time" ])
+
+    if jobId in node_details:
+        job_status[ "exec_host" ],job_status[ "mem_used" ],job_status[ "running_time" ] = node_details[jobId]
     return job_status
 
 def get_qstat_status( jobId ):
@@ -319,7 +327,7 @@ for logfile in parsed_logfiles:
             elif job_manager == "qstat":
                 job_status = get_qstat_status( jobId )
             else:
-                job_status = get_procman_status( jobId )
+                job_status = get_procman_status( jobId, node_details )
 
             if ( job_status[ "state" ] == "WAITING_TO_RUN" or job_status[ "state" ] == "RUNNING" ):
                 files_to_check = []
