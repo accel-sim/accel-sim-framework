@@ -1,11 +1,74 @@
 #!/usr/bin/env python
 
 # 2020 (c) Tim Rogers, Purdue University
-# A simple process manager that allow you to queue up tasks and launch them
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+# Redistributions of source code must retain the above copyright notice, this
+# list of conditions and the following disclaimer.
+# Redistributions in binary form must reproduce the above copyright notice,
+# this list of conditions and the following disclaimer in the documentation
+# and/or other materials provided with the distribution. Neither the name of
+# The University of British Columbia nor the names of its contributors may be
+# used to endorse or promote products derived from this software without
+# specific prior written permission.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+# This file implements ProcMan:
+# A simple process manager that allows you to queue up tasks and launch them
 # once the previous tasks are done. This is useful if you want to launch
 # a few hundred tests, but only have 40 cores, you can queue them all up
 # using the ProcMan, then let it continuously run 40 at a time.
 # This is essentially a poor-man's torque, slurm, condor, etc for a single node.
+
+# As the goal of proc-man is a dependency-free single-node version of slurm/torque
+# it is used in a similar way. Replace:
+#   sbatch <file decribing task>
+#   qsub <file describing task>
+# with
+#   ./procmany.py <file describing task>
+# After all the processes you want are submitted, start the procman using:
+#   ./procman.py -S
+# This will create a new process that launchs and manages all the tasks you previously queued
+# To avoid inter-process synchronization issues, procman operates using a
+# producer/consumer model and once a procman has been started, new work cannot
+# be added to that procman. However, more than one procman can run at once. That is,
+# you can call:
+# ./procman.py mybashA.sh
+# ...
+# ./procman.py mybashZ.sh
+# ./procman.py -S
+# ./procman.py mybash1.sh
+# ...
+# ./procman.py mybash26.sh
+# ./procman.py -S
+# And it will work, launching 2 procmans that loosely co-ordinate resource usage.
+# By default procman will attempt to launch as many jobs as there are cores on the machine
+# this can be changes with the "-c <numCores>" option.
+#
+#   Some other useful commands:
+#   ./procman.py -s # launches a self-test to confirm that procman is working (takes 1-2 mins)
+#   ./procman.py -p # prints the state of all procmans and their jobs
+#   ./procman.py -k # kill all the jobs procman is running
+#   ./procman.py --help # prints all the options available
+#
+# NOTE: procman only works when jobs are submitted from one process. i.e.
+#   the user cannot spawn 2 processes and have each process concurrently
+#   attempt to enque work. Supporting such a system adds more complication
+#   and is not a common case. Also procman is designed for managing one user's
+#   processes and knows nothing about what other users are doing on the machine.
+
+
 
 from optparse import OptionParser
 import pickle
