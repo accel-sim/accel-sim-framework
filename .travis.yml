@@ -15,4 +15,4 @@ matrix:
             - DOCKER_IMAGE=accelsim/ubuntu-18.04_cuda-11:latest
 
 script:
-    - docker run -v `pwd`:/accel-sim:rw "$DOCKER_IMAGE" /bin/bash travis.sh
+    - docker run -v `pwd`:/accel-sim:rw $DOCKER_IMAGE /bin/bash travis.sh
