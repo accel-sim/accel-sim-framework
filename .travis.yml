@@ -13,4 +13,4 @@ matrix:
         - CUDA_INSTALL_PATH=/usr/local/cuda-11.0
 
 script:
-    - docker run -env CUDA_INSTALL_PATH=$CUDA_INSTALL_PATH -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash travis.sh
+    - docker run --env CUDA_INSTALL_PATH=$CUDA_INSTALL_PATH -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash travis.sh
