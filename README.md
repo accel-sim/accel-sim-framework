@@ -4,9 +4,11 @@ The [ISCA 2020 paper](https://conferences.computer.org/isca/pdfs/ISCA2020-4QlDeg
 describes the goals of Accel-Sim and introduces the tool. This readme is meant to provide tutorial-like details on how to use the Accel-Sim
 framework. If you use any component of Accel-Sim, please cite:
 
+```
 Mahmoud Khairy, Zhensheng Shen, Tor M. Aamodt, Timothy G. Rogers,
 Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
 in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
+```
 
 ## Dependencies
 
@@ -14,7 +16,8 @@ This package is meant to be run on a modern linux distro.
 A docker image that works with this repo can be found [here](https://hub.docker.com/repository/docker/accelsim/ubuntu-18.04_cuda-11).
 There is nothing special here, just Ubuntu 18.04 with the following commands
 run:
-```
+
+```bash
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools python-dev build-essential python-pip
@@ -31,10 +34,8 @@ Note, that all the python scripts have more detailed options explanations when r
 
 The code for the Accel-Sim framework is in this repo. Accel-Sim 1.0 uses the
 GPGPU-Sim 4.0 performance model, which was released as part of the original
-Accel-Sim paper.
-
-[Framework](https://github.com/accel-sim/accel-sim-framework)
-[GPGPU-Sim 4.0](https://github.com/accel-sim/gpgpu-sim-4.x-prerelease)
+Accel-Sim paper. Building the trace-based Accel-Sim will pull the right version of
+GPGPU-Sim 4.0 to use Accel-Sim.
 
 There is an additional repo where we have collected a set of common GPU applications and a common infrastructure for building
 them with different versions of CUDA. If you use/extend this app framework, it makes Accel-Sim easily usable
@@ -50,7 +51,8 @@ the apps in from this collection as well as just on your own, with your own apps
 1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications.
 Code for the tool lives in ./util/tracer\_nvbit/.
 To make the tool:
-```
+
+```bash
 export CUDA_INSTALL_PATH=<your_cuda>
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH
 ./util/tracer_nvbit/install_nvbit.sh
@@ -60,7 +62,8 @@ make -C ./util/tracer_nvbit/
 *A simple example*
 The following example demonstrates how to trace the simple rodinia functional tests
 that get run in our travis regressions:
-```
+
+```bash
 # Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc
 
 # Get the applications, their data files and build them:
@@ -74,7 +77,7 @@ make -C ./gpu-app-collection/src data
 ```
 
 That's it. The traces for the short-running rodinia tests will be generated in:
-```
+```bash
 ./run_hw/traces/
 ```
 
@@ -82,7 +85,7 @@ To extend the tracer, use other apps and understand what, exactly is going on,
 read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md)
 
 For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:
-```
+```bash
 ./get-accel-sim-traces.py
 ```
 and follow the instructions.
