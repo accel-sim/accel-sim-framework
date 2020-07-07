@@ -3,12 +3,12 @@
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here] (https:a//hub.docker.com/repository/docker/accelsim/ubuntu-18.04_cuda-11).
+A docker image that works with this repo can be found [here](https://hub.docker.com/repository/docker/accelsim/ubuntu-18.04_cuda-11).
 There is nothing special here, just Ubuntu 18.04 with the following commands
 run:
 ```
-apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex
-      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++
+sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
+      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools python-dev build-essential python-pip
   && pip install pyyaml==5.1
   && wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
