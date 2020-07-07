@@ -25,7 +25,28 @@ Note, that all the python scripts have more detailed options explanations when r
 
 ### How do I quickly just run what Travis runs?
 
+Install docker, then simply run:
 
+```
+docker run --env CUDA_INSTALL_PATH=/usr/local/cuda-11.0 -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash travis.sh
+```
+
+If something is dying and you want to debug it - you can always run it in interactive mode:
+
+```
+docker run -it --env CUDA_INSTALL_PATH=/usr/local/cuda-11.0 -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash
+```
+
+Then from within the docker run:
+```
+./travis.sh
+```
+
+You can also play around and do stuff inside the image (even debug the
+simulator) - if you want to do this, installing gdb will help:
+```
+apt-get install gdb
+```
 
 ### Running test generally
 
