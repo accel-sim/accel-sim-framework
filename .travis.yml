@@ -10,9 +10,7 @@ matrix:
   include:
     - services: docker
       env:
-        global:
-            - CUDA_INSTALL_PATH=/usr/local/cuda-11.0
-            - DOCKER_IMAGE=accelsim/ubuntu-18.04_cuda-11:latest
+        - CUDA_INSTALL_PATH=/usr/local/cuda-11.0
 
 script:
-    - docker run -v `pwd`:/accel-sim:rw $DOCKER_IMAGE /bin/bash travis.sh
+    - docker run -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash travis.sh
