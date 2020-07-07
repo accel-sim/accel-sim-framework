@@ -52,12 +52,12 @@ the apps in from this collection as well as just on your own, with your own apps
 Code for the tool lives in ./util/tracer\_nvbit/.  
 To make the tool:  
   
-```bash  
-export CUDA_INSTALL_PATH=<your_cuda>  
-export PATH=$CUDA_INSTALL_PATH/bin:$PATH  
-./util/tracer_nvbit/install_nvbit.sh  
-make -C ./util/tracer_nvbit/  
-```  
+    ```bash  
+    export CUDA_INSTALL_PATH=<your_cuda>  
+    export PATH=$CUDA_INSTALL_PATH/bin:$PATH  
+    ./util/tracer_nvbit/install_nvbit.sh  
+    make -C ./util/tracer_nvbit/  
+    ```  
   
 *A simple example*  
   
