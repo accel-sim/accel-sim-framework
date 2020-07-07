@@ -36,10 +36,7 @@ else
 fi
 
 if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
-#  until GPGPU-Sim is public we will assume you have ssh setup and have permissions
-# once we publicize this we should use https for folks in general who may not use git wih ssh.
-    git clone git@github.com:accel-sim/gpgpu-sim-4.x-prerelease.git $ACCELSIM_ROOT/gpgpu-sim
-#    git clone https://github.com/accel-sim/gpgpu-sim-4.x-prerelease.git  $ACCELSIM_ROOT/gpgpu-sim
+    git clone https://github.com/accel-sim/gpgpu-sim-4.x-prerelease.git  $ACCELSIM_ROOT/gpgpu-sim
 fi
 
 source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
