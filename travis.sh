@@ -17,7 +17,6 @@ tar -xzvf rodinia_2.0-ft.tgz
 rm rodinia_2.0-ft.tgz
 
 #Run the tests on the trace
-pip install psutil
 ./util/job_launching/run_simulations.py -C QV100 -B rodinia_2.0-ft -T ./rodinia_2.0-ft/9.1 -N myTest
 
 # Wait for them to finish
