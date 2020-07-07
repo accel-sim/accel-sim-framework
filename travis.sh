@@ -2,7 +2,7 @@
 
 if [ ! -n "$CUDA_INSTALL_PATH" ]; then
 	echo "ERROR ** Install CUDA Toolkit and set CUDA_INSTALL_PATH.";
-	return;
+	exit;
 fi
 
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH;
