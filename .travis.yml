@@ -12,7 +12,4 @@ matrix:
       env:
         - CUDA_INSTALL_PATH=/usr/local/cuda-11.0
 
-script: docker run -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash -c "export CUDA_INSTALL_PATH=$CUDA_INSTALL_PATH && \
-            export PATH=$CUDA_INSTALL_PATH/bin:$PATH && \
-            source ./gpu-simulator/setup_environment.sh && \
-            make -C ./gpu-simulator "
+script: docker run -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash -c "export CUDA_INSTALL_PATH=$CUDA_INSTALL_PATH && export PATH=$CUDA_INSTALL_PATH/bin:$PATH && source ./gpu-simulator/setup_environment.sh && make -C ./gpu-simulator"
