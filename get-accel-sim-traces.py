@@ -117,7 +117,9 @@ def main():
     
     selectionValid = False
     while not selectionValid:
-        selection = raw_input("What do you want to download? <card/suite>,<card/suite> (i.e. tesla-v100/rodinia-3.1,tesla-v100/cudasdk or all/all) : ")
+        selection = raw_input("\n-------\nWhat do you want to download?"\
+            "\n<card/suite>,<card/suite> (i.e. tesla-v100/rodinia-3.1,tesla-v100/cudasdk)"\
+            "\n(Default=all/all) : ")
         if selection == "" or selection == None:
             selection = "all/all"
         try:
@@ -144,7 +146,8 @@ def main():
             selectionValid = False
             print "Invalid Input: {0}".format(e)
     
-    print "\n\nDownload successful. Files must be uncompressed with tar -xzvf <filename> to be usable by accel-sim"
+    print "\n\nDownload successful to {0}.\nFiles must be uncompressed with tar -xzvf <filename> to be usable by accel-sim"\
+        .format(hw_run_dir)
 
 if __name__ == '__main__':
     main()
