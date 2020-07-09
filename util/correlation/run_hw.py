@@ -63,7 +63,7 @@ for bench in benchmarks:
     for args in argslist:
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
-        this_run_dir = os.path.join(this_directory, "..", "..", "run_hw", "device-" + options.device_num, cuda_version, run_name)
+        this_run_dir = os.path.join(this_directory, "..", "..", "hw_run", "device-" + options.device_num, cuda_version, run_name)
         if not os.path.exists(this_run_dir):
             os.makedirs(this_run_dir)
 
