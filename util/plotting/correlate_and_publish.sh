@@ -5,8 +5,8 @@ EXTERNAL_PUBLISH_LOCATION="/home/dynamo/a/tgrogers/website/gpgpu-sim-plots/"
 EXTERNAL_SERVER="tgrogers@dynamo.ecn.purdue.edu"
 
 
-$CORREL_THIS_DIR/../../run_hw/get_hw_data.sh && rm -rf $CORREL_THIS_DIR/correl-html
-$CORREL_THIS_DIR/plot-correlation.py -c $1 -H $CORREL_THIS_DIR/../../run_hw/ -b ./pact.blacklist
+$CORREL_THIS_DIR/../../hw_run/get_hw_data.sh && rm -rf $CORREL_THIS_DIR/correl-html
+$CORREL_THIS_DIR/plot-correlation.py -c $1 -H $CORREL_THIS_DIR/../../hw_run/ -b ./pact.blacklist
 
 if [ $# -eq 3 ] ; then
     PLOTDIR=$2
