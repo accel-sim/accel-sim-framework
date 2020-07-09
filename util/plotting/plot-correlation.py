@@ -710,7 +710,7 @@ parser.add_option("-C", "--logchannel", dest="logchannel", default="",
 common.load_defined_yamls()
 
 benchmarks = []
-options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../run_hw/", this_directory )
+options.hardware_dir = common.dir_option_test( options.hardware_dir, "../../hw_run/", this_directory )
 options.data_mappings = common.file_option_test( options.data_mappings, "correl_mappings.py", this_directory )
 options.blacklist = common.file_option_test( options.blacklist, "", this_directory )
 
