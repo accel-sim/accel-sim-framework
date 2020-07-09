@@ -69,6 +69,11 @@ def downloadTrace(cardName, suiteName):
 
 
 def main():
+    parser = OptionParser()
+    parser.add_option("-a", "--apps", dest="apps", default = None,
+                help="Pass the comma seperated input list instead of asking "\
+                     "from stdin. Example: -a tesla-v100/rodinia-3.1,tesla-v100/cudasdk")
+    (options, args) = parser.parse_args()
     hw_run_dir = os.path.join(this_directory, "hw_run")
     if not os.path.exists(hw_run_dir):
         os.makedirs(hw_run_dir)
@@ -117,11 +122,14 @@ def main():
     
     selectionValid = False
     while not selectionValid:
-        selection = raw_input("\n-------\nWhat do you want to download?"\
-            "\n<card/suite>,<card/suite> (i.e. tesla-v100/rodinia-3.1,tesla-v100/cudasdk)"\
-            "\n(Default=all/all) : ")
-        if selection == "" or selection == None:
-            selection = "all/all"
+        if options.apps == None:
+            selection = raw_input("\n-------\nWhat do you want to download?"\
+                "\n<card/suite>,<card/suite> (i.e. tesla-v100/rodinia-3.1,tesla-v100/cudasdk)"\
+                "\n(Default=all/all) : ")
+            if selection == "" or selection == None:
+                selection = "all/all"
+        else:
+            selection = options.apps
         try:
             for item in selection.split(","):
                 cardName = item.split(r"/")[0]
@@ -145,6 +153,8 @@ def main():
         except Exception as e:
             selectionValid = False
             print "Invalid Input: {0}".format(e)
+            if options.apps != None:
+                sys.exit(1)
     
     print "\n\nDownload successful to {0}.\nFiles must be uncompressed with tar -xzvf <filename> to be usable by accel-sim"\
         .format(hw_run_dir)
