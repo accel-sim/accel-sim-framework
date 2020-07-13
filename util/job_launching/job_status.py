@@ -386,7 +386,7 @@ for logfile in parsed_logfiles:
 
             if len( status_found ) > 0:
                 status_string = ", ".join( status_found )
-            elif ( job_status["state"] == "UNKOWN" or job_status["state"] == "COMPLETE_NO_OTHER_INFO" )\
+            elif ( job_status["state"] == "UNKNOWN" or job_status["state"] == "COMPLETE_NO_OTHER_INFO" )\
                         and os.path.exists( errfile ) \
                         and os.stat( errfile ).st_size > 0:
                 status_string = "COMPLETE_ERR_FILE_HAS_CONTENTS"
