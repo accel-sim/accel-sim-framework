@@ -12,7 +12,7 @@
     # example: to run the tracer on hardware device 0 for rodinia workloads
     ./run_hw_trace.py -B rodinia-3.1 -D 0
     ```
-    the traces will be found in ../../run_hw/traces/device-0/
+    the traces will be found in ../../hw_run/traces/device-0/
 
 * To generate traces for specific individual application:
     ```bash
