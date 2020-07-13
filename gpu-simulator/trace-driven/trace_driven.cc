@@ -11,19 +11,19 @@
 #include <time.h>
 #include <vector>
 
-#include "gpgpu_context.h"
-#include "abstract_hardware_model.h"
-#include "cuda-sim/cuda-sim.h"
-#include "cuda-sim/ptx_ir.h"
-#include "cuda-sim/ptx_parser.h"
-#include "gpgpu-sim/gpu-sim.h"
-#include "gpgpusim_entrypoint.h"
-#include "option_parser.h"
 #include "ISA_Def/kepler_opcode.h"
 #include "ISA_Def/pascal_opcode.h"
 #include "ISA_Def/trace_opcode.h"
 #include "ISA_Def/turing_opcode.h"
 #include "ISA_Def/volta_opcode.h"
+#include "abstract_hardware_model.h"
+#include "cuda-sim/cuda-sim.h"
+#include "cuda-sim/ptx_ir.h"
+#include "cuda-sim/ptx_parser.h"
+#include "gpgpu-sim/gpu-sim.h"
+#include "gpgpu_context.h"
+#include "gpgpusim_entrypoint.h"
+#include "option_parser.h"
 #include "trace_driven.h"
 
 bool is_number(const std::string &s) {
