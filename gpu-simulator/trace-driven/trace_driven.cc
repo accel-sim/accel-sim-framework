@@ -50,7 +50,7 @@ trace_parser::trace_parser(const char *kernellist_filepath,
   kernellist_filename = kernellist_filepath;
 }
 
-std::vector<std::string> trace_parser::parse_kernellist_file() {
+std::vector<trace_command> trace_parser::parse_commandlist_file() {
   ifs.open(kernellist_filename);
 
   if (!ifs.is_open()) {
@@ -65,21 +65,28 @@ std::vector<std::string> trace_parser::parse_kernellist_file() {
   }
 
   std::string line, filepath;
-  std::vector<std::string> kernellist;
+  std::vector<trace_command> commandlist;
   while (!ifs.eof()) {
     getline(ifs, line);
     if (line.empty())
       continue;
-    else if (line.substr(0, 6) == "Memcpy") {
-      kernellist.push_back(line);
+    else if (line.substr(0, 10) == "MemcpyHtoD") {
+      trace_command command;
+      command.command_string = line;
+      command.m_type = command_type::cpu_gpu_mem_copy;
+      commandlist.push_back(command);
     } else if (line.substr(0, 6) == "kernel") {
+      trace_command command;
+      command.m_type = command_type::kernel_launch;
       filepath = directory + "/" + line;
-      kernellist.push_back(filepath);
+      command.command_string = filepath;
+      commandlist.push_back(command);
     }
+    // ignore gpu_to_cpu_memory_cpy
   }
 
   ifs.close();
-  return kernellist;
+  return commandlist;
 }
 
 void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
