@@ -18,11 +18,12 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # which will have current GIT commit number attatched.
 def extract_version( exec_path ):
     if options.trace_dir == "":
-        regex_str = r".*(gpgpu-sim_git-commit[^\s]+).*"
+        regex_base = "gpgpu-sim_git-commit"
     else:
-        regex_str = r".*(accelsim-commit[^\s]+).*"
+        regex_base = "accelsim-commit"
+    regex_str = r".*({0}[^\s]+).*".format(regex_base)
     strings_process = Popen(['strings', exec_path], stdout=PIPE)
-    grep_process = Popen(['grep', 'accelsim-commit'], stdin=strings_process.stdout, stdout=PIPE)
+    grep_process = Popen(['grep', regex_base], stdin=strings_process.stdout, stdout=PIPE)
     strings_process.stdout.close() 
     out, err = grep_process.communicate()
     return re.sub(regex_str, r"\1", out.rstrip())
