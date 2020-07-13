@@ -65,20 +65,23 @@ int main(int argc, const char **argv) {
                       m_gpgpu_context);
   tconfig.parse_config();
 
-  std::vector<std::string> commandlist = tracer.parse_kernellist_file();
+  std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
 
   for (unsigned i = 0; i < commandlist.size(); ++i) {
     trace_kernel_info_t *kernel_info = NULL;
-    if (commandlist[i].substr(0, 6) == "Memcpy") {
+    if (commandlist[i].m_type == command_type::cpu_gpu_mem_copy) {
       size_t addre, Bcount;
-      tracer.parse_memcpy_info(commandlist[i], addre, Bcount);
-      std::cout << commandlist[i] << std::endl;
+      tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount);
+      std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
       m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
       continue;
-    } else {
-      kernel_info = tracer.parse_kernel_info(commandlist[i], &tconfig);
+    } else if (commandlist[i].m_type == command_type::kernel_launch) {
+      kernel_info = tracer.parse_kernel_info(commandlist[i].command_string, &tconfig);
+      std::cout << "launching kernel command : " << commandlist[i].command_string << std::endl;
       m_gpgpu_sim->launch(kernel_info);
     }
+    else
+    	assert(0);
 
     bool active = false;
     bool sim_cycles = false;
