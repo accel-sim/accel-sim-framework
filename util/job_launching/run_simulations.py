@@ -303,10 +303,14 @@ common.load_defined_yamls()
 job_submit_call = None
 job_template = None
 if options.launcher != "":
-    job_submit_call = options.launcher
     if options.launcher == "qsub":
+        job_submit_call = options.launcher
         job_template = "torque.sim"
-    else:
+    elif options.launcher == "sbatch":
+        job_submit_call = options.launcher
+        job_template = "slurm.sim"
+    elif options.launcher == "local":
+        job_submit_call = os.path.join(this_directory, "procman.py")
         job_template = "slurm.sim"
 elif any([os.path.isfile(os.path.join(p, "sbatch")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_submit_call = "sbatch"
