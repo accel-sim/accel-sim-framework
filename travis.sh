@@ -11,13 +11,13 @@ source ./gpu-simulator/setup_environment.sh
 make -C ./gpu-simulator
 
 #Get the pre-run trace files
-rm -rf ./rodinia_2.0-ft
-wget https://engineering.purdue.edu/tgrogers/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft.tgz
-tar -xzvf rodinia_2.0-ft.tgz
-rm rodinia_2.0-ft.tgz
+rm -rf ./hw_run/rodinia_2.0-ft
+./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
+tar -xzvf ./hw_run/rodinia_2.0-ft.tgz -C ./hw_run
+rm hw_run/rodinia_2.0-ft.tgz
 
 #Run the tests on the trace
-./util/job_launching/run_simulations.py -C QV100 -B rodinia_2.0-ft -T ./rodinia_2.0-ft/9.1 -N myTest
+./util/job_launching/run_simulations.py -C QV100 -B rodinia_2.0-ft -T ./hw_run/rodinia_2.0-ft/9.1 -N myTest
 
 # Wait for them to finish
 ./util/job_launching/monitor_func_test.py -v -N myTest
