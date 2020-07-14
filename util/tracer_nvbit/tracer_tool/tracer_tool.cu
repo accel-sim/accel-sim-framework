@@ -169,8 +169,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
             srcNum++;
+            //TO DO: handle LDGSTS with two mem refs
             assert(mem_oper_idx == -1); // ensure one memory operand per inst
-            mem_oper_idx = i;
+            mem_oper_idx++;
           } else if (op->type == Instr::operandType::REG) {
             // reg is found
             assert(srcNum < MAX_SRC);

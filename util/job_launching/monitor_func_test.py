@@ -92,11 +92,23 @@ parser.add_option("-T", "--timeout", dest="timeout", default="99999",
                   help="Maximum number of hours to run the monitor for. If time is exceeded, exit with error code.")
 parser.add_option("-K", "--killwhentimedout", dest="killwhentimedout", action="store_true",
                   help="Kill all the jobs still running if the monitor times out.")
+parser.add_option("-j", "--job_manager", dest="job_manager",
+                  help="Pick between slurm, torque and out local procman. If not specified, "\
+                       "we will select it automatically.", default=None)
 
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.sim_name = options.sim_name.strip()
 options.timeout = float(options.timeout) * 60 * 60
+
+if options.job_manager != None:
+    job_manager = options.job_manager
+elif any([os.path.isfile(os.path.join(p, "squeue")) for p in os.getenv("PATH").split(os.pathsep)]):
+    job_manager = "squeue"
+elif any([os.path.isfile(os.path.join(p, "qstat")) for p in os.getenv("PATH").split(os.pathsep)]):
+    job_manager = "qstat"
+else:
+    job_manager = "procman"
 
 jobstatus_out_filename = os.path.join(this_directory, "job_status_out-{0}.txt".format(os.getpid()))
 failed_job_file = ""
@@ -105,11 +117,14 @@ while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
     if options.verbose:
         print "Calling job_status.py"
-    if subprocess.call([os.path.join(this_directory, "job_status.py") ,"-l", options.logfile, "-N", options.sim_name],
-        stdout=jobstatus_out_file, stderr=jobstatus_out_file) != 0:
-            jobstatus_out_file.seek(0)
-            print jobstatus_out_file.read()
-            exit("Error Launching job_status.py")
+    if subprocess.call([os.path.join(this_directory, "job_status.py"),\
+            "-l", options.logfile, \
+            "-N", options.sim_name, \
+            "-j", job_manager],\
+            stdout=jobstatus_out_file, stderr=jobstatus_out_file) != 0:
+        jobstatus_out_file.seek(0)
+        print jobstatus_out_file.read()
+        exit("Error Launching job_status.py")
     else:
         jobstatus_out_file.seek(0)
         jobStatusCol = None

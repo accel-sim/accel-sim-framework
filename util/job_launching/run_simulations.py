@@ -18,11 +18,12 @@ this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # which will have current GIT commit number attatched.
 def extract_version( exec_path ):
     if options.trace_dir == "":
-        regex_str = r".*(gpgpu-sim_git-commit[^\s]+).*"
+        regex_base = "gpgpu-sim_git-commit"
     else:
-        regex_str = r".*(accelsim-commit[^\s]+).*"
+        regex_base = "accelsim-commit"
+    regex_str = r".*({0}[^\s]+).*".format(regex_base)
     strings_process = Popen(['strings', exec_path], stdout=PIPE)
-    grep_process = Popen(['grep', 'accelsim-commit'], stdin=strings_process.stdout, stdout=PIPE)
+    grep_process = Popen(['grep', regex_base], stdin=strings_process.stdout, stdout=PIPE)
     strings_process.stdout.close() 
     out, err = grep_process.communicate()
     return re.sub(regex_str, r"\1", out.rstrip())
@@ -50,8 +51,10 @@ class ConfigurationSpec:
     def run(self, build_handle, benchmarks, run_directory, cuda_version, simdir):
         for dir_bench in benchmarks:
             exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
-            full_exec_dir = os.path.join( this_directory, exec_dir )
-            full_data_dir = os.path.join( this_directory, data_dir, benchmark.replace('/','_') )
+            full_exec_dir = common.dir_option_test(os.path.expandvars(exec_dir), "", this_directory)
+            full_data_dir = common.dir_option_test(\
+                os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
+                this_directory)
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
@@ -300,10 +303,14 @@ common.load_defined_yamls()
 job_submit_call = None
 job_template = None
 if options.launcher != "":
-    job_submit_call = options.launcher
     if options.launcher == "qsub":
+        job_submit_call = options.launcher
         job_template = "torque.sim"
-    else:
+    elif options.launcher == "sbatch":
+        job_submit_call = options.launcher
+        job_template = "slurm.sim"
+    elif options.launcher == "local":
+        job_submit_call = os.path.join(this_directory, "procman.py")
         job_template = "slurm.sim"
 elif any([os.path.isfile(os.path.join(p, "sbatch")) for p in os.getenv("PATH").split(os.pathsep)]):
     job_submit_call = "sbatch"

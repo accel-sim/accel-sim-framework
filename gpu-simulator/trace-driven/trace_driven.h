@@ -7,9 +7,20 @@
 #ifndef TRACE_DRIVEN_H
 #define TRACE_DRIVEN_H
 
+#include "ISA_Def/trace_opcode.h"
 #include "abstract_hardware_model.h"
 #include "gpgpu-sim/shader.h"
-#include "ISA_Def/trace_opcode.h"
+
+enum command_type {
+  kernel_launch = 1,
+  cpu_gpu_mem_copy,
+  gpu_cpu_mem_copy,
+};
+
+struct trace_command {
+  std::string command_string;
+  command_type m_type;
+};
 
 class trace_function_info : public function_info {
 public:
@@ -110,7 +121,7 @@ public:
   trace_parser(const char *kernellist_filepath, gpgpu_sim *m_gpgpu_sim,
                gpgpu_context *m_gpgpu_context);
 
-  std::vector<std::string> parse_kernellist_file();
+  std::vector<trace_command> parse_commandlist_file();
   trace_kernel_info_t *
   parse_kernel_info(const std::string &kerneltraces_filepath,
                     trace_config *config);
