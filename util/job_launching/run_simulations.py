@@ -51,7 +51,11 @@ class ConfigurationSpec:
     def run(self, build_handle, benchmarks, run_directory, cuda_version, simdir):
         for dir_bench in benchmarks:
             exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
-            full_exec_dir = common.dir_option_test(os.path.expandvars(exec_dir), "", this_directory)
+            if options.trace_dir == "":
+                full_exec_dir = common.dir_option_test(os.path.expandvars(exec_dir), "", this_directory)
+            else:
+                full_exec_dir = "" # For traces it is not necessary to have the apps built
+
             full_data_dir = common.dir_option_test(\
                 os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
                 this_directory)
