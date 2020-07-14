@@ -53,12 +53,13 @@ class ConfigurationSpec:
             exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
             if options.trace_dir == "":
                 full_exec_dir = common.dir_option_test(os.path.expandvars(exec_dir), "", this_directory)
+                full_data_dir = common.dir_option_test(\
+                    os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
+                this_directory)
             else:
                 full_exec_dir = "" # For traces it is not necessary to have the apps built
+                full_data_dir = ""
 
-            full_data_dir = common.dir_option_test(\
-                os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
-                this_directory)
 
             self.benchmark_args_subdirs = {}
             for args in self.command_line_args_list:
