@@ -4,6 +4,7 @@
 #ifndef PASCAL_OPCODE_H
 #define PASCAL_OPCODE_H
 
+#include "abstract_hardware_model.h"
 #include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
