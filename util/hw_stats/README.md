@@ -11,7 +11,7 @@ ls ../../benchmarks/bin/<cuda-version>/release | wc # this will tell you how man
 * Run the hardware correl
 
 ```bash
-cd ../../util/correlation
+cd ../../util/hw_stats/
 # In this folder there are shell scripts that kick off the hardware exectuion, bundle the resutls then publish them online.
 # Obviously your commands will not be exact. The most imporant part of this file is the ./run_hw.py command. It takes the exact same benchmark
 # definitions as the run_simulations.py command in the util/job_launching folder - ensuring there is a 1:1 relationship between apps run
