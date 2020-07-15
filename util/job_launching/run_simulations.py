@@ -163,7 +163,6 @@ class ConfigurationSpec:
                 glob.glob(os.path.join(options.trace_dir, "**", appargs_subdir, "traces"))
             for path in paths_to_try:
                 try:
-                    print path
                     benchmark_trace_dir = \
                         common.dir_option_test(path,"", this_directory)
                     break
