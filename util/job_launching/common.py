@@ -106,10 +106,14 @@ def get_cuda_version(this_directory):
     os.environ['CUDA_VERSION'] = cuda_version
     return cuda_version
 
+class PathMissing(Exception):
+    pass
+
 # This function exists so that this file can accept both absolute and relative paths
 # If no name is provided it sets the default
 # Either way it does a test if the absolute path exists and if not, tries a relative path
 def file_option_test(name, default, this_directory):
+    name = os.path.expandvars(name)
     if name == "":
         if default == "":
             return ""
@@ -122,11 +126,8 @@ def file_option_test(name, default, this_directory):
         try:
             with open(name): pass
         except IOError:
-            exit("Error - cannot open file {0}".format(name))
+            raise PathMissing("Error - cannot open file {0}".format(name))
     return name
-
-class PathMissing(Exception):
-    pass
 
 def dir_option_test(name, default, this_directory):
     name = os.path.expandvars(name)
