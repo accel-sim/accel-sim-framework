@@ -41,7 +41,7 @@ pipeline {
                 make rodinia_2.0-ft -j -C ./gpu-app-collection/src
                 ./gpu-app-collection/get_regression_data.sh
 
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100 -N rodinia_2.0-ft-ptx-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-EXEC -N rodinia_2.0-ft-ptx-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-ptx.csv -N rodinia_2.0-ft-ptx-$$'''
                }
             }
