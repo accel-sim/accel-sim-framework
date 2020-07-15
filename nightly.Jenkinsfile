@@ -23,7 +23,7 @@ pipeline {
                 make -j -C gpu-simulator'''
             }
         }
-        stage('nightly-trace'){
+        stage('nightly-sass'){
             steps{
                 sh '''#!/bin/bash
                 source ./env-setup/11.0_env_setup.sh
