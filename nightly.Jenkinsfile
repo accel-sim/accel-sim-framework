@@ -29,11 +29,8 @@ pipeline {
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
                 ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia -C QV100-SASS-5B_INSN -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N nightly-$$ -M 70G
-                ./util/job_launching/monitor_func_test.py -T 12 -I -v -s nightly-stats-per-app.csv -N nightly-$$'''
+                ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s nightly-stats-per-app.csv -N nightly-$$'''
             }
-
-
-
         }
     }
     post {
