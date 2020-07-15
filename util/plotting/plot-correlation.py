@@ -216,7 +216,6 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
 
     if not options.noanno:
         layout.annotations=kernel_annotations
-    correl_outdir = os.path.join(this_directory, "correl-html")
     if options.plotname == "":
         plotname = plotfile + agg_cfg
     else:
@@ -966,5 +965,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         fig_data[ (correl.plotfile, hw_cfg) ].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included, correl, hw_low_drop_stats))
 
 
+correl_outdir = os.path.join(this_directory, "correl-html")
 for (plotfile,hw_cfg), traces in fig_data.iteritems():
     make_submission_quality_image(options.image_type, traces, hw_cfg)
+print "Output Available at: file://{0}".format(correl_outdir)
