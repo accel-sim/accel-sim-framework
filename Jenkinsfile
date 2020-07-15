@@ -29,7 +29,7 @@ pipeline {
                 sh '''#!/bin/bash
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-TRACE -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-sass-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-sass-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-sass.csv -N rodinia_2.0-ft-sass-$$'''
                }, "ptx": {
                 sh '''#!/bin/bash
@@ -41,7 +41,7 @@ pipeline {
                 make rodinia_2.0-ft -j -C ./gpu-app-collection/src
                 ./gpu-app-collection/get_regression_data.sh
 
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-EXEC -N rodinia_2.0-ft-ptx-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N rodinia_2.0-ft-ptx-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-ptx.csv -N rodinia_2.0-ft-ptx-$$'''
                }
             }

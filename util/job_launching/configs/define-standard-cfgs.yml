@@ -41,6 +41,15 @@ QV100_old:
 GTX480:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM2_GTX480/gpgpusim.config"
 
+# To keep your configurations straight - we recommend specifying
+# If you are using SASS or PTX in the config:
+#   For example: QV100-SASS or QV100-PTX.
+SASS:
+    extra_params: "#SASS-Driven Accel-Sim"
+
+PTX:
+    extra_params: "#PTX-Driven GPGPU-Sim"
+
 ############################################################################
 
 # Extra configs - these are composable.
@@ -116,11 +125,7 @@ PAE:
 IPOLY:
     extra_params: "-memory_partition_indexing 2"
 
-TRACE:
-    extra_params: "-trace_driven_mode 1"
 
-EXEC:
-    extra_params: "-trace_driven_mode 0"
 
 RR:
     extra_params: "-gpgpu_scheduler lrr"

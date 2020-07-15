@@ -58,7 +58,7 @@ pipeline {
                 sh '''#!/bin/bash
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-TRACE -T ./hw_run/traces/device-7/11.0/ -N rodinia_2.0-ft-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/11.0/ -N rodinia_2.0-ft-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$'''
             }
         }
