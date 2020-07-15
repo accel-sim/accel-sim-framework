@@ -154,8 +154,24 @@ class ConfigurationSpec:
 
         # link the traces directory
         if options.trace_dir != "":
-            benchmark_trace_dir = \
-                common.dir_option_test(os.path.join(options.trace_dir, appargs_subdir, "traces"),"", this_directory)
+
+            ### This code handles the case where you pass a directory a few levels up from the
+            ### directory where the traces are laid out.
+            benchmark_trace_dir = None
+            paths_to_try = [os.path.join(options.trace_dir, appargs_subdir, "traces")] + \
+                glob.glob(os.path.join(options.trace_dir, "**", "**", appargs_subdir, "traces")) +\
+                glob.glob(os.path.join(options.trace_dir, "**", appargs_subdir, "traces"))
+            for path in paths_to_try:
+                try:
+                    print path
+                    benchmark_trace_dir = \
+                        common.dir_option_test(path,"", this_directory)
+                    break
+                except common.PathMissing as e:
+                    pass
+
+            if benchmark_trace_dir == None:
+                sys.exit("Cannot find traces in any of the paths: {0}".format(paths_to_try))
             benchmark_trace_dir = os.path.abspath(benchmark_trace_dir)
             if os.path.isdir(benchmark_trace_dir):
                 if os.path.lexists(os.path.join(this_run_dir, "traces")):
