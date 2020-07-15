@@ -77,19 +77,17 @@ COPYK:
 NCOPYK:
     extra_params: "-perf_sim_memcpy 0"
 
-5B:
+5B_INSN:
     extra_params: "-gpgpu_max_insn 5000000000"
 
-2B:
+2B_INSN:
     extra_params: "-gpgpu_max_insn 2000000000"
 
-1B:
+1B_INSN:
     extra_params: "-gpgpu_max_insn 1000000000"
 
-5B:
-    extra_params: "-gpgpu_max_insn 5000000000"
 
-100M:
+100M_INSN:
     extra_params: "-gpgpu_max_insn 100000000"
 
 FLUSHL1:
