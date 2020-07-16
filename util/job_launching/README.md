@@ -39,7 +39,7 @@ There are 3 core scripts in here:
 3. `job_status.py # Prints an easy-to-read summary of what state all jobs are in`
 4. `get_stat.py # Collects the data you need to publish :)`
 
-**run\_simulations.py **:
+**run\_simulations.py**:
 
 This file handles everything that needs to be done to launch jobs.
 It is configured by two yaml scripts, one for benchmarks and one for configs.
@@ -59,7 +59,31 @@ To summarize what run\_simulations does:
 6. After everything is setup it launches the jobs via a job manager.
 7. It creates a log of all the jobs you launch this time so you can collect stats and status for just these jobs if you so choose.
 
-**job\_status.py**:
+**job\_status.py**: This script will check all the jobs you ran and print details on their state (i.e. running, waiting or done). For each done job, some basic stats are also collected and printed. This is meant to be called with a -N parameter that indicates which launch of `run_simulations.py` you want the status for example:
+
+```bash
+# Run simulations using SASS (assumes you have built accel-sim and pulled the trace files)
+./run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ../../hw_run/rodinia_2.0-ft/9.1/ -N rodinia-sass-test
+./job_status.py -N rodinia-sass-test
+```
+
+```bash
+# Output:
+squeue.id       Node                            App                     AppArgs                 Version                 Config          RunningTime     Mem         JobStatus                       Basic GPGPU-Sim Stats
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+3207            tgrogers-littleram-03           backprop-rodinia-2.0    4096___data_result_4    backprop-rodinia-2.0    QV100-SASS      0:31            702 M       RUNNING
+3208            tgrogers-littleram-03           bfs-rodinia-2.0-ft      __data_graph4096_txt    bfs-rodinia-2.0-ft.a    QV100-SASS      0:31            391 M       RUNNING
+3209            tgrogers-littleram-04           hotspot-rodinia-2.0-    30_6_40___data_resul    hotspot-rodinia-2.0-    QV100-SASS      0:31            581 M       RUNNING
+3210            tgrogers-littleram-04           heartwall-rodinia-2.    __data_test_avi_1___    heartwall-rodinia-2.    QV100-SASS      00:00:22        578 M       COMPLETE_NO_OTHER_INFO          SIMRATE_IPS=349 K       SIM_TIME=21 sec (21 sec)        TOT_IPC=883     TOT_INSN=7 M    TOT_CYCLE=8 K
+3211            tgrogers-littleram-04           kmeans-rodinia-2.0-f    _i_data_400_txt__g_d    kmeans-rodinia-2.0-f    QV100-SASS      0:28            332 M       RUNNING
+3212            tgrogers-littleram-04           lud-rodinia-2.0-ft      _v__b__i___data_64_d    lud-rodinia-2.0-ft.a    QV100-SASS      0:28            326 M       RUNNING
+3213            tgrogers-littleram-04           nw-rodinia-2.0-ft       128_10___data_result    nw-rodinia-2.0-ft.ac    QV100-SASS      0:28            324 M       RUNNING
+3214            tgrogers-littleram-04           nn-rodinia-2.0-ft       __data_filelist_4_3_    nn-rodinia-2.0-ft.ac    QV100-SASS      0:28            517 M       RUNNING
+3215            tgrogers-littleram-05           pathfinder-rodinia-2    1000_20_5___data_res    pathfinder-rodinia-2    QV100-SASS      0:28            358 M       RUNNING
+3216            tgrogers-littleram-05           srad_v2-rodinia-2.0-    __data_matrix128x128    srad_v2-rodinia-2.0-    QV100-SASS      0:28            504 M       RUNNING
+3217            tgrogers-littleram-05           streamcluster-rodini    3_6_16_1024_1024_100    streamcluster-rodini    QV100-SASS      0:28            358 M       RUNNING
+-----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------
+```
 
 
 **get\_stats.py**:
