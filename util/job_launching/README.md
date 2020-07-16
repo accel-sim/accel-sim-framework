@@ -86,7 +86,27 @@ squeue.id       Node                            App                     AppArgs 
 ```
 
 
-**get\_stats.py**:
+**get\_stats.py**: When the tests are all done and you want to aggregate results, this script does through all the oupt and aggregates useful statistics, outputting the result to stdout in csv format. There are many options on how to organize the output CSV data - which you can then plot however you like. You can define the stats you want to collect in a yaml file, by default, the [./stats/example_stats.yml](./stats/example_stats.yml) is used. Each line in the file corresponds to a regrex to list that stat from the Accel-Sim/GPGPU-Sim output.
+Some useful ways to use `get_stats.py` are as follows:
+
+```bash
+# Just get me all the per-app stats for the set of 
+./get_stats.py -N rodinia-sass-tests | tee per-app-fromlaunch.csv
+
+# Ignoring how the tests were run, get me the latest results for a particular set of configs/apps
+# output will be a convenient output format that can be just copy/pasted into excel, etc... to plot
+# grouped bar chats. Note that you should either '-N' or '-B <apps> -C <configs>', not both.
+./get_stats.py -B rodinia_2.0-ft -C QV100-SASS,QV100-PTX | tee per-app-app-cfgs.csv
+
+# Same as above, but for each kernel launched, not for each end-result for the app:
+./get_stats.py -K -k -B rodinia_2.0-ft -C QV100-SASS,QV100-PTX | tee per-kernel-instance.csv
+
+# Get output you can feed to the auto-plotting ../plotting/plot-get-stats.py:
+./get_stats.py -R -B rodinia_2.0-ft -C QV100-SASS,QV100-PTX | tee per-app-for-autoplot.csv
+
+# Get output you can feed to the correlation plotter ../plotting/plot-correlation.py:
+./get_stats.py -K -k -R -B rodinia_2.0-ft -C QV100-SASS,QV100-PTX | tee per-app-for-correlation.csv
+```
 
 
 ### The Running directory:
@@ -99,7 +119,9 @@ Inside each of these directories is where the simulaton is run by the launched j
 The default running directory is `sim_run_<toolkit_version>` for example `sim_run_11.0`.
 If you ever need to debug specific runs interactively, you can `cd` to the right directory then run:
 
-`gdb --args `./justrun.sh``
+```bash
+gdb --args `./justrun.sh`
+```
 
 When jobs complete, they output a .o<jobId> and .e<jobId> file. This is what all the stat collection scripts parse when collecting statistics.
 It is intended that there will be multiple such output files in each of these directories.
