@@ -21,7 +21,7 @@
 ```
 
 All stats collected by the `get_stats.py` file will be plotted and placed in ./htmls/.
-[An example for the IPC is here](./example.plot.rodinia_2.0-ft.html).
+[An example for the IPC is here](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/example.plot.rodinia_2.0-ft.html).
 
 # Instructions on plotting correlation graphs
 
@@ -45,7 +45,7 @@ All stats collected by the `get_stats.py` file will be plotted and placed in ./h
     ./plot-correlation.py -c correl.stats.csv -i pdf -H ../../hw_run/QUADRO-V100/9.1/
     # You can also generate pdf files for the correaltions using "-i pdf"
     ```
-[Here is an example correlation plot for the simple rodinia tests aggregated per-app](./gv100-cycles.QV100-PTX.QV100-SASS.per-app.html).
-[And per-kernel](./gv100-cycles.QV100-PTX.QV100-SASS.per-kernel.html).
+[Here is an example correlation plot for the simple rodinia tests aggregated per-app](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/gv100-cycles.QV100-PTX.QV100-SASS.per-app.html).
+[And per-kernel](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/gv100-cycles.QV100-PTX.QV100-SASS.per-kernel.html).
 Note again - that these short-running tests are not representative of longer running GPU apps and the correlation on these applications should
 be taken into context.
