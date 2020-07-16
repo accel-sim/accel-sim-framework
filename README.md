@@ -94,7 +94,7 @@ the apps in from this collection as well as just on your own, with your own apps
     source ./gpu-simulator/setup_environment.sh
     make -j -C ./gpu-simulator/
     ```
-    This will prodice an executable in:
+    This will produce an executable in:
     ```bash
     ./gpu-simulator/bin/release/accel-sim.out
     ```
