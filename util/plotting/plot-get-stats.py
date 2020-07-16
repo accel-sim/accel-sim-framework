@@ -8,6 +8,7 @@ import os
 import subprocess
 import shutil
 import glob
+import re
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -112,7 +113,7 @@ for stat,value in all_stats.iteritems():
         )
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = stat.replace("\/", "-") + "-" + options.plotname
+    figure_name = re.sub('[^0-9a-zA-Z]+','_',stat) + "_" + options.plotname
     print "plotting: " + figure_name
     outdir = (os.path.join(this_directory,"htmls"))
     if not os.path.exists( outdir ):
