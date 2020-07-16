@@ -91,7 +91,7 @@ Some useful ways to use `get_stats.py` are as follows:
 
 ```bash
 # Just get me all the per-app stats for the set of 
-./get_stats.py -N rodinia-sass-tests | tee per-app-fromlaunch.csv
+./get_stats.py -N rodinia-sass-test | tee per-app-fromlaunch.csv
 
 # Ignoring how the tests were run, get me the latest results for a particular set of configs/apps
 # output will be a convenient output format that can be just copy/pasted into excel, etc... to plot
