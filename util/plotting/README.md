@@ -42,7 +42,7 @@ All stats collected by the `get_stats.py` file will be plotted and placed in ./h
     ./plot-correlation.py -c correl.stats.csv
     # stdout will print summary statistics and html files will be generated in ./correl-html/
     # You can generate pdf files instead using 
-    ./plot-correlation.py -c correl.stats.csv -i pdf -H ../../hw_run/QUADRO-V100/9.1/
+    ./plot-correlation.py -c correl.stats.csv -H ../../hw_run/QUADRO-V100/9.1/
     # You can also generate pdf files for the correaltions using "-i pdf"
     ```
 [Here is an example correlation plot for the simple rodinia tests aggregated per-app](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/gv100-cycles.QV100-PTX.QV100-SASS.per-app.html).
