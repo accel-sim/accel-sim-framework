@@ -37,9 +37,9 @@ else
 endif
 
 ifeq ($(DEBUG),1)
-	CXXFLAGS = -Wall -O0 -g3 -fPIC
+	CXXFLAGS = -Wall -O0 -g3 -fPIC -std=c++11
 else
-	CXXFLAGS = -Wall -O3 -g3 -fPIC
+	CXXFLAGS = -Wall -O3 -g3 -fPIC -std=c++11
 endif
 
 all: $(BIN_DIR)/accel-sim.out

@@ -45,7 +45,7 @@ else
 	CXXFLAGS += 
 endif
 
-OPTFLAGS += -g3 -fPIC
+OPTFLAGS += -g3 -fPIC -std=c++11
 
 SRCS = $(shell ls *.cc)
 EXCLUDES = 
