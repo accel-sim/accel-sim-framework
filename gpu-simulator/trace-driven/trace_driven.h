@@ -10,17 +10,7 @@
 #include "ISA_Def/trace_opcode.h"
 #include "abstract_hardware_model.h"
 #include "gpgpu-sim/shader.h"
-
-enum command_type {
-  kernel_launch = 1,
-  cpu_gpu_mem_copy,
-  gpu_cpu_mem_copy,
-};
-
-struct trace_command {
-  std::string command_string;
-  command_type m_type;
-};
+#include "trace_parser.h"
 
 class trace_function_info : public function_info {
 public:
@@ -44,51 +34,42 @@ public:
 class trace_warp_inst_t : public warp_inst_t {
 public:
   trace_warp_inst_t() {
-    m_gpgpu_context = NULL;
     m_opcode = 0;
-    m_tconfig = NULL;
     should_do_atomic = false;
   }
 
-  trace_warp_inst_t(const class core_config *config,
-                    gpgpu_context *gpgpu_context, class trace_config *tconfig)
-      : warp_inst_t(config) {
-    m_gpgpu_context = gpgpu_context;
+  trace_warp_inst_t(const class core_config *config) : warp_inst_t(config) {
     m_opcode = 0;
-    m_tconfig = tconfig;
     should_do_atomic = false;
   }
 
-  bool parse_from_string(
-      std::string trace,
-      const std::unordered_map<std::string, OpcodeChar> *OpcodeMap);
+  bool parse_from_trace_struct(
+      const inst_trace_t &trace,
+      const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
+      const class trace_config *tconfig,
+      const class kernel_trace_t *kernel_trace_info);
 
 private:
-  gpgpu_context *m_gpgpu_context;
-  class trace_config *m_tconfig;
   unsigned m_opcode;
-  bool check_opcode_contain(const std::vector<std::string> &opcode,
-                            std::string param);
-  unsigned get_datawidth_from_opcode(const std::vector<std::string> &opcode);
 };
 
 class trace_kernel_info_t : public kernel_info_t {
 public:
-  trace_kernel_info_t(dim3 gridDim, dim3 blockDim, unsigned m_binary_verion,
+  trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
                       trace_function_info *m_function_info,
-                      std::ifstream *inputstream, gpgpu_sim *gpgpu_sim,
-                      gpgpu_context *gpgpu_context, class trace_config *config);
+                      trace_parser *parser, class trace_config *config,
+                      kernel_trace_t *kernel_trace_info);
 
   bool get_next_threadblock_traces(
-      std::vector<std::vector<trace_warp_inst_t> *> threadblock_traces);
+      std::vector<std::vector<inst_trace_t> *> threadblock_traces);
 
 private:
-  std::ifstream *ifs;
-  gpgpu_sim *m_gpgpu_sim;
-  gpgpu_context *m_gpgpu_context;
   trace_config *m_tconfig;
-  unsigned binary_verion;
   const std::unordered_map<std::string, OpcodeChar> *OpcodeMap;
+  trace_parser *m_parser;
+  kernel_trace_t *m_kernel_trace_info;
+
+  friend class trace_shd_warp_t;
 };
 
 class trace_config {
@@ -96,7 +77,7 @@ public:
   trace_config();
 
   void set_latency(unsigned category, unsigned &latency,
-                   unsigned &initiation_interval);
+                   unsigned &initiation_interval) const;
   void parse_config();
   void reg_options(option_parser_t opp);
   char *get_traces_filename() { return g_traces_filename; }
@@ -116,43 +97,27 @@ private:
   char *trace_opcode_latency_initiation_specialized_op[SPECIALIZED_UNIT_NUM];
 };
 
-class trace_parser {
-public:
-  trace_parser(const char *kernellist_filepath, gpgpu_sim *m_gpgpu_sim,
-               gpgpu_context *m_gpgpu_context);
-
-  std::vector<trace_command> parse_commandlist_file();
-  trace_kernel_info_t *
-  parse_kernel_info(const std::string &kerneltraces_filepath,
-                    trace_config *config);
-  void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
-                         size_t &count);
-
-  void kernel_finalizer(trace_kernel_info_t *kernel_info);
-
-private:
-  std::string kernellist_filename;
-  std::ifstream ifs;
-  gpgpu_sim *m_gpgpu_sim;
-  gpgpu_context *m_gpgpu_context;
-};
-
 class trace_shd_warp_t : public shd_warp_t {
 public:
   trace_shd_warp_t(class shader_core_ctx *shader, unsigned warp_size)
       : shd_warp_t(shader, warp_size) {
     trace_pc = 0;
+    m_kernel_info = NULL;
   }
 
-  std::vector<trace_warp_inst_t> warp_traces;
+  std::vector<inst_trace_t> warp_traces;
   const trace_warp_inst_t *get_next_trace_inst();
   void clear();
   bool trace_done();
   address_type get_start_trace_pc();
   virtual address_type get_pc();
+  trace_warp_inst_t *set_kernel(trace_kernel_info_t *kernel_info) {
+    m_kernel_info = kernel_info;
+  }
 
 private:
   unsigned trace_pc;
+  trace_kernel_info_t *m_kernel_info;
 };
 
 class trace_gpgpu_sim : public gpgpu_sim {
@@ -213,6 +178,9 @@ public:
                                        unsigned *pc, unsigned *rpc);
   virtual const active_mask_t &get_active_mask(unsigned warp_id,
                                                const warp_inst_t *pI);
+  virtual void issue_warp(register_set &warp, const warp_inst_t *pI,
+                          const active_mask_t &active_mask, unsigned warp_id,
+                          unsigned sch_id);
 
 private:
   void init_traces(unsigned start_warp, unsigned end_warp,
