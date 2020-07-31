@@ -48,11 +48,15 @@
     export DYNAMIC_KERNEL_LIMIT_END=5
     ```
 
-    Set enviroment variables as below wil only report kernel 3 only
+    Set enviroment variables as below wil only report kernel 3.
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=3
     export DYNAMIC_KERNEL_LIMIT_END=3
     ```
 
-    If you do not really know the kernel id that you are intersted in, You can set kernel start with a big number like 1000 and the tracer will trace nothing. But it will still list kernels name and id in stats.csv. So, see the stats.csv file and you can check the file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
+    If you do not really know the kernel id that you are intersted in, you can set kernel start with a big number like 1000000 
+    ```bash
+    export DYNAMIC_KERNEL_LIMIT_START=1000000
+    ```
+In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
 
