@@ -17,9 +17,9 @@
 #include "gpgpu-sim/icnt_wrapper.h"
 #include "gpgpusim_entrypoint.h"
 #include "option_parser.h"
-#include "ISA_Def/trace_opcode.h"
+#include "../ISA_Def/trace_opcode.h"
 #include "trace_driven.h"
-#include "trace_parser.h"
+#include "../trace-parser/trace_parser.h"
 #include "accelsim_version.h"
 
 /* TO DO:

@@ -58,5 +58,5 @@
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=1000000
     ```
-In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
+    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
 
