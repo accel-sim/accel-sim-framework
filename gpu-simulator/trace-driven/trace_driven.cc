@@ -11,11 +11,11 @@
 #include <time.h>
 #include <vector>
 
-#include "ISA_Def/kepler_opcode.h"
-#include "ISA_Def/pascal_opcode.h"
-#include "ISA_Def/trace_opcode.h"
-#include "ISA_Def/turing_opcode.h"
-#include "ISA_Def/volta_opcode.h"
+#include "../ISA_Def/kepler_opcode.h"
+#include "../ISA_Def/pascal_opcode.h"
+#include "../ISA_Def/trace_opcode.h"
+#include "../ISA_Def/turing_opcode.h"
+#include "../ISA_Def/volta_opcode.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
