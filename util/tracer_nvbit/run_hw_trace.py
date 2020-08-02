@@ -48,7 +48,8 @@ for bench in benchmarks:
     edir, ddir, exe, argslist = bench
     ddir = common.dir_option_test(os.path.join(ddir,exe),"",this_directory)
     edir = common.dir_option_test(edir,"",this_directory)
-    for args in argslist:
+    for argpair in argslist:
+        args = argpair["args"]
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
         this_run_dir = os.path.abspath(os.path.expandvars(
