@@ -8,4 +8,4 @@ The blue blocks in the image are maintained in GPGPU-Sim 4.0 repo [here](https:/
 For each new GPU generation, we have to crease ISA_def file that specifies the SASS instructions. For now, we have created the ISA_def files for NVIDIA's Kepler, Pascal, Turing and Volta generations. Please see the directory [./trace-driven/ISA_Def](./trace-driven/ISA_Def).
 We were able to generate these files using the NVIDIA's CUDA Binary Utilities documentation from [here](https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#instruction-set-ref).
 
-For more info on the Accel-Sim front-end and how to compile, please see "Accel-Sim SASS Frontend" entry in the main read-me page [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/README.md).
+You do not need to clone the GPGPU-Sim 4.0 by your self. The [./setup_environment.sh](./setup_environment.sh) will clone the recent GPGPU-Sim model and integrate it with Accel-Sim. For more info on the Accel-Sim front-end and how to compile, please see "Accel-Sim SASS Frontend" entry in the main read-me page [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/README.md).
