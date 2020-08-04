@@ -44,6 +44,15 @@ pipeline {
                 '''
             }
         }
+        stage('generate-rodinia_2.0-ft-hw_stats'){
+            steps{
+                sh '''#!/bin/bash
+                source ./env-setup/11.0_env_setup.sh
+                source ./gpu-app-collection/src/setup_environment
+                ./util/hw_stats/run_hw.py -B rodinia_2.0-ft -D 7
+                '''
+            }
+        }
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash
