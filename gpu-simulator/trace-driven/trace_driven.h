@@ -8,9 +8,9 @@
 #define TRACE_DRIVEN_H
 
 #include "../ISA_Def/trace_opcode.h"
+#include "../trace-parser/trace_parser.h"
 #include "abstract_hardware_model.h"
 #include "gpgpu-sim/shader.h"
-#include "../trace-parser/trace_parser.h"
 
 class trace_function_info : public function_info {
 public:
