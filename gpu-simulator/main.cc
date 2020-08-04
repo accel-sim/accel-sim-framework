@@ -88,11 +88,10 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->launch(kernel_info);
     }
     else
-    	assert(0);
+    	assert(0 && "Undefined Command");
 
     bool active = false;
     bool sim_cycles = false;
-    bool break_limit = false;
 
     do {
       if (!m_gpgpu_sim->active())
@@ -107,7 +106,7 @@ int main(int argc, const char **argv) {
         if (m_gpgpu_sim->cycle_insn_cta_max_hit()) {
           m_gpgpu_context->the_gpgpusim->g_stream_manager
               ->stop_all_running_kernels();
-          break_limit = true;
+          break;
         }
       }
 
@@ -127,11 +126,11 @@ int main(int argc, const char **argv) {
       m_gpgpu_context->print_simulation_time();
     }
 
-    if (break_limit) {
+    if (m_gpgpu_sim->cycle_insn_cta_max_hit()) {
       printf("GPGPU-Sim: ** break due to reaching the maximum cycles (or "
              "instructions) **\n");
       fflush(stdout);
-      exit(1);
+      break;
     }
   }
 
@@ -139,6 +138,7 @@ int main(int argc, const char **argv) {
   // that we are done
   printf("GPGPU-Sim: *** simulation thread exiting ***\n");
   printf("GPGPU-Sim: *** exit detected ***\n");
+  fflush(stdout);
 
   return 1;
 }
