@@ -70,10 +70,10 @@ GPU_Microbenchmark:
               accel-sim-mem: 1G
         - l2_bw_32f:
             - args: 
-              accel-sim-mem: 1G
+              accel-sim-mem: 6G
         - l2_bw_64f:
             - args: 
-              accel-sim-mem: 1G
+              accel-sim-mem: 6G
 #        - l2_bw_128:
 #            - args: 
 #              accel-sim-mem: 1G
@@ -82,13 +82,13 @@ GPU_Microbenchmark:
               accel-sim-mem: 1G
         - mem_bw:
             - args: 
-              accel-sim-mem: 3G
+              accel-sim-mem: 2G
         - mem_lat:
             - args: 
               accel-sim-mem: 1G
         - shared_bw:
             - args: 
-              accel-sim-mem: 10G
+              accel-sim-mem: 2G
         - shared_lat:
             - args: 
               accel-sim-mem: 1G
@@ -111,77 +111,77 @@ Deepbench_nvidia_tencore:
     execs:
         - conv_bench-tencore:
             - args: train half 7 7 832 16 128 5 5 2 2 1 1
-              accel-sim-mem: 140G
+              accel-sim-mem: 20G
             - args: train half 7 7 512 8 512 1 1 0 0 1 1
-              accel-sim-mem: 30G
+              accel-sim-mem: 3G
             - args: train half 7 7 832 16 256 1 1 0 0 1 1
-              accel-sim-mem: 30G
+              accel-sim-mem: 4G
             - args: train half 7 7 512 8 512 3 3 1 1 1 1
-              accel-sim-mem: 70G
+              accel-sim-mem: 8G
             - args: train half 14 14 512 16 512 3 3 1 1 1 1
-              accel-sim-mem: 140G
+              accel-sim-mem: 18G
             - args: inference half 700 161 1 1 32 20 5 0 0 2 2
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 700 161 1 2 32 20 5 0 0 2 2
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 341 79 32 1 32 10 5 0 0 2 2
-              accel-sim-mem: 40G
+              accel-sim-mem: 5G
             - args: inference half 341 79 32 2 32 10 5 0 0 2 2
-              accel-sim-mem: 60G
+              accel-sim-mem: 7G
             - args: inference half 480 48 1 1 16 3 3 1 1 1 1
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - gemm_bench-tencore:
             - args: train half 1760 7000 1760 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 3G
             - args: train half 2048 128 2048 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: train half 1760 7000 1760 1 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 3G
             - args: train half 2048 64 2048 1 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: train half 1760 7133 1760 0 1
-              accel-sim-mem: 160G
+              accel-sim-mem: 18G
             - args: inference half 5124 1500 2048 0 0
-              accel-sim-mem: 200G
+              accel-sim-mem: 21G
             - args: inference half 7680 1 2560 0 0
-              accel-sim-mem: 15G
+              accel-sim-mem: 2G
             - args: inference half 6144 4 2048 0 0
-              accel-sim-mem: 15G
+              accel-sim-mem: 2G
             - args: inference half 512 3000 1536 0 0
-              accel-sim-mem: 15G
+              accel-sim-mem: 2G
             - args: inference half 35 1500 2560 0 0
-              accel-sim-mem: 15G
+              accel-sim-mem: 2G
         - rnn_bench-tencore:
             - args: inference half 512 1 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 2 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1024 1 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 256 4 150 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1536 1 50 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 1 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 2 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 4 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1536 1 750 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 256 1 150 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: train half 128 32 15 lstm
-              accel-sim-mem: 200G
+              accel-sim-mem: 20G
             - args: train half 128 64 15 lstm
-              accel-sim-mem: 200G
+              accel-sim-mem: 20G
             - args: train half 128 32 1 lstm
-              accel-sim-mem: 200G
+              accel-sim-mem: 20G
             - args: train half 128 64 1 gru
-              accel-sim-mem: 200G
+              accel-sim-mem: 20G
             - args: train half 128 32 1 gru
-              accel-sim-mem: 200G
+              accel-sim-mem: 20G
 
 Deepbench_nvidia_normal:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
@@ -189,75 +189,75 @@ Deepbench_nvidia_normal:
     execs:
         - conv_bench:
             - args: train half 7 7 832 16 128 5 5 2 2 1 1
-              accel-sim-mem: 150G
+              accel-sim-mem: 16G
             - args: train half 7 7 512 8 512 1 1 0 0 1 1
-              accel-sim-mem: 30G
+              accel-sim-mem: 3G
             - args: train half 7 7 832 16 256 1 1 0 0 1 1
-              accel-sim-mem: 30G
+              accel-sim-mem: 4G
             - args: train half 7 7 512 8 512 3 3 1 1 1 1
-              accel-sim-mem: 80G
+              accel-sim-mem: 9G
             - args: train half 14 14 512 16 512 3 3 1 1 1 1
-              accel-sim-mem: 150G
+              accel-sim-mem: 17G
             - args: inference half 700 161 1 1 32 20 5 0 0 2 2
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 700 161 1 2 32 20 5 0 0 2 2
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 341 79 32 1 32 10 5 0 0 2 2
-              accel-sim-mem: 60G
+              accel-sim-mem: 6G
             - args: inference half 341 79 32 2 32 10 5 0 0 2 2
               accel-sim-mem: 80G
             - args: inference half 480 48 1 1 16 3 3 1 1 1 1
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - gemm_bench:
             - args: train half 1760 7000 1760 0 0
-              accel-sim-mem: 160G
+              accel-sim-mem: 18G
             - args: train half 2048 128 2048 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: train half 1760 7000 1760 1 0
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: train half 2048 64 2048 1 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: train half 1760 7133 1760 0 1
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: inference half 5124 1500 2048 0 0
-              accel-sim-mem: 200G
+              accel-sim-mem: 21G
             - args: inference half 7680 1 2560 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 6144 4 2048 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
             - args: inference half 512 3000 1536 0 0
-              accel-sim-mem: 60G
+              accel-sim-mem: 7G
             - args: inference half 35 1500 2560 0 0
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - rnn_bench:
             - args: inference half 512 1 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 2 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1024 1 25 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 256 4 150 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1536 1 50 lstm
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 1 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 2 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 512 4 1 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: inference half 1536 1 750 gru
-              accel-sim-mem: 120G
+              accel-sim-mem: 12G
             - args: train half 128 32 15 lstm
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: train half 128 64 15 lstm
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: train half 128 32 1 lstm
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: train half 128 64 1 gru
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
             - args: train half 128 32 1 gru
-              accel-sim-mem: 160G
+              accel-sim-mem: 20G
 
 sdk-4.2-scaled:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
@@ -270,23 +270,23 @@ sdk-4.2-scaled:
               accel-sim-mem: 1G
         - convolutionSeparable:
             - args: --size 3072
-              accel-sim-mem: 6G
+              accel-sim-mem: 1G
         - fastWalshTransform:
             - args: -logK 7 -logD 21
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args: -logK 11 -logD 19
               accel-sim-mem: 1G
         - scalarProd:
             - args: --size 8192
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args: --size 13920
-              accel-sim-mem: 40G
+              accel-sim-mem: 4G
         - transpose:
             - args: dimX512 dimY512
               accel-sim-mem: 1G
         - scan:
             - args:
-              accel-sim-mem: 2G
+              accel-sim-mem: 1G
         - BlackScholes:
             - args:
               accel-sim-mem: 1G
@@ -306,48 +306,48 @@ rodinia-3.1:
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - backprop-rodinia-3.1:
             - args:  65536
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - bfs-rodinia-3.1:
             - args:  ./data/graph4096.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  ./data/graph65536.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  ./data/graph1MW_6.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #        - cfd-rodinia-3.1:
 #            - args:  ./data/fvcorr.domn.097K
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #            - args:  ./data/fvcorr.domn.193K
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #            - args:  ./data/missile.domn.0.2M
               accel-sim-mem: 4G
         - dwt2d-rodinia-3.1:
             - args:  ./data/192.bmp -d 192x192 -f -5 -l 3
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - gaussian-rodinia-3.1:
             - args:  -f ./data/matrix4.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -s 16
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -f ./data/matrix208.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -s 64
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -s 256
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #        - heartwall-rodinia-3.1:
 #            - args:  ./data/test.avi 1
 #            - args:  ./data/test.avi 20
         - hotspot-rodinia-3.1:
             - args:  512 2 2 ./data/temp_512 ./data/power_512 output.out
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #        - hotspot3D-rodinia-3.1:
 #            - args:  512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
 #              accel-sim-mem: 4G
@@ -356,27 +356,27 @@ rodinia-3.1:
 #            - args:  ./data/huffman/test1024_H2.206587175259.in
         - hybridsort-rodinia-3.1:
             - args:  r
-              accel-sim-mem: 60G
+              accel-sim-mem: 5G
             - args:  ./data/500000.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
         - kmeans-rodinia-3.1:
             - args:  -o -i ./data/28k_4x_features.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -o -i ./data/kdd_cup
-              accel-sim-mem: 8G
+              accel-sim-mem: 2G
             - args:  -o -i ./data/819200.txt
-              accel-sim-mem: 8G
+              accel-sim-mem: 2G
         - lavaMD-rodinia-3.1:
             - args:  -boxes1d 10
-              accel-sim-mem: 275G
+              accel-sim-mem: 32G
 #        - leukocyte-rodinia-3.1:
 #            - args:  ./data/testfile.avi 5
         - lud-rodinia-3.1:
             - args:  -s 256 -v
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
             - args:  -i ./data/512.dat
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #        - mummergpu-rodinia-3.1:
 #            - args:  ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
         - myocyte-rodinia-3.1:
@@ -387,19 +387,19 @@ rodinia-3.1:
               accel-sim-mem: 4G
         - nw-rodinia-3.1:
             - args:  2048 10
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - particlefilter_float-rodinia-3.1:
             - args:  -x 128 -y 128 -z 10 -np 1000
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - particlefilter_naive-rodinia-3.1:
             - args:  -x 128 -y 128 -z 10 -np 1000
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - pathfinder-rodinia-3.1:
             - args:  100000 100 20 > result.txt
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - srad_v1-rodinia-3.1:
             - args:  100 0.5 502 458
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
 #        - srad_v2-rodinia-3.1:
 #            - args:  2048 2048 0 127 0 127 0.5 2
 #        - streamcluster-rodinia-3.1:
@@ -418,38 +418,38 @@ parboil:
 
         - parboil-sgemm:
             - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
-              accel-sim-mem: 80G
+              accel-sim-mem: 8G
 
         - parboil-stencil:
             - args: -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
-              accel-sim-mem: 4G
+              accel-sim-mem: 1G
         - parboil-cutcp:
             - args: -i ./data/small/input/watbox.sl40.pqr -o lattice.dat
-              accel-sim-mem: 40G
+              accel-sim-mem: 5G
 
         - parboil-mri-q:
             - args: -i ./data/small/input/32_32_32_dataset.bin -o 32_32_32_dataset.out
-              accel-sim-mem: 20G
+              accel-sim-mem: 1G
 
 #        - parboil-lbm:
 #            - args:  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
 
         - parboil-histo:
             - args: -i ./data/default/input/img.bin -o ref.bmp -- 20 4
-              accel-sim-mem: 8G
+              accel-sim-mem: 2G
 
         - parboil-spmv:
             - args: -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
-              accel-sim-mem: 4G
+              accel-sim-mem: 2G
 
         - parboil-mri-gridding:
             - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
-              accel-sim-mem: 10G
+              accel-sim-mem: 1G
         
         - parboil-bfs:
 #            - args: -i ./data/1M/input/graph_input.dat -o bfs-1M.out
             - args: -i ./data/NY/input/graph_input.dat -o bfs-NY.out 
-              accel-sim-mem: 10G
+              accel-sim-mem: 2G
 #            - args: -i ./data/SF/input/graph_input.dat -o bfs-SF.out
 #            - args: -i ./data/UT/input/graph_input.dat -o bfs-UT.out
 
@@ -466,46 +466,46 @@ polybench:
               accel-sim-mem: 1G
         - polybench-2mm:
             - args: 
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
         - polybench-3DConvolution:
             - args:
               accel-sim-mem: 1G
         - polybench-3mm:
             - args: 
-              accel-sim-mem: 40G
+              accel-sim-mem: 4G
         - polybench-atax:
             - args:
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - polybench-bicg:
             - args:
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - polybench-correlation:
             - args:
-              accel-sim-mem: 500G
+              accel-sim-mem: 160G
         - polybench-covariance:
             - args:
-              accel-sim-mem: 500G
+              accel-sim-mem: 160G
         - polybench-fdtd2d:
             - args:
               accel-sim-mem: 1G
         - polybench-gemm:
             - args:
-              accel-sim-mem: 40G
+              accel-sim-mem: 4G
         - polybench-gesummv:
             - args: 
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - polybench-gramschmidt:
             - args:
-              accel-sim-mem: 30G
+              accel-sim-mem: 3G
         - polybench-mvt:
             - args:
-              accel-sim-mem: 20G
+              accel-sim-mem: 2G
         - polybench-syr2k:
             - args:
-              accel-sim-mem: 256G
+              accel-sim-mem: 25G
         - polybench-syrk:
             - args:
-              accel-sim-mem: 100G
+              accel-sim-mem: 8G
 
 cutlass_5_trace:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
@@ -513,49 +513,49 @@ cutlass_5_trace:
     execs:
         - cutlass_perf_test:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 25G
+              accel-sim-mem: 3G
             - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 25G
+              accel-sim-mem: 3G
             - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 25G
+              accel-sim-mem: 3G
             - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 25G
+              accel-sim-mem: 3G
             - args: --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 25G
+              accel-sim-mem: 3G
             - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 35G
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 35G
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 35G
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 35G
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 35G
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 120G
+              accel-sim-mem: 13G
             - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 150G
+              accel-sim-mem: 16G
             - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 150G
+              accel-sim-mem: 16G
             - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 150G
+              accel-sim-mem: 16G
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 150G
+              accel-sim-mem: 16G
             - args: --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 180G
+              accel-sim-mem: 20G
 
 ## Not sure how much memory the following apps take - just letting them go with the default
 
