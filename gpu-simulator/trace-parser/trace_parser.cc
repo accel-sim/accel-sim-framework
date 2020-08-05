@@ -84,27 +84,66 @@ kernel_trace_t::kernel_trace_t() {
   shmem_base_addr = 0;
   local_base_addr = 0;
   binary_verion = 0;
+  trace_verion = 0;
 }
 
-bool inst_trace_t::parse_from_string(std::string trace) {
+void inst_memadd_info_t::base_stride_decompress(
+    unsigned long long base_address, int stride,
+    const std::bitset<WARP_SIZE> &mask) {
+  bool first_bit1_found = false;
+  bool last_bit1_found = false;
+  unsigned long long addra = base_address;
+  for (int s = 0; s < WARP_SIZE; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      first_bit1_found = true;
+      addrs[s] = base_address;
+    } else if (first_bit1_found && !last_bit1_found) {
+      if (mask.test(s)) {
+        addra += stride;
+        addrs[s] = addra;
+      } else
+        last_bit1_found = true;
+    } else
+      addrs[s] = 0;
+  }
+}
+
+void inst_memadd_info_t::base_delta_decompress(
+    unsigned long long base_address, const std::vector<long long> &deltas,
+    const std::bitset<WARP_SIZE> &mask) {
+  bool first_bit1_found = false;
+  long long last_address = 0;
+  unsigned delta_index = 0;
+  for (int s = 0; s < 32; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      addrs[s] = base_address;
+      first_bit1_found = true;
+      last_address = base_address;
+    } else if (mask.test(s) && first_bit1_found) {
+      assert(delta_index < deltas.size());
+      addrs[s] = last_address + deltas[delta_index++];
+      last_address = addrs[s];
+    }
+  }
+}
+
+bool inst_trace_t::parse_from_string(std::string trace,
+                                     unsigned trace_version) {
   std::stringstream ss;
   ss.str(trace);
 
   std::string temp;
 
-  unsigned threadblock_x = 0, threadblock_y = 0, threadblock_z = 0,
-           warpid_tb = 0;
-  unsigned address_mode = 0;
-  unsigned long long base_address = 0;
-  int stride = 0;
-  unsigned mem_width = 0;
-
   // Start Parsing
-  ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z;
-  ss >> warpid_tb;
 
-  // core id is removed from the trace
-  // ss>>std::dec>>sm_id>>warpid_sm;
+  if (trace_version < 3) {
+    // for older trace version, read the tb ids and ignore
+    unsigned threadblock_x = 0, threadblock_y = 0, threadblock_z = 0,
+             warpid_tb = 0;
+
+    ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z >>
+        warpid_tb;
+  }
 
   ss >> std::hex >> m_pc;
   ss >> std::hex >> mask;
@@ -127,6 +166,10 @@ bool inst_trace_t::parse_from_string(std::string trace) {
     sscanf(temp.c_str(), "R%d", &reg_src[i]);
   }
 
+  // parse mem info
+  unsigned address_mode = 0;
+  unsigned mem_width = 0;
+
   ss >> mem_width;
 
   if (mem_width > 0) // then it is a memory inst
@@ -138,7 +181,7 @@ bool inst_trace_t::parse_from_string(std::string trace) {
     memadd_info->width = get_datawidth_from_opcode(opcode_tokens);
 
     ss >> std::dec >> address_mode;
-    if (address_mode == 0) {
+    if (address_mode == address_format::list_all) {
       // read addresses one by one from the file
       for (int s = 0; s < WARP_SIZE; s++) {
         if (mask_bits.test(s))
@@ -146,26 +189,26 @@ bool inst_trace_t::parse_from_string(std::string trace) {
         else
           memadd_info->addrs[s] = 0;
       }
-    } else if (address_mode == 1) {
+    } else if (address_mode == address_format::base_stride) {
       // read addresses as base address and stride
+      unsigned long long base_address = 0;
+      int stride = 0;
       ss >> std::hex >> base_address;
       ss >> std::dec >> stride;
-      bool first_bit1_found = false;
-      bool last_bit1_found = false;
-      unsigned long long addra = base_address;
+      memadd_info->base_stride_decompress(base_address, stride, mask_bits);
+    } else if (address_mode == address_format::base_delta) {
+      unsigned long long base_address = 0;
+      std::vector<long long> deltas;
+      // read addresses as base address and deltas
+      ss >> std::hex >> base_address;
       for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s) && !first_bit1_found) {
-          first_bit1_found = true;
-          memadd_info->addrs[s] = base_address;
-        } else if (first_bit1_found && !last_bit1_found) {
-          if (mask_bits.test(s)) {
-            addra += stride;
-            memadd_info->addrs[s] = addra;
-          } else
-            last_bit1_found = true;
-        } else
-          memadd_info->addrs[s] = 0;
+        if (mask_bits.test(s)) {
+          long long delta = 0;
+          ss >> std::dec >> delta;
+          deltas.push_back(delta);
+        }
       }
+      memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
   }
   // Finish Parsing
@@ -283,8 +326,8 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
         const size_t equal_idx = line.find('=');
         kernel_info.nvbit_verion = line.substr(equal_idx + 1);
       } else if (string1 == "accelsim" && string2 == "tracer") {
-        const size_t equal_idx = line.find('=');
-        kernel_info.trace_verion = line.substr(equal_idx + 1);
+        sscanf(line.c_str(), "-accelsim tracer version = %d",
+               &kernel_info.trace_verion);
       } else if (string1 == "shmem" && string2 == "base_addr") {
         ss.str(line.substr(line.find('=') + 1));
         ss >> std::hex >> kernel_info.shmem_base_addr;
@@ -307,7 +350,8 @@ void trace_parser::kernel_finalizer() {
 }
 
 bool trace_parser::get_next_threadblock_traces(
-    std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
+    std::vector<std::vector<inst_trace_t> *> threadblock_traces,
+    unsigned trace_version) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -358,7 +402,9 @@ bool trace_parser::get_next_threadblock_traces(
         inst_count = 0;
       } else {
         assert(start_of_tb_stream_found);
-        threadblock_traces[warp_id]->at(inst_count).parse_from_string(line);
+        threadblock_traces[warp_id]
+            ->at(inst_count)
+            .parse_from_string(line, trace_version);
         inst_count++;
       }
     }
