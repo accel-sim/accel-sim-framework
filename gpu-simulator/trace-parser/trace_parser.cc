@@ -123,7 +123,8 @@ void inst_memadd_info_t::base_delta_decompress(
       assert(delta_index < deltas.size());
       addrs[s] = last_address + deltas[delta_index++];
       last_address = addrs[s];
-    }
+    } else
+      addrs[s] = 0;
   }
 }
 
