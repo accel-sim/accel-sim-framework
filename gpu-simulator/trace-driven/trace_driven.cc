@@ -92,7 +92,8 @@ bool trace_kernel_info_t::get_next_threadblock_traces(
     threadblock_traces[i]->clear();
   }
 
-  bool success = m_parser->get_next_threadblock_traces(threadblock_traces);
+  bool success = m_parser->get_next_threadblock_traces(
+      threadblock_traces, m_kernel_trace_info->trace_verion);
 
   return success;
 }
