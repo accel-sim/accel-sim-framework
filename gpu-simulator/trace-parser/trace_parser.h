@@ -27,16 +27,23 @@ enum address_scope {
   SYS_MEM,
 };
 
+enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
+
 struct trace_command {
   std::string command_string;
   command_type m_type;
 };
 
-typedef struct {
+struct inst_memadd_info_t {
   uint64_t addrs[WARP_SIZE];
   int32_t width;
 
-} inst_memadd_info_t;
+  void base_stride_decompress(unsigned long long base_address, int stride,
+                              const std::bitset<WARP_SIZE> &mask);
+  void base_delta_decompress(unsigned long long base_address,
+                             const std::vector<long long> &deltas,
+                             const std::bitset<WARP_SIZE> &mask);
+};
 
 struct inst_trace_t {
   inst_trace_t();
@@ -51,7 +58,7 @@ struct inst_trace_t {
   unsigned reg_src[MAX_SRC];
   inst_memadd_info_t *memadd_info;
 
-  bool parse_from_string(std::string trace);
+  bool parse_from_string(std::string trace, unsigned tracer_version);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
@@ -79,7 +86,7 @@ struct kernel_trace_t {
   unsigned nregs;
   unsigned cuda_stream_id;
   unsigned binary_verion;
-  std::string trace_verion;
+  unsigned trace_verion;
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
@@ -97,7 +104,8 @@ public:
                          size_t &count);
 
   bool get_next_threadblock_traces(
-      std::vector<std::vector<inst_trace_t> *> threadblock_traces);
+      std::vector<std::vector<inst_trace_t> *> threadblock_traces,
+      unsigned trace_version);
 
   void kernel_finalizer();
 

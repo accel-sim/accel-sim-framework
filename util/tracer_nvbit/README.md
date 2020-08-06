@@ -34,7 +34,7 @@
     the post-traces-processing will go through all the kernels, one by one, and generate new file ".traceg", and it will also generate the kernelslist.g file. These are the final files that shold be given to accel-sim simulatror. Example:
 
     ```bash
-    ./accelsim.out -trace ../../../../../../Nvbits/nvbit_1.1/nvbit_release/traces/kernelslist.g 
+    ./gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
     ```
 
     .trace files are not required anymore. These are intermediate files and you can delete them to save disk space. 
