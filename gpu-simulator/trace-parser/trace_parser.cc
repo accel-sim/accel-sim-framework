@@ -284,11 +284,9 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
 
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
 
-  std::string line;
-  std::stringstream ss;
-  std::string string1, string2;
-
   kernel_trace_t kernel_info;
+
+  std::string line;
 
   while (!ifs.eof()) {
     getline(ifs, line);
@@ -299,9 +297,13 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
       // the trace format, ignore this and assume fixed format for now
       break; // the begin of the instruction stream
     } else if (line[0] == '-') {
+      std::stringstream ss;
+      std::string string1, string2;
+
       ss.str(line);
       ss.ignore();
       ss >> string1 >> string2;
+
       if (string1 == "kernel" && string2 == "name") {
         const size_t equal_idx = line.find('=');
         kernel_info.kernel_name = line.substr(equal_idx + 2);
@@ -313,7 +315,7 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
       } else if (string1 == "block" && string2 == "dim") {
         sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &kernel_info.tb_dim_x,
                &kernel_info.tb_dim_y, &kernel_info.tb_dim_z);
-      } else if (string1 == "shmem") {
+      } else if (string1 == "shmem" && string2 == "=") {
         sscanf(line.c_str(), "-shmem = %d", &kernel_info.shmem);
       } else if (string1 == "nregs") {
         sscanf(line.c_str(), "-nregs = %d", &kernel_info.nregs);
@@ -326,14 +328,19 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
       } else if (string1 == "nvbit" && string2 == "version") {
         const size_t equal_idx = line.find('=');
         kernel_info.nvbit_verion = line.substr(equal_idx + 1);
+
       } else if (string1 == "accelsim" && string2 == "tracer") {
         sscanf(line.c_str(), "-accelsim tracer version = %d",
                &kernel_info.trace_verion);
+
       } else if (string1 == "shmem" && string2 == "base_addr") {
-        ss.str(line.substr(line.find('=') + 1));
+        const size_t equal_idx = line.find('=');
+        ss.str(line.substr(equal_idx + 1));
         ss >> std::hex >> kernel_info.shmem_base_addr;
+
       } else if (string1 == "local" && string2 == "mem") {
-        ss.str(line.substr(line.find('=') + 1));
+        const size_t equal_idx = line.find('=');
+        ss.str(line.substr(equal_idx + 1));
         ss >> std::hex >> kernel_info.local_base_addr;
       }
       std::cout << line << std::endl;
