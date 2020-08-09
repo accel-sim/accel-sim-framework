@@ -51,7 +51,7 @@ rodinia_2.0-ft:
 
 GPU_Microbenchmark:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/GPU-Microbenchmark/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - l1_bw_32f:
             - args: 
