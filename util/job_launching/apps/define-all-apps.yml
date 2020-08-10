@@ -107,7 +107,7 @@ GPU_Microbenchmark:
 
 Deepbench_nvidia_tencore:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - conv_bench-tencore:
             - args: train half 7 7 832 16 128 5 5 2 2 1 1
@@ -185,7 +185,7 @@ Deepbench_nvidia_tencore:
 
 Deepbench_nvidia_normal:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - conv_bench:
             - args: train half 7 7 832 16 128 5 5 2 2 1 1
