@@ -14,7 +14,7 @@ TITANK:
 
 #Turing
 RTX2060:
-    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/Turing_RTX2060/gpgpusim.config"
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM75_RTX2060/gpgpusim.config"
 
 # Volta
 TITANV:
