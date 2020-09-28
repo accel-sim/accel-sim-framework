@@ -79,19 +79,20 @@ Finally, the mem_width rule is as following:
 If mem_width=0, this implies that it is not a memory instruction and [adrrescompress?] [mem_addresses] will be empty.
 if mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
 
-Example:
+Example: 
     ```bash
     31 0 0 3 0000 ffffffff 1 R1 IMAD.MOV.U32 2 R255 R255 0
-    ```
-threadblock_x threadblock_y threadblock_z=31 0 0
-warpid_tb=3
-PC =0000 (hexa)
-mask=ffffffff (hexa)
-dest_num=1 (how many destination registers)
-reg_dests=R1 (if dest_num=0, then this would be empty)
-opcode=IMAD.MOV.U32
-src_num=2
-reg_srcs=R255 R255
-mem_width = 0 (if mem_width>0, then there will be some addresses listed afterwards)
+    ```<br />
+    This is interpreted as following: <br />
+threadblock_x threadblock_y threadblock_z=31 0 0 <br />
+warpid_tb=3 <br />
+PC =0000 (hexa) <br />
+mask=ffffffff (hexa) <br />
+dest_num=1 (how many destination registers) <br />
+reg_dests=R1 (if dest_num=0, then this would be empty) <br />
+opcode=IMAD.MOV.U32  <br />
+src_num=2  <br />
+reg_srcs=R255 R255  <br />
+mem_width = 0 (if mem_width>0, then there will be some addresses listed afterwards) <br />
 
 
