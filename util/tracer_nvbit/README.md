@@ -80,10 +80,12 @@ If mem_width=0, this implies that it is not a memory instruction and [adrrescomp
 if mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
 
 Example: 
-    ```bash
+
+
     31 0 0 3 0000 ffffffff 1 R1 IMAD.MOV.U32 2 R255 R255 0
-    ```<br />
-    This is interpreted as following: <br />
+
+
+This is interpreted as following: <br />
 threadblock_x threadblock_y threadblock_z=31 0 0 <br />
 warpid_tb=3 <br />
 PC =0000 (hexa) <br />
