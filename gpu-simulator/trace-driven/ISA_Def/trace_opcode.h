@@ -219,12 +219,19 @@ enum TraceInstrOpcode {
 typedef enum TraceInstrOpcode sass_op_type;
 
 struct OpcodeChar {
+  OpcodeChar(unsigned m_opcode, unsigned m_opcode_category, unsigned m_opcode_power) {
+    opcode = m_opcode;
+    opcode_category = m_opcode_category;
+    opcode_power = m_opcode_power;
+  }
   OpcodeChar(unsigned m_opcode, unsigned m_opcode_category) {
     opcode = m_opcode;
     opcode_category = m_opcode_category;
+    opcode_power = OTHER_OP;
   }
   unsigned opcode;
   unsigned opcode_category;
+  unsigned opcode_power;
 };
 
 #endif

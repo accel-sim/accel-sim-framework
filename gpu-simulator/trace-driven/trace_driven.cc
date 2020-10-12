@@ -297,6 +297,7 @@ bool trace_kernel_info_t::get_next_threadblock_traces(
   return true;
 }
 
+
 bool trace_warp_inst_t::check_opcode_contain(
     const std::vector<std::string> &opcode, std::string param) {
   for (unsigned i = 0; i < opcode.size(); ++i)
@@ -444,6 +445,7 @@ bool trace_warp_inst_t::parse_from_string(
   memory_op = no_memory_op;
   data_size = 0;
   op = ALU_OP;
+  sp_op = OTHER_OP;
   mem_op = NOT_TEX;
 
   std::unordered_map<std::string, OpcodeChar>::const_iterator it =
@@ -451,6 +453,7 @@ bool trace_warp_inst_t::parse_from_string(
   if (it != OpcodeMap->end()) {
     m_opcode = it->second.opcode;
     op = (op_type)(it->second.opcode_category);
+    sp_op = (special_ops)(it->second.opcode_power);
   } else {
     std::cout << "ERROR:  undefined instruction : " << opcode
               << " Opcode: " << opcode1 << std::endl;
@@ -478,7 +481,6 @@ bool trace_warp_inst_t::parse_from_string(
 
   // fill latency and initl
   m_tconfig->set_latency(op, latency, initiation_interval);
-
   // fill addresses
   if (mem_width > 0) {
     for (unsigned i = 0; i < warp_size(); ++i)
