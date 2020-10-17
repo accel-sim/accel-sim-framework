@@ -1,6 +1,6 @@
 power_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/10.1/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/10.1/release/"
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     execs:
         - ACT_CORE:
             - 100 1
@@ -251,4 +251,6 @@ power_ubench:
         - REG_FILE:
             - 100
         - SHRD_TEX_SFU:
+            - 100
+        - TENSOR:
             - 100
