@@ -14,6 +14,19 @@ pipeline {
                     cd env-setup && git checkout cluster-ubuntu'
             }
         }
+        stage('test-prebuilt-traces'){
+            steps{
+                sh '''#!/bin/bash
+                source ./env-setup/11.0_env_setup.sh
+                ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
+                cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/ -N rodinia_2.0-ft-online-$$
+                ./util/job_launching/monitor_func_test.py -N rodinia_2.0-ft-online-$$
+                rm -rf hw_run
+                rm -rf sim_run_11.0
+                '''
+            }
+        }
         stage('build-tracer'){
             steps{
                 sh '''#!/bin/bash
