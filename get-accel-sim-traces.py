@@ -7,6 +7,7 @@ import math
 import sys
 from subprocess import Popen, STDOUT
 
+VERSION = "1.1.0"
 WEB_DIRECTORY = "ftp://ftp.ecn.purdue.edu/tgrogers/accel-sim/traces/"
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -60,7 +61,7 @@ class Card:
         return total
 
 def downloadTrace(cardName, suiteName):
-    webFile = os.path.join(WEB_DIRECTORY, cardName, "latest", suiteName + ".tgz")
+    webFile = os.path.join(WEB_DIRECTORY, cardName, VERSION + ".latest", suiteName + ".tgz")
     print "\n\nDownloading {0}".format(webFile)
     wget = Popen(["wget " + webFile], stderr=STDOUT, shell=True)
     wget.communicate()
@@ -79,17 +80,17 @@ def main():
         os.makedirs(hw_run_dir)
     os.chdir(hw_run_dir)
     # Parse the trace summary
-    trace_summary = os.path.join(hw_run_dir, "trace.summary.txt")
+    trace_summary = os.path.join(hw_run_dir, VERSION + ".trace.summary.txt")
     try:
         os.remove(trace_summary)
     except OSError:
         pass
     
     Popen(["wget " + " " +
-            WEB_DIRECTORY + "trace.summary.txt" ],
+            WEB_DIRECTORY + VERSION + ".trace.summary.txt" ],
           stderr=STDOUT, shell=True).communicate()
     
-    lineFormat = re.compile(r"(.*)\t(.*)/latest/(.*)")
+    lineFormat = re.compile(r"(.*)\t(.*)/" + VERSION + ".latest/(.*)")
     sizeDict = {}
     for line in open(trace_summary):
         lineMatch = lineFormat.match(line)
