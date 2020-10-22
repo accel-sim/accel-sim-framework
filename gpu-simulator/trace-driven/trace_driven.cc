@@ -244,6 +244,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
             space.set_type(local_space);
           else
             space.set_type(global_space);
+            cache_op = CACHE_ALL;
           break;
         }
     }
