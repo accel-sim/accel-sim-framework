@@ -1,22 +1,21 @@
 // developed by Mahmoud Khairy, Purdue Univ
 // abdallm@purdue.edu
 
-#ifndef VOLTA_OPCODE_H
-#define VOLTA_OPCODE_H
+#ifndef TURING_OPCODE_H
+#define TURING_OPCODE_H
 
 #include "abstract_hardware_model.h"
 #include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
 
-#define VOLTA_BINART_VERSION 70
-#define VOLTA_SHARED_MEMORY_VIRTIAL_ADDRESS_START 0x00007f2c60000000
+#define TURING_BINART_VERSION 75
 
 // TO DO: moving this to a yml or def files
 
 /// Volta SM_70 ISA
 // see: https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html
-static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
+static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     // Floating Point 32 Instructions
     {"FADD", OpcodeChar(OP_FADD, SP_OP)},
     {"FADD32I", OpcodeChar(OP_FADD32I, SP_OP)},
@@ -54,6 +53,7 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"DSETP", OpcodeChar(OP_DSETP, DP_OP)},
 
     // Integer Instructions
+    {"BMMA", OpcodeChar(OP_BMMA, INTP_OP)}, ////////
     {"BMSK", OpcodeChar(OP_BMSK, INTP_OP)},
     {"BREV", OpcodeChar(OP_BREV, INTP_OP)},
     {"FLO", OpcodeChar(OP_FLO, INTP_OP)},
@@ -77,6 +77,7 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"LOP32I", OpcodeChar(OP_LOP32I, INTP_OP)},
     {"POPC", OpcodeChar(OP_POPC, INTP_OP)},
     {"SHF", OpcodeChar(OP_SHF, INTP_OP)},
+    {"SHL", OpcodeChar(OP_SHL, INTP_OP)}, //////////
     {"SHR", OpcodeChar(OP_SHR, INTP_OP)},
     {"VABSDIFF", OpcodeChar(OP_VABSDIFF, INTP_OP)},
     {"VABSDIFF4", OpcodeChar(OP_VABSDIFF4, INTP_OP)},
@@ -92,6 +93,7 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     // Movement Instructions
     {"MOV", OpcodeChar(OP_MOV, ALU_OP)},
     {"MOV32I", OpcodeChar(OP_MOV32I, ALU_OP)},
+    {"MOVM", OpcodeChar(OP_MOVM, ALU_OP)}, // move matrix
     {"PRMT", OpcodeChar(OP_PRMT, ALU_OP)},
     {"SEL", OpcodeChar(OP_SEL, ALU_OP)},
     {"SGXT", OpcodeChar(OP_SGXT, ALU_OP)},
@@ -110,6 +112,7 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"LDG", OpcodeChar(OP_LDG, LOAD_OP)},
     {"LDL", OpcodeChar(OP_LDL, LOAD_OP)},
     {"LDS", OpcodeChar(OP_LDS, LOAD_OP)},
+    {"LDSM", OpcodeChar(OP_LDSM, LOAD_OP)}, //
     {"ST", OpcodeChar(OP_ST, STORE_OP)},
     {"STG", OpcodeChar(OP_STG, STORE_OP)},
     {"STL", OpcodeChar(OP_STL, STORE_OP)},
@@ -126,6 +129,38 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"MEMBAR", OpcodeChar(OP_MEMBAR, MEMORY_BARRIER_OP)},
     {"CCTLT", OpcodeChar(OP_CCTLT, ALU_OP)},
 
+    // Uniform Datapath Instruction
+    // UDP unit
+    // for more info about UDP, see
+    // https://www.hotchips.org/hc31/HC31_2.12_NVIDIA_final.pdf
+    {"R2UR", OpcodeChar(OP_R2UR, SPECIALIZED_UNIT_4_OP)},
+    {"S2UR", OpcodeChar(OP_S2UR, SPECIALIZED_UNIT_4_OP)},
+    {"UBMSK", OpcodeChar(OP_UBMSK, SPECIALIZED_UNIT_4_OP)},
+    {"UBREV", OpcodeChar(OP_UBREV, SPECIALIZED_UNIT_4_OP)},
+    {"UCLEA", OpcodeChar(OP_UCLEA, SPECIALIZED_UNIT_4_OP)},
+    {"UFLO", OpcodeChar(OP_UFLO, SPECIALIZED_UNIT_4_OP)},
+    {"UIADD3", OpcodeChar(OP_UIADD3, SPECIALIZED_UNIT_4_OP)},
+    {"UIMAD", OpcodeChar(OP_UIMAD, SPECIALIZED_UNIT_4_OP)},
+    {"UISETP", OpcodeChar(OP_UISETP, SPECIALIZED_UNIT_4_OP)},
+    {"ULDC", OpcodeChar(OP_ULDC, SPECIALIZED_UNIT_4_OP)},
+    {"ULEA", OpcodeChar(OP_ULEA, SPECIALIZED_UNIT_4_OP)},
+    {"ULOP", OpcodeChar(OP_ULOP, SPECIALIZED_UNIT_4_OP)},
+    {"ULOP3", OpcodeChar(OP_ULOP3, SPECIALIZED_UNIT_4_OP)},
+    {"ULOP32I", OpcodeChar(OP_ULOP32I, SPECIALIZED_UNIT_4_OP)},
+    {"UMOV", OpcodeChar(OP_UMOV, SPECIALIZED_UNIT_4_OP)},
+    {"UP2UR", OpcodeChar(OP_UP2UR, SPECIALIZED_UNIT_4_OP)},
+    {"UPLOP3", OpcodeChar(OP_UPLOP3, SPECIALIZED_UNIT_4_OP)},
+    {"UPOPC", OpcodeChar(OP_UPOPC, SPECIALIZED_UNIT_4_OP)},
+    {"UPRMT", OpcodeChar(OP_UPRMT, SPECIALIZED_UNIT_4_OP)},
+    {"UPSETP", OpcodeChar(OP_UPSETP, SPECIALIZED_UNIT_4_OP)},
+    {"UR2UP", OpcodeChar(OP_UR2UP, SPECIALIZED_UNIT_4_OP)},
+    {"USEL", OpcodeChar(OP_USEL, SPECIALIZED_UNIT_4_OP)},
+    {"USGXT", OpcodeChar(OP_USGXT, SPECIALIZED_UNIT_4_OP)},
+    {"USHF", OpcodeChar(OP_USHF, SPECIALIZED_UNIT_4_OP)},
+    {"USHL", OpcodeChar(OP_USHL, SPECIALIZED_UNIT_4_OP)},
+    {"USHR", OpcodeChar(OP_USHR, SPECIALIZED_UNIT_4_OP)},
+    {"VOTEU", OpcodeChar(OP_VOTEU, SPECIALIZED_UNIT_4_OP)},
+
     // Texture Instructions
     // For now, we ignore texture loads, consider it as ALU_OP
     {"TEX", OpcodeChar(OP_TEX, SPECIALIZED_UNIT_2_OP)},
@@ -135,6 +170,12 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"TXD", OpcodeChar(OP_TXD, SPECIALIZED_UNIT_2_OP)},
     {"TXQ", OpcodeChar(OP_TXQ, SPECIALIZED_UNIT_2_OP)},
 
+    // Surface Instructions //
+    {"SUATOM", OpcodeChar(OP_SUATOM, ALU_OP)},
+    {"SULD", OpcodeChar(OP_SULD, ALU_OP)},
+    {"SURED", OpcodeChar(OP_SURED, ALU_OP)},
+    {"SUST", OpcodeChar(OP_SUST, ALU_OP)},
+
     // Control Instructions
     // execute branch insts on a dedicated branch unit (SPECIALIZED_UNIT_1)
     {"BMOV", OpcodeChar(OP_BMOV, SPECIALIZED_UNIT_1_OP)},
@@ -142,13 +183,15 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
     {"BRA", OpcodeChar(OP_BRA, SPECIALIZED_UNIT_1_OP)},
     {"BREAK", OpcodeChar(OP_BREAK, SPECIALIZED_UNIT_1_OP)},
     {"BRX", OpcodeChar(OP_BRX, SPECIALIZED_UNIT_1_OP)},
+    {"BRXU", OpcodeChar(OP_BRXU, SPECIALIZED_UNIT_1_OP)}, //
     {"BSSY", OpcodeChar(OP_BSSY, SPECIALIZED_UNIT_1_OP)},
     {"BSYNC", OpcodeChar(OP_BSYNC, SPECIALIZED_UNIT_1_OP)},
     {"CALL", OpcodeChar(OP_CALL, SPECIALIZED_UNIT_1_OP)},
     {"EXIT", OpcodeChar(OP_EXIT, EXIT_OPS)},
     {"JMP", OpcodeChar(OP_JMP, SPECIALIZED_UNIT_1_OP)},
     {"JMX", OpcodeChar(OP_JMX, SPECIALIZED_UNIT_1_OP)},
-    {"KILL", OpcodeChar(OP_KILL, SPECIALIZED_UNIT_1_OP)},
+    {"JMXU", OpcodeChar(OP_JMXU, SPECIALIZED_UNIT_1_OP)}, ///
+    {"KILL", OpcodeChar(OP_KILL, SPECIALIZED_UNIT_3_OP)},
     {"NANOSLEEP", OpcodeChar(OP_NANOSLEEP, SPECIALIZED_UNIT_1_OP)},
     {"RET", OpcodeChar(OP_RET, SPECIALIZED_UNIT_1_OP)},
     {"RPCMOV", OpcodeChar(OP_RPCMOV, SPECIALIZED_UNIT_1_OP)},

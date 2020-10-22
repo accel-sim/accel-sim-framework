@@ -1,4 +1,3 @@
-#!/bin/bash
 # Copyright (c) 2020 Timothy Rogers, Purdue University
 # All rights reserved.
 #
@@ -25,21 +24,43 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=
-export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
+DEBUG?=0
 
-if [ $# = '1' ] ;
-then
-    export ACCELSIM_CONFIG=$1
+
+BUILD_DIR=../build/$(ACCELSIM_CONFIG)
+
+ifeq ($(DEBUG),1)
+	CXXFLAGS = -Wall -DDEBUG
 else
-    export ACCELSIM_CONFIG=release
-fi
+	CXXFLAGS = -Wall
+endif
 
-if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
-    git clone https://github.com/gpgpu-sim/gpgpu-sim_distribution.git  $ACCELSIM_ROOT/gpgpu-sim
-    git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout v4.0.1
-fi
+ifeq ($(GNUC_CPP0X), 1)
+    CXXFLAGS += -std=c++0x
+endif
 
-source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
+ifneq ($(DEBUG),1)
+	OPTFLAGS += -O3
+else
+	CXXFLAGS += 
+endif
 
-export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
+OPTFLAGS += -g3 -fPIC -std=c++11
+
+SRCS = $(shell ls *.cc)
+EXCLUDES = 
+CSRCS = $(filter-out $(EXCLUDES), $(SRCS))
+OBJS = $(CSRCS:%.cc=$(BUILD_DIR)/%.o)
+
+trace-parser:$(OBJS)
+
+$(BUILD_DIR)/%.o: %.cc
+	$(CXX) $(OPTFLAGS) $(CXXFLAGS) -I$(CUDA_INSTALL_PATH)/include -I. -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -c $*.cc -o $(BUILD_DIR)/$*.o 
+
+$(BUILD_DIR)/trace-parser.Makefile.makedepend: depend
+
+depend:
+	touch $(BUILD_DIR)/trace-parser.Makefile.makedepend
+	makedepend -f$(BUILD_DIR)/trace-parser.Makefile.makedepend -p$(BUILD_DIR)/ $(CSRCS) 2> /dev/null
+
+include $(BUILD_DIR)/trace-parser.Makefile.makedepend

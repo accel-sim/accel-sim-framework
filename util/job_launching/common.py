@@ -56,6 +56,16 @@ def parse_app_definition_yaml( def_yml, apps ):
         for exe in benchmark_yaml[suite]['execs']:
             exe_name = exe.keys()[0]
             args_list = exe.values()[0]
+            count = 0
+            for runparms in args_list:
+                args = runparms["args"]
+                if "accel-sim-mem" not in runparms:
+                    runparms["accel-sim-mem"] = "4G"
+                apps[suite + ":" + exe_name + ":" + str(count) ] = []
+                apps[suite + ":" + exe_name + ":" + str(count) ].append( ( benchmark_yaml[suite]['exec_dir'],
+                                    benchmark_yaml[suite]['data_dirs'],
+                                    exe_name, [args]) )
+                count += 1
             apps[suite].append(( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
                                  exe_name, args_list ))
@@ -63,13 +73,6 @@ def parse_app_definition_yaml( def_yml, apps ):
             apps[suite + ":" + exe_name].append( ( benchmark_yaml[suite]['exec_dir'],
                                  benchmark_yaml[suite]['data_dirs'],
                                  exe_name, args_list ) )
-            count = 0
-            for args in args_list:
-                apps[suite + ":" + exe_name + ":" + str(count) ] = []
-                apps[suite + ":" + exe_name + ":" + str(count) ].append( ( benchmark_yaml[suite]['exec_dir'],
-                                    benchmark_yaml[suite]['data_dirs'],
-                                    exe_name, [args] ) )
-                count += 1
     return
 
 def parse_config_definition_yaml( def_yml, defined_baseconfigs, defined_xtracfgs ):
@@ -173,7 +176,7 @@ def parse_run_simulations_options():
     parser.add_option("-T", "--trace_dir", dest="trace_dir", default="",
                   help="Pass this option to run the simulator in trace-driven mode."+\
                         " The directory passed should be the root of all the trace files.")
-    parser.add_option("-M", "--job_mem", dest="job_mem", default="",
+    parser.add_option("-M", "--job_mem", dest="job_mem", default=None,
                   help="Memory usgae of the job be sure to specify the units i.e. 4G, 900M, etc..")
     parser.add_option("-l", "--launcher", dest="launcher", default="",
                   help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
@@ -190,5 +193,6 @@ def parse_run_simulations_options():
     options.run_directory = options.run_directory.strip()
     options.simulator_dir = options.simulator_dir.strip()
     options.launch_name = options.launch_name.strip()
-    options.job_mem = options.job_mem.strip()
+    if options.job_mem != None:
+        options.job_mem = options.job_mem.strip()
     return (options, args)

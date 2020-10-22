@@ -17,8 +17,9 @@
 #include "gpgpu-sim/icnt_wrapper.h"
 #include "gpgpusim_entrypoint.h"
 #include "option_parser.h"
-#include "ISA_Def/trace_opcode.h"
+#include "../ISA_Def/trace_opcode.h"
 #include "trace_driven.h"
+#include "../trace-parser/trace_parser.h"
 #include "accelsim_version.h"
 
 /* TO DO:
@@ -46,6 +47,11 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
                                            gpgpu_context *m_gpgpu_context,
                                            class trace_config *m_config);
 
+trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
+		                      gpgpu_context *m_gpgpu_context, class trace_config *config,
+							  trace_parser *parser);
+
+
 int main(int argc, const char **argv) {
   gpgpu_context *m_gpgpu_context = new gpgpu_context();
   trace_config tconfig;
@@ -54,16 +60,16 @@ int main(int argc, const char **argv) {
       gpgpu_trace_sim_init_perf_model(argc, argv, m_gpgpu_context, &tconfig);
   m_gpgpu_sim->init();
 
+  trace_parser tracer(tconfig.get_traces_filename());
+
+  tconfig.parse_config();
+
   // for each kernel
   // load file
   // parse and create kernel info
   // launch
   // while loop till the end of the end kernel execution
   // prints stats
-
-  trace_parser tracer(tconfig.get_traces_filename(), m_gpgpu_sim,
-                      m_gpgpu_context);
-  tconfig.parse_config();
 
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
 
@@ -76,16 +82,16 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
       continue;
     } else if (commandlist[i].m_type == command_type::kernel_launch) {
-      kernel_info = tracer.parse_kernel_info(commandlist[i].command_string, &tconfig);
+      kernel_trace_t kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
+      kernel_info = create_kernel_info(&kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
       std::cout << "launching kernel command : " << commandlist[i].command_string << std::endl;
       m_gpgpu_sim->launch(kernel_info);
     }
     else
-    	assert(0);
+    	assert(0 && "Undefined Command");
 
     bool active = false;
     bool sim_cycles = false;
-    bool break_limit = false;
 
     do {
       if (!m_gpgpu_sim->active())
@@ -100,7 +106,7 @@ int main(int argc, const char **argv) {
         if (m_gpgpu_sim->cycle_insn_cta_max_hit()) {
           m_gpgpu_context->the_gpgpusim->g_stream_manager
               ->stop_all_running_kernels();
-          break_limit = true;
+          break;
         }
       }
 
@@ -109,7 +115,9 @@ int main(int argc, const char **argv) {
     } while (active);
 
     if (kernel_info) {
-      tracer.kernel_finalizer(kernel_info);
+      delete kernel_info->entry();
+      delete kernel_info;
+      tracer.kernel_finalizer();
       m_gpgpu_sim->print_stats();
     }
 
@@ -118,11 +126,11 @@ int main(int argc, const char **argv) {
       m_gpgpu_context->print_simulation_time();
     }
 
-    if (break_limit) {
+    if (m_gpgpu_sim->cycle_insn_cta_max_hit()) {
       printf("GPGPU-Sim: ** break due to reaching the maximum cycles (or "
              "instructions) **\n");
       fflush(stdout);
-      exit(1);
+      break;
     }
   }
 
@@ -130,8 +138,29 @@ int main(int argc, const char **argv) {
   // that we are done
   printf("GPGPU-Sim: *** simulation thread exiting ***\n");
   printf("GPGPU-Sim: *** exit detected ***\n");
+  fflush(stdout);
 
   return 1;
+}
+
+
+trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
+		                      gpgpu_context *m_gpgpu_context, class trace_config *config,
+							  trace_parser *parser){
+
+  gpgpu_ptx_sim_info info;
+  info.smem = kernel_trace_info->shmem;
+  info.regs = kernel_trace_info->nregs;
+  dim3 gridDim(kernel_trace_info->grid_dim_x, kernel_trace_info->grid_dim_y, kernel_trace_info->grid_dim_z);
+  dim3 blockDim(kernel_trace_info->tb_dim_x, kernel_trace_info->tb_dim_y, kernel_trace_info->tb_dim_z);
+  trace_function_info *function_info =
+      new trace_function_info(info, m_gpgpu_context);
+  function_info->set_name(kernel_trace_info->kernel_name.c_str());
+  trace_kernel_info_t *kernel_info =
+      new trace_kernel_info_t(gridDim, blockDim, function_info,
+    		  parser, config, kernel_trace_info);
+
+  return kernel_info;
 }
 
 gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
@@ -173,3 +202,4 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
 
   return m_gpgpu_context->the_gpgpusim->g_the_gpu;
 }
+
