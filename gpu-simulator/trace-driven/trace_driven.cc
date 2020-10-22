@@ -240,8 +240,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
           else if (trace.memadd_info->addrs[i] >=
                        kernel_trace_info->local_base_addr &&
                    trace.memadd_info->addrs[i] <
-                       kernel_trace_info->local_base_addr + LOCAL_MEM_SIZE_MAX)
+                       kernel_trace_info->local_base_addr + LOCAL_MEM_SIZE_MAX){
             space.set_type(local_space);
+            cache_op = CACHE_ALL;
+          }
           else {
             space.set_type(global_space);
             cache_op = CACHE_ALL;
