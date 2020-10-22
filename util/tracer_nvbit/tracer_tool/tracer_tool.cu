@@ -108,8 +108,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
     if (verbose) {
-      printf("Inspecting function %s at address 0x%lx\n",
-             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(f), true);
+      printf("Inspecting function %s at address 0x%lx\n", nvbit_get_func_name(ctx, f), nvbit_get_func_addr(f), true);
     }
 
     uint32_t cnt = 0;
@@ -137,7 +136,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
 
       /* pass predicate value */
-      nvbit_add_call_arg_pred_val(instr);
+      nvbit_add_call_arg_guard_pred_val(instr);
 
       /* send opcode and pc */
       nvbit_add_call_arg_const_val32(instr, opcode_id);
@@ -153,10 +152,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
        * store and RED)*/
       if (instr->getNumOperands() > 0 &&
-          instr->getOperand(0)->type == Instr::operandType::REG)
+          instr->getOperand(0)->type == InstrType::OperandType::REG)
         dst_oprd = instr->getOperand(0)->u.reg.num;
       else if (instr->getNumOperands() > 0 &&
-               instr->getOperand(0)->type == Instr::operandType::MREF) {
+               instr->getOperand(0)->type == InstrType::OperandType::MREF) {
         src_oprd[0] = instr->getOperand(0)->u.mref.ra_num;
         mem_oper_idx = 0;
         srcNum++;
@@ -165,8 +164,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       // find src regs and mem
       for (int i = 1; i < MAX_SRC; i++) {
         if (i < instr->getNumOperands()) {
-          const Instr::operand_t *op = instr->getOperand(i);
-          if (op->type == Instr::operandType::MREF) {
+          const InstrType::operand_t *op = instr->getOperand(i);
+          if (op->type == InstrType::OperandType::MREF) {
             // mem is found
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
@@ -174,7 +173,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             // TO DO: handle LDGSTS with two mem refs
             assert(mem_oper_idx == -1); // ensure one memory operand per inst
             mem_oper_idx++;
-          } else if (op->type == Instr::operandType::REG) {
+          } else if (op->type == InstrType::OperandType::REG) {
             // reg is found
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
