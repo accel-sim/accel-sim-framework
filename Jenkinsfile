@@ -16,7 +16,7 @@ pipeline {
         }
         stage('accel-sim-build'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 rm -rf ./gpu-simulator/gpgpu-sim
                 source ./gpu-simulator/setup_environment.sh
@@ -28,13 +28,13 @@ pipeline {
         stage('rodinia_2.0-ft'){
             steps{
                 parallel "sass": {
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-sass-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-sass.csv -N rodinia_2.0-ft-sass-$$'''
                }, "ptx": {
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
 
