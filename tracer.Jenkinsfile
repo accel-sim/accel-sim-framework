@@ -14,9 +14,32 @@ pipeline {
                     cd env-setup && git checkout cluster-ubuntu'
             }
         }
+        stage('accel-sim-build'){
+            steps{
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.0_env_setup.sh
+                rm -rf ./gpu-simulator/gpgpu-sim
+                source ./gpu-simulator/setup_environment.sh
+                make -j -C gpu-simulator'''
+            }
+        }
+        stage('test-prebuilt-traces'){
+            steps{
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.0_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
+                cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/ -N rodinia_2.0-ft-online-$$
+                ./util/job_launching/monitor_func_test.py -N rodinia_2.0-ft-online-$$
+                rm -rf hw_run
+                rm -rf sim_run_11.0
+                '''
+            }
+        }
         stage('build-tracer'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 ./util/tracer_nvbit/install_nvbit.sh
                 make clean -C ./util/tracer_nvbit/
@@ -25,7 +48,7 @@ pipeline {
         }
         stage('rodinia_2.0-ft-build'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 rm -rf ./gpu-app-collection/
                 git clone git@github.com:accel-sim/gpu-app-collection.git
@@ -36,7 +59,7 @@ pipeline {
         }
         stage('generate-rodinia_2.0-ft-traces'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-app-collection/src/setup_environment
                 rm -rf ./hw_run/
@@ -44,18 +67,19 @@ pipeline {
                 '''
             }
         }
-        stage('accel-sim-build'){
+        stage('generate-rodinia_2.0-ft-hw_stats'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
-                rm -rf ./gpu-simulator/gpgpu-sim
-                source ./gpu-simulator/setup_environment.sh
-                make -j -C gpu-simulator'''
+                source ./gpu-app-collection/src/setup_environment
+                ./util/hw_stats/run_hw.py -B rodinia_2.0-ft -D 7
+                '''
             }
         }
+
         stage('test-new-traces'){
             steps{
-                sh '''#!/bin/bash
+                sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/11.0/ -N rodinia_2.0-ft-$$

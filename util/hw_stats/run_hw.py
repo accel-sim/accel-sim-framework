@@ -59,7 +59,8 @@ logfile = day_string + "--" + time_string + ".csv"
 
 for bench in benchmarks:
     edir, ddir, exe, argslist = bench
-    for args in argslist:
+    for argpair in argslist:
+        args = argpair["args"]
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
         this_run_dir = os.path.join(this_directory, "..", "..", "hw_run", "device-" + options.device_num, cuda_version, run_name)

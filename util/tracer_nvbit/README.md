@@ -34,7 +34,7 @@
     the post-traces-processing will go through all the kernels, one by one, and generate new file ".traceg", and it will also generate the kernelslist.g file. These are the final files that shold be given to accel-sim simulatror. Example:
 
     ```bash
-    ./accelsim.out -trace ../../../../../../Nvbits/nvbit_1.1/nvbit_release/traces/kernelslist.g 
+    ./gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
     ```
 
     .trace files are not required anymore. These are intermediate files and you can delete them to save disk space. 
@@ -48,11 +48,53 @@
     export DYNAMIC_KERNEL_LIMIT_END=5
     ```
 
-    Set enviroment variables as below wil only report kernel 3 only
+    Set enviroment variables as below wil only report kernel 3.
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=3
     export DYNAMIC_KERNEL_LIMIT_END=3
     ```
 
-    If you do not really know the kernel id that you are intersted in, You can set kernel start with a big number like 1000 and the tracer will trace nothing. But it will still list kernels name and id in stats.csv. So, see the stats.csv file and you can check the file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
+    If you do not really know the kernel id that you are intersted in, you can set kernel start with a big number like 1000000 
+    ```bash
+    export DYNAMIC_KERNEL_LIMIT_START=1000000
+    ```
+    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
+
+* Traces format:
+
+    The instruction format contains the following columns. Any column that is NOT contained in brackets [] must exist in any instruction format, so any instruction should have at least 10 column entries as reported below. 
+    
+    ```bash
+    #traces format = threadblock_x threadblock_y threadblock_z warpid_tb PC mask dest_num [reg_dests] opcode src_num [reg_srcs] mem_width [adrrescompress?] [mem_addresses]
+    ```
+    
+The other columns that are in brackets [] may or may not exist based on the instruction characteristics, for example:
+"dest_num" tells us the number of destination registers.
+If dest_num=0, then "reg_dests" will be empty and not exist in the trace.
+If dest_num>0, this means that this instruction has dest_num destination registers, the [reg_dests] will list these registers values.
+
+Similarly, the src_num and "reg_srcs".
+
+Finally, the mem_width rule is as following:
+If mem_width=0, this implies that it is not a memory instruction and [adrrescompress?] [mem_addresses] will be empty.
+if mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
+
+Example: 
+
+
+    31 0 0 3 0000 ffffffff 1 R1 IMAD.MOV.U32 2 R255 R255 0
+
+
+This is interpreted as following: <br />
+threadblock_x threadblock_y threadblock_z=31 0 0 <br />
+warpid_tb=3 <br />
+PC =0000 (hexa) <br />
+mask=ffffffff (hexa) <br />
+dest_num=1 (how many destination registers) <br />
+reg_dests=R1 (if dest_num=0, then this would be empty) <br />
+opcode=IMAD.MOV.U32  <br />
+src_num=2  <br />
+reg_srcs=R255 R255  <br />
+mem_width = 0 (if mem_width>0, then there will be some addresses listed afterwards) <br />
+
 

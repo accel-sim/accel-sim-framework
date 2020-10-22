@@ -46,9 +46,8 @@ nvbit_tracer_path = os.path.join(this_directory, "tracer_tool")
 
 for bench in benchmarks:
     edir, ddir, exe, argslist = bench
-    ddir = common.dir_option_test(os.path.join(ddir,exe),"",this_directory)
-    edir = common.dir_option_test(edir,"",this_directory)
-    for args in argslist:
+    for argpair in argslist:
+        args = argpair["args"]
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
 
         this_run_dir = os.path.abspath(os.path.expandvars(
@@ -60,27 +59,31 @@ for bench in benchmarks:
             os.makedirs(this_trace_folder)
 
         # link the data directory
-        if os.path.isdir(os.path.join(ddir, "data")):
+        try:
+            benchmark_data_dir = common.dir_option_test(os.path.join(ddir,exe,"data"),"",this_directory)
             if os.path.lexists(os.path.join(this_run_dir, "data")):
                 os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(os.path.join(ddir, "data"), os.path.join(this_run_dir,"data"))
+            os.symlink(benchmark_data_dir, os.path.join(this_run_dir,"data"))
+        except common.PathMissing:
+            pass
 
-#        all_data_link = os.path.join(this_run_dir,"data_dirs")
-#        if os.path.lexists(all_data_link):
-#            os.remove(all_data_link)
-#        if os.path.exists(os.path.join(this_directory, ddir)):
-#            os.symlink(os.path.join(this_directory, ddir), all_data_link)
+        all_data_link = os.path.join(this_run_dir,"data_dirs")
+        if os.path.lexists(all_data_link):
+            os.remove(all_data_link)
+        top_data_dir_path = common.dir_option_test(ddir, "", this_directory)
+        os.symlink(top_data_dir_path, all_data_link)
 
         if args == None:
             args = ""
 
+        exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
-        
+
 	# first we generate the traces (.trace and kernelslist files)
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
 	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " + os.path.join(this_directory, edir,exe) +\
+            "LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " + exec_path +\
             " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 

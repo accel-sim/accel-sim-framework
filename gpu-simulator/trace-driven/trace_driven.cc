@@ -11,11 +11,11 @@
 #include <time.h>
 #include <vector>
 
-#include "ISA_Def/kepler_opcode.h"
-#include "ISA_Def/pascal_opcode.h"
-#include "ISA_Def/trace_opcode.h"
-#include "ISA_Def/turing_opcode.h"
-#include "ISA_Def/volta_opcode.h"
+#include "../ISA_Def/kepler_opcode.h"
+#include "../ISA_Def/pascal_opcode.h"
+#include "../ISA_Def/trace_opcode.h"
+#include "../ISA_Def/turing_opcode.h"
+#include "../ISA_Def/volta_opcode.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
@@ -26,166 +26,15 @@
 #include "option_parser.h"
 #include "trace_driven.h"
 
-bool is_number(const std::string &s) {
-  std::string::const_iterator it = s.begin();
-  while (it != s.end() && std::isdigit(*it))
-    ++it;
-  return !s.empty() && it == s.end();
-}
-
-void split(const std::string &str, std::vector<std::string> &cont,
-           char delimi = ' ') {
-  std::stringstream ss(str);
-  std::string token;
-  while (std::getline(ss, token, delimi)) {
-    cont.push_back(token);
-  }
-}
-
-trace_parser::trace_parser(const char *kernellist_filepath,
-                           gpgpu_sim *m_gpgpu_sim,
-                           gpgpu_context *m_gpgpu_context) {
-  this->m_gpgpu_sim = m_gpgpu_sim;
-  this->m_gpgpu_context = m_gpgpu_context;
-  kernellist_filename = kernellist_filepath;
-}
-
-std::vector<trace_command> trace_parser::parse_commandlist_file() {
-  ifs.open(kernellist_filename);
-
-  if (!ifs.is_open()) {
-    std::cout << "Unable to open file: " << kernellist_filename << std::endl;
-    exit(1);
-  }
-
-  std::string directory(kernellist_filename);
-  const size_t last_slash_idx = directory.rfind('/');
-  if (std::string::npos != last_slash_idx) {
-    directory = directory.substr(0, last_slash_idx);
-  }
-
-  std::string line, filepath;
-  std::vector<trace_command> commandlist;
-  while (!ifs.eof()) {
-    getline(ifs, line);
-    if (line.empty())
-      continue;
-    else if (line.substr(0, 10) == "MemcpyHtoD") {
-      trace_command command;
-      command.command_string = line;
-      command.m_type = command_type::cpu_gpu_mem_copy;
-      commandlist.push_back(command);
-    } else if (line.substr(0, 6) == "kernel") {
-      trace_command command;
-      command.m_type = command_type::kernel_launch;
-      filepath = directory + "/" + line;
-      command.command_string = filepath;
-      commandlist.push_back(command);
-    }
-    // ignore gpu_to_cpu_memory_cpy
-  }
-
-  ifs.close();
-  return commandlist;
-}
-
-void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
-                                     size_t &address, size_t &count) {
-  std::vector<std::string> params;
-  split(memcpy_command, params, ',');
-  assert(params.size() == 3);
-  std::stringstream ss;
-  ss.str(params[1]);
-  ss >> std::hex >> address;
-  ss.clear();
-  ss.str(params[2]);
-  ss >> std::dec >> count;
-}
-
-trace_kernel_info_t *
-trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath,
-                                trace_config *config) {
-  ifs.open(kerneltraces_filepath.c_str());
-
-  if (!ifs.is_open()) {
-    std::cout << "Unable to open file: " << kerneltraces_filepath << std::endl;
-    exit(1);
-  }
-
-  std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
-
-  unsigned grid_dim_x = 0, grid_dim_y = 0, grid_dim_z = 0, tb_dim_x = 0,
-           tb_dim_y = 0, tb_dim_z = 0;
-  unsigned shmem = 0, nregs = 0, cuda_stream_id = 0, kernel_id = 0,
-           binary_verion = 0;
-  std::string line;
-  std::stringstream ss;
-  std::string string1, string2;
-  std::string kernel_name;
-
-  while (!ifs.eof()) {
-    getline(ifs, line);
-
-    if (line.length() == 0) {
-      continue;
-    } else if (line[0] == '#') {
-      // the trace format, ignore this and assume fixed format for now
-      break; // the begin of the instruction stream
-    } else if (line[0] == '-') {
-      ss.str(line);
-      ss.ignore();
-      ss >> string1 >> string2;
-      if (string1 == "kernel" && string2 == "name") {
-        const size_t equal_idx = line.find('=');
-        kernel_name = line.substr(equal_idx + 1);
-      } else if (string1 == "kernel" && string2 == "id") {
-        sscanf(line.c_str(), "-kernel id = %d", &kernel_id);
-      } else if (string1 == "grid" && string2 == "dim") {
-        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &grid_dim_x, &grid_dim_y,
-               &grid_dim_z);
-      } else if (string1 == "block" && string2 == "dim") {
-        sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &tb_dim_x, &tb_dim_y,
-               &tb_dim_z);
-      } else if (string1 == "shmem") {
-        sscanf(line.c_str(), "-shmem = %d", &shmem);
-      } else if (string1 == "nregs") {
-        sscanf(line.c_str(), "-nregs = %d", &nregs);
-      } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %d", &cuda_stream_id);
-      } else if (string1 == "binary" && string2 == "version") {
-        sscanf(line.c_str(), "-binary version = %d", &binary_verion);
-      }
-      std::cout << line << std::endl;
-      continue;
-    }
-  }
-
-  gpgpu_ptx_sim_info info;
-  info.smem = shmem;
-  info.regs = nregs;
-  dim3 gridDim(grid_dim_x, grid_dim_y, grid_dim_z);
-  dim3 blockDim(tb_dim_x, tb_dim_y, tb_dim_z);
-  trace_function_info *function_info =
-      new trace_function_info(info, m_gpgpu_context);
-  function_info->set_name(kernel_name.c_str());
-  trace_kernel_info_t *kernel_info =
-      new trace_kernel_info_t(gridDim, blockDim, binary_verion, function_info,
-                              &ifs, m_gpgpu_sim, m_gpgpu_context, config);
-
-  return kernel_info;
-}
-
-void trace_parser::kernel_finalizer(trace_kernel_info_t *kernel_info) {
-  if (ifs.is_open())
-    ifs.close();
-
-  delete kernel_info->entry();
-  delete kernel_info;
-}
-
 const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
   if (trace_pc < warp_traces.size()) {
-    return &warp_traces[trace_pc++];
+    trace_warp_inst_t *new_inst =
+        new trace_warp_inst_t(get_shader()->get_config());
+    new_inst->parse_from_trace_struct(
+        warp_traces[trace_pc], m_kernel_info->OpcodeMap,
+        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
+    trace_pc++;
+    return new_inst;
   } else
     return NULL;
 }
@@ -200,233 +49,69 @@ bool trace_shd_warp_t::trace_done() { return trace_pc == (warp_traces.size()); }
 
 address_type trace_shd_warp_t::get_start_trace_pc() {
   assert(warp_traces.size() > 0);
-  return warp_traces[0].pc;
+  return warp_traces[0].m_pc;
 }
 
 address_type trace_shd_warp_t::get_pc() {
   assert(warp_traces.size() > 0);
   assert(trace_pc < warp_traces.size());
-  return warp_traces[trace_pc].pc;
+  return warp_traces[trace_pc].m_pc;
 }
 
 trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
-                                         unsigned m_binary_verion,
                                          trace_function_info *m_function_info,
-                                         std::ifstream *inputstream,
-                                         gpgpu_sim *gpgpu_sim,
-                                         gpgpu_context *gpgpu_context,
-                                         class trace_config *config)
+                                         trace_parser *parser,
+                                         class trace_config *config,
+                                         kernel_trace_t *kernel_trace_info)
     : kernel_info_t(gridDim, blockDim, m_function_info) {
-  ifs = inputstream;
-  m_gpgpu_sim = gpgpu_sim;
-  m_gpgpu_context = gpgpu_context;
-  binary_verion = m_binary_verion;
+  m_parser = parser;
   m_tconfig = config;
+  m_kernel_trace_info = kernel_trace_info;
 
   // resolve the binary version
-  if (m_binary_verion == VOLTA_BINART_VERSION)
+  if (kernel_trace_info->binary_verion == VOLTA_BINART_VERSION)
     OpcodeMap = &Volta_OpcodeMap;
-  else if (m_binary_verion == PASCAL_TITANX_BINART_VERSION ||
-           m_binary_verion == PASCAL_P100_BINART_VERSION)
+  else if (kernel_trace_info->binary_verion == PASCAL_TITANX_BINART_VERSION ||
+           kernel_trace_info->binary_verion == PASCAL_P100_BINART_VERSION)
     OpcodeMap = &Pascal_OpcodeMap;
-  else if (m_binary_verion == KEPLER_BINART_VERSION)
+  else if (kernel_trace_info->binary_verion == KEPLER_BINART_VERSION)
     OpcodeMap = &Kepler_OpcodeMap;
-  else if (m_binary_verion == TURING_BINART_VERSION)
+  else if (kernel_trace_info->binary_verion == TURING_BINART_VERSION)
     OpcodeMap = &Turing_OpcodeMap;
-  else
-    assert(0 && "unsupported binary version");
+  else {
+    printf("unsupported binary version: %d\n",
+           kernel_trace_info->binary_verion);
+    fflush(stdout);
+    exit(0);
+  }
 }
 
 bool trace_kernel_info_t::get_next_threadblock_traces(
-    std::vector<std::vector<trace_warp_inst_t> *> threadblock_traces) {
+    std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
 
-  unsigned block_id_x = 0, block_id_y = 0, block_id_z = 0;
-  unsigned warp_id = 0;
-  unsigned insts_num = 0;
+  bool success = m_parser->get_next_threadblock_traces(
+      threadblock_traces, m_kernel_trace_info->trace_verion);
 
-  bool start_of_tb_stream_found = false;
-
-  while (!ifs->eof()) {
-    std::string line;
-    std::stringstream ss;
-    std::string string1, string2;
-
-    getline(*ifs, line);
-
-    if (line.length() == 0) {
-      continue;
-    } else {
-      ss.str(line);
-      ss >> string1 >> string2;
-      if (string1 == "#BEGIN_TB") {
-        if (!start_of_tb_stream_found) {
-          start_of_tb_stream_found = true;
-        } else
-          assert(0 &&
-                 "Parsing error: thread block start before the previous one "
-                 "finish");
-      } else if (string1 == "#END_TB") {
-        assert(start_of_tb_stream_found);
-        break; // end of TB stream
-      } else if (string1 == "thread" && string2 == "block") {
-        assert(start_of_tb_stream_found);
-        sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
-               &block_id_y, &block_id_z);
-        std::cout << line << std::endl;
-      } else if (string1 == "warp") {
-        // the start of new warp stream
-        assert(start_of_tb_stream_found);
-        sscanf(line.c_str(), "warp = %d", &warp_id);
-      } else if (string1 == "insts") {
-        assert(start_of_tb_stream_found);
-        sscanf(line.c_str(), "insts = %d", &insts_num);
-        threadblock_traces[warp_id]->reserve(insts_num);
-      } else {
-        assert(start_of_tb_stream_found);
-        trace_warp_inst_t inst(m_gpgpu_sim->getShaderCoreConfig(),
-                               m_gpgpu_context, m_tconfig);
-        inst.parse_from_string(line, OpcodeMap);
-        threadblock_traces[warp_id]->push_back(inst);
-      }
-    }
-  }
-
-  return true;
+  return success;
 }
 
-bool trace_warp_inst_t::check_opcode_contain(
-    const std::vector<std::string> &opcode, std::string param) {
-  for (unsigned i = 0; i < opcode.size(); ++i)
-    if (opcode[i] == param)
-      return true;
-
-  return false;
-}
-
-unsigned trace_warp_inst_t::get_datawidth_from_opcode(
-    const std::vector<std::string> &opcode) {
-  for (unsigned i = 0; i < opcode.size(); ++i) {
-    if (is_number(opcode[i])) {
-      return (std::stoi(opcode[i], NULL) / 8);
-    } else if (opcode[i][0] == 'U' && is_number(opcode[i].substr(1))) {
-      // handle the U* case
-      unsigned bits;
-      sscanf(opcode[i].c_str(), "U%u", &bits);
-      return bits / 8;
-    }
-  }
-
-  return 4; // default is 4 bytes
-}
-
-bool trace_warp_inst_t::parse_from_string(
-    std::string trace,
-    const std::unordered_map<std::string, OpcodeChar> *OpcodeMap) {
-  std::stringstream ss;
-  ss.str(trace);
-
-  std::string temp;
-  unsigned threadblock_x = 0, threadblock_y = 0, threadblock_z = 0,
-           warpid_tb = 0, sm_id = 0, warpid_sm = 0;
-  unsigned long long m_pc = 0;
-  unsigned mask = 0;
-  unsigned reg_dest[4];
-  std::string opcode;
-  unsigned reg_dsts_num = 0;
-  unsigned reg_srcs_num = 0;
-  unsigned reg_srcs[4];
-  unsigned mem_width = 0;
-  unsigned long long mem_addresses[warp_size()];
-  unsigned address_mode = 0;
-  unsigned long long base_address = 0;
-  int stride = 0;
-
-  // Start Parsing
-  ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z >>
-      warpid_tb;
-
-  // ignore core id
-  // ss>>std::dec>>sm_id>>warpid_sm;
-
-  ss >> std::hex >> m_pc;
-  ss >> std::hex >> mask;
-
-  std::bitset<MAX_WARP_SIZE> mask_bits(mask);
-
-  ss >> std::dec >> reg_dsts_num;
-  for (unsigned i = 0; i < reg_dsts_num; ++i) {
-    ss >> std::dec >> temp;
-    sscanf(temp.c_str(), "R%d", &reg_dest[i]);
-  }
-
-  ss >> opcode;
-
-  ss >> reg_srcs_num;
-  for (unsigned i = 0; i < reg_srcs_num; ++i) {
-    ss >> temp;
-    sscanf(temp.c_str(), "R%d", &reg_srcs[i]);
-  }
-
-  ss >> mem_width;
-
-  if (mem_width > 0) // then it is a memory inst
-  {
-    ss >> std::dec >> address_mode;
-    if (address_mode == 0) {
-      // read addresses one by one from the file
-      for (int s = 0; s < warp_size(); s++) {
-        if (mask_bits.test(s))
-          ss >> std::hex >> mem_addresses[s];
-        else
-          mem_addresses[s] = 0;
-      }
-    } else if (address_mode == 1) {
-      // read addresses as base address and stride
-      ss >> std::hex >> base_address;
-      ss >> std::dec >> stride;
-      bool first_bit1_found = false;
-      bool last_bit1_found = false;
-      unsigned long long addra = base_address;
-      for (int s = 0; s < warp_size(); s++) {
-        if (mask_bits.test(s) && !first_bit1_found) {
-          first_bit1_found = true;
-          mem_addresses[s] = base_address;
-        } else if (first_bit1_found && !last_bit1_found) {
-          if (mask_bits.test(s)) {
-            addra += stride;
-            mem_addresses[s] = addra;
-          } else
-            last_bit1_found = true;
-        } else
-          mem_addresses[s] = 0;
-      }
-    }
-  }
-  // Finish Parsing
-  // After parsing, fill the inst_t and warp_inst_t params
+bool trace_warp_inst_t::parse_from_trace_struct(
+    const inst_trace_t &trace,
+    const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
+    const class trace_config *tconfig,
+    const class kernel_trace_t *kernel_trace_info) {
+  // fill the inst_t and warp_inst_t params
 
   // fill active mask
-  active_mask_t active_mask = mask_bits;
+  active_mask_t active_mask = trace.mask;
   set_active(active_mask);
-
-  // get the opcode
-  std::istringstream iss(opcode);
-  std::vector<std::string> opcode_tokens;
-  std::string token;
-  while (std::getline(iss, token, '.')) {
-    if (!token.empty())
-      opcode_tokens.push_back(token);
-  }
-
-  std::string opcode1 = opcode_tokens[0];
 
   // fill and initialize common params
   m_decoded = true;
-  pc = (address_type)m_pc; // we will lose the high 32 bits from casting long
-                           // to unsigned, it should be okay!
+  pc = (address_type)trace.m_pc;
 
   isize =
       16; // starting from MAXWELL isize=16 bytes (including the control bytes)
@@ -446,53 +131,53 @@ bool trace_warp_inst_t::parse_from_string(
   op = ALU_OP;
   mem_op = NOT_TEX;
 
+  // get the opcode
+  std::vector<std::string> opcode_tokens = trace.get_opcode_tokens();
+  std::string opcode1 = opcode_tokens[0];
+
   std::unordered_map<std::string, OpcodeChar>::const_iterator it =
       OpcodeMap->find(opcode1);
   if (it != OpcodeMap->end()) {
     m_opcode = it->second.opcode;
     op = (op_type)(it->second.opcode_category);
   } else {
-    std::cout << "ERROR:  undefined instruction : " << opcode
+    std::cout << "ERROR:  undefined instruction : " << trace.opcode
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
 
   // fill regs information
-  num_regs = reg_srcs_num + reg_dsts_num;
+  num_regs = trace.reg_srcs_num + trace.reg_dsts_num;
   num_operands = num_regs;
-  outcount = reg_dsts_num;
-  for (unsigned m = 0; m < reg_dsts_num; ++m) {
-    out[m] = reg_dest[m] + 1; // Increment by one because GPGPU-sim starts from
-                              // R1, while SASS starts from R0
-    arch_reg.dst[m] = reg_dest[m] + 1;
+  outcount = trace.reg_dsts_num;
+  for (unsigned m = 0; m < trace.reg_dsts_num; ++m) {
+    out[m] = trace.reg_dest[m] + 1; // Increment by one because GPGPU-sim starts
+                                    // from R1, while SASS starts from R0
+    arch_reg.dst[m] = trace.reg_dest[m] + 1;
   }
 
-  incount = reg_srcs_num;
-  for (unsigned m = 0; m < reg_srcs_num; ++m) {
-    in[m] = reg_srcs[m] + 1; // Increment by one because GPGPU-sim starts from
-                             // R1, while SASS starts from R0
-    arch_reg.src[m] = reg_srcs[m] + 1;
+  incount = trace.reg_srcs_num;
+  for (unsigned m = 0; m < trace.reg_srcs_num; ++m) {
+    in[m] = trace.reg_src[m] + 1; // Increment by one because GPGPU-sim starts
+                                  // from R1, while SASS starts from R0
+    arch_reg.src[m] = trace.reg_src[m] + 1;
   }
-  // TO DO: handle: vector, store insts have no output, double inst and hmma,
-  // and 64 bit address remove redundant registers
 
   // fill latency and initl
-  m_tconfig->set_latency(op, latency, initiation_interval);
+  tconfig->set_latency(op, latency, initiation_interval);
 
   // fill addresses
-  if (mem_width > 0) {
+  if (trace.memadd_info != NULL) {
+    data_size = trace.memadd_info->width;
     for (unsigned i = 0; i < warp_size(); ++i)
-      set_addr(i, mem_addresses[i]);
+      set_addr(i, trace.memadd_info->addrs[i]);
   }
 
   // handle special cases and fill memory space
   switch (m_opcode) {
   case OP_LDG:
   case OP_LDL:
-    assert(mem_width > 0);
-    // Nvbit reports incorrect data width, and we have to parse the opcode to
-    // get the correct data width
-    data_size = get_datawidth_from_opcode(opcode_tokens);
+    assert(data_size > 0);
     memory_op = memory_load;
     cache_op = CACHE_ALL;
     if (m_opcode == OP_LDL)
@@ -500,65 +185,69 @@ bool trace_warp_inst_t::parse_from_string(
     else
       space.set_type(global_space);
     // check the cache scope, if its strong GPU, then bypass L1
-    if (check_opcode_contain(opcode_tokens, "STRONG") &&
-        check_opcode_contain(opcode_tokens, "GPU")) {
+    if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
+        trace.check_opcode_contain(opcode_tokens, "GPU")) {
       cache_op = CACHE_GLOBAL;
     }
     break;
   case OP_STG:
   case OP_STL:
-  case OP_ATOMG:
-  case OP_RED:
-  case OP_ATOM:
-    assert(mem_width > 0);
-    data_size = get_datawidth_from_opcode(opcode_tokens);
+    assert(data_size > 0);
     memory_op = memory_store;
     cache_op = CACHE_ALL;
     if (m_opcode == OP_STL)
       space.set_type(local_space);
     else
       space.set_type(global_space);
-
-    if (m_opcode == OP_ATOMG || m_opcode == OP_ATOM || m_opcode == OP_RED) {
-      m_isatomic = true;
-      memory_op = memory_load;
-      op = LOAD_OP;
-      cache_op = CACHE_GLOBAL;
-
-      // ATOMIC writes to the first operand, we missed that in the trace so we
-      // fixed it here. TO be fixed in tracer
-      outcount = reg_dsts_num + 1;
-      out[0] = in[0]; // Increment by one because GPGPU-sim starts from R1,
-                      // while SASS starts from R0
-      arch_reg.dst[0] = reg_srcs[0];
-      num_regs = reg_srcs_num + reg_dsts_num + 1;
-      num_operands = num_regs;
-    }
-
+    break;
+  case OP_ATOMG:
+  case OP_RED:
+  case OP_ATOM:
+    assert(data_size > 0);
+    memory_op = memory_load;
+    op = LOAD_OP;
+    space.set_type(global_space);
+    m_isatomic = true;
+    cache_op = CACHE_GLOBAL; // all the atomics should be done at L2
     break;
   case OP_LDS:
   case OP_STS:
   case OP_ATOMS:
-    assert(mem_width > 0);
-    data_size = mem_width;
+    assert(data_size > 0);
     space.set_type(shared_space);
-    if (m_opcode == OP_ATOMS || m_opcode == OP_LDS) {
-      // m_isatomic = true;
-      op = LOAD_OP;
-      memory_op = memory_load;
-    }
     break;
   case OP_ST:
   case OP_LD:
-    // TO DO: set generic load based on the address
-    // right now, we consider all loads are shared.
-    assert(mem_width > 0);
-    data_size = get_datawidth_from_opcode(opcode_tokens);
-    space.set_type(shared_space);
+    assert(data_size > 0);
     if (m_opcode == OP_LD)
       memory_op = memory_load;
     else
       memory_op = memory_store;
+    // resolve generic loads
+    if (kernel_trace_info->shmem_base_addr == 0 ||
+        kernel_trace_info->local_base_addr == 0) {
+      // shmem and local addresses are not set
+      // assume all the mem reqs are shared by default
+      space.set_type(shared_space);
+    } else {
+      // check the first active address
+      for (unsigned i = 0; i < warp_size(); ++i)
+        if (active_mask.test(i)) {
+          if (trace.memadd_info->addrs[i] >=
+                  kernel_trace_info->shmem_base_addr &&
+              trace.memadd_info->addrs[i] < kernel_trace_info->local_base_addr)
+            space.set_type(shared_space);
+          else if (trace.memadd_info->addrs[i] >=
+                       kernel_trace_info->local_base_addr &&
+                   trace.memadd_info->addrs[i] <
+                       kernel_trace_info->local_base_addr + LOCAL_MEM_SIZE_MAX)
+            space.set_type(local_space);
+          else
+            space.set_type(global_space);
+          break;
+        }
+    }
+
     break;
   case OP_BAR:
     // TO DO: fill this correctly
@@ -647,7 +336,7 @@ void trace_config::parse_config() {
   }
 }
 void trace_config::set_latency(unsigned category, unsigned &latency,
-                               unsigned &initiation_interval) {
+                               unsigned &initiation_interval) const {
   initiation_interval = latency = 1;
 
   switch (category) {
@@ -777,7 +466,8 @@ void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
 
 void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
-  std::vector<std::vector<trace_warp_inst_t> *> threadblock_traces;
+
+  std::vector<std::vector<inst_trace_t> *> threadblock_traces;
   for (unsigned i = start_warp; i < end_warp; ++i) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->clear();
@@ -791,6 +481,7 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
   for (unsigned i = start_warp; i < end_warp; ++i) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
+    m_trace_warp->set_kernel(&trace_kernel);
   }
 }
 
@@ -799,6 +490,16 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
                                                           unsigned tid) {
   if (inst.isatomic())
     m_warp[inst.warp_id()]->inc_n_atomic();
+
+  if (inst.space.is_local() && (inst.is_load() || inst.is_store())) {
+    new_addr_type localaddrs[MAX_ACCESSES_PER_INSN_PER_THREAD];
+    unsigned num_addrs;
+    num_addrs = translate_local_memaddr(
+        inst.get_addr(t), tid,
+        m_config->n_simt_clusters * m_config->n_simt_cores_per_cluster,
+        inst.data_size, (new_addr_type *)localaddrs);
+    inst.set_addr(t, (new_addr_type *)localaddrs, num_addrs);
+  }
 
   if (inst.op == EXIT_OPS) {
     m_warp[inst.warp_id()]->set_completed(t);
@@ -825,4 +526,16 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
     m_trace_warp->ibuffer_flush();
     m_barriers.warp_exit(inst.warp_id());
   }
+}
+
+void trace_shader_core_ctx::issue_warp(register_set &warp,
+                                       const warp_inst_t *pI,
+                                       const active_mask_t &active_mask,
+                                       unsigned warp_id, unsigned sch_id) {
+
+  shader_core_ctx::issue_warp(warp, pI, active_mask, warp_id, sch_id);
+
+  // delete warp_inst_t class here, it is not required anymore by gpgpu-sim
+  // after issue
+  delete pI;
 }
