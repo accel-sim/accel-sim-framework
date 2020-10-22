@@ -38,6 +38,7 @@ pipeline {
                 source ./env-setup/11.0_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
 
+                rm -rf ./gpu-app-collection
                 git clone git@github.com:accel-sim/gpu-app-collection.git
                 source ./gpu-app-collection/src/setup_environment
                 make rodinia_2.0-ft -j -C ./gpu-app-collection/src
