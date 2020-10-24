@@ -447,6 +447,8 @@ bool trace_warp_inst_t::parse_from_string(
   op = ALU_OP;
   sp_op = OTHER_OP;
   mem_op = NOT_TEX;
+  const_cache_operand = 0;
+  oprnd_type = UN_OP;
 
   std::unordered_map<std::string, OpcodeChar>::const_iterator it =
       OpcodeMap->find(opcode1);
@@ -454,12 +456,24 @@ bool trace_warp_inst_t::parse_from_string(
     m_opcode = it->second.opcode;
     op = (op_type)(it->second.opcode_category);
     sp_op = (special_ops)(it->second.opcode_power);
+    oprnd_type = (types_of_operands)(it->second.opcode_type);
   } else {
     std::cout << "ERROR:  undefined instruction : " << opcode
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
 
+  if(opcode1 == "MUFU"){ // Differentiate between different MUFU operations for power model
+    if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS"))
+      sp_op = FP_SIN_OP;
+    if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP"))
+      sp_op = FP_EXP_OP;
+    if (opcode == "MUFU.RSQ") 
+      sp_op = FP_SQRT_OP;
+    if (opcode == "MUFU.LG2") 
+      sp_op = FP_LG_OP;
+  }
+  
   // fill regs information
   num_regs = reg_srcs_num + reg_dsts_num;
   num_operands = num_regs;
@@ -487,8 +501,16 @@ bool trace_warp_inst_t::parse_from_string(
       set_addr(i, mem_addresses[i]);
   }
 
+
   // handle special cases and fill memory space
   switch (m_opcode) {
+  case OP_LDC: //handle Load from Constant
+    assert(mem_width > 0);
+    data_size = 4;
+    memory_op = memory_load;
+    space.set_type(const_space);
+    cache_op = CACHE_ALL;
+    break;
   case OP_LDG:
   case OP_LDL:
     assert(mem_width > 0);
@@ -584,6 +606,12 @@ bool trace_warp_inst_t::parse_from_string(
         initiation_interval / 2; // FP16 has 2X throughput than FP32
     break;
   default:
+    if(mem_width > 0){//must be using operand from Constant Address Space, generate appropriate mem accesses
+      data_size = 4;
+      const_cache_operand = 1;
+      space.set_type(const_space);
+      cache_op = CACHE_ALL;
+    }
     break;
   }
 
