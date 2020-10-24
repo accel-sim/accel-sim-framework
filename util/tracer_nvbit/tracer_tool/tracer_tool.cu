@@ -147,6 +147,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
+      int cbank_idx = -1;
+      int cbank_opnd = -1;
 
       /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
        * store and RED)*/
@@ -174,16 +176,44 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             mem_oper_idx++;
           } else if (op->type == Instr::operandType::REG) {
             // reg is found
+
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
+          } else if ((op->type == Instr::operandType::CBANK)) {
+            assert(srcNum < MAX_SRC);
+            if(instr->getOperand(cbank_opnd)->u.cbank.has_reg_offset){
+              src_oprd[srcNum] = instr->getOperand(i)->u.cbank.reg_offset;
+              srcNum++;
+            }
+            assert(cbank_idx == -1); // ensure one constant operand per inst
+            cbank_idx++;
+            cbank_opnd = i;
           }
-          // skip anything else (constant and predicates)
+          // skip anything else (predicates)
         }
       }
-
+      /* ConstantBank addresses info */
+      if (cbank_idx >= 0) {
+        if(instr->getOperand(cbank_opnd)->u.cbank.has_imm_offset){
+          nvbit_add_call_arg_const_val32(instr, 1);
+          int low = instr->getOperand(cbank_opnd)->u.cbank.imm_offset;
+          int high = instr->getOperand(cbank_opnd)->u.cbank.id;
+          uint64_t constcache_index;
+          unsigned char * ptr = (unsigned char *) &constcache_index;
+          memcpy (ptr+0, &low, 4);
+          memcpy (ptr+4, &high, 4);
+          nvbit_add_call_arg_const_val64(instr, constcache_index);
+          nvbit_add_call_arg_const_val32(instr, instr->getOperand(cbank_opnd)->u.cbank.id);
+        }
+        else if(instr->getOperand(cbank_opnd)->u.cbank.has_reg_offset){
+          nvbit_add_call_arg_const_val32(instr, 1);
+          nvbit_add_call_arg_reg_val(instr, instr->getOperand(cbank_opnd)->u.cbank.reg_offset);
+          nvbit_add_call_arg_const_val32(instr, instr->getOperand(cbank_opnd)->u.cbank.id);
+        }
+      }
       /* mem addresses info */
-      if (mem_oper_idx >= 0) {
+      else if (mem_oper_idx >= 0) {
         nvbit_add_call_arg_const_val32(instr, 1);
         nvbit_add_call_arg_mref_addr64(instr, 0);
         nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
