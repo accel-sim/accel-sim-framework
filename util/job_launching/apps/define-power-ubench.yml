@@ -17,10 +17,8 @@ power_ubench:
         - add_mem_1:
             - 100
         - add_mem_2:
-            - 100
+            - 10
         - BE_DP_FP_ADD:
-            - 100
-        - BE_DP_FP_DIV:
             - 100
         - BE_DP_FP_MAD:
             - 100
@@ -33,7 +31,7 @@ power_ubench:
         - BE_MEM_CNST_Acss:
             - 100
         - BE_MEM_DRAM_Acss:
-            - 100
+            - 10
         - BE_MEM_SHRD_Acss:
             - 100
         - BE_SFU_EXP:
@@ -67,30 +65,6 @@ power_ubench:
         - BE_SP_FP_ADD_leven:
             - 100
         - BE_SP_FP_ADD_lodd:
-            - 100
-        - BE_SP_FP_DIV:
-            - 100
-        - BE_SP_FP_DIV_l1:
-            - 100
-        - BE_SP_FP_DIV_l12:
-            - 100
-        - BE_SP_FP_DIV_l16:
-            - 100
-        - BE_SP_FP_DIV_l20:
-            - 100
-        - BE_SP_FP_DIV_l24:
-            - 100
-        - BE_SP_FP_DIV_l28:
-            - 100
-        - BE_SP_FP_DIV_l32:
-            - 100
-        - BE_SP_FP_DIV_l4:
-            - 100
-        - BE_SP_FP_DIV_l8:
-            - 100
-        - BE_SP_FP_DIV_leven:
-            - 100
-        - BE_SP_FP_DIV_lodd:
             - 100
         - BE_SP_FP_MAD:
             - 100
@@ -179,22 +153,16 @@ power_ubench:
         - BE_TEXTURE_ACCESS_2:
             - 100
         - BRANCHING1:
-            - 100
+            - 10
         - BRANCHING2:
-            - 100
+            - 10
         - BRANCHING3:
-            - 100
+            - 10
         - BRANCHING4:
-            - 100
+            - 10
         - BRANCHING5:
-            - 100
+            - 10
         - const_mul:
-            - 100
-        - FE_IL0_HIT:
-            - 100
-        - FE_IL1_HIT:
-            - 100
-        - FE_IL1_MISS:
             - 100
         - immediates_constant:
             - 100
@@ -203,7 +171,7 @@ power_ubench:
         - mix1:
             - 100
         - mix10:
-            - 100
+            - 10
         - mix11:
             - 100
         - mix12:
@@ -223,31 +191,31 @@ power_ubench:
         - mix19:
             - 100
         - mix2:
-            - 100
+            - 10
         - mix20:
             - 100
         - mix3:
             - 100
         - mix4:
-            - 100
+            - 10
         - mix5:
-            - 100
+            - 10
         - mix6:
-            - 100
+            - 10
         - mix7:
-            - 100
+            - 10
         - mix8:
-            - 100
+            - 10
         - mix9:
-            - 100
+            - 10
         - mul_add_tex_1:
             - 100
         - mul_add_tex_2:
             - 100
         - mul_mem_1:
-            - 100
+            - 10
         - mul_mem_2:
-            - 100
+            - 10
         - REG_FILE:
             - 100
         - SHRD_TEX_SFU:

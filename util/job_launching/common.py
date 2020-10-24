@@ -133,10 +133,10 @@ def dir_option_test(name, default, this_directory):
     name = os.path.expandvars(name)
     if name == "":
         name = os.path.join(this_directory, default)
-    # if not os.path.isdir(name):
-    #     name = os.path.join(os.getcwd(), name)
-    #     if not os.path.isdir(name):
-    #         raise PathMissing("Error - directory test fails for {0}".format(name))
+    if not os.path.isdir(name):
+        name = os.path.join(os.getcwd(), name)
+        if not os.path.isdir(name):
+            raise PathMissing("Error - directory test fails for {0}".format(name))
     return name
 
 def parse_run_simulations_options():
