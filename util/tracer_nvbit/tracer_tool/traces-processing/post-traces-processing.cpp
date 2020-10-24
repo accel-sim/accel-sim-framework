@@ -146,7 +146,12 @@ void group_per_block(const char *filepath) {
         insts[tb_id].tb_id_z = tb_id_z;
         insts[tb_id].initialized = true;
       }
-      insts[tb_id].warp_insts_array[warpid_tb].push_back(line);
+	//ss.ignore(); //remove the space
+	//rest_of_line.clear();
+      // getline(ss, rest_of_line); //get rest of the string!
+	string rest_of_line(ss.str().substr(ss.tellg()+1));
+
+      insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
     }
   }
 

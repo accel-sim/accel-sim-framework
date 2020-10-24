@@ -28,7 +28,7 @@
 /* contains definition of the inst_trace_t structure */
 #include "common.h"
 
-#define TRACER_VERSION "1.2"
+#define TRACER_VERSION "3"
 
 /* Channel used to communicate from GPU to CPU receiving thread */
 #define CHANNEL_SIZE (1l << 20)
@@ -60,6 +60,8 @@ std::map<int, std::string> id_to_opcode_map;
 uint64_t dynamic_kernel_limit_start =
     0;                                 // 0 means start from the begging kernel
 uint64_t dynamic_kernel_limit_end = 0; // 0 means no limit
+
+enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
 
 void nvbit_at_init() {
   setenv("CUDA_MANAGED_FORCE_DEVICE_ALLOC", "1", 1);
@@ -106,8 +108,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
     if (verbose) {
-      printf("Inspecting function %s at address 0x%lx\n",
-             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(f), true);
+      printf("Inspecting function %s at address 0x%lx\n", nvbit_get_func_name(ctx, f), nvbit_get_func_addr(f), true);
     }
 
     uint32_t cnt = 0;
@@ -135,7 +136,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
 
       /* pass predicate value */
-      nvbit_add_call_arg_pred_val(instr);
+      nvbit_add_call_arg_guard_pred_val(instr);
 
       /* send opcode and pc */
       nvbit_add_call_arg_const_val32(instr, opcode_id);
@@ -153,10 +154,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
        * store and RED)*/
       if (instr->getNumOperands() > 0 &&
-          instr->getOperand(0)->type == Instr::operandType::REG)
+          instr->getOperand(0)->type == InstrType::OperandType::REG)
         dst_oprd = instr->getOperand(0)->u.reg.num;
       else if (instr->getNumOperands() > 0 &&
-               instr->getOperand(0)->type == Instr::operandType::MREF) {
+               instr->getOperand(0)->type == InstrType::OperandType::MREF) {
         src_oprd[0] = instr->getOperand(0)->u.mref.ra_num;
         mem_oper_idx = 0;
         srcNum++;
@@ -165,16 +166,16 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       // find src regs and mem
       for (int i = 1; i < MAX_SRC; i++) {
         if (i < instr->getNumOperands()) {
-          const Instr::operand_t *op = instr->getOperand(i);
-          if (op->type == Instr::operandType::MREF) {
+          const InstrType::operand_t *op = instr->getOperand(i);
+          if (op->type == InstrType::OperandType::MREF) {
             // mem is found
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
             srcNum++;
-            //TO DO: handle LDGSTS with two mem refs
+            // TO DO: handle LDGSTS with two mem refs
             assert(mem_oper_idx == -1); // ensure one memory operand per inst
             mem_oper_idx++;
-          } else if (op->type == Instr::operandType::REG) {
+          } else if (op->type == InstrType::OperandType::REG) {
             // reg is found
 
             assert(srcNum < MAX_SRC);
@@ -471,6 +472,63 @@ bool check_opcode_contain(const std::vector<std::string> &opcode,
   return false;
 }
 
+bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
+                          uint64_t &base_addr, int &stride) {
+
+  // calulcate the difference between addresses
+  // write cosnsctive addresses with constant stride in a more
+  // compressed way (i.e. start adress and stride)
+  bool const_stride = true;
+  bool first_bit1_found = false;
+  bool last_bit1_found = false;
+
+  for (int s = 0; s < 32; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      first_bit1_found = true;
+      base_addr = addrs[s];
+      if (s < 31 && mask.test(s + 1))
+        stride = addrs[s + 1] - addrs[s];
+      else {
+        const_stride = false;
+        break;
+      }
+    } else if (first_bit1_found && !last_bit1_found) {
+      if (mask.test(s)) {
+        if (stride != addrs[s] - addrs[s - 1]) {
+          const_stride = false;
+          break;
+        }
+      } else
+        last_bit1_found = true;
+    } else if (last_bit1_found) {
+      if (mask.test(s)) {
+        const_stride = false;
+        break;
+      }
+    }
+  }
+
+  return const_stride;
+}
+
+void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
+                         uint64_t &base_addr, std::vector<long long> &deltas) {
+
+  // save the delta from the previous address
+  bool first_bit1_found = false;
+  uint64_t last_address = 0;
+  for (int s = 0; s < 32; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      base_addr = addrs[s];
+      first_bit1_found = true;
+      last_address = addrs[s];
+    } else if (mask.test(s) && first_bit1_found) {
+      deltas.push_back(addrs[s] - last_address);
+      last_address = addrs[s];
+    }
+  }
+}
+
 void *recv_thread_fun(void *) {
   char *recv_buffer = (char *)malloc(CHANNEL_SIZE);
 
@@ -520,7 +578,6 @@ void *recv_thread_fun(void *) {
         // print addresses
         std::bitset<32> mask(ma->active_mask);
         if (ma->is_mem) {
-          // fprintf(resultsFile, "%d ", ma->width);
           std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
           std::vector<std::string> tokens;
           std::string token;
@@ -530,45 +587,35 @@ void *recv_thread_fun(void *) {
           }
           fprintf(resultsFile, "%d ", get_datawidth_from_opcode(tokens));
 
-          // calulcate teh difference between addresses
-          // write cosnsctive addresses with constant stride in a more
-          // compressed way (i.e. start adress and stride)
+          bool base_stride_success = false;
+          uint64_t base_addr = 0;
           int stride = 0;
-          bool const_stride = true;
-          bool first_bit1_found = false;
-          bool last_bit1_found = false;
-          uint64_t addr = 0;
-          for (int s = 0; s < 32; s++) {
-            if (mask.test(s) && !first_bit1_found) {
-              first_bit1_found = true;
-              addr = ma->addrs[s];
-              if (s < 31 && mask.test(s + 1))
-                stride = ma->addrs[s + 1] - ma->addrs[s];
-              else {
-                const_stride = false;
-                break;
-              }
-            } else if (first_bit1_found && !last_bit1_found) {
-              if (mask.test(s)) {
-                if (stride != ma->addrs[s] - ma->addrs[s - 1]) {
-                  const_stride = false;
-                  break;
-                }
-              } else
-                last_bit1_found = true;
-            } else if (last_bit1_found) {
-              if (mask.test(s)) {
-                const_stride = false;
-                break;
-              }
+          std::vector<long long> deltas;
+
+          if (enable_compress) {
+            // try base+stride format
+            base_stride_success =
+                base_stride_compress(ma->addrs, mask, base_addr, stride);
+            if (!base_stride_success) {
+              // if base+stride fails, try base+delta format
+              base_delta_compress(ma->addrs, mask, base_addr, deltas);
             }
           }
 
-          if (const_stride && enable_compress) {
-            fprintf(resultsFile, "1 0x%016lx %d ", addr, stride);
+          if (base_stride_success && enable_compress) {
+            // base + stride format
+            fprintf(resultsFile, "%u 0x%llx %d ", address_format::base_stride,
+                    base_addr, stride);
+          } else if (!base_stride_success && enable_compress) {
+            // base + delta format
+            fprintf(resultsFile, "%u 0x%llx ", address_format::base_delta,
+                    base_addr);
+            for (int s = 0; s < deltas.size(); s++) {
+              fprintf(resultsFile, "%lld ", deltas[s]);
+            }
           } else {
-            // list all the adresses
-            fprintf(resultsFile, "0 ");
+            // list all the addresses
+            fprintf(resultsFile, "%u ", address_format::list_all);
             for (int s = 0; s < 32; s++) {
               if (mask.test(s))
                 fprintf(resultsFile, "0x%016lx ", ma->addrs[s]);

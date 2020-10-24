@@ -1,7 +1,8 @@
 #   execs:
 #       - <exec_name_1>:
-#           - <commandline arg_list 1> # Leave blank if no arguments
-#           - <commandline arg_list 2>
+#           - args: <commandline arg_list 1> # Leave blank if no arguments
+#             <optional> accel-sim-mem: <xG>
+#           - args: <commandline arg_list 2>
 #           ...
 #       - <exec_name_2>
 #           ...
@@ -14,626 +15,661 @@ rodinia_2.0-ft:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/2.0-ft/"
     execs:
         - backprop-rodinia-2.0-ft:
-            - 4096 ./data/result-4096.txt
+            - args:  4096 ./data/result-4096.txt
+              accel-sim-mem: 1G
         - bfs-rodinia-2.0-ft:
-            - ./data/graph4096.txt ./data/graph4096-result.txt
+            - args:  ./data/graph4096.txt ./data/graph4096-result.txt
+              accel-sim-mem: 1G
         - hotspot-rodinia-2.0-ft:
-            - 30 6 40 ./data/result_30_6_40.txt
+            - args:  30 6 40 ./data/result_30_6_40.txt
+              accel-sim-mem: 1G
         - heartwall-rodinia-2.0-ft:
-            - ./data/test.avi 1 ./data/result-1.txt
+            - args:  ./data/test.avi 1 ./data/result-1.txt
+              accel-sim-mem: 1G
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
-        - kmeans-rodinia-2.0-ft:
-            - -i data/400.txt -g data/400-result.txt -o
+#        - kmeans-rodinia-2.0-ft:
+#            - args:  -i ./data/400.txt -g data/400-result.txt -o
+#              accel-sim-mem: 1G
         - lud-rodinia-2.0-ft:
-            - -v -b -i ./data/64.dat
+            - args:  -v -b -i ./data/64.dat
+              accel-sim-mem: 1G
         - nw-rodinia-2.0-ft:
-            - 128 10 ./data/result_128_10.txt
+            - args:  128 10 ./data/result_128_10.txt
+              accel-sim-mem: 1G
         - nn-rodinia-2.0-ft:
-            - ./data/filelist_4 3 30 90 ./data/filelist_4_3_30_90-result.txt
+            - args:  ./data/filelist_4 3 30 90 ./data/filelist_4_3_30_90-result.txt
+              accel-sim-mem: 1G
         - pathfinder-rodinia-2.0-ft:
-            - 1000 20 5 ./data/result_1000_20_5.txt
+            - args:  1000 20 5 ./data/result_1000_20_5.txt
+              accel-sim-mem: 1G
         - srad_v2-rodinia-2.0-ft:
-            - ./data/matrix128x128.txt 0 127 0 127 .5 2 ./data/result_matrix128x128_1_150_1_100_.5_2.txt
+            - args:  ./data/matrix128x128.txt 0 127 0 127 .5 2 ./data/result_matrix128x128_1_150_1_100_.5_2.txt
+              accel-sim-mem: 1G
         - streamcluster-rodinia-2.0-ft:
-            - 3 6 16 1024 1024 100 none output.txt 1 ./data/result_3_6_16_1024_1024_100_none_1.txt
-
-test:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/sdk/4.2/"
-    execs:
-        - vectorAdd:
-            - --size 5000
-
-maxflop_test:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/GPU-Microbenchmark/"
-    execs:
-        - MaxFlops:
-            -
-
-atomic:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/GPU-Microbenchmark/"
-    execs:
-        - atomic_add_bw:
-            -
-        - atomic_add_bw_conflict:
-            -
-        - atomic_add_lat:
-            -
-
-l2_bw:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/GPU-Microbenchmark/"
-    execs:
-        - l2_bw_32f:
-            -
-        - l2_bw_64f:
-            -
-        - l2_bw_128:
-            -
+            - args:  3 6 16 1024 1024 100 none output.txt 1 ./data/result_3_6_16_1024_1024_100_none_1.txt
+              accel-sim-mem: 1G
 
 GPU_Microbenchmark:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/GPU-Microbenchmark/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - l1_bw_32f:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - l1_bw_64f:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - l1_bw_128:
-            -
+            - args: 
+              accel-sim-mem: 2G
         - l1_lat:
-            -
+            - args: 
+              accel-sim-mem: 1G
+        - l1_lat:
+            - args: 
+              accel-sim-mem: 1G
         - l2_bw_32f:
-            -
+            - args: 
+              accel-sim-mem: 6G
         - l2_bw_64f:
-            -
+            - args: 
+              accel-sim-mem: 6G
 #        - l2_bw_128:
-#            -
+#            - args: 
+#              accel-sim-mem: 1G
         - l2_lat:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - mem_bw:
-            -
+            - args: 
+              accel-sim-mem: 2G
         - mem_lat:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - shared_bw:
-            -
+            - args: 
+              accel-sim-mem: 2G
         - shared_lat:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - MaxFlops:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - l1_shared_bw:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - l1_bw_32f_unroll:
-            -
+            - args: 
+              accel-sim-mem: 1G
         - l1_bw_32f_unroll_large:
-            -
+            - args: 
+              accel-sim-mem: 1G
 
 Deepbench_nvidia_tencore:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - conv_bench-tencore:
-            - train half 7 7 832 16 128 5 5 2 2 1 1
-            - train half 7 7 512 8 512 1 1 0 0 1 1
-            - train half 7 7 832 16 256 1 1 0 0 1 1
-            - train half 7 7 512 8 512 3 3 1 1 1 1
-            - train half 14 14 512 16 512 3 3 1 1 1 1
-            - inference half 700 161 1 1 32 20 5 0 0 2 2
-            - inference half 700 161 1 2 32 20 5 0 0 2 2
-            - inference half 341 79 32 1 32 10 5 0 0 2 2
-            - inference half 341 79 32 2 32 10 5 0 0 2 2
-            - inference half 480 48 1 1 16 3 3 1 1 1 1
+            - args: train half 7 7 832 16 128 5 5 2 2 1 1
+              accel-sim-mem: 20G
+            - args: train half 7 7 512 8 512 1 1 0 0 1 1
+              accel-sim-mem: 3G
+            - args: train half 7 7 832 16 256 1 1 0 0 1 1
+              accel-sim-mem: 4G
+            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+              accel-sim-mem: 8G
+            - args: train half 14 14 512 16 512 3 3 1 1 1 1
+              accel-sim-mem: 18G
+            - args: inference half 700 161 1 1 32 20 5 0 0 2 2
+              accel-sim-mem: 2G
+            - args: inference half 700 161 1 2 32 20 5 0 0 2 2
+              accel-sim-mem: 2G
+            - args: inference half 341 79 32 1 32 10 5 0 0 2 2
+              accel-sim-mem: 5G
+            - args: inference half 341 79 32 2 32 10 5 0 0 2 2
+              accel-sim-mem: 7G
+            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
+              accel-sim-mem: 2G
         - gemm_bench-tencore:
-            - train half 1760 7000 1760 0 0
-            - train half 2048 128 2048 0 0
-            - train half 1760 7000 1760 1 0
-            - train half 2048 64 2048 1 0
-            - train half 1760 7133 1760 0 1
-            - inference half 5124 1500 2048 0 0
-            - inference half 7680 1 2560 0 0
-            - inference half 6144 4 2048 0 0
-            - inference half 512 3000 1536 0 0
-            - inference half 35 1500 2560 0 0
+            - args: train half 1760 7000 1760 0 0
+              accel-sim-mem: 3G
+            - args: train half 2048 128 2048 0 0
+              accel-sim-mem: 2G
+            - args: train half 1760 7000 1760 1 0
+              accel-sim-mem: 3G
+            - args: train half 2048 64 2048 1 0
+              accel-sim-mem: 2G
+            - args: train half 1760 7133 1760 0 1
+              accel-sim-mem: 18G
+            - args: inference half 5124 1500 2048 0 0
+              accel-sim-mem: 21G
+            - args: inference half 7680 1 2560 0 0
+              accel-sim-mem: 2G
+            - args: inference half 6144 4 2048 0 0
+              accel-sim-mem: 2G
+            - args: inference half 512 3000 1536 0 0
+              accel-sim-mem: 2G
+            - args: inference half 35 1500 2560 0 0
+              accel-sim-mem: 2G
         - rnn_bench-tencore:
-            - inference half 512 1 25 lstm
-            - inference half 512 2 25 lstm
-            - inference half 1024 1 25 lstm
-            - inference half 256 4 150 lstm
-            - inference half 1536 1 50 lstm
-            - inference half 512 1 1 gru
-            - inference half 512 2 1 gru
-            - inference half 512 4 1 gru
-            - inference half 1536 1 750 gru
-            - inference half 256 1 150 lstm
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
-
-Deepbench_nvidia_rnn_train:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
-    execs:
-        - rnn_bench-tencore:
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
-        - rnn_bench:
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
+            - args: inference half 512 1 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 512 2 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 1024 1 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 256 4 150 lstm
+              accel-sim-mem: 12G
+            - args: inference half 1536 1 50 lstm
+              accel-sim-mem: 12G
+            - args: inference half 512 1 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 512 2 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 512 4 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 1536 1 750 gru
+              accel-sim-mem: 12G
+            - args: inference half 256 1 150 lstm
+              accel-sim-mem: 12G
+            - args: train half 128 32 15 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 64 15 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 32 1 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 64 1 gru
+              accel-sim-mem: 20G
+            - args: train half 128 32 1 gru
+              accel-sim-mem: 20G
 
 Deepbench_nvidia_normal:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - conv_bench:
-            - train half 7 7 832 16 128 5 5 2 2 1 1
-            - train half 7 7 512 8 512 1 1 0 0 1 1
-            - train half 7 7 832 16 256 1 1 0 0 1 1
-            - train half 7 7 512 8 512 3 3 1 1 1 1
-            - train half 14 14 512 16 512 3 3 1 1 1 1
-            - inference half 700 161 1 1 32 20 5 0 0 2 2
-            - inference half 700 161 1 2 32 20 5 0 0 2 2
-            - inference half 341 79 32 1 32 10 5 0 0 2 2
-            - inference half 341 79 32 2 32 10 5 0 0 2 2
-            - inference half 480 48 1 1 16 3 3 1 1 1 1
+            - args: train half 7 7 832 16 128 5 5 2 2 1 1
+              accel-sim-mem: 16G
+            - args: train half 7 7 512 8 512 1 1 0 0 1 1
+              accel-sim-mem: 3G
+            - args: train half 7 7 832 16 256 1 1 0 0 1 1
+              accel-sim-mem: 4G
+            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+              accel-sim-mem: 9G
+            - args: train half 14 14 512 16 512 3 3 1 1 1 1
+              accel-sim-mem: 17G
+            - args: inference half 700 161 1 1 32 20 5 0 0 2 2
+              accel-sim-mem: 2G
+            - args: inference half 700 161 1 2 32 20 5 0 0 2 2
+              accel-sim-mem: 2G
+            - args: inference half 341 79 32 1 32 10 5 0 0 2 2
+              accel-sim-mem: 6G
+            - args: inference half 341 79 32 2 32 10 5 0 0 2 2
+              accel-sim-mem: 80G
+            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
+              accel-sim-mem: 2G
         - gemm_bench:
-            - train half 1760 7000 1760 0 0
-            - train half 2048 128 2048 0 0
-            - train half 1760 7000 1760 1 0
-            - train half 2048 64 2048 1 0
-            - train half 1760 7133 1760 0 1
-            - inference half 5124 1500 2048 0 0
-            - inference half 7680 1 2560 0 0
-            - inference half 6144 4 2048 0 0
-            - inference half 512 3000 1536 0 0
-            - inference half 35 1500 2560 0 0
+            - args: train half 1760 7000 1760 0 0
+              accel-sim-mem: 18G
+            - args: train half 2048 128 2048 0 0
+              accel-sim-mem: 2G
+            - args: train half 1760 7000 1760 1 0
+              accel-sim-mem: 20G
+            - args: train half 2048 64 2048 1 0
+              accel-sim-mem: 2G
+            - args: train half 1760 7133 1760 0 1
+              accel-sim-mem: 20G
+            - args: inference half 5124 1500 2048 0 0
+              accel-sim-mem: 21G
+            - args: inference half 7680 1 2560 0 0
+              accel-sim-mem: 2G
+            - args: inference half 6144 4 2048 0 0
+              accel-sim-mem: 2G
+            - args: inference half 512 3000 1536 0 0
+              accel-sim-mem: 7G
+            - args: inference half 35 1500 2560 0 0
+              accel-sim-mem: 2G
         - rnn_bench:
-            - inference half 512 1 25 lstm
-            - inference half 512 2 25 lstm
-            - inference half 1024 1 25 lstm
-            - inference half 256 4 150 lstm
-            - inference half 1536 1 50 lstm
-            - inference half 512 1 1 gru
-            - inference half 512 2 1 gru
-            - inference half 512 4 1 gru
-            - inference half 1536 1 750 gru
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
-
-Deepbench_nvidia:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/Deepbench/"
-    execs:
-        - conv_bench:
-            - train half 7 7 832 16 128 5 5 2 2 1 1
-            - train half 7 7 512 8 512 1 1 0 0 1 1
-            - train half 7 7 832 16 256 1 1 0 0 1 1
-            - train half 7 7 512 8 512 3 3 1 1 1 1
-            - train half 14 14 512 16 512 3 3 1 1 1 1
-            - inference half 700 161 1 1 32 20 5 0 0 2 2
-            - inference half 700 161 1 2 32 20 5 0 0 2 2
-            - inference half 341 79 32 1 32 10 5 0 0 2 2
-            - inference half 341 79 32 2 32 10 5 0 0 2 2
-            - inference half 480 48 1 1 16 3 3 1 1 1 1
-        - gemm_bench:
-            - train half 1760 7000 1760 0 0
-            - train half 2048 128 2048 0 0
-            - train half 1760 7000 1760 1 0
-            - train half 2048 64 2048 1 0
-            - train half 1760 7133 1760 0 1
-            - inference half 5124 1500 2048 0 0
-            - inference half 7680 1 2560 0 0
-            - inference half 6144 4 2048 0 0
-            - inference half 512 3000 1536 0 0
-            - inference half 35 1500 2560 0 0
-        - rnn_bench:
-            - inference half 512 1 25 lstm
-            - inference half 512 2 25 lstm
-            - inference half 1024 1 25 lstm
-            - inference half 256 4 150 lstm
-            - inference half 1536 1 50 lstm
-            - inference half 512 1 1 gru
-            - inference half 512 2 1 gru
-            - inference half 512 4 1 gru
-            - inference half 1536 1 750 gru
-            - inference half 256 1 150 lstm
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
-        - conv_bench-tencore:
-            - train half 7 7 832 16 128 5 5 2 2 1 1
-            - train half 7 7 512 8 512 1 1 0 0 1 1
-            - train half 7 7 832 16 256 1 1 0 0 1 1
-            - train half 7 7 512 8 512 3 3 1 1 1 1
-            - train half 14 14 512 16 512 3 3 1 1 1 1
-            - inference half 700 161 1 1 32 20 5 0 0 2 2
-            - inference half 700 161 1 2 32 20 5 0 0 2 2
-            - inference half 341 79 32 1 32 10 5 0 0 2 2
-            - inference half 341 79 32 2 32 10 5 0 0 2 2
-            - inference half 480 48 1 1 16 3 3 1 1 1 1
-        - gemm_bench-tencore:
-            - train half 1760 7000 1760 0 0
-            - train half 2048 128 2048 0 0
-            - train half 1760 7000 1760 1 0
-            - train half 2048 64 2048 1 0
-            - train half 1760 7133 1760 0 1
-            - inference half 5124 1500 2048 0 0
-            - inference half 7680 1 2560 0 0
-            - inference half 6144 4 2048 0 0
-            - inference half 512 3000 1536 0 0
-            - inference half 35 1500 2560 0 0
-        - rnn_bench-tencore:
-            - inference half 512 1 25 lstm
-            - inference half 512 2 25 lstm
-            - inference half 1024 1 25 lstm
-            - inference half 256 4 150 lstm
-            - inference half 1536 1 50 lstm
-            - inference half 512 1 1 gru
-            - inference half 512 2 1 gru
-            - inference half 512 4 1 gru
-            - inference half 1536 1 750 gru
-            - inference half 256 1 150 lstm
-            - train half 128 32 15 lstm
-            - train half 128 64 15 lstm
-            - train half 128 32 1 lstm
-            - train half 128 64 1 gru
-            - train half 128 32 1 gru
+            - args: inference half 512 1 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 512 2 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 1024 1 25 lstm
+              accel-sim-mem: 12G
+            - args: inference half 256 4 150 lstm
+              accel-sim-mem: 12G
+            - args: inference half 1536 1 50 lstm
+              accel-sim-mem: 12G
+            - args: inference half 512 1 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 512 2 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 512 4 1 gru
+              accel-sim-mem: 12G
+            - args: inference half 1536 1 750 gru
+              accel-sim-mem: 12G
+            - args: train half 128 32 15 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 64 15 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 32 1 lstm
+              accel-sim-mem: 20G
+            - args: train half 128 64 1 gru
+              accel-sim-mem: 20G
+            - args: train half 128 32 1 gru
+              accel-sim-mem: 20G
 
 sdk-4.2-scaled:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/sdk/4.2/"
     execs:
         - vectorAdd:
-            - --size 4000000
-            - --size 6000000
+            - args: --size 4000000
+              accel-sim-mem: 1G
+            - args: --size 6000000
+              accel-sim-mem: 1G
         - convolutionSeparable:
-            - --size 3072
-#            - --size 30720 #500G too big
+            - args: --size 3072
+              accel-sim-mem: 1G
         - fastWalshTransform:
-            - -logK 7 -logD 21
-            - -logK 11 -logD 19
+            - args: -logK 7 -logD 21
+              accel-sim-mem: 1G
+            - args: -logK 11 -logD 19
+              accel-sim-mem: 1G
         - scalarProd:
-            - --size 8192
-            - --size 13920
+            - args: --size 8192
+              accel-sim-mem: 1G
+            - args: --size 13920
+              accel-sim-mem: 4G
         - transpose:
-            - dimX512 dimY512
+            - args: dimX512 dimY512
+              accel-sim-mem: 1G
         - scan:
-            -
+            - args:
+              accel-sim-mem: 1G
         - BlackScholes:
-            -
+            - args:
+              accel-sim-mem: 1G
         - histogram:
-            -
+            - args:
+              accel-sim-mem: 1G
         - mergeSort:
-            -
+            - args:
+              accel-sim-mem: 1G
         - sortingNetworks:
-            -
-
-sdk-4.2:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/sdk/4.2/"
-    execs:
-        - BlackScholes:
-            -
-        # complex compile flow makes 2 versions of the same kernel in
-        # CUDA 9.1 - screws up parser. Not worth continued support.
-#        - MonteCarlo:
-#            -
-        - SobolQRNG:
-            -
-        - alignedTypes:
-            -
-        - asyncAPI:
-            -
-        - bandwidthTest:
-            -
-        # complex compile flow makes 2 versions of the same kernel in
-        # CUDA 9.1 - screws up parser. Not worth continued support.
-#        - binomialOptions:
-#            -
-        - clock:
-            -
-        - convolutionSeparable:
-            -
-        - convolutionTexture:
-            -
-        - cppIntegration:
-            -
-        - fastWalshTransform:
-            -
-        - histogram:
-            -
-        - mergeSort:
-            -
-        # complex compile flow makes 2 versions of the same kernel in
-        # CUDA 9.1 - screws up parser. Not worth continued support.
-#        - quasirandomGenerator:
-#            -
-        - reduction:
-            -
-        - scalarProd:
-            -
-        - simpleAtomicIntrinsics:
-            - 128 16
-        - simpleP2P:
-            -
-        - simpleTemplates:
-            -
-        # CUDA 10 has issues with the vot intrinsics for 4.2's SDK.
-        # Not worth continued support
-#        - simpleVoteIntrinsics:
-#            -
-        - simpleZeroCopy:
-            -
-        - sortingNetworks:
-            -
-#        - template:
-#            -
-        - transpose:
-            - dimX128 dimY128
-        - vectorAdd:
-            -
-
-microbench:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/src/microbench/"
-    execs:
-        - microbench-oo-vfunc-test:
-            -
-
-### Apps without FTs
-
-# dragon-naive
-dragon-naive:
-    exec_dir: "$GPUAPPS_ROOT/src/cuda/dragon_li/bin/$CUDA_VERSION/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/dragon/"
-    execs:
-        - testBfs:
-            - -g ./data/sample_cdp.gr -e -v
-            - -g ./data/citationCiteseer.graph -f metis -e -v
-            - -g ./data/coPapersDBLP.graph -f metis -e -v --sf 1.5
-        - testAmr:
-            - -v -e -r 20
-        - testSssp:
-            - -g ./data/sample_cdp.gr -e -v
-            - -g ./data/citationCiteseer.graph -f metis -e -v
-            - -g ./data/coPapersDBLP.graph -f metis -e -v
-        - testJoin:
-            - -v -e -l 204800 -r 204800
-
-
-#proxy-apps-doe
-proxy-apps-doe1:
-    exec_dir: "$GPUAPPS_ROOT/src/cuda/proxy-apps-doe/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/proxy-apps-doe/"
-    execs:
-            # Does not compile
-#         - comd/CoMDCUDA:
-#            - p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
-         - cns/cns_all:
-            - 64 32 32 1
-
-proxy-apps-doe2:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/proxy-apps-doe/"
-    execs:
-         - XSBench:
-            - 12 small 0
-            - 12 large 0
-         - lulesh:
-            - 1e-7
-
-# pannotia
-pannotia:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/pannotia/"
-    execs:
-        - bc:
-            - ./data/1k_128k.gr
-            - ./data/2k_1M.gr
-        - color_max:
-            - ./data/ecology1.graph 1
-            - ./data/G3_circuit.graph 1
-        - color_maxmin:
-            - ./data/ecology1.graph 1
-            - ./data/G3_circuit.graph 1
-        - fw:
-            - ./data/256_16384.gr
-# This input is taking more thatn 17 hours to reach 2B insn
-#            - ./data/512_65536.gr
-        - fw_block:
-            - ./data/256_16384.gr
-            - ./data/512_65536.gr
-        - mis:
-            - ./data/ecology1.graph 1
-            - ./data/G3_circuit.graph 1
-        - pagerank:
-            - ./data/coAuthorsDBLP.graph 1
-        - pagerank_spmv:
-            - ./data/coAuthorsDBLP.graph 1
-#        - sssp:
-#            - ./data/USA-road-d.NW.gr 0
-#            - ./data/USA-road-d.NY.gr 0
-#        - sssp_ell:
-#            - ./data/USA-road-d.NW.gr 0
-#            - ./data/USA-road-d.NY.gr 0
-
-dragon-cdp:
-    exec_dir: "$GPUAPPS_ROOT/src/cuda/dragon_li/cdp_bin/$CUDA_VERSION/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/dragon/"
-    execs:
-        - testBfs-cdp:
-            - -g ./data/sample_cdp.gr -e -v --cdp
-            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
-            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5
-#        - testAmr-cdp:
-#            - -v -e --cdp -r 20
-        - testSssp-cdp:
-            - -g ./data/sample_cdp.gr -e -v --cdp
-            - -g ./data/citationCiteseer.graph -f metis -e -v --cdp
-            - -g ./data/coPapersDBLP.graph -f metis -e -v --cdp
-#        - testJoin-cdp:
-#            - -v -e --cdp -l 204800 -r 204800
-
-b+tree:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
-    execs:
-        - b+tree-rodinia-3.1:
-            - file ./data/mil.txt command ./data/command.txt
-srad_v1:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
-    execs:
-        - srad_v1-rodinia-3.1:
-            - 100 0.5 502 458
-
-rodinia-3.1-large:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
-    execs:
-        - cfd-rodinia-3.1:
-            - ./data/fvcorr.domn.097K
-            - ./data/fvcorr.domn.193K
-            - ./data/missile.domn.0.2M  
-        - heartwall-rodinia-3.1:
-            - ./data/test.avi 1
-            - ./data/test.avi 20
-        - hotspot3D-rodinia-3.1:
-            - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
-        # Only works with newer versions of CUDA
-        - huffman-rodinia-3.1:
-            - ./data/huffman/test1024_H2.206587175259.in  
-        - leukocyte-rodinia-3.1:
-            - ./data/testfile.avi 5 
-        - mummergpu-rodinia-3.1:
-            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
-        - srad_v2-rodinia-3.1:
-            - 2048 2048 0 127 0 127 0.5 2
-        - streamcluster-rodinia-3.1:
-            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
-            - 10 20 256 65536 65536 1000 none output.txt 1
-
-backprob:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
-    execs:
-        - backprop-rodinia-3.1:
-            - 65536
+            - args:
+              accel-sim-mem: 1G
 
 rodinia-3.1:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
-            - file ./data/mil.txt command ./data/command.txt
+            - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
         - backprop-rodinia-3.1:
-            - 65536
+            - args:  65536
+              accel-sim-mem: 1G
         - bfs-rodinia-3.1:
-            - ./data/graph4096.txt
-            - ./data/graph65536.txt
-            - ./data/graph1MW_6.txt
+            - args:  ./data/graph4096.txt
+              accel-sim-mem: 1G
+            - args:  ./data/graph65536.txt
+              accel-sim-mem: 1G
+            - args:  ./data/graph1MW_6.txt
+              accel-sim-mem: 1G
 #        - cfd-rodinia-3.1:
-#            - ./data/fvcorr.domn.097K
-#            - ./data/fvcorr.domn.193K
-#            - ./data/missile.domn.0.2M
+#            - args:  ./data/fvcorr.domn.097K
+              accel-sim-mem: 1G
+#            - args:  ./data/fvcorr.domn.193K
+              accel-sim-mem: 1G
+#            - args:  ./data/missile.domn.0.2M
+              accel-sim-mem: 4G
         - dwt2d-rodinia-3.1:
-            - ./data/192.bmp -d 192x192 -f -5 -l 3
-            - ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+            - args:  ./data/192.bmp -d 192x192 -f -5 -l 3
+              accel-sim-mem: 1G
+            - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              accel-sim-mem: 1G
         - gaussian-rodinia-3.1:
-            - -f ./data/matrix4.txt
-            - -s 16
-            - -f ./data/matrix208.txt
-            - -s 64
-            - -s 256
+            - args:  -f ./data/matrix4.txt
+              accel-sim-mem: 1G
+            - args:  -s 16
+              accel-sim-mem: 1G
+            - args:  -f ./data/matrix208.txt
+              accel-sim-mem: 1G
+            - args:  -s 64
+              accel-sim-mem: 1G
+            - args:  -s 256
+              accel-sim-mem: 1G
 #        - heartwall-rodinia-3.1:
-#            - ./data/test.avi 1
-#            - ./data/test.avi 20
+#            - args:  ./data/test.avi 1
+#            - args:  ./data/test.avi 20
         - hotspot-rodinia-3.1:
-            - 512 2 2 ./data/temp_512 ./data/power_512 output.out
-            - 1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+            - args:  512 2 2 ./data/temp_512 ./data/power_512 output.out
+              accel-sim-mem: 1G
+            - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+              accel-sim-mem: 1G
 #        - hotspot3D-rodinia-3.1:
-#            - 512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
+#            - args:  512 8 100 ./data/power_512x8 ./data/temp_512x8 output.out
+#              accel-sim-mem: 4G
         # Only works with newer versions of CUDA
 #        - huffman-rodinia-3.1:
-#            - ./data/huffman/test1024_H2.206587175259.in
+#            - args:  ./data/huffman/test1024_H2.206587175259.in
         - hybridsort-rodinia-3.1:
-            - r
-            - ./data/500000.txt
+            - args:  r
+              accel-sim-mem: 5G
+            - args:  ./data/500000.txt
+              accel-sim-mem: 1G
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
         - kmeans-rodinia-3.1:
-            - -o -i ./data/28k_4x_features.txt
-            - -o -i ./data/kdd_cup
-            - -o -i ./data/819200.txt
+            - args:  -o -i ./data/28k_4x_features.txt
+              accel-sim-mem: 1G
+            - args:  -o -i ./data/kdd_cup
+              accel-sim-mem: 2G
+            - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
         - lavaMD-rodinia-3.1:
-            - -boxes1d 10
+            - args:  -boxes1d 10
+              accel-sim-mem: 32G
 #        - leukocyte-rodinia-3.1:
-#            - ./data/testfile.avi 5
+#            - args:  ./data/testfile.avi 5
         - lud-rodinia-3.1:
-            - -s 256 -v
-            - -i ./data/512.dat
+            - args:  -s 256 -v
+              accel-sim-mem: 1G
+            - args:  -i ./data/512.dat
+              accel-sim-mem: 1G
 #        - mummergpu-rodinia-3.1:
-#            - ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
+#            - args:  ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
         - myocyte-rodinia-3.1:
-            - 100 1 0
+            - args:  100 1 0
+              accel-sim-mem: 4G
         - nn-rodinia-3.1:
-            - ./data/filelist_4 -r 5 -lat 30 -lng 90
+            - args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+              accel-sim-mem: 4G
         - nw-rodinia-3.1:
-            - 2048 10
+            - args:  2048 10
+              accel-sim-mem: 1G
         - particlefilter_float-rodinia-3.1:
-            - -x 128 -y 128 -z 10 -np 1000
+            - args:  -x 128 -y 128 -z 10 -np 1000
+              accel-sim-mem: 1G
         - particlefilter_naive-rodinia-3.1:
-            - -x 128 -y 128 -z 10 -np 1000
+            - args:  -x 128 -y 128 -z 10 -np 1000
+              accel-sim-mem: 1G
         - pathfinder-rodinia-3.1:
-            - 100000 100 20 > result.txt
+            - args:  100000 100 20 > result.txt
+              accel-sim-mem: 1G
         - srad_v1-rodinia-3.1:
-            - 100 0.5 502 458
+            - args:  100 0.5 502 458
+              accel-sim-mem: 1G
 #        - srad_v2-rodinia-3.1:
-#            - 2048 2048 0 127 0 127 0.5 2
+#            - args:  2048 2048 0 127 0 127 0.5 2
 #        - streamcluster-rodinia-3.1:
-#            - 3 6 16 65536 65536 1000 none output.txt 1 output.txt
-#            - 10 20 256 65536 65536 1000 none output.txt 1
+#            - args:  3 6 16 65536 65536 1000 none output.txt 1 output.txt
+#            - args:  10 20 256 65536 65536 1000 none output.txt 1
+
+
+
+parboil:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
+    execs:
+        - parboil-sad:
+            - args: -i ./data/default/input/reference.bin,./data/default/input/frame.bin -o out.bin
+              accel-sim-mem: 4G
+
+        - parboil-sgemm:
+            - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+              accel-sim-mem: 8G
+
+        - parboil-stencil:
+            - args: -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
+              accel-sim-mem: 1G
+        - parboil-cutcp:
+            - args: -i ./data/small/input/watbox.sl40.pqr -o lattice.dat
+              accel-sim-mem: 5G
+
+        - parboil-mri-q:
+            - args: -i ./data/small/input/32_32_32_dataset.bin -o 32_32_32_dataset.out
+              accel-sim-mem: 1G
+
+#        - parboil-lbm:
+#            - args:  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
+
+        - parboil-histo:
+            - args: -i ./data/default/input/img.bin -o ref.bmp -- 20 4
+              accel-sim-mem: 2G
+
+        - parboil-spmv:
+            - args: -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
+              accel-sim-mem: 2G
+
+        - parboil-mri-gridding:
+            - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
+              accel-sim-mem: 1G
+        
+        - parboil-bfs:
+#            - args: -i ./data/1M/input/graph_input.dat -o bfs-1M.out
+            - args: -i ./data/NY/input/graph_input.dat -o bfs-NY.out 
+              accel-sim-mem: 2G
+#            - args: -i ./data/SF/input/graph_input.dat -o bfs-SF.out
+#            - args: -i ./data/UT/input/graph_input.dat -o bfs-UT.out
+
+#        - parboil-tpacf:
+#            - args: -i ./data/large/input/Datapnts.1,./data/large/input/Randompnts.1,./data/large/input/Randompnts.2,./data/large/input/Randompnts.3,./data/large/input/Randompnts.4,./data/large/input/Randompnts.5,./data/large/input/Randompnts.6,./data/large/input/Randompnts.7,./data/large/input/Randompnts.8,./data/large/input/Randompnts.9,./data/large/input/Randompnts.10,./data/large/input/Randompnts.11,./data/large/input/Randompnts.12,./data/large/input/Randompnts.13,./data/large/input/Randompnts.14,./data/large/input/Randompnts.15,./data/large/input/Randompnts.16,./data/large/input/Randompnts.17,./data/large/input/Randompnts.18,./data/large/input/Randompnts.19,./data/large/input/Randompnts.20,./data/large/input/Randompnts.21,./data/large/input/Randompnts.22,./data/large/input/Randompnts.23,./data/large/input/Randompnts.24,./data/large/input/Randompnts.25,./data/large/input/Randompnts.26,./data/large/input/Randompnts.27,./data/large/input/Randompnts.28,./data/large/input/Randompnts.29,./data/large/input/Randompnts.30,./data/large/input/Randompnts.31,./data/large/input/Randompnts.32,./data/large/input/Randompnts.33,./data/large/input/Randompnts.34,./data/large/input/Randompnts.35,./data/large/input/Randompnts.36,./data/large/input/Randompnts.37,./data/large/input/Randompnts.38,./data/large/input/Randompnts.39,./data/large/input/Randompnts.40,./data/large/input/Randompnts.41,./data/large/input/Randompnts.42,./data/large/input/Randompnts.43,./data/large/input/Randompnts.44,./data/large/input/Randompnts.45,./data/large/input/Randompnts.46,./data/large/input/Randompnts.47,./data/large/input/Randompnts.48,./data/large/input/Randompnts.49,./data/large/input/Randompnts.50,./data/large/input/Randompnts.51,./data/large/input/Randompnts.52,./data/large/input/Randompnts.53,./data/large/input/Randompnts.54,./data/large/input/Randompnts.55,./data/large/input/Randompnts.56,./data/large/input/Randompnts.57,./data/large/input/Randompnts.58,./data/large/input/Randompnts.59,./data/large/input/Randompnts.60,./data/large/input/Randompnts.61,./data/large/input/Randompnts.62,./data/large/input/Randompnts.63,./data/large/input/Randompnts.64,./data/large/input/Randompnts.65,./data/large/input/Randompnts.66,./data/large/input/Randompnts.67,./data/large/input/Randompnts.68,./data/large/input/Randompnts.69,./data/large/input/Randompnts.70,./data/large/input/Randompnts.71,./data/large/input/Randompnts.72,./data/large/input/Randompnts.73,./data/large/input/Randompnts.74,./data/large/input/Randompnts.75,./data/large/input/Randompnts.76,./data/large/input/Randompnts.77,./data/large/input/Randompnts.78,./data/large/input/Randompnts.79,./data/large/input/Randompnts.80,./data/large/input/Randompnts.81,./data/large/input/Randompnts.82,./data/large/input/Randompnts.83,./data/large/input/Randompnts.84,./data/large/input/Randompnts.85,./data/large/input/Randompnts.86,./data/large/input/Randompnts.87,./data/large/input/Randompnts.88,./data/large/input/Randompnts.89,./data/large/input/Randompnts.90,./data/large/input/Randompnts.91,./data/large/input/Randompnts.92,./data/large/input/Randompnts.93,./data/large/input/Randompnts.94,./data/large/input/Randompnts.95,./data/large/input/Randompnts.96,./data/large/input/Randompnts.97,./data/large/input/Randompnts.98,./data/large/input/Randompnts.99,./data/large/input/Randompnts.100 -o tpacf.out -- -n 100 -p 10391
+
+
+polybench:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - polybench-2DConvolution:
+            - args: 
+              accel-sim-mem: 1G
+        - polybench-2mm:
+            - args: 
+              accel-sim-mem: 13G
+        - polybench-3DConvolution:
+            - args:
+              accel-sim-mem: 1G
+        - polybench-3mm:
+            - args: 
+              accel-sim-mem: 4G
+        - polybench-atax:
+            - args:
+              accel-sim-mem: 2G
+        - polybench-bicg:
+            - args:
+              accel-sim-mem: 2G
+        - polybench-correlation:
+            - args:
+              accel-sim-mem: 160G
+        - polybench-covariance:
+            - args:
+              accel-sim-mem: 160G
+        - polybench-fdtd2d:
+            - args:
+              accel-sim-mem: 1G
+        - polybench-gemm:
+            - args:
+              accel-sim-mem: 4G
+        - polybench-gesummv:
+            - args: 
+              accel-sim-mem: 2G
+        - polybench-gramschmidt:
+            - args:
+              accel-sim-mem: 3G
+        - polybench-mvt:
+            - args:
+              accel-sim-mem: 2G
+        - polybench-syr2k:
+            - args:
+              accel-sim-mem: 25G
+        - polybench-syrk:
+            - args:
+              accel-sim-mem: 8G
+
+cutlass_5_trace:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 3G
+            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 3G
+            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 3G
+            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 3G
+            - args: --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 3G
+            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 16G
+            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 16G
+            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 16G
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 16G
+            - args: --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 20G
+
+## Not sure how much memory the following apps take - just letting them go with the default
 
 ispass-2009:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/ispass-2009/"
     execs:
         - ispass-2009-AES:
-            - e 128 ./data/output.bmp ./data/key128.txt
+            - args:  e 128 ./data/output.bmp ./data/key128.txt
         - ispass-2009-BFS:
-            - ./data/graph65536.txt
+            - args:  ./data/graph65536.txt
         # Compile Issues
         #benchmarks/cp/build/cuda_short/cp
         #../bin/release/DG ./data/cubeK268.neu
         - ispass-2009-LIB:
-            -
+            - args: 
         - ispass-2009-LPS:
-            -
+            - args: 
         - ispass-2009-MUM:
-            - ./data/NC_003997.20k.fna ./data/NC_003997_q25bp.50k.fna
+            - args:  ./data/NC_003997.20k.fna ./data/NC_003997_q25bp.50k.fna
         - ispass-2009-NN:
-            - 28
+            - args:  28
         - ispass-2009-NQU:
-            -
+            - args: 
         - ispass-2009-RAY:
-            - 256 256
+            - args:  256 256
         - ispass-2009-STO:
-            - 
+            - args:
         - ispass-2009-WP:
-            - < ./data/args
+            - args:  < ./data/args
+
+dragon-naive:
+    exec_dir: "$GPUAPPS_ROOT/src/cuda/dragon_li/bin/$CUDA_VERSION/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/dragon/"
+    execs:
+        - testBfs:
+            - args: -g ./data/sample_cdp.gr -e -v
+            - args: -g ./data/citationCiteseer.graph -f metis -e -v
+            - args: -g ./data/coPapersDBLP.graph -f metis -e -v --sf 1.5
+        - testAmr:
+            - args: -v -e -r 20
+        - testSssp:
+            - args: -g ./data/sample_cdp.gr -e -v
+            - args: -g ./data/citationCiteseer.graph -f metis -e -v
+            - args: -g ./data/coPapersDBLP.graph -f metis -e -v
+        - testJoin:
+            - args: -v -e -l 204800 -r 204800
+
+dragon-cdp:
+    exec_dir: "$GPUAPPS_ROOT/src/cuda/dragon_li/cdp_bin/$CUDA_VERSION/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/dragon/"
+    execs:
+        - testBfs-cdp:
+            - args: -g ./data/sample_cdp.gr -e -v --cdp
+            - args: -g ./data/citationCiteseer.graph -f metis -e -v --cdp
+            - args: -g ./data/coPapersDBLP.graph -f metis -e -v --cdp --sf 1.5
+#        - testAmr-cdp:
+#            - args: -v -e --cdp -r 20
+        - testSssp-cdp:
+            - args: -g ./data/sample_cdp.gr -e -v --cdp
+            - args: -g ./data/citationCiteseer.graph -f metis -e -v --cdp
+            - args: -g ./data/coPapersDBLP.graph -f metis -e -v --cdp
+#        - testJoin-cdp:
+#            - args: -v -e --cdp -l 204800 -r 204800
+
+
+proxy-apps-doe:
+    exec_dir: "$GPUAPPS_ROOT/src/cuda/proxy-apps-doe/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/proxy-apps-doe/"
+    execs:
+            # Does not compile
+#         - comd/CoMDCUDA:
+#            - args: p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
+         - cns/cns_all:
+            - args: 64 32 32 1
+         - XSBench:
+            - args: 12 small 0
+            - args: 12 large 0
+         - lulesh:
+            - args: 1e-7
+
+pannotia:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/pannotia/"
+    execs:
+        - bc:
+            - args: ./data/1k_128k.gr
+            - args: ./data/2k_1M.gr
+        - color_max:
+            - args: ./data/ecology1.graph 1
+            - args: ./data/G3_circuit.graph 1
+        - color_maxmin:
+            - args: ./data/ecology1.graph 1
+            - args: ./data/G3_circuit.graph 1
+        - fw:
+            - args: ./data/256_16384.gr
+# This input is taking more thatn 17 hours to reach 2B insn
+#            - args: ./data/512_65536.gr
+        - fw_block:
+            - args: ./data/256_16384.gr
+            - args: ./data/512_65536.gr
+        - mis:
+            - args: ./data/ecology1.graph 1
+            - args: ./data/G3_circuit.graph 1
+        - pagerank:
+            - args: ./data/coAuthorsDBLP.graph 1
+        - pagerank_spmv:
+            - args: ./data/coAuthorsDBLP.graph 1
+#        - sssp:
+#            - args: ./data/USA-road-d.NW.gr 0
+#            - args: ./data/USA-road-d.NY.gr 0
+#        - sssp_ell:
+#            - args: ./data/USA-road-d.NW.gr 0
+#            - args: ./data/USA-road-d.NY.gr 0
 
 lonestargpu-2.0:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
@@ -641,986 +677,55 @@ lonestargpu-2.0:
     execs:
         # Needs Texture
         - lonestar-bfs-atomic:
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
         - lonestar-bfs-wlw: 
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
         - lonestar-bfs-wla: 
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
         # bad regs
         - lonestar-sssp:
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
         - lonestar-sssp-wlc:
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
             #deadlock
-#            - ./data/USA-road-d.NY.gr
+#            - args: ./data/USA-road-d.NY.gr
         # Needs Texture
         - lonestar-sssp-wln: 
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
-            - ./data/USA-road-d.FLA.gr
-            - ./data/USA-road-d.USA.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
+            - args: ./data/USA-road-d.FLA.gr
+            - args: ./data/USA-road-d.USA.gr
         # Some register sizing problems
         - lonestar-bfs-wlc: 
-            - ./data/r4-2e20.gr
-            - ./data/rmat20.gr
-            - ./data/USA-road-d.NY.gr
+            - args: ./data/r4-2e20.gr
+            - args: ./data/rmat20.gr
+            - args: ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
         - lonestar-bh:
-            - 30000 50 0
-            - 300000 10 0
-            - 3000000 2 0
+            - args: 30000 50 0
+            - args: 300000 10 0
+            - args: 3000000 2 0
         - lonestar-dmr:
-            - ./data/250k.2 20
-            - ./data/r1M 20
-            - ./data/r5M 12
+            - args: ./data/250k.2 20
+            - args: ./data/r1M 20
+            - args: ./data/r5M 12
         # Needs Texture
         - lonestar-mst:
-            - ./data/rmat12.sym.gr
-            - ./data/USA-road-d.FLA.sym.gr
-            - ./data/2d-2e20.sym.gr
-
-parboilmissing2:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
-    execs:
-        - parboil-stencil:
-            - -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
-
-parboilmissing:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
-    execs:
- #       - parboil-lbm:
- #           -  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
-
-        - parboil-histo:
-            - -i ./data/default/input/img.bin -o ref.bmp -- 20 4
-
-#        - parboil-spmv:
-#            - -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
-
-        - parboil-mri-gridding:
-            - -i ./data/small/input/small.uks -o output.txt -- 32 0
-
-        - parboil-bfs:
-#            - -i ./data/1M/input/graph_input.dat -o bfs-1M.out
-            - -i ./data/NY/input/graph_input.dat -o bfs-NY.out 
-#            - -i ./data/SF/input/graph_input.dat -o bfs-SF.out
-#            - -i ./data/UT/input/graph_input.dat -o bfs-UT.out
-
-#        - parboil-tpacf:
-#            - -i ./data/large/input/Datapnts.1,./data/large/input/Randompnts.1,./data/large/input/Randompnts.2,./data/large/input/Randompnts.3,./data/large/input/Randompnts.4,./data/large/input/Randompnts.5,./data/large/input/Randompnts.6,./data/large/input/Randompnts.7,./data/large/input/Randompnts.8,./data/large/input/Randompnts.9,./data/large/input/Randompnts.10,./data/large/input/Randompnts.11,./data/large/input/Randompnts.12,./data/large/input/Randompnts.13,./data/large/input/Randompnts.14,./data/large/input/Randompnts.15,./data/large/input/Randompnts.16,./data/large/input/Randompnts.17,./data/large/input/Randompnts.18,./data/large/input/Randompnts.19,./data/large/input/Randompnts.20,./data/large/input/Randompnts.21,./data/large/input/Randompnts.22,./data/large/input/Randompnts.23,./data/large/input/Randompnts.24,./data/large/input/Randompnts.25,./data/large/input/Randompnts.26,./data/large/input/Randompnts.27,./data/large/input/Randompnts.28,./data/large/input/Randompnts.29,./data/large/input/Randompnts.30,./data/large/input/Randompnts.31,./data/large/input/Randompnts.32,./data/large/input/Randompnts.33,./data/large/input/Randompnts.34,./data/large/input/Randompnts.35,./data/large/input/Randompnts.36,./data/large/input/Randompnts.37,./data/large/input/Randompnts.38,./data/large/input/Randompnts.39,./data/large/input/Randompnts.40,./data/large/input/Randompnts.41,./data/large/input/Randompnts.42,./data/large/input/Randompnts.43,./data/large/input/Randompnts.44,./data/large/input/Randompnts.45,./data/large/input/Randompnts.46,./data/large/input/Randompnts.47,./data/large/input/Randompnts.48,./data/large/input/Randompnts.49,./data/large/input/Randompnts.50,./data/large/input/Randompnts.51,./data/large/input/Randompnts.52,./data/large/input/Randompnts.53,./data/large/input/Randompnts.54,./data/large/input/Randompnts.55,./data/large/input/Randompnts.56,./data/large/input/Randompnts.57,./data/large/input/Randompnts.58,./data/large/input/Randompnts.59,./data/large/input/Randompnts.60,./data/large/input/Randompnts.61,./data/large/input/Randompnts.62,./data/large/input/Randompnts.63,./data/large/input/Randompnts.64,./data/large/input/Randompnts.65,./data/large/input/Randompnts.66,./data/large/input/Randompnts.67,./data/large/input/Randompnts.68,./data/large/input/Randompnts.69,./data/large/input/Randompnts.70,./data/large/input/Randompnts.71,./data/large/input/Randompnts.72,./data/large/input/Randompnts.73,./data/large/input/Randompnts.74,./data/large/input/Randompnts.75,./data/large/input/Randompnts.76,./data/large/input/Randompnts.77,./data/large/input/Randompnts.78,./data/large/input/Randompnts.79,./data/large/input/Randompnts.80,./data/large/input/Randompnts.81,./data/large/input/Randompnts.82,./data/large/input/Randompnts.83,./data/large/input/Randompnts.84,./data/large/input/Randompnts.85,./data/large/input/Randompnts.86,./data/large/input/Randompnts.87,./data/large/input/Randompnts.88,./data/large/input/Randompnts.89,./data/large/input/Randompnts.90,./data/large/input/Randompnts.91,./data/large/input/Randompnts.92,./data/large/input/Randompnts.93,./data/large/input/Randompnts.94,./data/large/input/Randompnts.95,./data/large/input/Randompnts.96,./data/large/input/Randompnts.97,./data/large/input/Randompnts.98,./data/large/input/Randompnts.99,./data/large/input/Randompnts.100 -o tpacf.out -- -n 100 -p 10391
-
-parboil:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
-    execs:
-        - parboil-sad:
-            - -i ./data/default/input/reference.bin,./data/default/input/frame.bin -o out.bin
-
-        - parboil-sgemm:
-            - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
-
-        - parboil-stencil:
-            - -i ./data/small/input/128x128x32.bin -o 128x128x32.out -- 128 128 32 100
-        - parboil-cutcp:
-            - -i ./data/small/input/watbox.sl40.pqr -o lattice.dat
-
-        - parboil-mri-q:
-            - -i ./data/small/input/32_32_32_dataset.bin -o 32_32_32_dataset.out
-
-#        - parboil-lbm:
-#            -  -i ./data/long/input/120_120_150_ldc.of -o reference.dat -- 3000
-
-        - parboil-histo:
-            - -i ./data/default/input/img.bin -o ref.bmp -- 20 4
-
-        - parboil-spmv:
-            - -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
-
-        - parboil-mri-gridding:
-            - -i ./data/small/input/small.uks -o output.txt -- 32 0
-        
-        - parboil-bfs:
-#            - -i ./data/1M/input/graph_input.dat -o bfs-1M.out
-            - -i ./data/NY/input/graph_input.dat -o bfs-NY.out 
-#            - -i ./data/SF/input/graph_input.dat -o bfs-SF.out
-#            - -i ./data/UT/input/graph_input.dat -o bfs-UT.out
-
-#        - parboil-tpacf:
-#            - -i ./data/large/input/Datapnts.1,./data/large/input/Randompnts.1,./data/large/input/Randompnts.2,./data/large/input/Randompnts.3,./data/large/input/Randompnts.4,./data/large/input/Randompnts.5,./data/large/input/Randompnts.6,./data/large/input/Randompnts.7,./data/large/input/Randompnts.8,./data/large/input/Randompnts.9,./data/large/input/Randompnts.10,./data/large/input/Randompnts.11,./data/large/input/Randompnts.12,./data/large/input/Randompnts.13,./data/large/input/Randompnts.14,./data/large/input/Randompnts.15,./data/large/input/Randompnts.16,./data/large/input/Randompnts.17,./data/large/input/Randompnts.18,./data/large/input/Randompnts.19,./data/large/input/Randompnts.20,./data/large/input/Randompnts.21,./data/large/input/Randompnts.22,./data/large/input/Randompnts.23,./data/large/input/Randompnts.24,./data/large/input/Randompnts.25,./data/large/input/Randompnts.26,./data/large/input/Randompnts.27,./data/large/input/Randompnts.28,./data/large/input/Randompnts.29,./data/large/input/Randompnts.30,./data/large/input/Randompnts.31,./data/large/input/Randompnts.32,./data/large/input/Randompnts.33,./data/large/input/Randompnts.34,./data/large/input/Randompnts.35,./data/large/input/Randompnts.36,./data/large/input/Randompnts.37,./data/large/input/Randompnts.38,./data/large/input/Randompnts.39,./data/large/input/Randompnts.40,./data/large/input/Randompnts.41,./data/large/input/Randompnts.42,./data/large/input/Randompnts.43,./data/large/input/Randompnts.44,./data/large/input/Randompnts.45,./data/large/input/Randompnts.46,./data/large/input/Randompnts.47,./data/large/input/Randompnts.48,./data/large/input/Randompnts.49,./data/large/input/Randompnts.50,./data/large/input/Randompnts.51,./data/large/input/Randompnts.52,./data/large/input/Randompnts.53,./data/large/input/Randompnts.54,./data/large/input/Randompnts.55,./data/large/input/Randompnts.56,./data/large/input/Randompnts.57,./data/large/input/Randompnts.58,./data/large/input/Randompnts.59,./data/large/input/Randompnts.60,./data/large/input/Randompnts.61,./data/large/input/Randompnts.62,./data/large/input/Randompnts.63,./data/large/input/Randompnts.64,./data/large/input/Randompnts.65,./data/large/input/Randompnts.66,./data/large/input/Randompnts.67,./data/large/input/Randompnts.68,./data/large/input/Randompnts.69,./data/large/input/Randompnts.70,./data/large/input/Randompnts.71,./data/large/input/Randompnts.72,./data/large/input/Randompnts.73,./data/large/input/Randompnts.74,./data/large/input/Randompnts.75,./data/large/input/Randompnts.76,./data/large/input/Randompnts.77,./data/large/input/Randompnts.78,./data/large/input/Randompnts.79,./data/large/input/Randompnts.80,./data/large/input/Randompnts.81,./data/large/input/Randompnts.82,./data/large/input/Randompnts.83,./data/large/input/Randompnts.84,./data/large/input/Randompnts.85,./data/large/input/Randompnts.86,./data/large/input/Randompnts.87,./data/large/input/Randompnts.88,./data/large/input/Randompnts.89,./data/large/input/Randompnts.90,./data/large/input/Randompnts.91,./data/large/input/Randompnts.92,./data/large/input/Randompnts.93,./data/large/input/Randompnts.94,./data/large/input/Randompnts.95,./data/large/input/Randompnts.96,./data/large/input/Randompnts.97,./data/large/input/Randompnts.98,./data/large/input/Randompnts.99,./data/large/input/Randompnts.100 -o tpacf.out -- -n 100 -p 10391
-
-
-polybench_missing:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - polybench-2DConvolution:
-            - 
-        - polybench-2mm:
-            - 
-
-polybench:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - polybench-2DConvolution:
-            - 
-        - polybench-2mm:
-            - 
-        - polybench-3DConvolution:
-            -
-        - polybench-3mm:
-            - 
-        - polybench-atax:
-            -
-        - polybench-bicg:
-            -
-        - polybench-correlation:
-            -
-        - polybench-covariance:
-            -
-        - polybench-fdtd2d:
-            -
-        - polybench-gemm:
-            -
-        - polybench-gesummv:
-            - 
-        - polybench-gramschmidt:
-            -
-        - polybench-mvt:
-            -
-        - polybench-syr2k:
-            -
-        - polybench-syrk:
-            -
-
-shoc:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - shoc-BFS:
-            -
-        - shoc-BusSpeedDownload:
-            -
-        - shoc-BusSpeedReadback:
-            - 
-        - shoc-DeviceMemory:
-            -
-        - shoc-FFT:
-            -
-        - shoc-GEMM:
-            -
-        - shoc-MaxFlops:
-            -
-        - shoc-MD:
-            -
-        - shoc-MD5Hash:
-            -
-        - shoc-NeuralNet:
-            -
-        - shoc-QTC:
-            -
-        - shoc-Reduction:
-            -
-        - shoc-S3D:
-            -
-        - shoc-Scan:
-            -
-        - shoc-Sort:
-            -
-        - shoc-Spmv:
-            -
-        - shoc-Stability:
-            -
-        - shoc-Stencil2D:
-            -
-        - shoc-Triad:
-            -
-
-deeplearning:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - mnistCUDNN:
-            -
-
-heterosync:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - allSyncPrims-1kernel:
-            - atomicTreeBarrUniq 10 2 10
-            - atomicTreeBarrUniq 10 4 10
-            - atomicTreeBarrUniq 10 8 10
-            - atomicTreeBarrUniq 10 16 10
-            - atomicTreeBarrUniqLocalExch 10 2 10
-            - atomicTreeBarrUniqLocalExch 10 4 10
-            - atomicTreeBarrUniqLocalExch 10 8 10
-            - atomicTreeBarrUniqLocalExch 10 16 10
-            - lfTreeBarrUniq 10 2 10
-            - lfTreeBarrUniq 10 4 10
-            - lfTreeBarrUniq 10 8 10
-            - lfTreeBarrUniq 10 16 10
-            - lfTreeBarrUniqLocalExch 10 2 10
-            - lfTreeBarrUniqLocalExch 10 4 10
-            - lfTreeBarrUniqLocalExch 10 8 10
-            - lfTreeBarrUniqLocalExch 10 16 10
-            - spinMutex 10 2 10
-            - spinMutex 10 4 10
-            - spinMutex 10 8 10
-            - spinMutex 10 16 10
-            - spinMutexEBO 10 2 10
-            - spinMutexEBO 10 4 10
-            - spinMutexEBO 10 8 10
-            - spinMutexEBO 10 16 10
-            - faMutex 10 2 10
-            - faMutex 10 4 10
-            - faMutex 10 8 10
-            - faMutex 10 16 10
-            - sleepMutex 10 2 10
-            - sleepMutex 10 4 10
-            - sleepMutex 10 8 10
-            - sleepMutex 10 16 10
-            - spinSem10 10 2 10
-            - spinSem10 10 4 10
-            - spinSem10 10 8 10
-            - spinSem10 10 16 10
-            - spinSemEBO10 10 2 10
-            - spinSemEBO10 10 4 10
-            - spinSemEBO10 10 8 10
-            - spinSemEBO10 10 16 10
-            - spinMutexUniq 10 2 10
-            - spinMutexUniq 10 4 10
-            - spinMutexUniq 10 8 10
-            - spinMutexUniq 10 16 10
-            - spinMutexEBOUniq 10 2 10
-            - spinMutexEBOUniq 10 4 10
-            - spinMutexEBOUniq 10 8 10
-            - spinMutexEBOUniq 10 16 10
-            - faMutexUniq 10 2 10
-            - faMutexUniq 10 4 10
-            - faMutexUniq 10 8 10
-            - faMutexUniq 10 16 10
-            - sleepMutexUniq 10 2 10
-            - sleepMutexUniq 10 4 10
-            - sleepMutexUniq 10 8 10
-            - sleepMutexUniq 10 16 10
-            - spinSemUniq10 10 2 10
-            - spinSemUniq10 10 4 10
-            - spinSemUniq10 10 8 10
-            - spinSemUniq10 10 16 10
-            - spinSemEBOUniq10 10 2 10
-            - spinSemEBOUniq10 10 4 10
-            - spinSemEBOUniq10 10 8 10
-            - spinSemEBOUniq10 10 16 10
-
-cutlass-test:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            -
-
-cutlass_5_trace_short:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-
-cutlass_5_trace_fail:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-
-
-cutlass_5_sgemm:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-
-cutlass_5_trace_wmma:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-
-cutlass_5_trace:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-
-cutlass_5_trace_sgemm:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-
-
-cutlass_5:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7133 --k=1760 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7133 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7133 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7133 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=7435 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=5481 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=1 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=2 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=4 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=1 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=2 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=4 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=1500 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=3000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=6000 --k=1024 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=1 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=1 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=1 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=2 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=2 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=2 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=4 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=4 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=4 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=1760 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=4096 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=5 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=5 --providers=cutlass
-
-cutlass_10:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - cutlass_perf_test:
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7133 --k=1760 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7133 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7133 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7133 --k=4096 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=7435 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=5481 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=1 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=2 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=4 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=1 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=2 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=4 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=2 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=4 --k=500000 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=1500 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=3000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=6000 --k=1024 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=1 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=1 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=1 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=2 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=2 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=2 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=4 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=4 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=4 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1500 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=1 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=3000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=2 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2816 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2048 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=2560 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=6000 --k=1536 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=4 --k=512 --kernels=wmma_gemm_nn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=16 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=32 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=64 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=128 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1760 --n=7000 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=64 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=128 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2048 --n=7000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=1760 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=5124 --n=9124 --k=4096 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=16 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=32 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=64 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=128 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=16 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=32 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=64 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=128 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=8 --k=500000 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=500000 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=700 --k=512 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=24000 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=7680 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=3072 --n=48000 --k=1024 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=16 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=16 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=16 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=6144 --n=32 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=4608 --n=32 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=8448 --n=32 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=24000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=16 --k=512 --kernels=wmma_gemm_nt  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2816 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2048 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=2560 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=48000 --k=1536 --kernels=wmma_gemm_tn  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=512 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=10 --providers=cutlass
-            - --seed=2020 --dist=0  --m=1024 --n=32 --k=512 --kernels=wmma_gemm_nt  --iterations=10 --providers=cutlass
-
-custom_apps:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - shoc-spmv-modified:
-            -
-        - rodinia-kmn-no-tex:
-            - -o -i ./data_dirs/cuda/rodinia/3.1/kmeans-rodinia-3.1/data/28k_4x_features.txt
-        - sdk-matrixMul-modified:
-            - 512
+            - args: ./data/rmat12.sym.gr
+            - args: ./data/USA-road-d.FLA.sym.gr
+            - args: ./data/2d-2e20.sym.gr

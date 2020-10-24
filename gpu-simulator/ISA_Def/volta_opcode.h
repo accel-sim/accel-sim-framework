@@ -10,7 +10,6 @@
 #include <unordered_map>
 
 #define VOLTA_BINART_VERSION 70
-#define VOLTA_SHARED_MEMORY_VIRTIAL_ADDRESS_START 0x00007f2c60000000
 
 // TO DO: moving this to a yml or def files
 

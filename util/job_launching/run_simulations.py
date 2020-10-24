@@ -51,28 +51,39 @@ class ConfigurationSpec:
     def run(self, build_handle, benchmarks, run_directory, cuda_version, simdir):
         for dir_bench in benchmarks:
             exec_dir, data_dir, benchmark, self.command_line_args_list = dir_bench
+            full_exec_dir = "" # For traces it is not necessary to have the apps built
+            full_data_dir = ""
             if options.trace_dir == "":
                 full_exec_dir = common.dir_option_test(os.path.expandvars(exec_dir), "", this_directory)
-                full_data_dir = common.dir_option_test(\
-                    os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
-                this_directory)
-            else:
-                full_exec_dir = "" # For traces it is not necessary to have the apps built
-                full_data_dir = ""
+                try:
+                    full_data_dir = common.dir_option_test(\
+                        os.path.join(os.path.expandvars(data_dir), benchmark.replace('/','_')), "",\
+                    this_directory)
+                except common.PathMissing:
+                    pass
 
 
             self.benchmark_args_subdirs = {}
-            for args in self.command_line_args_list:
+            for argmap in self.command_line_args_list:
+                args = argmap["args"]
                 self.benchmark_args_subdirs[args] = common.get_argfoldername( args )
 
 
-            for args in self.command_line_args_list:
+            for argmap in self.command_line_args_list:
+                args = argmap["args"]
+                mem_usage = argmap["accel-sim-mem"]
                 appargs_run_subdir = os.path.join( benchmark.replace('/','_'),
                                 self.benchmark_args_subdirs[args] )
                 this_run_dir = os.path.join( run_directory, appargs_run_subdir, self.run_subdir )
                 self.setup_run_directory(full_data_dir, this_run_dir, data_dir, appargs_run_subdir)
 
-                self.text_replace_torque_sim(full_data_dir,this_run_dir,benchmark,cuda_version, args, simdir, full_exec_dir,build_handle)
+                self.text_replace_torque_sim(full_data_dir,
+                    this_run_dir,
+                    benchmark,cuda_version,
+                    args,
+                    simdir,
+                    full_exec_dir,build_handle,
+                    mem_usage)
                 self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
@@ -182,9 +193,10 @@ class ConfigurationSpec:
             os.remove(all_data_link)
         if os.path.exists(os.path.join(this_directory, data_dir)):
             os.symlink(os.path.join(this_directory, data_dir), all_data_link)
-    # replaces all the "REAPLCE_*" strings in the torque.sim file
+
+    # replaces all the "REAPLCE_*" strings in the .sim file
     def text_replace_torque_sim( self,full_run_dir,this_run_dir,benchmark, cuda_version, command_line_args,
-                                 libpath, exec_dir, gpgpusim_build_handle ):
+                                 libpath, exec_dir, gpgpusim_build_handle, mem_usage ):
         # get the pre-launch sh commands
         prelaunch_filename =  full_run_dir +\
                              "benchmark_pre_launch_command_line.txt"
@@ -193,7 +205,7 @@ class ConfigurationSpec:
             f = open(prelaunch_filename)
             benchmark_command_line = f.read().strip()
             f.close()
-            
+
         if options.trace_dir == "":
             exec_name = options.benchmark_exec_prefix + " " +\
                     os.path.join(this_directory, exec_dir, benchmark)
@@ -209,18 +221,18 @@ class ConfigurationSpec:
         if str(os.getenv("GPGPUSIM_CONFIG")) == "None":
             exit("\nERROR - Specify GPGPUSIM_CONFIG prior to running this script")
 
-        # do the text replacement for the torque.sim file
-        mem_usage = options.job_mem
+        # If the user specified the memory use that
+        if options.job_mem != None:
+            mem_usage = options.job_mem
+        # if we are using PTX (GPGPU-Sim) - then just assume 4G
+        elif options.trace_dir == "":
+            mem_usage = "4G"
         if options.trace_dir == "":
             if command_line_args == None:
                 txt_args = ""
             else:
                 txt_args = command_line_args
-            if mem_usage == "":
-                mem_usage = "4G"
         else:
-            if mem_usage == "":
-                mem_usage = "20G"
             txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g"
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
@@ -228,6 +240,7 @@ class ConfigurationSpec:
         else:
             queue_name = os.getenv("TORQUE_QUEUE_NAME")
 
+        # do the text replacement for the .sim file
         replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
                                 gpgpusim_build_handle,
                             "NODES":"1", 

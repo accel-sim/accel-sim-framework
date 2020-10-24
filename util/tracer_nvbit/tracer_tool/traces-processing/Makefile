@@ -1,7 +1,7 @@
 TARGET := post-traces-processing
 
 $(TARGET): post-traces-processing.cpp
-	g++ -o $@ $^
+	g++ -std=c++11 -o $@ $^
 
 run: $(TARGET)
 	./$(TARGET)
