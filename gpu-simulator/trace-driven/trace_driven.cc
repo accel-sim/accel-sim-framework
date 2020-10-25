@@ -150,8 +150,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
-
+  std::string opcode = trace.opcode;
   if(opcode1 == "MUFU"){ // Differentiate between different MUFU operations for power model
+    std::cout<<opcode<<"\n";
     if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS"))
       sp_op = FP_SIN_OP;
     if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP"))
@@ -193,7 +194,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // handle special cases and fill memory space
   switch (m_opcode) {
   case OP_LDC: //handle Load from Constant
-    assert(mem_width > 0);
+    assert(trace.memadd_info->width > 0);
     data_size = 4;
     memory_op = memory_load;
     space.set_type(const_space);
@@ -299,7 +300,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         initiation_interval / 2; // FP16 has 2X throughput than FP32
     break;
   default:
-    if(mem_width > 0){//must be using operand from Constant Address Space, generate appropriate mem accesses
+    if(trace.memadd_info->width > 0){//must be using operand from Constant Address Space, generate appropriate mem accesses
       data_size = 4;
       const_cache_operand = 1;
       space.set_type(const_space);
