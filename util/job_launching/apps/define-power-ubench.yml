@@ -1,224 +1,249 @@
+dram_ubench:
+    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    execs:
+        - BE_MEM_DRAM_Acss:
+            - args: 1
+
+const_ubench:
+    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    execs:
+        - BE_MEM_CNST_Acss:
+            - args: 100
+
+power_debug_ubench:
+    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    execs:
+        - BE_TEXTURE_ACCESS:
+            - args: 100
+            
 power_ubench:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
         - ACT_CORE:
-            - 100 1
+            - args: 100 1
         - ACT_CORE:
-            - 100 16
+            - args: 100 16
         - ACT_CORE:
-            - 100 32
+            - args: 100 32
         - ACT_CORE:
-            - 100 48
+            - args: 100 48
         - ACT_CORE:
-            - 100 64
+            - args: 100 64
         - ACT_CORE:
-            - 100 80      
+            - args: 100 80      
         - add_mem_1:
-            - 100
+            - args: 10
         - add_mem_2:
-            - 10
+            - args: 10
         - BE_DP_FP_ADD:
-            - 100
+            - args: 100
+        - BE_DP_FP_DIV:
+            - args: 10
         - BE_DP_FP_MAD:
-            - 100
+            - args: 100
         - BE_DP_FP_MUL:
-            - 100
+            - args: 100
         - BE_L1D_HIT:
-            - 100
+            - args: 100
         - BE_L2D_HIT:
-            - 100
+            - args: 100
         - BE_MEM_CNST_Acss:
-            - 100
+            - args: 100
         - BE_MEM_DRAM_Acss:
-            - 10
+            - args: 1
         - BE_MEM_SHRD_Acss:
-            - 100
+            - args: 100
         - BE_SFU_EXP:
-            - 100
+            - args: 100
         - BE_SFU_LG2:
-            - 100
+            - args: 100
         - BE_SFU_SIN:
-            - 100
+            - args: 100
         - BE_SFU_SQRT:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l1:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l12:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l16:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l20:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l24:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l28:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l32:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l4:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_l8:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_leven:
-            - 100
+            - args: 100
         - BE_SP_FP_ADD_lodd:
-            - 100
+            - args: 100
+        - BE_SP_FP_DIV:
+            - args: 10
         - BE_SP_FP_MAD:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l1:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l12:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l16:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l20:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l24:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l28:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l32:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l4:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_l8:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_leven:
-            - 100
+            - args: 100
         - BE_SP_FP_MUL_lodd:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l1:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l12:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l16:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l20:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l24:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l28:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l32:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l4:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_l8:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_leven:
-            - 100
+            - args: 100
         - BE_SP_INT_ADD_lodd:
-            - 100
+            - args: 100
         - BE_SP_INT_DIV:
-            - 100
+            - args: 10
         - BE_SP_INT_LOGIC:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL24:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL32:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l1:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l12:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l16:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l20:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l24:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l28:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l32:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l4:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_l8:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_leven:
-            - 100
+            - args: 100
         - BE_SP_INT_MUL_lodd:
-            - 100
+            - args: 100
         - BE_TEXTURE_ACCESS:
-            - 100
+            - args: 100
         - BE_TEXTURE_ACCESS_2:
-            - 100
+            - args: 100
         - BRANCHING1:
-            - 10
+            - args: 100
         - BRANCHING2:
-            - 10
+            - args: 100
         - BRANCHING3:
-            - 10
+            - args: 100
         - BRANCHING4:
-            - 10
+            - args: 100
         - BRANCHING5:
-            - 10
+            - args: 100
         - const_mul:
-            - 100
+            - args: 100
         - immediates_constant:
-            - 100
+            - args: 100
         - immediates_texture:
-            - 100
+            - args: 100
         - mix1:
-            - 100
+            - args: 100
         - mix10:
-            - 10
+            - args: 10
         - mix11:
-            - 100
+            - args: 100
         - mix12:
-            - 100
+            - args: 100
         - mix13:
-            - 100
+            - args: 100
         - mix14:
-            - 100
+            - args: 100
         - mix15:
-            - 100
+            - args: 100
         - mix16:
-            - 100
+            - args: 100
         - mix17:
-            - 100
+            - args: 100
         - mix18:
-            - 100
+            - args: 100
         - mix19:
-            - 100
+            - args: 100
         - mix2:
-            - 10
+            - args: 10
         - mix20:
-            - 100
+            - args: 100
         - mix3:
-            - 100
+            - args: 100
         - mix4:
-            - 10
+            - args: 10
         - mix5:
-            - 10
+            - args: 10
         - mix6:
-            - 10
+            - args: 10
         - mix7:
-            - 10
+            - args: 10
         - mix8:
-            - 10
+            - args: 10
         - mix9:
-            - 10
+            - args: 10
         - mul_add_tex_1:
-            - 100
+            - args: 100
         - mul_add_tex_2:
-            - 100
+            - args: 100
         - mul_mem_1:
-            - 10
+            - args: 10
         - mul_mem_2:
-            - 10
+            - args: 10
         - REG_FILE:
-            - 100
+            - args: 100
         - SHRD_TEX_SFU:
-            - 100
+            - args: 100
         - TENSOR:
-            - 100
+            - args: 10

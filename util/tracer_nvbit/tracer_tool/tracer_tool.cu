@@ -136,7 +136,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
 
       /* pass predicate value */
-      nvbit_add_call_arg_guard_pred_val(instr);
+      nvbit_add_call_arg_pred_val(instr);
 
       /* send opcode and pc */
       nvbit_add_call_arg_const_val32(instr, opcode_id);
@@ -154,10 +154,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
        * store and RED)*/
       if (instr->getNumOperands() > 0 &&
-          instr->getOperand(0)->type == InstrType::OperandType::REG)
+          instr->getOperand(0)->type == Instr::operandType::REG)
         dst_oprd = instr->getOperand(0)->u.reg.num;
       else if (instr->getNumOperands() > 0 &&
-               instr->getOperand(0)->type == InstrType::OperandType::MREF) {
+               instr->getOperand(0)->type == Instr::operandType::MREF) {
         src_oprd[0] = instr->getOperand(0)->u.mref.ra_num;
         mem_oper_idx = 0;
         srcNum++;
@@ -166,8 +166,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       // find src regs and mem
       for (int i = 1; i < MAX_SRC; i++) {
         if (i < instr->getNumOperands()) {
-          const InstrType::operand_t *op = instr->getOperand(i);
-          if (op->type == InstrType::OperandType::MREF) {
+          const Instr::operand_t *op = instr->getOperand(i);
+          if (op->type == Instr::operandType::MREF) {
             // mem is found
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
@@ -175,18 +175,13 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             // TO DO: handle LDGSTS with two mem refs
             assert(mem_oper_idx == -1); // ensure one memory operand per inst
             mem_oper_idx++;
-          } else if (op->type == InstrType::OperandType::REG) {
+          } else if (op->type == Instr::operandType::REG) {
             // reg is found
 
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           } else if ((op->type == Instr::operandType::CBANK)) {
-            assert(srcNum < MAX_SRC);
-            if(instr->getOperand(cbank_opnd)->u.cbank.has_reg_offset){
-              src_oprd[srcNum] = instr->getOperand(i)->u.cbank.reg_offset;
-              srcNum++;
-            }
             assert(cbank_idx == -1); // ensure one constant operand per inst
             cbank_idx++;
             cbank_opnd = i;
@@ -196,8 +191,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       }
       /* ConstantBank addresses info */
       if (cbank_idx >= 0) {
+        nvbit_add_call_arg_const_val32(instr, 1);
         if(instr->getOperand(cbank_opnd)->u.cbank.has_imm_offset){
-          nvbit_add_call_arg_const_val32(instr, 1);
           int low = instr->getOperand(cbank_opnd)->u.cbank.imm_offset;
           int high = instr->getOperand(cbank_opnd)->u.cbank.id;
           uint64_t constcache_index;
@@ -206,9 +201,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           memcpy (ptr+4, &high, 4);
           nvbit_add_call_arg_const_val64(instr, constcache_index);
           nvbit_add_call_arg_const_val32(instr, instr->getOperand(cbank_opnd)->u.cbank.id);
-        }
+        }               
         else if(instr->getOperand(cbank_opnd)->u.cbank.has_reg_offset){
-          nvbit_add_call_arg_const_val32(instr, 1);
           nvbit_add_call_arg_reg_val(instr, instr->getOperand(cbank_opnd)->u.cbank.reg_offset);
           nvbit_add_call_arg_const_val32(instr, instr->getOperand(cbank_opnd)->u.cbank.id);
         }
