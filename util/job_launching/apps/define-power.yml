@@ -1,24 +1,105 @@
-dram_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+rodinia-3.1_validation:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
     execs:
-        - BE_MEM_DRAM_Acss:
-            - args: 1
+        - b+tree-rodinia-3.1:
+            - args:  file ./data/mil.txt command ./data/command.txt
+        - backprop-rodinia-3.1:
+           - args:  65536
+        #- bfs-rodinia-3.1:
+        #    - args:  ./data/graph1MW_6.txt
+        - dwt2d-rodinia-3.1:
+            - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+        #- gaussian-rodinia-3.1:
+        #    - args:  -f ./data/matrix208.txt
+        #- hotspot-rodinia-3.1:
+        #    - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+        #- hybridsort-rodinia-3.1:
+        #   - args:  ./data/500000.txt
+        - kmeans-rodinia-3.1:
+            - args:  -o -i ./data/819200.txt
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
+        #- lud-rodinia-3.1:
+        #    - args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+        #    - args:  100 1 0
+        #- nn-rodinia-3.1:
+        #    - args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+        #    - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+        #    - args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+        #    - args:  -x 128 -y 128 -z 10 -np 1000
+        - pathfinder-rodinia-3.1:
+            - args:  100000 100 20 > result.txt
+        - srad_v1-rodinia-3.1:
+            - args:  100 0.5 502 458
 
-const_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+parboil_validation:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
     execs:
-        - BE_MEM_CNST_Acss:
-            - args: 100
-
-power_debug_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    execs:
-        - BE_TEXTURE_ACCESS:
-            - args: 100
+        - parboil-sad:
+            - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
             
+        - parboil-sgemm:
+            - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+   
+        #- parboil-stencil:
+        #    - args: -i ./data/default/input/512x512x64x100.bin -o 512x512x64x100.out -- 512 512 64 100
+
+        #- parboil-cutcp:
+        #    - args: -i ./data/large/input/watbox.sl100.pqr -o lattice.dat
+
+        - parboil-mri-q:
+            - args: -i ./data/large/input/64_64_64_dataset.bin -o 64_64_64_dataset.out
+
+        #- parboil-histo:
+        #    - args: -i ./data/large/input/img.bin -o ref.bmp -- 10000 4
+
+        #- parboil-spmv:
+        #    - args: -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
+
+        #- parboil-mri-gridding:
+        #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
+
+cuda_samples_11.1_validation:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda_samples_11.1/"
+    execs:
+        - dct8x8:
+            - args:
+        - binomialOptions:
+            - args:
+        - fastWalshTransform:
+            - args:
+        - histogram:
+            - args:
+        - mergesort:
+            - args:
+        - quasirandomGenerator:
+            - args:
+        - SobolQRNG:
+            - args:
+        - sortingNetworks:
+            - args:
+			
+cutlass_5_trace_validation:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_perf_test:
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
+     
 power_ubench:
     exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
