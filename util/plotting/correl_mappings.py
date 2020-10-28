@@ -294,7 +294,7 @@ correl_list = \
         stattype="rate"
     ),
     CorrelStat(chart_name="L1D Hit Rate (global_hit_rate match)",
-        plotfile="l1hitrate.golbal",
+        plotfile="l1hitrate.global",
         hw_eval="np.average(hw[\"global_hit_rate\"])",
         hw_error=None,
         sim_eval="(float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])" +\
@@ -458,7 +458,7 @@ correl_list = \
     ),
     CorrelStat(chart_name="L1D Write Hits",
         plotfile="l1hitwrites",
-        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_st_ld_lookup_hit.sum\"])",
+        hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum\"])",
         hw_error=None,
         sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)\"])",
         hw_name="all",
