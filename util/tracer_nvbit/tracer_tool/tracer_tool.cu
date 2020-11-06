@@ -546,7 +546,7 @@ void *recv_thread_fun(void *) {
             fprintf(resultsFile, "R%d ", ma->GPRSrcs[s]);
 
         // print addresses
-        std::bitset<32> mask(ma->active_mask);
+        std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
         if (ma->is_mem) {
           std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
           std::vector<std::string> tokens;
