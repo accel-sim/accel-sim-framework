@@ -152,7 +152,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   }
   std::string opcode = trace.opcode;
   if(opcode1 == "MUFU"){ // Differentiate between different MUFU operations for power model
-    std::cout<<opcode<<"\n";
     if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS"))
       sp_op = FP_SIN_OP;
     if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP"))
@@ -161,6 +160,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       sp_op = FP_SQRT_OP;
     if (opcode == "MUFU.LG2") 
       sp_op = FP_LG_OP;
+  }
+
+  if(opcode1 == "IMAD"){ // Differentiate between different IMAD operations for power model
+    if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD"))
+      sp_op = INT__OP;
   }
   
   // fill regs information

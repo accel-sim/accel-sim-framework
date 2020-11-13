@@ -1,6 +1,6 @@
 rodinia-3.1_validation:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
@@ -18,8 +18,8 @@ rodinia-3.1_validation:
            - args:  ./data/500000.txt
         - kmeans-rodinia-3.1:
             - args:  -o -i ./data/819200.txt
-        - lavaMD-rodinia-3.1:
-            - args:  -boxes1d 10
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
         - lud-rodinia-3.1:
             - args:  -i ./data/512.dat
         - myocyte-rodinia-3.1:
@@ -38,11 +38,11 @@ rodinia-3.1_validation:
             - args:  100 0.5 502 458
 
 Deepbench_nvidia_tencore_validation:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/"
     execs:
         - conv_bench-tencore:
-            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+            #- args: train half 7 7 512 8 512 3 3 1 1 1 1
             - args: inference half 480 48 1 1 16 3 3 1 1 1 1
         - gemm_bench-tencore:
             - args: train half 2048 64 2048 1 0
@@ -54,8 +54,8 @@ Deepbench_nvidia_tencore_validation:
             - args: train half 128 32 1 gru
 
 parboil_validation:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/parboil/"
     execs:
         - parboil-sad:
             - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
@@ -82,8 +82,8 @@ parboil_validation:
         #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
 
 cuda_samples_11.1_validation:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda_samples_11.1/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/"
     execs:
         - dct8x8:
             - args:
@@ -103,8 +103,8 @@ cuda_samples_11.1_validation:
             - args:
                    
 cutlass_5_trace_validation:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/"
     execs:
         - cutlass_perf_test:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
@@ -116,20 +116,17 @@ cutlass_5_trace_validation:
             - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
 
-power_debug_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+debug_ubench:
+    exec_dir: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
-        - BE_MEM_CNST_Acss:
-            - args: 100
-        - BE_L1D_HIT:
-            - args: 100
-        - immediates_constant:
-            - args: 100
+        - ACT_CORE:
+            - args: 100 1
+
 
 power_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
         - ACT_CORE:
             - args: 100 1
@@ -159,8 +156,8 @@ power_ubench:
             - args: 100
         - BE_L2D_HIT:
             - args: 100
-        - BE_MEM_CNST_Acss:
-            - args: 100
+        #- BE_MEM_CNST_Acss:
+        #    - args: 100
         - BE_MEM_DRAM_Acss:
             - args: 1
         - BE_MEM_SHRD_Acss:
@@ -295,8 +292,8 @@ power_ubench:
             - args: 100
         - BRANCHING5:
             - args: 100
-        - const_mul:
-            - args: 100
+        #- const_mul:
+        #    - args: 100
         - immediates_constant:
             - args: 100
         - immediates_texture:
