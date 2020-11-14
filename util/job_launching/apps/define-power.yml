@@ -125,21 +125,61 @@ debug_ubench:
 
 
 power_ubench:
-    exec_dir: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
-        - ACT_CORE:
-            - args: 100 1
-        - ACT_CORE:
-            - args: 100 16
-        - ACT_CORE:
-            - args: 100 32
-        - ACT_CORE:
-            - args: 100 48
-        - ACT_CORE:
-            - args: 100 64
-        - ACT_CORE:
-            - args: 100 80      
+        - ACT_CORE1:
+            - args: 100 1 32
+            - args: 100 16 32
+            - args: 100 32 32
+            - args: 100 48 32
+            - args: 100 64 32
+            - args: 100 80 32
+        - ACT_CORE2:
+            - args: 100 1 32
+            - args: 100 16 32
+            - args: 100 32 32
+            - args: 100 48 32
+            - args: 100 64 32
+            - args: 100 80 32 
+        - INT_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_DP_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_SFU_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_TEX_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_TENSOR_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - LIGHT_SM:
+            - args: 100 80 32
         - add_mem_1:
             - args: 10
         - add_mem_2:
@@ -156,8 +196,8 @@ power_ubench:
             - args: 100
         - BE_L2D_HIT:
             - args: 100
-        #- BE_MEM_CNST_Acss:
-        #    - args: 100
+        - BE_MEM_CNST_Acss:
+            - args: 100
         - BE_MEM_DRAM_Acss:
             - args: 1
         - BE_MEM_SHRD_Acss:
@@ -292,8 +332,8 @@ power_ubench:
             - args: 100
         - BRANCHING5:
             - args: 100
-        #- const_mul:
-        #    - args: 100
+        - const_mul:
+            - args: 100
         - immediates_constant:
             - args: 100
         - immediates_texture:
