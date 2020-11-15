@@ -450,7 +450,8 @@ correl_list = \
         plotfile="l1hitreads",
         hw_eval="np.average(hw[\"l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum\"])",
         hw_error=None,
-        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])",
+        sim_eval="float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)\"])" +\
+                "+float(sim[\"\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[MSHR_HIT\]\s*=\s*(.*)\"])",
         hw_name="all",
         drophwnumbelow=0,
         plottype="log",
