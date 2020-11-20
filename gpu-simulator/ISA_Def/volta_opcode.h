@@ -104,7 +104,6 @@ static const std::unordered_map<std::string, OpcodeChar> Volta_OpcodeMap = {
 
     // Load/Store Instructions
     {"LD", OpcodeChar(OP_LD, LOAD_OP, OTHER_OP, FP_OP)},
-    // For now, we ignore constant loads, consider it as ALU_OP, TO DO
     {"LDC", OpcodeChar(OP_LDC, LOAD_OP, OTHER_OP, FP_OP)},
     {"LDG", OpcodeChar(OP_LDG, LOAD_OP, OTHER_OP, FP_OP)},
     {"LDL", OpcodeChar(OP_LDL, LOAD_OP, OTHER_OP, FP_OP)},

@@ -6,32 +6,32 @@ rodinia-3.1_validation:
             - args:  file ./data/mil.txt command ./data/command.txt
         - backprop-rodinia-3.1:
            - args:  65536
-        - bfs-rodinia-3.1:
-            - args:  ./data/graph1MW_6.txt
+        #- bfs-rodinia-3.1:
+            #- args:  ./data/graph1MW_6.txt
         - dwt2d-rodinia-3.1:
             - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
-        - gaussian-rodinia-3.1:
-            - args:  -f ./data/matrix208.txt
+        #- gaussian-rodinia-3.1:
+           # - args:  -f ./data/matrix208.txt
         - hotspot-rodinia-3.1:
             - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
-        - hybridsort-rodinia-3.1:
-           - args:  ./data/500000.txt
+        #- hybridsort-rodinia-3.1:
+           #- args:  ./data/500000.txt
         - kmeans-rodinia-3.1:
             - args:  -o -i ./data/819200.txt
         #- lavaMD-rodinia-3.1:
         #    - args:  -boxes1d 10
-        - lud-rodinia-3.1:
-            - args:  -i ./data/512.dat
-        - myocyte-rodinia-3.1:
-            - args:  100 1 0
-        - nn-rodinia-3.1:
-            - args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
-        - nw-rodinia-3.1:
-            - args:  2048 10
-        - particlefilter_float-rodinia-3.1:
-            - args:  -x 128 -y 128 -z 10 -np 1000
-        - particlefilter_naive-rodinia-3.1:
-            - args:  -x 128 -y 128 -z 10 -np 1000
+        #- lud-rodinia-3.1:
+            #- args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+            #- args:  100 1 0
+        #- nn-rodinia-3.1:
+           #- args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+           # - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
         - pathfinder-rodinia-3.1:
             - args:  100000 100 20 > result.txt
         - srad_v1-rodinia-3.1:
@@ -47,11 +47,11 @@ Deepbench_nvidia_tencore_validation:
         - gemm_bench-tencore:
             - args: train half 2048 64 2048 1 0
             - args: inference half 35 1500 2560 0 0
-        - rnn_bench-tencore:
-            - args: inference half 512 1 25 lstm
-            - args: inference half 512 1 1 gru
-            - args: train half 128 32 1 lstm
-            - args: train half 128 32 1 gru
+        #- rnn_bench-tencore:
+            #- args: inference half 512 1 25 lstm
+            #- args: inference half 512 1 1 gru
+            #- args: train half 128 32 1 lstm
+            #- args: train half 128 32 1 gru
 
 parboil_validation:
     exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
@@ -99,8 +99,8 @@ cuda_samples_11.1_validation:
             - args:
         - SobolQRNG:
             - args:
-        - sortingNetworks:
-            - args:
+        #- sortingNetworks:
+           # - args:
                    
 cutlass_5_trace_validation:
     exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
@@ -108,25 +108,22 @@ cutlass_5_trace_validation:
     execs:
         - cutlass_perf_test:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
 
 debug_ubench:
     exec_dir: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     data_dirs: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
-        - ACT_CORE:
-            - args: 100 1
+        - BE_SP_INT_MUL24:
+            - args: 100
+        - BE_SP_INT_MUL32:
+            - args: 100
 
 
 power_ubench:
-    exec_dir: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
-    data_dirs: "/home/vkz4947/volta_power_model/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    exec_dir: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpgpu-sim_simulations/benchmarks/bin/$CUDA_VERSION/release/"
     execs:
         - ACT_CORE1:
             - args: 100 1 32
@@ -178,8 +175,8 @@ power_ubench:
             - args: 100 80 16
             - args: 100 80 24
             - args: 100 80 32
-        - LIGHT_SM:
-            - args: 100 80 32
+        #- LIGHT_SM:
+        #    - args: 100 80 32
         - add_mem_1:
             - args: 10
         - add_mem_2:
@@ -196,8 +193,8 @@ power_ubench:
             - args: 100
         - BE_L2D_HIT:
             - args: 100
-        - BE_MEM_CNST_Acss:
-            - args: 100
+        #- BE_MEM_CNST_Acss:
+            #- args: 100
         - BE_MEM_DRAM_Acss:
             - args: 1
         - BE_MEM_SHRD_Acss:
@@ -212,80 +209,36 @@ power_ubench:
             - args: 100
         - BE_SP_FP_ADD:
             - args: 100
-        - BE_SP_FP_ADD_l1:
-            - args: 100
-        - BE_SP_FP_ADD_l12:
-            - args: 100
-        - BE_SP_FP_ADD_l16:
-            - args: 100
-        - BE_SP_FP_ADD_l20:
-            - args: 100
-        - BE_SP_FP_ADD_l24:
-            - args: 100
-        - BE_SP_FP_ADD_l28:
-            - args: 100
-        - BE_SP_FP_ADD_l32:
-            - args: 100
-        - BE_SP_FP_ADD_l4:
-            - args: 100
-        - BE_SP_FP_ADD_l8:
-            - args: 100
-        - BE_SP_FP_ADD_leven:
-            - args: 100
-        - BE_SP_FP_ADD_lodd:
-            - args: 100
         - BE_SP_FP_DIV:
             - args: 10
         - BE_SP_FP_MAD:
             - args: 100
         - BE_SP_FP_MUL:
             - args: 100
-        - BE_SP_FP_MUL_l1:
-            - args: 100
-        - BE_SP_FP_MUL_l12:
-            - args: 100
-        - BE_SP_FP_MUL_l16:
-            - args: 100
-        - BE_SP_FP_MUL_l20:
-            - args: 100
-        - BE_SP_FP_MUL_l24:
-            - args: 100
-        - BE_SP_FP_MUL_l28:
-            - args: 100
-        - BE_SP_FP_MUL_l32:
-            - args: 100
-        - BE_SP_FP_MUL_l4:
-            - args: 100
-        - BE_SP_FP_MUL_l8:
-            - args: 100
-        - BE_SP_FP_MUL_leven:
-            - args: 100
-        - BE_SP_FP_MUL_lodd:
-            - args: 100
         - BE_SP_INT_ADD:
             - args: 100
-        - BE_SP_INT_ADD_l1:
-            - args: 100
-        - BE_SP_INT_ADD_l12:
-            - args: 100
-        - BE_SP_INT_ADD_l16:
-            - args: 100
-        - BE_SP_INT_ADD_l20:
-            - args: 100
-        - BE_SP_INT_ADD_l24:
-            - args: 100
-        - BE_SP_INT_ADD_l28:
-            - args: 100
-        - BE_SP_INT_ADD_l32:
-            - args: 100
-        - BE_SP_INT_ADD_l4:
-            - args: 100
-        - BE_SP_INT_ADD_l8:
-            - args: 100
-        - BE_SP_INT_ADD_leven:
-            - args: 100
-        - BE_SP_INT_ADD_lodd:
-            - args: 100
+        #- BE_SP_INT_ADD_l1:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l12:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l16:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l20:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l24:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l28:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l32:
+        #   - args: 100
+        #- BE_SP_INT_ADD_l4:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l8:
+        #    - args: 100
+        #- BE_SP_INT_ADD_leven:
+        #    - args: 100
+        #- BE_SP_INT_ADD_lodd:
+        #    - args: 100
         - BE_SP_INT_DIV:
             - args: 10
         - BE_SP_INT_LOGIC:
@@ -296,28 +249,28 @@ power_ubench:
             - args: 100
         - BE_SP_INT_MUL32:
             - args: 100
-        - BE_SP_INT_MUL_l1:
-            - args: 100
-        - BE_SP_INT_MUL_l12:
-            - args: 100
-        - BE_SP_INT_MUL_l16:
-            - args: 100
-        - BE_SP_INT_MUL_l20:
-            - args: 100
-        - BE_SP_INT_MUL_l24:
-            - args: 100
-        - BE_SP_INT_MUL_l28:
-            - args: 100
-        - BE_SP_INT_MUL_l32:
-            - args: 100
-        - BE_SP_INT_MUL_l4:
-            - args: 100
-        - BE_SP_INT_MUL_l8:
-            - args: 100
-        - BE_SP_INT_MUL_leven:
-            - args: 100
-        - BE_SP_INT_MUL_lodd:
-            - args: 100
+        #- BE_SP_INT_MUL_l1:
+        #   - args: 100
+        #- BE_SP_INT_MUL_l12:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l16:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l20:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l24:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l28:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l32:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l4:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l8:
+        #    - args: 100
+        #- BE_SP_INT_MUL_leven:
+        #    - args: 100
+        #- BE_SP_INT_MUL_lodd:
+        #    - args: 100
         - BE_TEXTURE_ACCESS:
             - args: 100
         - BE_TEXTURE_ACCESS_2:
@@ -332,8 +285,8 @@ power_ubench:
             - args: 100
         - BRANCHING5:
             - args: 100
-        - const_mul:
-            - args: 100
+        #- const_mul:
+        #    - args: 100
         - immediates_constant:
             - args: 100
         - immediates_texture:
