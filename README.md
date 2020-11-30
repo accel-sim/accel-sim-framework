@@ -103,6 +103,10 @@ the apps in from this collection as well as just on your own, with your own apps
     ```bash
     ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
     ```
+    The above command will run the worklaods in accel-sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
+    ```bash
+    ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
+    ```
     You can monitor the tests using:
     ```bash
     ./util/job_launching/monitor_func_test.py -v -N myTest
