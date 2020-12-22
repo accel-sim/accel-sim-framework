@@ -32,20 +32,19 @@ bytes_parsed = 0
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
-help_str = "There are 3 ways to use this file" +\
-           " 1) Specify a sim_name: \"-N <the-name>\"\n"+\
+help_str = "There are 3 ways to use this file, select only one of the following:" +\
+           " \n1) Specify a sim_name: \"-N <the-name>\"\n"+\
            "    If you do this, then the job launching logfiles"+\
            " will be searched for the most recent sim_name job launch."+\
            " Those specific output files will be parsed."+\
-           " 2) Specify a logfile: \"-l <the-file>\"\n"+\
+           " \n2) Specify a logfile: \"-l <the-file>\"\n"+\
            "    If you do this, then the jobs in the specific logfile will be parsed" +\
            " If no options are specified, then it basically defaults to the -l"+\
            " option using the latest logfile." +\
-           " 3) Specify a configs -c and benchmarks -b yaml files you want data for."
+           " \n3) Specify a configs -c and benchmarks -b yaml files you want data for."
 
 
 parser = OptionParser(usage=help_str)
-parser = OptionParser()
 parser.add_option("-l", "--logfile", dest="logfile",
                   help="The logfile the status is based on. "+\
                         "By default, we will base it on the latest simulations launched.\n" +\
