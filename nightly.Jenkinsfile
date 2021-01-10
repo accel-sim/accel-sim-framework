@@ -18,6 +18,7 @@ pipeline {
             steps{
                 sh '''#!/bin/bash -xe
                     rm -rf /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    mkdir /scratch/tgrogers-disk01/a/$USER/nightly-traces
                     ./get-accel-sim-traces.py -a all/all -d /scratch/tgrogers-disk01/a/$USER/nightly-traces'''
             }
         }
