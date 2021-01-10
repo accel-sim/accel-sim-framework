@@ -14,6 +14,14 @@ pipeline {
                     cd env-setup && git checkout cluster-ubuntu'
             }
         }
+        stage('pull-traces') {
+            steps{
+                sh '''#!/bin/bash -xe
+                    rm -rf /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    ./get-accel-sim-traces.py -a all/all -d /scratch/tgrogers-disk01/a/$USER/nightly-traces'''
+            }
+        }
+        /*
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash -xe
@@ -32,6 +40,7 @@ pipeline {
                 ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s nightly-stats-per-app.csv -N nightly-$$'''
             }
         }
+        */
     }
     post {
         success {
