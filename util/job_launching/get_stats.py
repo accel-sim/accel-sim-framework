@@ -41,7 +41,7 @@ help_str = "There are 3 ways to use this file, select only one of the following:
            "    If you do this, then the jobs in the specific logfile will be parsed" +\
            " If no options are specified, then it basically defaults to the -l"+\
            " option using the latest logfile." +\
-           " \n3) Specify a configs -c and benchmarks -b yaml files you want data for."
+           " \n3) Specify a list of configs -C and benchmarks -B suite names you want data for."
 
 
 parser = OptionParser(usage=help_str)
@@ -53,7 +53,7 @@ parser.add_option("-l", "--logfile", dest="logfile",
 parser.add_option("-r", "--run_dir", dest="run_dir",
                   help="The directory where the benchmark/config directories exist.", default="")
 parser.add_option("-N", "--sim_name", dest="sim_name",
-                  help="If you are launchign run_simulations.py with the \"-N\" option" +\
+                  help="If you are launching run_simulations.py with the \"-N\" option" +\
                        " then you can run ./job_status.py with \"-N\" and it will" + \
                        " give you the status of the latest run with that name."+ \
                        " if you want older runs from this name, then just point it directly at the"+\
@@ -119,7 +119,8 @@ for stat in stats_yaml['collect_rates']:
 if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
-        for args in args_list:
+        for argpair in args_list:
+            args = argpair["args"]
             apps_and_args.append( os.path.join(exe_name, common.get_argfoldername(args) ) )
     for config, params, gpuconf_file in common.gen_configs_from_list( options.configs_list.split(",") ):
         configs.append( config )
