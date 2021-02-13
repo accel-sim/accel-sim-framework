@@ -101,7 +101,14 @@ cuda_samples_11.1_validation:
             - args:
         #- sortingNetworks:
            # - args:
-                   
+
+cudatensor:
+    exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
+    data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/"
+    execs:
+        - cudaTensorCoreGemm:
+            - args:
+                 
 cutlass_5_trace_validation:
     exec_dir: "/home/vkz4947/gpu_applications/gpu-app-collection/bin/$CUDA_VERSION/release/"
     data_dirs: "/home/vkz4947/gpu_applications/gpu-app-collection/data_dirs/"
