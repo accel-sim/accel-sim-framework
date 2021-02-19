@@ -20,7 +20,7 @@ pipeline {
                 source ./env-setup/11.0_env_setup.sh
                 rm -rf ./gpu-simulator/gpgpu-sim
                 source ./gpu-simulator/setup_environment.sh
-                make clean gpu-simulator
+                make clean -C gpu-simulator
                 make -j -C gpu-simulator'''
             }
         }
