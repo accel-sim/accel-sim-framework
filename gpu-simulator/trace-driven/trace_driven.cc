@@ -213,6 +213,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   case OP_LDS:
   case OP_STS:
   case OP_ATOMS:
+  case OP_LDSM:
     assert(data_size > 0);
     space.set_type(shared_space);
     break;
