@@ -31,7 +31,7 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbench -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-$$'''
                }, "ptx": {
                 sh '''#!/bin/bash -xe
@@ -41,10 +41,10 @@ pipeline {
                 rm -rf ./gpu-app-collection
                 git clone git@github.com:accel-sim/gpu-app-collection.git
                 source ./gpu-app-collection/src/setup_environment
-                make rodinia_2.0-ft GPU_Microbench -j -C ./gpu-app-collection/src
+                make rodinia_2.0-ft GPU_Microbenchmark -j -C ./gpu-app-collection/src
                 ./gpu-app-collection/get_regression_data.sh
 
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbench -C QV100-PTX -N short-ptx-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX -N short-ptx-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-ptx.csv -N short-ptx-$$'''
                }
             }
