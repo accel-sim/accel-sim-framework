@@ -764,8 +764,10 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
     hw_cfg = None
     for device in hw_data.iterkeys():
+        logger.log("Testing hw_cfg={0}".format(device))
         if config_maps[cfg.split('-')[0]] in device:
             hw_cfg = device
+            logger.log("Setting hw_cfg={0}".format(device))
             continue
 
     if hw_cfg == None:
