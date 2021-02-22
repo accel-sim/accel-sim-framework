@@ -101,8 +101,9 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, ret_rpd,\
         num_less_than_ten_percent,rmse
 
-def getCorrelCsvRaw((names, x, y)):
-    out_csv = "Name,Hardware,Simulator,Sim/HW\n"
+def getCorrelCsvRaw(anno, names, x, y):
+    out_csv = anno + "\n"
+    out_csv += "Name,Hardware,Simulator,Sim/HW\n"
     count = 0
     for k in names:
         out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
@@ -179,7 +180,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_str, kernel_str = make_pretty_app_list(apps_included)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
-            .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
+            .format(getCorrelCsvRaw(anno, trace.text, trace.x, trace.y))
 
         apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
             = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title, correlmap)
@@ -188,7 +189,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_min = min ( app_min, min(appx), min(appy) )
 
         app_csv_file_contents += "{0}\n\n"\
-            .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
+            .format(getCorrelCsvRaw( anno, apps,appx,appy ))
         kernel_data.append(trace)
 
         app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over, {8} < 10% Err)) [Correl={1:.4} Err={2:.2f}% Agg_Err={6:.2f}% RPD={7:.2f}%,NMSE={9:.2f}]"\
