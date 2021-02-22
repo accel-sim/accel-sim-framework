@@ -55,7 +55,7 @@ pipeline {
                 source ./env-setup/11.2.1_env_setup.sh
                 ./util/hw_stats/get_hw_data.sh
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-PTX,QV100-SASS | tee ubench-$$.csv
-                ./util/plotting/plot-correlation.py -c ubench-$$.csv | tee ubench-correl.txt
+                ./util/plotting/plot-correlation.py -c ubench-$$.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee ubench-correl.txt
                 '''
             }
         }
