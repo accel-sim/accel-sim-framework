@@ -17,7 +17,7 @@ pipeline {
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash -xe
-                source ./env-setup/11.0_env_setup.sh
+                source ./env-setup/11.2.1_env_setup.sh
                 rm -rf ./gpu-simulator/gpgpu-sim
                 source ./gpu-simulator/setup_environment.sh
                 make -j -C gpu-simulator
@@ -25,28 +25,43 @@ pipeline {
                 make -j -C gpu-simulator'''
             }
         }
-        stage('rodinia_2.0-ft'){
+        stage('short-test'){
             steps{
                 parallel "sass": {
                 sh '''#!/bin/bash -xe
-                source ./env-setup/11.0_env_setup.sh
+                source ./env-setup/11.2.1_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft/9.1/ -N rodinia_2.0-ft-sass-$$
-                ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-sass.csv -N rodinia_2.0-ft-sass-$$'''
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx/ -N sass-short-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-$$'''
                }, "ptx": {
                 sh '''#!/bin/bash -xe
-                source ./env-setup/11.0_env_setup.sh
+                source ./env-setup/11.2.1_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
 
                 rm -rf ./gpu-app-collection
                 git clone git@github.com:accel-sim/gpu-app-collection.git
                 source ./gpu-app-collection/src/setup_environment
-                make rodinia_2.0-ft -j -C ./gpu-app-collection/src
+                make rodinia_2.0-ft GPU_Microbenchmark -j -C ./gpu-app-collection/src
                 ./gpu-app-collection/get_regression_data.sh
 
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N rodinia_2.0-ft-ptx-$$
-                ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app-ptx.csv -N rodinia_2.0-ft-ptx-$$'''
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX -N short-ptx-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-ptx.csv -N short-ptx-$$'''
                }
+            }
+        }
+        stage('correlate-ubench'){
+            steps{
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                ./util/hw_stats/get_hw_data.sh
+                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-PTX,QV100-SASS | tee v100-ubench-$$.csv
+                ./util/plotting/plot-correlation.py -c v100-ubench-$$.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
+                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-PTX,RTX2060-SASS | tee turing-ubench-$$.csv
+                ./util/plotting/plot-correlation.py -c turing-ubench-$$.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
+                cat ./util/plotting/correl-html/gv100-cycles.QV100-PTX.QV100-SASS.app.raw.csv
+                cat ./util/plotting/correl-html/rtx2060_sm_cycles.RTX2060-SASS.RTX2060-PTX.app.raw.csv
+                '''
             }
         }
     }
