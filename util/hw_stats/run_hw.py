@@ -36,6 +36,7 @@ parser.add_option("-N", "--nsight_profiler", dest="nsight_profiler", action="sto
                  help="use the new nsight cli profiler")
 parser.add_option("-d", "--disable_nvprof", dest="disable_nvprof", action="store_true",
                  help="do not use nvprof (decrecated in Turing+)")
+
 (options, args) = parser.parse_args()
 
 if not options.disable_nvprof:
@@ -87,6 +88,8 @@ for bench in benchmarks:
 
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
+        if('bert' in exec_path):
+            exec_path = "sh " + exec_path
         if not options.cycle_only:
             if not options.disable_nvprof:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\

@@ -729,3 +729,9 @@ lonestargpu-2.0:
             - args: ./data/rmat12.sym.gr
             - args: ./data/USA-road-d.FLA.sym.gr
             - args: ./data/2d-2e20.sym.gr
+mlperf:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - run_bert:
+            - args:
