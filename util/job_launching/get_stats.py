@@ -80,7 +80,7 @@ parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="sto
 parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
                   help="If an app crashed, still collect its data")
 parser.add_option("-A", "--do_averages", dest="do_averages", action="store_true",
-                  help="If an app crashed, still collect its data")
+                  help="Print the averages for each statistic")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
