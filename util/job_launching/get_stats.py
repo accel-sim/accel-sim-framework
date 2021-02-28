@@ -210,10 +210,13 @@ for idx, app_and_args in enumerate(apps_and_args):
             count += 1
             if count >= MAX_LINES:
                 break
-            build_match = re.match(".*\[build\s+(.*)\].*", line)
-            if build_match:
-                stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
+            gpgpu_build_match = re.match(".*GPGPU-Sim.*\[build\s+(.*)\].*", line)
+            if gpgpu_build_match:
+                stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = gpgpu_build_match.group(1)
                 break
+            accelsim_build_match = re.match("Accel-Sim.*\[build\s+(.*)\].*", line)
+            if accelsim_build_match:
+                stat_map["all_kernels" + app_and_args + config + "Accel-Sim-build"] = accelsim_build_match.group(1)
         f.close()
 
         # Do a quick 10000-line reverse pass to make sure the simualtion thread finished
@@ -430,6 +433,7 @@ all_kernels = {}
 for appargs in apps_and_args:
     all_kernels[appargs] = ["all_kernels"]
 
+print_stat( "Accel-Sim-build", all_kernels, options.configs_as_rows )
 print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
 
 for stat_name in ( stats_yaml['collect_aggregate'] +\
