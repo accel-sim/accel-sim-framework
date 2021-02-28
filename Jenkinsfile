@@ -72,7 +72,7 @@ pipeline {
                 git  -C ./statistics-archive add --all
                 git -C ./statistics-archive commit \
                     -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}"
-                git -C ./statistics-archive push --set-upstream origin
+                git -C ./statistics-archive push -u origin ${JOB_NAME}
                 '''
             }
         }
