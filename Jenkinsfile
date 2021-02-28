@@ -59,9 +59,9 @@ pipeline {
                 git clone git@github.com:accel-sim/statistics-archive.git
                 # either create a new branch or check it out if it already exists
                 git -C ./statistics-archive checkout ${JOB_NAME} 2>/dev/null || git -C ./statistics-archive checkout -b ${JOB_NAME}
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS | tee v100-ubench-sass-$$.csv
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS | tee turing-ubench-sass-$$.csv
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS | tee ampere-ubench-sass-$$.csv
+                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-$$.csv
+                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-$$.csv
+                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-$$.csv
                 mkdir -p statistics-archive/ubench/
                 ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$$.csv \
                     | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
