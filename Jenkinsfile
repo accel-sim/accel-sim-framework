@@ -63,11 +63,11 @@ pipeline {
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS | tee turing-ubench-sass-$$.csv
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS | tee ampere-ubench-sass-$$.csv
                 mkdir -p statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$$.csv \
+                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$$.csv \
                     | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-$$.csv \
+                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-$$.csv \
                     | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$$.csv \
+                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$$.csv \
                     | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
                 git  -C ./statistics-archive add --all
                 git -C ./statistics-archive commit \
