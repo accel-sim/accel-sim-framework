@@ -58,17 +58,22 @@ pipeline {
                 rm -rf statistics-archive
                 git clone git@github.com:accel-sim/statistics-archive.git
                 # either create a new branch or check it out if it already exists
-                cd statistics-archive && git checkout ${JOB_NAME} 2>/dev/null || git checkout -b ${JOB_NAME} && cd ..
+                git -C ./statistics-archive checkout ${JOB_NAME} 2>/dev/null || git -C ./statistics-archive checkout -b ${JOB_NAME} && cd ..
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS | tee v100-ubench-sass-$$.csv
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS | tee turing-ubench-sass-$$.csv
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS | tee ampere-ubench-sass-$$.csv
                 mkdir -p statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$$.csv | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-$$.csv | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$$.csv | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
+                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$$.csv \
+                    | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
+                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-$$.csv \
+                    | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
+                ./util/plotting/merge-stats.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$$.csv \
+                    | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
                 cd statistics-archive
-                git add --all && git commit -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}"
-                git push --set-upstream origin
+                git  -C ./statistics-archive add --all
+                git -C ./statistics-archive commit \
+                    -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}"
+                git -C ./statistics-archive push --set-upstream origin
                 '''
             }
         }
