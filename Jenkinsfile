@@ -58,7 +58,7 @@ pipeline {
                 rm -rf statistics-archive
                 git clone git@github.com:accel-sim/statistics-archive.git
                 # either create a new branch or check it out if it already exists
-                git checkout ${JOB_NAME} 2>/dev/null || git checkout -b ${JOB_NAME}
+                cd statistics-archive && git checkout ${JOB_NAME} 2>/dev/null || git checkout -b ${JOB_NAME} && cd ..
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS | tee v100-ubench-sass-$$.csv
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS | tee turing-ubench-sass-$$.csv
                 ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS | tee ampere-ubench-sass-$$.csv
