@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from optparse import OptionParser
 import re
 import os
@@ -151,7 +152,7 @@ else:
     else:
         parsed_logfiles.append(common.file_option_test( options.logfile, "", this_directory ))
 
-    print "Using logfiles " + str(parsed_logfiles)
+    print("Using logfiles " + str(parsed_logfiles), file=sys.stderr)
 
     for logfile in parsed_logfiles:
         if not os.path.isfile(logfile):
@@ -180,7 +181,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
         if not os.path.isdir( output_dir ):
-            print("WARNING the outputdir " + output_dir + " does not exist")
+            print("WARNING the outputdir " + output_dir + " does not exist", file=sys.stderr)
             continue
 
         if config + app_and_args in specific_jobIds:
@@ -199,7 +200,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         stat_found = set()
 
         if not os.path.isfile( outfile ):
-            print "WARNING - " + outfile + " does not exist"
+            print("WARNING - " + outfile + " does not exist", file=sys.stderr)
             continue
 
         # Do a quick 100-line pass to get the GPGPU-Sim Version number
@@ -242,7 +243,8 @@ for idx, app_and_args in enumerate(apps_and_args):
         f.close()
 
         if not exit_success:
-            print "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile)
+            print("WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile),
+                file=sys.stderr)
             if not options.ignore_failures:
                 continue
 
@@ -289,7 +291,7 @@ for idx, app_and_args in enumerate(apps_and_args):
                 # Note: This only appies if we are doing kernel-by-kernel stats
                 last_kernel_break = re.match("GPGPU-Sim: \*\* break due to reaching the maximum cycles \(or instructions\) \*\*", line)
                 if last_kernel_break:
-                    print "NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile)
+                    print("NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile), file=sys.stderr)
                     for stat_name in stats_to_pull.keys():
                         if current_kernel + app_and_args + config + stat_name in stat_map:
                             del stat_map[current_kernel + app_and_args + config + stat_name]
@@ -346,11 +348,18 @@ for idx, app_and_args in enumerate(apps_and_args):
 def print_stat(stat_name, all_named_kernels, cfg_as_rows):
     csv_str = ""
     DIVISION = "-" * 100
-    csv_str += DIVISION + "\n"
+    if cfg_as_rows:
+        num_commas = len(apps_and_args)
+    else:
+        num_commas = len(configs)
+    if options.do_averages:
+        num_commas += 1
+    csv_str += DIVISION + ("," * num_commas) + "\n"
+
     running_total = 0
     total_num = 0
     if cfg_as_rows:
-        csv_str += stat_name + "\nCFG,"
+        csv_str += stat_name + ("," * num_commas) +  "\nCFG,"
         for appargs in apps_and_args:
             knames = all_named_kernels[appargs]
             for kname in knames:
@@ -389,7 +398,7 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
             csv_str += "\n"
 
     else:
-        csv_str += stat_name + "\nAPPS,"
+        csv_str += stat_name + ("," * num_commas) + "\nAPPS,"
         for config in configs:
             csv_str += config + ","
 
@@ -426,7 +435,7 @@ def print_stat(stat_name, all_named_kernels, cfg_as_rows):
 
     csv_str = csv_str[:-1]
     csv_str += "\n"
-    print csv_str
+    print(csv_str)
 
 # Print any stats that do not make sense on a per-kernel basis ever (like GPGPU-Sim Build)
 all_kernels = {}
@@ -443,6 +452,6 @@ for stat_name in ( stats_yaml['collect_aggregate'] +\
 
 duration = time.time() - start_time
 
-print"Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
+print("Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
     format(duration , files_parsed, millify(bytes_parsed),
-    millify(float(bytes_parsed)/float(duration)))
+    millify(float(bytes_parsed)/float(duration))), file=sys.stderr)
