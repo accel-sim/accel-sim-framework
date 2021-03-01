@@ -90,7 +90,7 @@ pipeline {
 //                '''
 //            }
 //        }
-//    }
+    }
     post {
         success {
             emailext body: "See ${BUILD_URL}",
