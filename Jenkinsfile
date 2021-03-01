@@ -69,9 +69,9 @@ pipeline {
                     | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
                 ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$$.csv \
                     | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
-                git  -C ./statistics-archive add --all
+                git -C ./statistics-archive add --all
                 git -C ./statistics-archive commit \
-                    -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}"
+                    -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}" || echo "No Changes."
                 git -C ./statistics-archive push -u origin ${JOB_NAME}
                 '''
             }
