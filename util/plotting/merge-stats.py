@@ -76,9 +76,8 @@ def get_csv_data_for_merge(filepath):
                         full_config = row[0] + "-accel-" + str(accel_build_num) + "-gpgpu-" + str(gpgpu_build_num)
                     else:
                         full_config = row[0]
-                    if full_config not in cached_configs and full_config not in configs:
-                        configs.append(full_config)
-                        data[full_config] = row[1:]
+                    configs.append(full_config)
+                    data[full_config] = row[1:]
 
     app_and_args = []
     for appargs_kname in cached_apps:
@@ -132,7 +131,7 @@ for csvf in csv_files:
             union_configs.add(config)
             new_configs.append(config)
         else:
-            print("Found redundant config: {0} in csf: \"{1}\" - filtering it out.".format(config, csvf), file=sys.stderr)
+            print("Found redundant config: {0} in csvf: \"{1}\" - filtering it out.".format(config, csvf), file=sys.stderr)
 
     if len(union_apps_args) == 0:
         union_apps_args = set(apps_and_args)
