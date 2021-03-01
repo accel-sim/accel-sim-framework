@@ -55,7 +55,7 @@ pipeline {
             steps{
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
-                rm -rf statistics-archive
+                rm -rf ./statistics-archive
                 git clone git@github.com:accel-sim/statistics-archive.git
                 # either create a new branch or check it out if it already exists
                 git -C ./statistics-archive checkout ${JOB_NAME} 2>/dev/null || git -C ./statistics-archive checkout -b ${JOB_NAME}
