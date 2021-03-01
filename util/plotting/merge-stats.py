@@ -93,59 +93,6 @@ def get_csv_data_for_merge(filepath):
             .format(filepath, gpgpu_build_nums, accel_build_nums))
     return all_named_kernels, stat_map, app_and_args, cached_configs, stats, gpgpu_build_nums
 
-
-# After collection, spew out the tables
-def print_stat(stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows):
-    csv_str = ""
-    DIVISION = "-" * 100
-    csv_str += DIVISION + "\n"
-    csv_str += stat_name + "\n,"
-    if cfg_as_rows:
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for config in configs:
-            csv_str += config + ","
-            for appargs in apps_and_args:
-                knames = all_named_kernels[appargs]
-                for kname in knames:
-                    if kname == "":
-                        continue
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                    else:
-                        csv_str += "NA,"
-            csv_str = csv_str[:-1]
-            csv_str += "\n"
-    else:
-        for config in configs:
-            csv_str += config + ","
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-                for config in configs:
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                    else:
-                        csv_str += "NA,"
-                csv_str = csv_str[:-1]
-                csv_str += "\n"
-
-    csv_str = csv_str[:-1]
-    csv_str += "\n"
-    print csv_str
-
 parser = OptionParser()
 parser.add_option("-c", "--csv_files", dest="csv_files",
                   help="Files to merge",
@@ -187,4 +134,4 @@ for csvf in csv_files:
         union_stats &= set(stats)
 
 for stat in stats:
-    print_stat( stat, all_named_kernels, apps_and_args, new_configs, new_stats, options.configs_as_rows )
+    common.print_stat( stat, all_named_kernels, apps_and_args, new_configs, new_stats, options.configs_as_rows, False )
