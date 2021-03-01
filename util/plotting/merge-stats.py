@@ -72,9 +72,13 @@ def get_csv_data_for_merge(filepath):
                     continue
                 else:
                     any_data = True
-                    full_config = row[0] + "-accel-" + str(accel_build_num) + "-gpgpu-" + str(gpgpu_build_num)
-                    configs.append(full_config)
-                    data[full_config] = row[1:]
+                    if accel_build_num != None and gpgpu_build_num != None:
+                        full_config = row[0] + "-accel-" + str(accel_build_num) + "-gpgpu-" + str(gpgpu_build_num)
+                    else:
+                        full_config = row[0]
+                    if full_config not in cached_configs and full_config not in configs:
+                        configs.append(full_config)
+                        data[full_config] = row[1:]
 
     app_and_args = []
     for appargs_kname in cached_apps:
@@ -118,11 +122,17 @@ new_stats = {}
 new_configs = []
 union_apps_args = set()
 union_stats = set()
+union_configs = set()
 for csvf in csv_files:
     ( all_named_kernels, stat_map, apps_and_args, configs, stats, gpgpu_build_nums ) = stats_per_file[csvf]
     print("Processing {0}".format(csvf), file=sys.stderr)
     new_stats = dict(new_stats, **stat_map)
-    new_configs += configs
+    for config in configs:
+        if config not in union_configs:
+            union_configs.add(config)
+            new_configs.append(config)
+        else:
+            print("Found redundant config: {0} in csf: \"{1}\" - filtering it out.".format(config, csvf), file=sys.stderr)
 
     if len(union_apps_args) == 0:
         union_apps_args = set(apps_and_args)

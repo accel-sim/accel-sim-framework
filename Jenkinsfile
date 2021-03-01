@@ -14,43 +14,43 @@ pipeline {
                     cd env-setup && git checkout cluster-ubuntu'
             }
         }
-//        stage('accel-sim-build'){
-//            steps{
-//                sh '''#!/bin/bash -xe
-//                source ./env-setup/11.2.1_env_setup.sh
-//                rm -rf ./gpu-simulator/gpgpu-sim
-//                source ./gpu-simulator/setup_environment.sh
-//                make -j -C gpu-simulator
-//                make clean -C gpu-simulator
-//                make -j -C gpu-simulator'''
-//            }
-//        }
-//        stage('short-test'){
-//            steps{
-//                parallel "sass": {
-//                sh '''#!/bin/bash -xe
-//                source ./env-setup/11.2.1_env_setup.sh
-//                source ./gpu-simulator/setup_environment.sh
-//                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-$$
-//                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx/ -N sass-short-$$
-//                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx/ -N sass-short-$$
-//                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-$$'''
-//               }, "ptx": {
-//                sh '''#!/bin/bash -xe
-//                source ./env-setup/11.2.1_env_setup.sh
-//                source ./gpu-simulator/setup_environment.sh
-//
-//                rm -rf ./gpu-app-collection
-//                git clone git@github.com:accel-sim/gpu-app-collection.git
-//                source ./gpu-app-collection/src/setup_environment
-//                make rodinia_2.0-ft GPU_Microbenchmark -j -C ./gpu-app-collection/src
-//                ./gpu-app-collection/get_regression_data.sh
-//
-//                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-$$
-//                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-ptx.csv -N short-ptx-$$'''
-//               }
-//            }
-//        }
+        stage('accel-sim-build'){
+            steps{
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                rm -rf ./gpu-simulator/gpgpu-sim
+                source ./gpu-simulator/setup_environment.sh
+                make -j -C gpu-simulator
+                make clean -C gpu-simulator
+                make -j -C gpu-simulator'''
+            }
+        }
+        stage('short-test'){
+            steps{
+                parallel "sass": {
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx/ -N sass-short-$$
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx/ -N sass-short-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-$$'''
+               }, "ptx": {
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                source ./gpu-simulator/setup_environment.sh
+
+                rm -rf ./gpu-app-collection
+                git clone git@github.com:accel-sim/gpu-app-collection.git
+                source ./gpu-app-collection/src/setup_environment
+                make rodinia_2.0-ft GPU_Microbenchmark -j -C ./gpu-app-collection/src
+                ./gpu-app-collection/get_regression_data.sh
+
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-$$
+                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-ptx.csv -N short-ptx-$$'''
+               }
+            }
+        }
         stage('archive-stats') {
             steps{
                 sh '''#!/bin/bash -xe
@@ -76,20 +76,20 @@ pipeline {
                 '''
             }
         }
-//        stage('correlate-ubench'){
-//            steps{
-//                sh '''#!/bin/bash -xe
-//                source ./env-setup/11.2.1_env_setup.sh
-//                ./util/hw_stats/get_hw_data.sh
-//                ./util/plotting/plot-correlation.py -c v100-ubench-$$.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
-//                ./util/plotting/plot-correlation.py -c turing-ubench-$$.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
-//                ./util/plotting/plot-correlation.py -c ampere-ubench-$$.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
-//                cat ./util/plotting/correl-html/gv100-cycles.QV100-PTX.QV100-SASS.app.raw.csv
-//                cat ./util/plotting/correl-html/gpc_cycles.RTX2060-SASS.RTX2060-PTX.app.raw.csv
-//                cat ./util/plotting/correl-html/gpc_cycles.RTX3070-SASS.RTX3070-PTX.app.raw.csv
-//                '''
-//            }
-//        }
+        stage('correlate-ubench'){
+            steps{
+                sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                ./util/hw_stats/get_hw_data.sh
+                ./util/plotting/plot-correlation.py -c v100-ubench-$$.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
+                ./util/plotting/plot-correlation.py -c turing-ubench-$$.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
+                ./util/plotting/plot-correlation.py -c ampere-ubench-$$.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
+                cat ./util/plotting/correl-html/gv100-cycles.QV100-PTX.QV100-SASS.app.raw.csv
+                cat ./util/plotting/correl-html/gpc_cycles.RTX2060-SASS.RTX2060-PTX.app.raw.csv
+                cat ./util/plotting/correl-html/gpc_cycles.RTX3070-SASS.RTX3070-PTX.app.raw.csv
+                '''
+            }
+        }
     }
     post {
         success {
