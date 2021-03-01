@@ -94,7 +94,7 @@ def get_csv_data_for_merge(filepath):
     # git hash number, if not we are just going to warn and fail.
     if len(gpgpu_build_nums) > 1 or len(accel_build_nums) > 1:
         exit("File {0} contains more than one gpgpu_build_num or accelsim_build_num - this assumes one stats file has one build num: gpgpu: {1}" +\
-            " accel: {2}"
+            " accel: {2}"\
             .format(filepath, gpgpu_build_nums, accel_build_nums))
     return all_named_kernels, stat_map, app_and_args, cached_configs, stats, gpgpu_build_nums
 
