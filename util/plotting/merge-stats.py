@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from optparse import OptionParser
 import os
 import subprocess
@@ -107,7 +108,7 @@ for csvf in options.csv_files.split(","):
     try:
         csv_files.append( common.file_option_test( csvf, "", this_directory ) )
     except common.PathMissing as e:
-        print "Warning path {0}. Continuing".format(e)
+        print("Warning path {0}. Continuing".format(e), file=sys.stderr)
 
 stats_per_file = {}
 for csvf in csv_files:
@@ -119,7 +120,7 @@ union_apps_args = set()
 union_stats = set()
 for csvf in csv_files:
     ( all_named_kernels, stat_map, apps_and_args, configs, stats, gpgpu_build_nums ) = stats_per_file[csvf]
-    print "Processing {0}".format(csvf)
+    print("Processing {0}".format(csvf), file=sys.stderr)
     new_stats = dict(new_stats, **stat_map)
     new_configs += configs
 
