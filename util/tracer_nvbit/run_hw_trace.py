@@ -84,14 +84,14 @@ for bench in benchmarks:
         if('mlperf' in exec_path):
             exec_path = '. '+exec_path
             if(options.kernel_number > 0):
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = options.kernel_number                
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)                
             else:
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = 1000
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '1000'
         else:
             if(options.kernel_number > 0):
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = options.kernel_number
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)
             else:
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = 0
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '0'
 
 	# first we generate the traces (.trace and kernelslist files)
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
