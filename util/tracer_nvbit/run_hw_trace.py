@@ -28,6 +28,8 @@ parser.add_option("-D", "--device_num", dest="device_num",
                  default="0")
 parser.add_option("-n", "--norun", dest="norun", action="store_true", 
                  help="Do not actually run the apps, just create the dir structure and launch files")
+parser.add_option("-l", "--limit_kernel_number", dest='kernel_number', default=-99, help="Sets a hard limit to the " +\
+                        "number of traced limits")
 
 (options, args) = parser.parse_args()
 
@@ -78,6 +80,18 @@ for bench in benchmarks:
 
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
+
+        if('mlperf' in exec_path):
+            exec_path = '. '+exec_path
+            if(options.kernel_number > 0):
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = options.kernel_number                
+            else:
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = 1000
+        else:
+            if(options.kernel_number > 0):
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = options.kernel_number
+            else:
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = 0
 
 	# first we generate the traces (.trace and kernelslist files)
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)

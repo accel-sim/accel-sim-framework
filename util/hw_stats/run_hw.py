@@ -36,6 +36,11 @@ parser.add_option("-N", "--nsight_profiler", dest="nsight_profiler", action="sto
                  help="use the new nsight cli profiler")
 parser.add_option("-d", "--disable_nvprof", dest="disable_nvprof", action="store_true",
                  help="do not use nvprof (decrecated in Turing+)")
+parser.add_option("-S", "--nsys_profiler", dest="nsys_profiler", action="store_true",
+                 help="Use the Nsys profiler for counting cycles instead of Ncu")
+parser.add_option("-l", "--limit_kernel_number", dest="kernel_number", type=int, default=-99,
+                 help="Limits the number of profiled kernels (useful in larger applications")
+
 (options, args) = parser.parse_args()
 
 if not options.disable_nvprof:
@@ -87,6 +92,15 @@ for bench in benchmarks:
 
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
+        kernel_number = ""
+        if('mlperf' in exec_path):
+            exec_path = "sh " + exec_path
+            # For MLPerf we are by default limiting the number of profiled kernels to 1000
+            # This can be overriden by explicitly indicating the number of kernels via the -c argument.
+            kernel_number = ' -c 1000 '
+        if(options.kernel_number > 0):
+            kernel_number = ' -c '+str(options.kernel_number)+' '
+
         if not options.cycle_only:
             if not options.disable_nvprof:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
@@ -99,7 +113,7 @@ for bench in benchmarks:
                     "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum,lts__t_sectors_srcunit_tex_op_read.sum,"+\
                     "lts__t_sectors_srcunit_tex_op_write.sum,lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum,lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum," +\
                     "lts__t_sector_op_write_hit_rate.pct,lts__t_sectors_srcunit_tex_op_read.sum.per_second,dram__sectors_read.sum,dram__sectors_write.sum,dram__bytes_read.sum " +\
-                    " --csv --page raw " +\
+                    " --csv --page raw --target-processes all " + kernel_number +\
                     " " + exec_path + " " + str(args) +\
                     " | tee " + os.path.join(this_run_dir,logfile + ".nsight")
 
@@ -111,9 +125,14 @@ for bench in benchmarks:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
                     "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace --events elapsed_cycles_sm --demangling off --csv --log-file " +\
                     os.path.join(this_run_dir,logfile + ".elapsed_cycles_sm.{0}".format(i)) + " " + exec_path + " " + str(args) + " "
-            if options.nsight_profiler:
+            if options.nsys_profiler:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                    "\" ; timeout 5m nv-nsight-cu-cli --metrics gpc__cycles_elapsed.avg --csv " +\
+                    "\" ; timeout 5m nsys profile -o "+os.path.join(this_run_dir,"out") + " " +\
+                        exec_path + " " + str(args) + "; nsys stats -f csv --report gputrace "+os.path.join(this_run_dir,"out.qdrep")+\
+                        " | tee cycles.csv; python "+os.path.join(this_directory,"postprocess-nsys-csv.py")+" --path "+this_run_dir
+            elif options.nsight_profiler:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nv-nsight-cu-cli --target-processes all --metrics gpc__cycles_elapsed.avg --csv " +\
                         exec_path + " " + str(args) + " | tee " +\
                         os.path.join(this_run_dir,logfile + ".gpc__cycles_elapsed.{0}".format(i))
 
