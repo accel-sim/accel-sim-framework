@@ -85,6 +85,7 @@ pipeline {
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/turing-ubench-sass.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
+                ssh tgrogers@dynamo mkdir -p tgrogers@dynamo:~/website/accel-sim/${JOB_NAME}/latest-correl
                 rsync --delete -r ./util/plotting/correl-html/ tgrogers@dynamo:~/website/accel-sim/${JOB_NAME}/latest-correl
                 echo "Correlation Report at: https://engineering.purdue.edu/tgrogers/accel-sim/${JOB_NAME}/latest-correl"
                 '''
