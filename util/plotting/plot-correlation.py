@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from optparse import OptionParser
 import plotly
 #import chart_studio.plotly as py
@@ -238,8 +239,8 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     f.write(app_csv_file_contents)
     f.close()
 
-    print "Plotting {0} : [{1}]\n{2}"\
-        .format(hw_cfg, layout.title.text, print_anno)
+    print("Plotting {0} : [{1}]\n{2}"\
+        .format(hw_cfg, layout.title.text, print_anno))
     TEXT_SIZE=25
 
 
@@ -395,11 +396,11 @@ class Logger:
 
     def log(self, msg):
         if self.verbose:
-            print msg
+            print(msg)
 
     def logchan(self, msg, channel):
         if self.verbose or channel == self.channel:
-            print msg
+            print(msg)
 
     def write_log(self):
         now_time = datetime.datetime.now()
@@ -466,8 +467,12 @@ def get_sim_csv_data(filepath, logger):
                 if cfg not in all_kerns:
                     all_kerns[cfg] = copy.deepcopy(all_kern_cfg)
                 for x in row[1:]:
-                    try:
+                    if count < len(klist):
                         appargs,kname,num = klist[count]
+                    else:
+                        print("More row entries than kernels processed. Likely because of an average column", file=sys.stderr)
+                        break
+                    try:
                         all_kerns[cfg][appargs][num][current_stat] = float(x)
                     except ValueError:
                         all_kerns[cfg][appargs][num][current_stat] = None
@@ -579,8 +584,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
 
                 # Set the Device
                 if cfg != "" and cfg != row[cfg_col]:
-                    print "data for more than one device in {0}..{1}:{2}"\
-                        .format(csv_file,cfg,elem)
+                    print("data for more than one device in {0}..{1}:{2}"\
+                        .format(csv_file,cfg,elem))
                     exit()
 
                 cfg = row[cfg_col]
@@ -742,10 +747,10 @@ if options.hardware_dict == None:
                 else:
                     parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
 else:
-    print "Begin pickle.load"
+    print("Begin pickle.load")
     with open(options.hardware_dict, 'rb') as hw_dictionary_file:
         hw_data = pickle.load(hw_dictionary_file)
-    print "End pickle.load"
+    print("End pickle.load")
 summarize_hw_data(hw_data,logger)
 #with open('hwdata.{0}.dictionary'.format(options.hardware_dir).replace('/','_'),
 #            'wb') as hw_dictionary_file:
@@ -976,4 +981,4 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 correl_outdir = os.path.join(this_directory, "correl-html")
 for (plotfile,hw_cfg), traces in fig_data.iteritems():
     make_submission_quality_image(options.image_type, traces, hw_cfg)
-print "Output Available at: file://{0}".format(correl_outdir)
+print("Output Available at: file://{0}".format(correl_outdir))
