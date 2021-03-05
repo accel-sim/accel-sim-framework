@@ -28,8 +28,6 @@ parser.add_option("-D", "--device_num", dest="device_num",
                  default="0")
 parser.add_option("-n", "--norun", dest="norun", action="store_true",
                  help="Do not actually run the apps, just create the dir structure and launch files")
-parser.add_option("-c", "--cycle_only", dest="cycle_only", action="store_true",
-                 help="Just get Kernel Duration")
 parser.add_option("-R", "--repeat_cycle", dest="repeat_cycle", default=1,
                  help="When running the cycle tests, do them this many times (good when DVFS is enabled)")
 parser.add_option("-N", "--nsight_profiler", dest="nsight_profiler", action="store_true",
@@ -40,6 +38,8 @@ parser.add_option("-S", "--nsys_profiler", dest="nsys_profiler", action="store_t
                  help="Use the Nsys profiler for counting cycles instead of Ncu")
 parser.add_option("-l", "--limit_kernel_number", dest="kernel_number", type=int, default=-99,
                  help="Limits the number of profiled kernels (useful in larger applications")
+parser.add_option("-C", "--collect", dest="collect", default="cycles",
+                help="Pass what you want from the hardware. Options are: \"cycles,other_stats\"")
 
 (options, args) = parser.parse_args()
 
@@ -101,7 +101,7 @@ for bench in benchmarks:
         if(options.kernel_number > 0):
             kernel_number = ' -c '+str(options.kernel_number)+' '
 
-        if not options.cycle_only:
+        if "other_stats" in options.collect:
             if not options.disable_nvprof:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
                     "\" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
