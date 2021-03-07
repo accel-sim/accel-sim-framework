@@ -509,10 +509,6 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
         inst.data_size, (new_addr_type *)localaddrs);
     inst.set_addr(t, (new_addr_type *)localaddrs, num_addrs);
   }
-
-  if (inst.op == EXIT_OPS) {
-    m_warp[inst.warp_id()]->set_completed(t);
-  }
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
@@ -531,7 +527,10 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
   }
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
-  if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
+  if (m_trace_warp->trace_done()) {
+    for (unsigned t = 0; t < m_warp_size; t++) {
+      m_warp[inst.warp_id()]->set_completed(t);
+    }
     m_trace_warp->ibuffer_flush();
     m_barriers.warp_exit(inst.warp_id());
   }
