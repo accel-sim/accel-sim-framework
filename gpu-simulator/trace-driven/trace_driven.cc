@@ -529,7 +529,9 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
   if (m_trace_warp->trace_done()) {
     for (unsigned t = 0; t < m_warp_size; t++) {
-      m_warp[inst.warp_id()]->set_completed(t);
+        if (inst.active(t)) {
+          m_warp[inst.warp_id()]->set_completed(t);
+        }
     }
     m_trace_warp->ibuffer_flush();
     m_barriers.warp_exit(inst.warp_id());
