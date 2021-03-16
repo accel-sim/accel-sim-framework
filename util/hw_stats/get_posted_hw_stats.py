@@ -35,6 +35,10 @@ for card in options.cards.split(","):
     if card not in cards_availible:
         sys.exit("Error, wrong card name \"{0}\". Valid names: all or {1}".format(card, cards_availible))
     tarfilename = card + ".tgz"
-    subprocess.run(["wget", "https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/{0}".format(tarfilename)])
-    subprocess.run(["tar", "-xzvf", tarfilename, "-C", data_root])
-    os.remove(tarfilename)
+    folder_path = os.path.join(data_root, card)
+    if not os.path.exists(folder_path):
+        subprocess.run(["wget", "https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/{0}".format(tarfilename)])
+        subprocess.run(["tar", "-xzvf", tarfilename, "-C", data_root])
+        os.remove(tarfilename)
+    else:
+        print("Found " + folder_path)
