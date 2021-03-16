@@ -16,8 +16,8 @@ cards_availible = [ "fermi-gtx480",
                     "pascal-p100",
                     "pascal-1080ti",
                     "volta-titanv",
-                    "volta-quadrov100",
-                    "volta-v100",
+                    "volta-quadro-v100",
+                    "volta-tesla-v100",
                     "turing-rtx2060",
                     "ampere-rtx3070" ]
 
