@@ -1,6 +1,6 @@
 rodinia-3.1_validation:
-    exec_dir: "$ACCELSIM_ROOT/benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
@@ -38,8 +38,8 @@ rodinia-3.1_validation:
             - args:  100 0.5 502 458
 
 parboil_validation:
-    exec_dir: "$ACCELSIM_ROOT/benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/benchmarks/data_dirs/parboil/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/parboil/"
     execs:
         - parboil-sad:
             - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
@@ -66,8 +66,8 @@ parboil_validation:
         #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
 
 cuda_samples_11.1_validation:
-    exec_dir: "$ACCELSIM_ROOT/benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
     execs:
         - dct8x8:
             - args:
@@ -87,8 +87,8 @@ cuda_samples_11.1_validation:
             - args:
 			
 cutlass_5_trace_validation:
-    exec_dir: "$ACCELSIM_ROOT/benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
@@ -96,8 +96,8 @@ cutlass_5_trace_validation:
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
 
 power_ubench:
-    exec_dir: "$ACCELSIM_ROOT/benchmarks/microbenchmarks/"
-    data_dirs: "$ACCELSIM_ROOT/benchmarks/microbenchmarks/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
     execs:
         - ACT_CORE1:
             - args: 100 1 32
