@@ -58,7 +58,12 @@
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=1000000
     ```
-    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
+    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Id you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels. 
+
+    As an alternative to the method described above, you can wrap the region you want to trace with `cudaProfileStart()` and `cudaProfilerStop()` calls then set the following environment variable to trace only within that region. Note: setting `ACTIVE_FROM_START` to zero disables the effects of the `DYNAMIC_KERNEL_LIMIT_START/STOP` variables.
+    ```bash
+    export ACTIVE_FROM_START=0
+    ```
 
 * Traces format:
 

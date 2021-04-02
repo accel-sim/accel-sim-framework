@@ -12,6 +12,14 @@ QUADRO_V100_DATA=$DATA_ROOT/QUADRO-V100
 TESLA_V100_DATA=$DATA_ROOT/TESLA-V100
 TURING_RTX_DATA=$DATA_ROOT/TURING-RTX2060
 KEPLER_DATA=$DATA_ROOT/KEPLER-TITAN
+AMPERE_RTX_DATA=$DATA_ROOT/AMPERE-RTX3070
+
+if [ ! -d $AMPERE_RTX_DATA ]; then
+    TARFILE=ampere.rtx3070.tgz
+    wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/hw_data/$TARFILE
+    tar -xzvf $TARFILE -C $DATA_ROOT
+    rm $TARFILE
+fi
 
 if [ ! -d $TURING_RTX_DATA ]; then
     TARFILE=turing.rtx2060.cycle.tgz
