@@ -4,26 +4,14 @@
 #   Every time you want to correlate a new configuration, you need to map it here.
 config_maps = \
 {
-    "PUB_TITANX": "TITAN X (Pascal)",
-    "TITANX_P102": "TITAN X (Pascal)",
-    "TITANX": "TITAN X (Pascal)",
-    "TITANXX": "TITAN X (Pascal)",
-    "TITANX_OLD": "TITAN X (Pascal)",
-    "TITANV": "TITAN V",
-    "TITANV_OLD": "TITAN V",
-    "3.x_PASCALTITANX" : "TITAN X (Pascal)",
-    "3.x_P100" :  "Tesla P100",
-    "P100_HBM" : "Tesla P100",
-    "GTX480" : "GeForce GTX 480",
-    "GTX1080Ti" : "GeForce GTX 1080 Ti",
-    "TITANK" : "GeForce GTX TITAN",
-    "QV100" : "Quadro GV100",
-    "QV100_old" : "Quadro GV100",
-    "QV100_SASS" : "Quadro GV100",
-    "RTX2060" : "GeForce RTX 2060",
-    "QV100" : "Tesla V100-SXM2-32GB",
-#	"QV100_old" : "Tesla V100-SXM2-32GB",
-#	"QV100_SASS" : "Tesla V100-SXM2-32GB"
+    "TITANX": set("TITAN X (Pascal)"),
+    "P100_HBM" : set("Tesla P100"),
+    "GTX480" : set("GeForce GTX 480"),
+    "GTX1080Ti" : set("GeForce GTX 1080 Ti"),
+    "TITANK" : set("GeForce GTX TITAN"),
+    "QV100" : set(["TITAN V", "Quadro GV100","Tesla V100-SXM2-32GB"]),
+    "RTX2060" : set("GeForce RTX 2060"),
+    "RTX3070" : set("GeForce RTX 3070"),
 }
 
 
@@ -116,13 +104,13 @@ correl_list = \
         plottype="log",
         stattype="counter"
     ),
-    CorrelStat(chart_name="RTX 2060 SM Cycles",
-        plotfile="rtx2060_sm_cycles",
+    CorrelStat(chart_name="GPC Cycles",
+        plotfile="gpc_cycles",
         hw_eval="np.average(hw[\"gpc__cycles_elapsed.avg\"])",
         hw_error="np.max(hw[\"gpc__cycles_elapsed.avg\"]) - np.average(hw[\"gpc__cycles_elapsed.avg\"]),"+\
                  "np.average(hw[\"gpc__cycles_elapsed.avg\"]) - np.min(hw[\"gpc__cycles_elapsed.avg\"])",
         sim_eval="float(sim[\"gpu_tot_sim_cycle\s*=\s*(.*)\"])",
-        hw_name="GeForce RTX 2060",
+        hw_name="all",
         drophwnumbelow=0,
         plottype="log",
         stattype="counter"

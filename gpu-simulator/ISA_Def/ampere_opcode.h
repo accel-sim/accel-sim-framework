@@ -1,21 +1,22 @@
 // developed by Mahmoud Khairy, Purdue Univ
 // abdallm@purdue.edu
 
-#ifndef TURING_OPCODE_H
-#define TURING_OPCODE_H
+#ifndef AMPERE_OPCODE_H
+#define AMPERE_OPCODE_H
 
 #include "abstract_hardware_model.h"
 #include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
 
-#define TURING_BINART_VERSION 75
+#define AMPERE_RTX_BINART_VERSION 86
+#define AMPERE_A100_BINART_VERSION 80
 
 // TO DO: moving this to a yml or def files
 
-/// Volta SM_70 ISA
-// see: https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html
-static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
+/// Ampere ISA
+// see:https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#ampere
+static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     // Floating Point 32 Instructions
     {"FADD", OpcodeChar(OP_FADD, SP_OP)},
     {"FADD32I", OpcodeChar(OP_FADD32I, SP_OP)},
@@ -41,10 +42,12 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"HMUL2_32I", OpcodeChar(OP_HMUL2_32I, SP_OP)},
     {"HSET2", OpcodeChar(OP_HSET2, SP_OP)},
     {"HSETP2", OpcodeChar(OP_HSETP2, SP_OP)},
+    {"HMNMX2", OpcodeChar(OP_HMNMX2, SP_OP)},
 
     // Tensor Core Instructions
     // Execute Tensor Core Instructions on SPECIALIZED_UNIT_3
     {"HMMA", OpcodeChar(OP_HMMA, SPECIALIZED_UNIT_3_OP)},
+    {"DMMA", OpcodeChar(OP_DMMA, SPECIALIZED_UNIT_3_OP)},
     {"BMMA", OpcodeChar(OP_BMMA, SPECIALIZED_UNIT_3_OP)},
     {"IMMA", OpcodeChar(OP_IMMA, SPECIALIZED_UNIT_3_OP)},
 
@@ -88,6 +91,8 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"I2F", OpcodeChar(OP_I2F, ALU_OP)},
     {"I2I", OpcodeChar(OP_I2I, ALU_OP)},
     {"I2IP", OpcodeChar(OP_I2IP, ALU_OP)},
+    {"I2FP", OpcodeChar(OP_I2FP, ALU_OP)},
+    {"F2IP", OpcodeChar(OP_F2IP, ALU_OP)},
     {"FRND", OpcodeChar(OP_FRND, ALU_OP)},
 
     // Movement Instructions
@@ -129,15 +134,20 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"MEMBAR", OpcodeChar(OP_MEMBAR, MEMORY_BARRIER_OP)},
     {"CCTLT", OpcodeChar(OP_CCTLT, ALU_OP)},
 
+    {"LDGDEPBAR", OpcodeChar(OP_LDGDEPBAR, ALU_OP)},
+    {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)},
+
     // Uniform Datapath Instruction
     // UDP unit
     // for more info about UDP, see
     // https://www.hotchips.org/hc31/HC31_2.12_NVIDIA_final.pdf
     {"R2UR", OpcodeChar(OP_R2UR, SPECIALIZED_UNIT_4_OP)},
+    {"REDUX", OpcodeChar(OP_REDUX, SPECIALIZED_UNIT_4_OP)},
     {"S2UR", OpcodeChar(OP_S2UR, SPECIALIZED_UNIT_4_OP)},
     {"UBMSK", OpcodeChar(OP_UBMSK, SPECIALIZED_UNIT_4_OP)},
     {"UBREV", OpcodeChar(OP_UBREV, SPECIALIZED_UNIT_4_OP)},
     {"UCLEA", OpcodeChar(OP_UCLEA, SPECIALIZED_UNIT_4_OP)},
+    {"UF2FP", OpcodeChar(OP_UF2FP, SPECIALIZED_UNIT_4_OP)},
     {"UFLO", OpcodeChar(OP_UFLO, SPECIALIZED_UNIT_4_OP)},
     {"UIADD3", OpcodeChar(OP_UIADD3, SPECIALIZED_UNIT_4_OP)},
     {"UIMAD", OpcodeChar(OP_UIMAD, SPECIALIZED_UNIT_4_OP)},
@@ -173,6 +183,7 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     // Surface Instructions //
     {"SUATOM", OpcodeChar(OP_SUATOM, ALU_OP)},
     {"SULD", OpcodeChar(OP_SULD, ALU_OP)},
+    {"SUQUERY", OpcodeChar(OP_SUQUERY, ALU_OP)},
     {"SURED", OpcodeChar(OP_SURED, ALU_OP)},
     {"SUST", OpcodeChar(OP_SUST, ALU_OP)},
 

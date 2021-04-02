@@ -196,3 +196,96 @@ def parse_run_simulations_options():
     if options.job_mem != None:
         options.job_mem = options.job_mem.strip()
     return (options, args)
+
+# After collection, spew out the tables
+def print_stat(stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows, do_averages):
+    csv_str = ""
+    DIVISION = "-" * 100
+    if cfg_as_rows:
+        num_commas = len(apps_and_args)
+    else:
+        num_commas = len(configs)
+    if do_averages:
+        num_commas += 1
+    csv_str += DIVISION + ("," * num_commas) + "\n"
+
+    running_total = 0
+    total_num = 0
+    if cfg_as_rows:
+        csv_str += stat_name + ("," * num_commas) +  "\nCFG,"
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
+                csv_str += appargs + "--" + kname + ","
+        if do_averages:
+            csv_str += "AVG,"
+
+        csv_str = csv_str[:-1]
+        csv_str += "\n"
+        for config in configs:
+            csv_str += config + ","
+            for appargs in apps_and_args:
+                knames = all_named_kernels[appargs]
+                for kname in knames:
+                    if kname == "":
+                        continue
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
+                    else:
+                        csv_str += "NA,"
+            if do_averages:
+                if total_num != 0:
+                    csv_str += "{0:.1f},".format(running_total/total_num)
+                else:
+                    csv_str += "NA,"
+            running_total = 0
+            total_num = 0
+            csv_str = csv_str[:-1]
+            csv_str += "\n"
+
+    else:
+        csv_str += stat_name + ("," * num_commas) + "\nAPPS,"
+        for config in configs:
+            csv_str += config + ","
+
+        if do_averages:
+            csv_str += "AVG,"
+        csv_str = csv_str[:-1]
+        csv_str += "\n"
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
+                csv_str += appargs + "--" + kname + ","
+                for config in configs:
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
+                    else:
+                        csv_str += "NA,"
+
+                if do_averages:
+                    if total_num != 0:
+                        csv_str += "{0:.1f},".format(running_total/total_num)
+                    else:
+                        csv_str += "NA,"
+                running_total = 0
+                total_num = 0
+                csv_str = csv_str[:-1]
+                csv_str += "\n"
+
+    csv_str = csv_str[:-1]
+    csv_str += "\n"
+    print(csv_str)

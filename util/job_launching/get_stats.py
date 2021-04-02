@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+from __future__ import print_function
 from optparse import OptionParser
 import re
 import os
@@ -41,7 +42,7 @@ help_str = "There are 3 ways to use this file, select only one of the following:
            "    If you do this, then the jobs in the specific logfile will be parsed" +\
            " If no options are specified, then it basically defaults to the -l"+\
            " option using the latest logfile." +\
-           " \n3) Specify a configs -c and benchmarks -b yaml files you want data for."
+           " \n3) Specify a list of configs -C and benchmarks -B suite names you want data for."
 
 
 parser = OptionParser(usage=help_str)
@@ -53,7 +54,7 @@ parser.add_option("-l", "--logfile", dest="logfile",
 parser.add_option("-r", "--run_dir", dest="run_dir",
                   help="The directory where the benchmark/config directories exist.", default="")
 parser.add_option("-N", "--sim_name", dest="sim_name",
-                  help="If you are launchign run_simulations.py with the \"-N\" option" +\
+                  help="If you are launching run_simulations.py with the \"-N\" option" +\
                        " then you can run ./job_status.py with \"-N\" and it will" + \
                        " give you the status of the latest run with that name."+ \
                        " if you want older runs from this name, then just point it directly at the"+\
@@ -80,7 +81,7 @@ parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows", action="sto
 parser.add_option("-I", "--ignore_failures", dest="ignore_failures", action="store_true",
                   help="If an app crashed, still collect its data")
 parser.add_option("-A", "--do_averages", dest="do_averages", action="store_true",
-                  help="If an app crashed, still collect its data")
+                  help="Print the averages for each statistic")
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -119,7 +120,8 @@ for stat in stats_yaml['collect_rates']:
 if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
         a,b,exe_name,args_list = app
-        for args in args_list:
+        for argpair in args_list:
+            args = argpair["args"]
             apps_and_args.append( os.path.join(exe_name, common.get_argfoldername(args) ) )
     for config, params, gpuconf_file in common.gen_configs_from_list( options.configs_list.split(",") ):
         configs.append( config )
@@ -150,7 +152,7 @@ else:
     else:
         parsed_logfiles.append(common.file_option_test( options.logfile, "", this_directory ))
 
-    print "Using logfiles " + str(parsed_logfiles)
+    print("Using logfiles " + str(parsed_logfiles), file=sys.stderr)
 
     for logfile in parsed_logfiles:
         if not os.path.isfile(logfile):
@@ -179,7 +181,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
         if not os.path.isdir( output_dir ):
-            print("WARNING the outputdir " + output_dir + " does not exist")
+            print("WARNING the outputdir " + output_dir + " does not exist", file=sys.stderr)
             continue
 
         if config + app_and_args in specific_jobIds:
@@ -198,7 +200,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         stat_found = set()
 
         if not os.path.isfile( outfile ):
-            print "WARNING - " + outfile + " does not exist"
+            print("WARNING - " + outfile + " does not exist", file=sys.stderr)
             continue
 
         # Do a quick 100-line pass to get the GPGPU-Sim Version number
@@ -209,10 +211,13 @@ for idx, app_and_args in enumerate(apps_and_args):
             count += 1
             if count >= MAX_LINES:
                 break
-            build_match = re.match(".*\[build\s+(.*)\].*", line)
-            if build_match:
-                stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = build_match.group(1)
+            gpgpu_build_match = re.match(".*GPGPU-Sim.*\[build\s+(.*)\].*", line)
+            if gpgpu_build_match:
+                stat_map["all_kernels" + app_and_args + config + "GPGPU-Sim-build"] = gpgpu_build_match.group(1)
                 break
+            accelsim_build_match = re.match("Accel-Sim.*\[build\s+(.*)\].*", line)
+            if accelsim_build_match:
+                stat_map["all_kernels" + app_and_args + config + "Accel-Sim-build"] = accelsim_build_match.group(1)
         f.close()
 
         # Do a quick 10000-line reverse pass to make sure the simualtion thread finished
@@ -238,7 +243,8 @@ for idx, app_and_args in enumerate(apps_and_args):
         f.close()
 
         if not exit_success:
-            print "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile)
+            print("WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(outfile),
+                file=sys.stderr)
             if not options.ignore_failures:
                 continue
 
@@ -285,7 +291,7 @@ for idx, app_and_args in enumerate(apps_and_args):
                 # Note: This only appies if we are doing kernel-by-kernel stats
                 last_kernel_break = re.match("GPGPU-Sim: \*\* break due to reaching the maximum cycles \(or instructions\) \*\*", line)
                 if last_kernel_break:
-                    print "NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile)
+                    print("NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile), file=sys.stderr)
                     for stat_name in stats_to_pull.keys():
                         if current_kernel + app_and_args + config + stat_name in stat_map:
                             del stat_map[current_kernel + app_and_args + config + stat_name]
@@ -338,106 +344,23 @@ for idx, app_and_args in enumerate(apps_and_args):
 #if options.per_kernel and not options.kernel_instance:
 #    stats_yaml['collect'].append("k-count")
 
-# After collection, spew out the tables
-def print_stat(stat_name, all_named_kernels, cfg_as_rows):
-    csv_str = ""
-    DIVISION = "-" * 100
-    csv_str += DIVISION + "\n"
-    running_total = 0
-    total_num = 0
-    if cfg_as_rows:
-        csv_str += stat_name + "\nCFG,"
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-        if options.do_averages:
-            csv_str += "AVG,"
-
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for config in configs:
-            csv_str += config + ","
-            for appargs in apps_and_args:
-                knames = all_named_kernels[appargs]
-                for kname in knames:
-                    if kname == "":
-                        continue
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                        try:
-                            running_total += float(stat_map[kname + appargs + config + stat_name])
-                            total_num += 1
-                        except:
-                            pass
-                    else:
-                        csv_str += "NA,"
-            if options.do_averages:
-                if total_num != 0:
-                    csv_str += "{0:.1f},".format(running_total/total_num)
-                else:
-                    csv_str += "NA,"
-            running_total = 0
-            total_num = 0
-            csv_str = csv_str[:-1]
-            csv_str += "\n"
-
-    else:
-        csv_str += stat_name + "\nAPPS,"
-        for config in configs:
-            csv_str += config + ","
-
-        if options.do_averages:
-            csv_str += "AVG,"
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-                for config in configs:
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                        try:
-                            running_total += float(stat_map[kname + appargs + config + stat_name])
-                            total_num += 1
-                        except:
-                            pass
-                    else:
-                        csv_str += "NA,"
-
-                if options.do_averages:
-                    if total_num != 0:
-                        csv_str += "{0:.1f},".format(running_total/total_num)
-                    else:
-                        csv_str += "NA,"
-                running_total = 0
-                total_num = 0
-                csv_str = csv_str[:-1]
-                csv_str += "\n"
-
-    csv_str = csv_str[:-1]
-    csv_str += "\n"
-    print csv_str
 
 # Print any stats that do not make sense on a per-kernel basis ever (like GPGPU-Sim Build)
 all_kernels = {}
 for appargs in apps_and_args:
     all_kernels[appargs] = ["all_kernels"]
 
-print_stat( "GPGPU-Sim-build", all_kernels, options.configs_as_rows )
+#stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows
+common.print_stat( "Accel-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
+common.print_stat( "GPGPU-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 
 for stat_name in ( stats_yaml['collect_aggregate'] +\
                    stats_yaml['collect_abs'] +\
                    stats_yaml['collect_rates'] ):
-    print_stat( stat_name, all_named_kernels, options.configs_as_rows )
+    common.print_stat( stat_name, all_named_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 
 duration = time.time() - start_time
 
-print"Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
+print("Script exec time {0:.2f} seconds. {1} files and {2}B parsed. {3}B/s".\
     format(duration , files_parsed, millify(bytes_parsed),
-    millify(float(bytes_parsed)/float(duration)))
+    millify(float(bytes_parsed)/float(duration))), file=sys.stderr)

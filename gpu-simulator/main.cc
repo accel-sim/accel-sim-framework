@@ -53,6 +53,7 @@ trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
 
 
 int main(int argc, const char **argv) {
+  std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
   gpgpu_context *m_gpgpu_context = new gpgpu_context();
   trace_config tconfig;
 
