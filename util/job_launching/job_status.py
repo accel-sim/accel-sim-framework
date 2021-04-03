@@ -122,7 +122,7 @@ def get_squeue_status( jobId, node_details ):
         else:
             # no squeue output
             out, err = Popen(["sacct" ,"--format", "Elapsed", "-j", jobId],stdout=PIPE).communicate()
-            outlines = out.split("\n")
+            outlines = str(out).split("\n")
             if outlines > 2:
                 job_status[ "running_time" ] = outlines[2].strip()
             if jobId in node_details:
