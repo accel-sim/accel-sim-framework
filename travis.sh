@@ -5,11 +5,6 @@ if [ ! -n "$CUDA_INSTALL_PATH" ]; then
 	exit;
 fi
 
-sudo apt-get install pip3
-pip3 install pyyaml
-pip3 install psutil
-pip3 install plotly
-
 #Make the simulator
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH;
 source ./gpu-simulator/setup_environment.sh
