@@ -5,6 +5,9 @@ if [ ! -n "$CUDA_INSTALL_PATH" ]; then
 	exit;
 fi
 
+pip3 install pyyaml
+pip3 install psutil
+
 #Make the simulator
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH;
 source ./gpu-simulator/setup_environment.sh
