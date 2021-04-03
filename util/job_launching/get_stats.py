@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 from optparse import OptionParser
@@ -264,7 +264,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             lines = f.readlines()
             for line in reversed(lines):
                 # pull out some stats
-                for stat_name, tup in stats_to_pull.iteritems():
+                for stat_name, tup in stats_to_pull.items():
                     token, statType = tup
                     if stat_name in stat_found:
                         continue
@@ -285,7 +285,7 @@ for idx, app_and_args in enumerate(apps_and_args):
             files_parsed += 1
             bytes_parsed += os.stat(outfile).st_size
             f = open(outfile)
-            #print "Parsing File {0}. Size: {1}".format(outfile, millify(os.stat(outfile).st_size))
+            #print("Parsing File {0}. Size: {1}".format(outfile, millify(os.stat(outfile).st_size)))
             for line in f:
                 # If we ended simulation due to too many insn - ignore the last kernel launch, as it is no complete.
                 # Note: This only appies if we are doing kernel-by-kernel stats
@@ -317,7 +317,7 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_map[current_kernel + app_and_args + config + "k-count"] = 1
                     continue
 
-                for stat_name, tup in stats_to_pull.iteritems():
+                for stat_name, tup in stats_to_pull.items():
                     token, statType = tup
                     existance_test = token.search( line.rstrip() )
                     if existance_test != None:

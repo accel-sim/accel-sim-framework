@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from optparse import OptionParser
 import os
@@ -21,12 +21,13 @@ def extract_version( exec_path ):
         regex_base = "gpgpu-sim_git-commit"
     else:
         regex_base = "accelsim-commit"
-    regex_str = r".*({0}[^\s]+).*".format(regex_base)
+    regex_str = r".*({0}[^\s^']+).*".format(regex_base)
     strings_process = Popen(['strings', exec_path], stdout=PIPE)
     grep_process = Popen(['grep', regex_base], stdin=strings_process.stdout, stdout=PIPE)
     strings_process.stdout.close() 
     out, err = grep_process.communicate()
-    return re.sub(regex_str, r"\1", out.rstrip())
+    version = re.sub(regex_str, r"\1", str(out.rstrip()))
+    return version
 
 #######################################################################################
 # Class the represents each configuration you are going to run
@@ -38,15 +39,16 @@ class ConfigurationSpec:
     # Public Interface methods
     #########################################################################################
     # Class is constructed with a single line of text from the sweep_param file
-    def __init__(self, ( name, params, config_file ) ):
+    def __init__(self, nameTuple ):
+        name, params, config_file = nameTuple
         self.run_subdir = name
         self.params = params
         self.config_file = config_file
 
     def my_print(self):
-        print "Run Subdir = " + self.run_subdir
-        print "Parameters = " + self.params
-        print "Base config file = " + self.config_file
+        print("Run Subdir = " + self.run_subdir)
+        print("Parameters = " + self.params)
+        print("Base config file = " + self.config_file)
 
     def run(self, build_handle, benchmarks, run_directory, cuda_version, simdir):
         for dir_bench in benchmarks:
@@ -124,14 +126,14 @@ class ConfigurationSpec:
                         logfile = open(this_directory +\
                                        "logfiles/"+ log_name + "." +\
                                        day_string + ".txt",'a')
-                        print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
+                        print("%s %6s %-22s %-100s %-25s %s.%s" %\
                                ( time_string ,\
                                torque_out ,\
                                benchmark ,\
                                self.benchmark_args_subdirs[args] ,\
                                self.run_subdir,\
                                benchmark,\
-                               build_handle )
+                               build_handle ), file=logfile)
                         logfile.close()
             self.benchmark_args_subdirs.clear()
 
@@ -352,7 +354,7 @@ elif any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").spl
     job_submit_call = "qsub"
     job_template = "torque.sim"
 else:
-    print "Cannot find a supported job management system. Spawning jobs locally."
+    print("Cannot find a supported job management system. Spawning jobs locally.")
     job_submit_call = os.path.join(this_directory, "procman.py")
     job_template = "slurm.sim"
 
