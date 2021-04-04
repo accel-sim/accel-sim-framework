@@ -233,7 +233,7 @@ class ConfigurationSpec:
             if command_line_args == None:
                 txt_args = ""
             else:
-                txt_args = command_line_args
+                txt_args = str(command_line_args)
         else:
             txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g"
 
