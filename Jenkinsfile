@@ -81,7 +81,7 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
                 ./util/hw_stats/get_hw_data.sh
-                rm -r ./util/plotting/correl-html/
+                rm -rf ./util/plotting/correl-html/
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/v100-ubench-sass.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/turing-ubench-sass.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
