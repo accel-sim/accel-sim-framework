@@ -326,7 +326,9 @@ def selfTest():
         os.chmod(jobScript, st.st_mode | stat.S_IEXEC)
         out, err = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
                                         jobScript], stdout=PIPE).communicate()
+        out = out.decode("utf-8")
         if err != None:
+            err = err.decode("utf-8")
             sys.exit(err)
         print("Queued Job {0}".format(out))
 
@@ -338,15 +340,16 @@ def selfTest():
         time.sleep(1)
         out, err = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
                                         "-p"], stdout=PIPE).communicate()
-        out = out.strip()
+        out = out.strip().decode("utf-8")
         if err != None:
+            err = err.decode("utf-8")
             sys.exit(err)
         print(out)
     print("Asynchronous test passed")
 
 
     print("Starting multi ProcMan test")
-    JOBS_PER_PROCMAN = int(psutil.cpu_count()*1.2) / 4
+    JOBS_PER_PROCMAN = int(int(psutil.cpu_count()*1.2) / 4)
     for j in range(4):
         for i in range(JOBS_PER_PROCMAN):
             jobNum = j*JOBS_PER_PROCMAN + i
@@ -360,7 +363,9 @@ def selfTest():
             os.chmod(jobScript, st.st_mode | stat.S_IEXEC)
             out, err = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
                                             jobScript], stdout=PIPE).communicate()
+            out = out.decode("utf-8")
             if err != None:
+                err = err.decode("utf-8")
                 sys.exit(err)
             print("ProcMan {0}: Queued Job {0}".format(j, out))
 
@@ -373,8 +378,9 @@ def selfTest():
         time.sleep(1)
         out, err = subprocess.Popen([os.path.join(this_directory, "procman.py"),\
                                         "-p"], stdout=PIPE).communicate()
-        out = out.strip()
+        out = out.strip().decode("utf-8")
         if err != None:
+            err = err.decode("utf-8")
             sys.exit(err)
         print(out)
     print("Multi-ProcMan test passed")
