@@ -182,6 +182,10 @@ def parse_run_simulations_options():
                   help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
                         "local. By default, we test for slurm, then torque, then just use local if " \
                         "you have neither.")
+    parser.add_option("-c", "--cores", dest="cores", default=None,
+                  help="Specify the core limit when using procman. If nothing is specified, all the cores"\
+                       " on the local node will be used.")
+
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
