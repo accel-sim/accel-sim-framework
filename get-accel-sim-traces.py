@@ -79,7 +79,11 @@ def main():
     parser.add_option("-d", "--download_dir", dest="download_dir", default = "",
                 help="Directory to download the traces to.")
     (options, args) = parser.parse_args()
-    hw_run_dir = common.dir_option_test(options.download_dir, "hw_run", this_directory)
+    try:
+        hw_run_dir = common.dir_option_test(options.download_dir, "hw_run", this_directory)
+    except common.PathMissing:
+        hw_run_dir = os.path.join(this_directory, "hw_run")
+
     if not os.path.exists(hw_run_dir):
         os.makedirs(hw_run_dir)
     os.chdir(hw_run_dir)
