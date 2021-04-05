@@ -154,7 +154,7 @@ class ProcMan:
         self.queuedJobs = []
         self.activeJobs = {}
         self.completeJobs = {}
-        self.jobLimit = jobLimit
+        self.jobLimit = int(jobLimit)
         self.nextJobId = 1
         self.tickingProcess = None
         self.mutable = True
@@ -440,6 +440,9 @@ def main():
         if not os.path.exists(options.file):
              sys.exit("Nothing to start {0} does not exist".format(options.file))
         procMan = pickle.load(open(options.file, 'rb'))
+        if procMan.jobLimit != int(options.cores):
+            procMan.jobLimit = int(options.cores)
+            procMan.saveState()
         procMan.spawnProcMan(options.sleepTime)
         procMan.clear()
         procMan.saveState()

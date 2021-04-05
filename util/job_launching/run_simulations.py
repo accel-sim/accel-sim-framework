@@ -378,4 +378,7 @@ for config in configurations:
     config.run(version_string, benchmarks, options.run_directory, cuda_version, options.simulator_dir)
 
 if "procman" in job_submit_call and not options.no_launch:
-    subprocess.call([job_submit_call, "-S"])
+    if options.cores == None:
+        subprocess.call([job_submit_call, "-S"])
+    else:
+        subprocess.call([job_submit_call, "-S", "-c", options.cores])
