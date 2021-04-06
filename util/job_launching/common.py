@@ -27,13 +27,13 @@ def get_argfoldername( args ):
 def get_config(name, defined_baseconfigs, defined_xtracfgs):
     tokens = name.split('-')
     if tokens[0] not in defined_baseconfigs:
-        print "Could not fined {0} in defined basenames {1}".format(tokens[0], defined_baseconfigs)
+        print("Could not fined {0} in defined basenames {1}".format(tokens[0], defined_baseconfigs))
         return None
     else:
         config = (name, "", defined_baseconfigs[tokens[0]])
     for token in tokens[1:]:
         if token not in defined_xtracfgs:
-            print "Could not find {0} in defined xtraconfigs {1}".format(token, defined_xtracfgs)
+            print("Could not find {0} in defined xtraconfigs {1}".format(token, defined_xtracfgs))
             return None
         else:
             oldName, oldXtra, oldBasename = config
@@ -54,8 +54,8 @@ def parse_app_definition_yaml( def_yml, apps ):
     for suite in benchmark_yaml:
         apps[suite] = []
         for exe in benchmark_yaml[suite]['execs']:
-            exe_name = exe.keys()[0]
-            args_list = exe.values()[0]
+            exe_name = list(exe.keys())[0]
+            args_list = list(exe.values())[0]
             count = 0
             for runparms in args_list:
                 args = runparms["args"]
@@ -182,6 +182,10 @@ def parse_run_simulations_options():
                   help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
                         "local. By default, we test for slurm, then torque, then just use local if " \
                         "you have neither.")
+    parser.add_option("-c", "--cores", dest="cores", default=None,
+                  help="Specify the core limit when using procman. If nothing is specified, all the cores"\
+                       " on the local node will be used.")
+
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it

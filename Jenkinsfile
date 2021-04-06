@@ -31,9 +31,9 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
                 source ./gpu-simulator/setup_environment.sh
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N sass-short-${BUILD_NUMBER}
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx/ -N sass-short-${BUILD_NUMBER}
-                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx/ -N sass-short-${BUILD_NUMBER}
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-${BUILD_NUMBER}
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-${BUILD_NUMBER}
+                ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-${BUILD_NUMBER}
                 ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-${BUILD_NUMBER}'''
                }, "ptx": {
                 sh '''#!/bin/bash -xe
@@ -81,7 +81,7 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
                 ./util/hw_stats/get_hw_data.sh
-                rm -r ./util/plotting/correl-html/
+                rm -rf ./util/plotting/correl-html/
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/v100-ubench-sass.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/turing-ubench-sass.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt

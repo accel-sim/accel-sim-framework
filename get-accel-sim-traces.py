@@ -10,6 +10,8 @@ from subprocess import Popen, STDOUT
 VERSION = "1.1.0"
 WEB_DIRECTORY = "ftp://ftp.ecn.purdue.edu/tgrogers/accel-sim/traces/"
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+sys.path.insert(0,os.path.join(this_directory,"util","job_launching"))
+import common
 
 millnames = ['',' K',' M',' G',' T']
 def getNumRaw(n):
@@ -74,8 +76,14 @@ def main():
     parser.add_option("-a", "--apps", dest="apps", default = None,
                 help="Pass the comma seperated input list instead of asking "\
                      "from stdin. Example: -a tesla-v100/rodinia-3.1,tesla-v100/cudasdk")
+    parser.add_option("-d", "--download_dir", dest="download_dir", default = "",
+                help="Directory to download the traces to.")
     (options, args) = parser.parse_args()
-    hw_run_dir = os.path.join(this_directory, "hw_run")
+    try:
+        hw_run_dir = common.dir_option_test(options.download_dir, "hw_run", this_directory)
+    except common.PathMissing:
+        hw_run_dir = os.path.join(this_directory, "hw_run")
+
     if not os.path.exists(hw_run_dir):
         os.makedirs(hw_run_dir)
     os.chdir(hw_run_dir)
