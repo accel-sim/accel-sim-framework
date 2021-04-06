@@ -14,6 +14,30 @@ pipeline {
                     cd env-setup && git checkout cluster-ubuntu'
             }
         }
+        stage('pull-traces') {
+            steps{
+                sh '''#!/bin/bash -xe
+                    rm -rf /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    mkdir /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    ./get-accel-sim-traces.py -a all/all -d /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    cd /scratch/tgrogers-disk01/a/$USER/nightly-traces
+                    tar -xzvf cutlass.tgz
+                    rm cutlass.tgz
+                    tar -xzvf deepbench.tgz
+                    rm deepbench.tgz
+                    tar -xzvf parboil.tgz
+                    rm parboil.tgz
+                    tar -xzvf polybench.tgz
+                    rm polybench.tgz
+                    tar -xzvf rodinia_2.0-ft.tgz
+                    rm rodinia_2.0-ft.tgz
+                    tar -xzvf rodinia-3.1.tgz
+                    rm rodinia-3.1.tgz
+                    tar -xzvf ubench.tgz
+                    rm ubench.tgz
+                    '''
+            }
+        }
         stage('accel-sim-build'){
             steps{
                 sh '''#!/bin/bash -xe
@@ -23,6 +47,7 @@ pipeline {
                 make -j -C gpu-simulator'''
             }
         }
+        /*
         stage('nightly-sass'){
             steps{
                 sh '''#!/bin/bash -xe
@@ -32,6 +57,7 @@ pipeline {
                 ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s nightly-stats-per-app.csv -N nightly-$$'''
             }
         }
+        */
     }
     post {
         success {
