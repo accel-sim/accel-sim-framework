@@ -21,7 +21,7 @@
     LD_PRELOAD=./tracer_tool/tracer_tool.so ./nvbit_release/test-apps/vectoradd/vectoradd
     ```
     the traces will be found in `traces` folder, This folder will contain:
-    * 1- kernel traces files with `.trace` (one file per kernel), e.g. `kernel-1.trace`, `kernel-2.trace`, etc.
+    * 1- kernel traces files with `.trace` extension (one file per kernel), e.g. `kernel-1.trace`, `kernel-2.trace`, etc.
     * 2- `kernelslist` (one file), this contains the kernel files list that have been traced along with the CUDA memcpy commands
     * 3- `stats.csv` (one file), this contains the statistcs of the kernels, e.g. how many kernels traced, traced intructions, etc.
 
@@ -76,13 +76,12 @@
     The other columns that are in brackets [] may or may not exist based on the instruction characteristics, for example:
     "dest_num" tells us the number of destination registers.
     If dest_num=0, then "reg_dests" will be empty and not exist in the trace.
-    If dest_num>0, this means that this instruction has dest_num destination registers, the [reg_dests] will list these registers values.
-
-    Similarly, the src_num and "reg_srcs".
+    If dest_num>0, this means that this instruction has dest_num destination registers, the [reg_dests] will list these registers values. 
+	Similarly, the "src_num" and "reg_srcs".
 
     Finally, the mem_width rule is as following:
     If mem_width=0, this implies that it is not a memory instruction and [adrrescompress?] [mem_addresses] will be empty.
-    if mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
+    If mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
 
     Example: 
 
