@@ -9,8 +9,7 @@ int main() {
   printf("Shared memory per multiprocessor = %lu bytes\n",
          deviceProp.sharedMemPerMultiprocessor);
 
-  printf("Shared memory per block = %lu bytes\n",
-         deviceProp.sharedMemPerBlock);
+  printf("Shared memory per block = %lu bytes\n", deviceProp.sharedMemPerBlock);
 
   if (ACCEL_SIM_MODE) {
 

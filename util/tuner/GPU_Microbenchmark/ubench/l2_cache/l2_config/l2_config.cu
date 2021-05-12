@@ -10,6 +10,7 @@ using namespace std;
 // we know sector size from l2_access_grain ubench
 #define L2_CACHE_LINE_SIZE 128
 #define L2_SECTOR_SIZE 32
+#define IS_SECTOR 1
 
 // It is hard to know the exact l2 assoc from ubenhmarking
 // Thus, based on previous work, we assume assoc is constant and = 16
@@ -47,6 +48,7 @@ int main() {
     unsigned l2_size_per_bank = L2_SIZE / l2_banks_num;
     unsigned assoc, sets_num;
     char set_indexing = 'L'; // by default assume linear indexing
+    char is_sector = IS_SECTOR ? 'S' : 'N';
     if (isPowerOfTwo(l2_size_per_bank)) {
       assoc = L2_CACHE_ASSOC;
       sets_num = l2_size_per_bank / L2_CACHE_LINE_SIZE / assoc;
@@ -77,8 +79,9 @@ int main() {
       std::cout << "-gpgpu_memory_partition_indexing 2" << std::endl;
     else
       std::cout << "-gpgpu_memory_partition_indexing 0" << std::endl;
-    std::cout << "-gpgpu_cache:dl2 S:" << sets_num << "," << L2_CACHE_LINE_SIZE
-              << "," << assoc << L2_Cache_Write_Policy << set_indexing << ","
+    std::cout << "-gpgpu_cache:dl2 " << is_sector << ":" << sets_num << ":"
+              << L2_CACHE_LINE_SIZE << ":" << assoc << L2_Cache_Write_Policy
+              << set_indexing << ","
               << "A:192:4,32:0,32" << std::endl;
   }
 

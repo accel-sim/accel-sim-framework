@@ -31,12 +31,12 @@ in the below mb, we have 6 reads and 4 writes
 1. Check the write allocation policy
  we have three policies: write no-allocate vs write-allocate fetch-on-write vs
 vs write-allocate sub-sector write?? if only two write hits (C[i] and A[i] at
-lines 3&4) ==> then write no-allocate, else if three write hits (C[i+1], C[i] and
-A[i] at lines 2&3&4) then it is write-allocate. if one read miss (A[i] at line1)
-and 5 reads hits ==> then fetch-on-write, as the miss at line1 will fetch the
-whole sector, and C[i] and line 3 is hit else if two read misses (A[i] at lines
-1 and C[i] at line 3) ==> then sub-sector write with write bit-mask, the sector
-will be fetched on read miss, not write miss
+lines 3&4) ==> then write no-allocate, else if three write hits (C[i+1], C[i]
+and A[i] at lines 2&3&4) then it is write-allocate. if one read miss (A[i] at
+line1) and 5 reads hits ==> then fetch-on-write, as the miss at line1 will fetch
+the whole sector, and C[i] and line 3 is hit else if two read misses (A[i] at
+lines 1 and C[i] at line 3) ==> then sub-sector write with write bit-mask, the
+sector will be fetched on read miss, not write miss
 
 2. check if write-back or write-through
 check the DRAM writes, if four writes are received ==> then write-through
@@ -104,8 +104,7 @@ int main(int argc, char *argv[]) {
   std::cout << "check the nvprof or nvsight for received L2 reads and writes "
                "to detect the policy.\n";
   std::cout << "see the code comments for further details\n";
-  std::cout
-      << "to run the program with nvsight: make nvsight ./2\n";
+  std::cout << "to run the program with nvsight: make nvsight ./2\n";
   std::cout << "stats to look at: llts__t_sectors_srcunit_tex_op_read.sum & "
                "lts__t_sectors_srcunit_tex_op_write.sum & "
                "lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum & "
