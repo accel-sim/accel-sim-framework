@@ -1,5 +1,5 @@
 
-  # Accel_Sim's Tuner
+  # Accel-Sim Tuner
   This is a tool that tunes your Accel-Sim performance model to the underline hardware. In this process, we try to generate GPGPU-Sim and Accel-Sim configuration files that match and model the hardware to the best effort. 
   
   ![Accel-Sim Class Overview](https://accel-sim.github.io/assets/img/tuner.png)
@@ -14,7 +14,7 @@
 4. For other parameters that cannot be directly determined by our microbenchmarks (such as warp scheduling, memory scheduling, the L2 cache interleaving granularity, and the L2
 cache hashing function), we do an extensive searching by simulating each possible combination of these four parameters on a set of memory bandwidth microbenchmarks.
 
-# Tuner Steps:
+# Tuning Steps:
 The following steps demonstrate how to tune the Accel-Sim config files to a specific GPU hardware. We assume that you already have the GPU hardware in question.
 
 1. **Provide HW def file and run microbenchmarks**:
@@ -28,7 +28,7 @@ Then, compile microbenchmarks and run:
   # compile microbenchmarks
   make -C ./GPU_Microbenchmark/
   # set the device id that you want to tune to 
-  # if you do now know the device id, run ./GPU_Microbenchmark/bin/list_devices
+  # if you do not know the device id, run ./GPU_Microbenchmark/bin/list_devices
   export CUDA_VISIBLE_DEVICES=0  
   #run the ubench and save output in stats.txt
   ./GPU_Microbenchmark/run_all.sh | tee stats.txt
@@ -56,10 +56,10 @@ bandwidth microbenchmarks (l1-bw, l2-bw, shd-bw, mem-bw, and maxflops). In the t
 
 | HW Parameter | Possible Options | GPGPU-Sim Options
 | ------------- | ------------- | ------------- |
-| Warp Scheduling  | Round-robin vs Greedy | lrr, gto |
-| L2 cache interleaving granularity  | Fine vs Corase frain  | 32B, 268B  |
+| Warp Scheduling  | Loose Round-Robin vs Greedy | lrr, gto |
+| L2 cache interleaving granularity  | Fine vs Corase grain  | 32B, 268B  |
 | L2 cache hashing function | Linear vs IPOLY  hashing | 'L', 'P'  |
-| Memory Scheduling  | FCFS vs First row-ready | FCFS, FR-FCFS  |
+| Memory Scheduling  | FCFS vs First Row-ready | FCFS, FR-FCFS  |
 
 First, We use our run_simulations.py script to launch all 16 possible combinations as listed below. Note that, we assume you already generated the traces for the microbenchmark suite. Also, ensure to replace the "TITANV" name in the command below with the new config name entry that you have added in yml file from the previous step.
 
