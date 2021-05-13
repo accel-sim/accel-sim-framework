@@ -1,5 +1,5 @@
 
-  # Accel_Sim's Tuner
+  # Accel-Sim Tuner
   This is a tool that tunes your Accel-Sim performance model to the underline hardware. In this process, we try to generate GPGPU-Sim and Accel-Sim configuration files that match and model the hardware to the best effort. 
   
   ![Accel-Sim Class Overview](https://accel-sim.github.io/assets/img/tuner.png)
@@ -14,7 +14,7 @@
 4. For other parameters that cannot be directly determined by our microbenchmarks (such as warp scheduling, memory scheduling, the L2 cache interleaving granularity, and the L2
 cache hashing function), we do an extensive searching by simulating each possible combination of these four parameters on a set of memory bandwidth microbenchmarks.
 
-# Tuner Steps:
+# Tuning Steps:
 The following steps demonstrate how to tune the Accel-Sim config files to a specific GPU hardware. We assume that you already have the GPU hardware in question.
 
 1. **Provide HW def file and run microbenchmarks**:
