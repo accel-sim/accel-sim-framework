@@ -4,10 +4,10 @@
 #ifndef VOLTA_OPCODE_H
 #define VOLTA_OPCODE_H
 
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
 #define VOLTA_BINART_VERSION 70
 
