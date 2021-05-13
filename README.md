@@ -185,14 +185,14 @@ For a true validation, you should attempt correlating the fully-scaled set of ap
   # Make sure PATH includes nvcc  
   # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
   # compile microbenchmarks
-  make -C ./tuner/GPU_Microbenchmark/
+  make -C ./util/tuner/GPU_Microbenchmark/
   # set the device id that you want to tune to 
   # if you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
   export CUDA_VISIBLE_DEVICES=0  
   # run the ubench and save output in stats.txt
-  ./tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
+  ./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
   # run the tuner with the stats.txt from the previous step
-  ./tuner/tuner.py -s stats.txt
+  ./util/tuner/tuner.py -s stats.txt
   ```  
   
   The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "TITAN_V"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suire, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
