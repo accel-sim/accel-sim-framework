@@ -179,8 +179,23 @@ For a true validation, you should attempt correlating the fully-scaled set of ap
 ```
 
 
-4. **Accel-Sim Tuner**: An automated tuner that automates configuration file generation from a detailed microbenchmark suite. To be released soon!
+4. **Accel-Sim Tuner**: An automated tuner that automates configuration file generation from a detailed microbenchmark suite. You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). Then, compile microbenchmarks, and run  the microbenchmarks and the tuner:
 
+  ```bash
+  # Make sure PATH includes nvcc  
+  # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
+  # compile microbenchmarks
+  make -C ./GPU_Microbenchmark/
+  # set the device id that you want to tune to 
+  # if you do now know the device id, run ./GPU_Microbenchmark/bin/list_devices
+  export CUDA_VISIBLE_DEVICES=0  
+  #run the ubench and save output in stats.txt
+  ./GPU_Microbenchmark/run_all.sh | tee stats.txt
+  # run the tuner with the stats.txt from the previous step
+   ./tuner.py -s stats.txt
+  ```  
+  
+  The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "TITAN_V"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suire, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
 
 
 ### How do I quickly just run what Travis runs?
