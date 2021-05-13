@@ -112,7 +112,7 @@ BOOKSIM:
 1132MHZ:
     extra_params: "-gpgpu_clock_domains 1132.0:1132.0:1132.0:850.0"
 
-NORM:
+LINEAR:
     extra_params: "-memory_partition_indexing 0"
 
 XOR:
@@ -133,11 +133,17 @@ VISUAL:
 RR:
     extra_params: "-gpgpu_scheduler lrr"
 
+GTO:
+    extra_params: "-gpgpu_scheduler gto"
+
 128B:
     extra_params: "-gpgpu_mem_addr_mapping dramid@7;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCC.BCCSSSSS"
 
 256B:
     extra_params: "-gpgpu_mem_addr_mapping dramid@8;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCB.CCCSSSSS"
+
+32B:
+    extra_params: "-gpgpu_mem_addr_mapping dramid@5;00000000.00000000.00000000.00000000.0000RRRR.RRRRRRRR.RBBBCCCC.BCCSSSSS"
 
 FRFCFS:
     extra_params: "-gpgpu_dram_scheduler 1"
