@@ -56,10 +56,10 @@ bandwidth microbenchmarks (l1-bw, l2-bw, shd-bw, mem-bw, and maxflops). In the t
 
 | HW Parameter | Possible Options | GPGPU-Sim Options
 | ------------- | ------------- | ------------- |
-| Warp Scheduling  | Round-robin vs Greedy | lrr, gto |
-| L2 cache interleaving granularity  | Fine vs Corase frain  | 32B, 268B  |
+| Warp Scheduling  | Loose Round-Robin vs Greedy | lrr, gto |
+| L2 cache interleaving granularity  | Fine vs Corase grain  | 32B, 268B  |
 | L2 cache hashing function | Linear vs IPOLY  hashing | 'L', 'P'  |
-| Memory Scheduling  | FCFS vs First row-ready | FCFS, FR-FCFS  |
+| Memory Scheduling  | FCFS vs First Row-ready | FCFS, FR-FCFS  |
 
 First, We use our run_simulations.py script to launch all 16 possible combinations as listed below. Note that, we assume you already generated the traces for the microbenchmark suite. Also, ensure to replace the "TITANV" name in the command below with the new config name entry that you have added in yml file from the previous step.
 
