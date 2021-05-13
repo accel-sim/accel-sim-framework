@@ -54,7 +54,7 @@ TITANV:
 3. **Tuner searching**: Some parameters are hard to determine from microbenchmarking. Accel-Sim simulates each possible combination of these four parameters on a set of memory
 bandwidth microbenchmarks (l1-bw, l2-bw, shd-bw, mem-bw, and maxflops). In the table below, we list the four undemystified parameters in question, each has two possible combinations, with a total of 16 possible cases.
 
-| HW Parameter | Possible options | GPGPU-sim options
+| HW Parameter | Possible Options | GPGPU-Sim Options
 | ------------- | ------------- | ------------- |
 | Warp Scheduling  | Round-robin vs Greedy | lrr, gto |
 | L2 cache interleaving granularity  | Fine vs Corase frain  | 32B, 268B  |
