@@ -28,7 +28,7 @@ Then, compile microbenchmarks and run:
   # compile microbenchmarks
   make -C ./GPU_Microbenchmark/
   # set the device id that you want to tune to 
-  # if you do now know the device id, run ./GPU_Microbenchmark/bin/list_devices
+  # if you do not know the device id, run ./GPU_Microbenchmark/bin/list_devices
   export CUDA_VISIBLE_DEVICES=0  
   #run the ubench and save output in stats.txt
   ./GPU_Microbenchmark/run_all.sh | tee stats.txt
