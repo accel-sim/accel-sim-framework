@@ -29,8 +29,9 @@ In sub_core model, warp schedulers are restrictively partitioned the pipeline, a
 Also, in trace-driven mode, we provide the flexibility and ability to add new execution units without the need to update the codebase. This ensures that when GPU vendor adds new domain-specific execution unit, such as tensor cores, we can adapt our model to this and add the new execution unit very quickly. To add a new specialized unit, the user declares the new unit in the configuration file as shown below and maps the machine ISA op codes that use this unit in the ISA def file
 
 ```
-#we support up to 8 specialized units defined in GPGPU-Sim
-#tensor unit
+# We support up to 8 specialized units defined in GPGPU-Sim
+# to add a new unit, for example, tensor unit
+# configuration string: <enabled>,<num_units>,<max_latency>,<ID_OC_SPEC>,<OC_EX_SPEC>,<NAME>
 -specialized_unit_3 1,4,8,4,4,TENSOR
 -trace_opcode_latency_initiation_spec_op_3 8,4
 ```
