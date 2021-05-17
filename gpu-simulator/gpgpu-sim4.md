@@ -44,15 +44,29 @@ Our GPU cache model supports sectored, banked L1 cache design. Our sector size n
 # Add the 'S' character at the header as shown below, for non-sector cache design, use 'N'
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 -gpgpu_cache:dl1  S:1:128:256,L:L:m:N:L,A:512:8,16:0,32
+
 # 4 cache banks, we interleave 32B sector on each bank
 -gpgpu_l1_banks 4
 -gpgpu_l1_banks_byte_interleaving 32
+
+# to set different latencies for L1 and shared memory. In GPGPU-sim 3.x, latency was 1 cycle constant
+-gpgpu_l1_latency 20
+-gpgpu_smem_latency 20
 ```
 L1 cache design can also be configured to be streaming. In the streaming cache, it allows many caches misses to be in flight (depending on MSHR throughput), regardless of how many cache lines are available in the cache set. This is very beneficial for streaming workloads, like memcpy, to not to be limited by cache size.
 ```
 # Add the 's' character at the middle of cache configuration, 'm' for ON_MISS and 'f' got ON_FILL
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 -gpgpu_cache:dl1  S:1:128:256,L:L:s:N:L,A:512:8,16:0,32
+```
+Contemporary GPU architectures make use of an adaptive cache mechanism, in which the device driver transparently configures the shared memory capacity
+and L1D capacity on a per-kernel basis. Using the adaptive cache, if a kernel does not utilize shared memory, all the onchip storage will be assigned to the L1D cache
+```
+# Defualt config is 32KB DL1 and 96KB shared memory
+# In Volta, we assign the remaining shared memory to L1 cache 
+# if the assigned shd mem = 0, then L1 cache = 128KB
+# For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x 
+-gpgpu_adaptive_cache_config 1
 ```
 We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. 
 ```
@@ -116,11 +130,16 @@ buffers, to reduce memory bank conflicts and read-write interference.
 -gpgpu_dram_burst_length 2
 -dram_data_command_freq_ratio 2  # HBM is DDR
 
-# Timing for 850 MHZ, V100 HBM runs at 850 MHZ
+# Timing for 850 MHZ
 -gpgpu_dram_timing_opt "nbk=16:CCD=1:RRD=3:RCD=12:RAS=28:RP=12:RC=40:
                         CL=12:WL=2:CDLR=3:WR=10:nbkgrp=4:CCDL=2:RTPL=3"
 
 # HBM has dual bus interface, in which it can issue two col and row commands at a time
 -dram_dual_bus_interface 1
+
+# to enable write queue
+-dram_seperate_write_queue_enable 1
+# write_queue_size:write_high_watermark:write_low_watermark
+-dram_write_queue_size 64:56:32
 
 ```
