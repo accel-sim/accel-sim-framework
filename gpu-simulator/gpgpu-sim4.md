@@ -113,7 +113,7 @@ See [hashing.cc](https://github.com/accel-sim/gpgpu-sim_distribution/blob/dev/sr
 
 3. **Interconnect**:
 
-We developed a fast built-in xbar interconnect instead of the complex Booksim-based xbar so the user can have more control and understanding of the interconnect. The user can switch between the built-in xbar and Booksim interconnect.
+We developed a fast built-in xbar interconnect instead of the complex Booksim-based xbar so the user can have more control and understanding of the interconnect. The user can switch between the built-in xbar and Booksim interconnect. The built-in xbar is a standard crossbar with iSLIP arbitration. For more details, see [local_interconnect.cc](https://github.com/accel-sim/gpgpu-sim_distribution/blob/dev/src/gpgpu-sim/local_interconnect.cc).
 
 ```
 # interconnection
