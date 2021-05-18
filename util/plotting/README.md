@@ -50,4 +50,4 @@ All stats collected by the `get_stats.py` file will be plotted and placed in ./h
 Note again - that these short-running tests are not representative of longer running GPU apps and the correlation on these applications should
 be taken into context.
 
-We map the hardware Nvprof and Nvisght statistics with the accel-sim gpgpu-sim reported statistics, to see the full mapping, please see [this speadsheet](https://docs.google.com/spreadsheets/d/1oLbNX-5qTnF9x4v-GCUKuA5zvjx72yD0D2rJIllBHds/edit#gid=0). Also, see the correl_mappings.py file for the exact mapping in python. 
+We map the hardware Nvprof and Nvsight statistics with the Accel-Sim reported statistics. To see the 1:1 mapping, read [this speadsheet](https://docs.google.com/spreadsheets/d/1oLbNX-5qTnF9x4v-GCUKuA5zvjx72yD0D2rJIllBHds/edit#gid=0). Also, see the [./correl_mappings.py](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/plotting/correl_mappings.py) file for the exact mapping in python script. 
