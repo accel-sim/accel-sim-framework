@@ -4,9 +4,18 @@
 
 This article describes the major changes that have been made in GPGPU-Sim version 4.x. Before reading the article, If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
 
+If you use GPGPU-Sim 4.x, please cite:
+
+```
+Mahmoud Khairy, Zhensheng Shen, Tor M. Aamodt, Timothy G. Rogers,
+Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
+in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
+```
+
+
 In the new version of GPGPU-Sim 4.x, we make extensive modifications to GPGPU-Sim 3.x’s performance model in order to accurately model contemporary and future GPU generations. We designed the new model to be highly flexible and not tuned to a specific architecture.
 
-We made major changes at both the Streaming Multiprocessor (SM) core model and memory system model.
+We made major changes at both the Streaming Multiprocessor (SM) core, caches and memory subsystem modeling.
 
 1. **SM Core Model**:
 
