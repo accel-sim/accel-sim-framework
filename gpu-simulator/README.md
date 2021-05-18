@@ -14,4 +14,4 @@ You do not need to clone the GPGPU-Sim 4.0 by yourself. The [./setup_environment
 
 For more information about GPGPU-Sim, see the [original GPGPU-Sim manual](http://gpgpu-sim.org/manual/index.php/Main_Page).
 
-For more information about the changes and new features in GPGPU-Sim 4.x, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md)
+For more information about the major changes and new features in GPGPU-Sim 4.x, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md).
