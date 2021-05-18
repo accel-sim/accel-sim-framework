@@ -26,7 +26,7 @@ In the new core model, we increased the flexibility to model contemporary and fu
 To enable sub_core model, you need to set sub_core model in the config file:
 
   ```
- #Volta has sub core model, in which each scheduler has its own register file and EUs
+ # Volta has sub core model, in which each scheduler has its own register file and EUs
  # i.e. schedulers are isolated
 -gpgpu_sub_core_model 1
   ```  
