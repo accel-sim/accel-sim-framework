@@ -33,7 +33,7 @@ Note, that all the python scripts have more detailed options explanations when r
 ## Accel-Sim Repo Overview
 
 The code for the Accel-Sim framework is in this repo. Accel-Sim 1.0 uses the
-GPGPU-Sim 4.0 performance model, which was released as part of the original
+[GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md) performance model, which was released as part of the original
 Accel-Sim paper. Building the trace-based Accel-Sim will pull the right version of
 GPGPU-Sim 4.0 to use in Accel-Sim.
 
@@ -89,7 +89,7 @@ the apps in from this collection as well as just on your own, with your own apps
     ```  
     and follow the instructions.  
 
-2. **Accel-Sim SASS Frontend**: A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of GPGPU-Sim 4.0, which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
+2. **Accel-Sim SASS Frontend and Simulation Engine**: A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md), which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
     ```bash
     source ./gpu-simulator/setup_environment.sh
     make -j -C ./gpu-simulator/
@@ -184,18 +184,18 @@ For a true validation, you should attempt correlating the fully-scaled set of ap
   ```bash
   # Make sure PATH includes nvcc  
   # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
-  # compile microbenchmarks
+  # Compile microbenchmarks
   make -C ./util/tuner/GPU_Microbenchmark/
-  # set the device id that you want to tune to 
-  # if you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
+  # Set the device id that you want to tune to 
+  # If you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
   export CUDA_VISIBLE_DEVICES=0  
-  # run the ubench and save output in stats.txt
+  # Run the ubench and save output in stats.txt
   ./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
-  # run the tuner with the stats.txt from the previous step
+  # Run the tuner with the stats.txt from the previous step
   ./util/tuner/tuner.py -s stats.txt
   ```  
   
-  The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "TITAN_V"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suire, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
+  The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "RTX_3060"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suite, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
 
 
 ### How do I quickly just run what Travis runs?
