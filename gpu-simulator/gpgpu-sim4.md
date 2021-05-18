@@ -2,9 +2,9 @@
 
 <p><a name="gpgpusim4"></a></p>
 
-This article describes the major changes that have been made in GPGPU-Sim version 4.x. Before reading the article, If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
+This article describes the major changes that have been made in GPGPU-Sim version 4.x. If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
 
-If you use GPGPU-Sim 4.x, please cite:
+If you use GPGPU-Sim 4.x in your research, please cite:
 
 ```
 Mahmoud Khairy, Zhensheng Shen, Tor M. Aamodt, Timothy G. Rogers,
@@ -49,7 +49,7 @@ Also, in trace-driven mode, we provide the flexibility and ability to add new ex
 
 <img src="https://accel-sim.github.io/assets/img/memory.png" width="700" height="400">
 
-Our GPU cache model supports sectored, banked L1 cache design. Our sector size now is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks: 
+Our GPU cache model supports sectored, banked L1 cache design. Our sector size is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks: 
 ```
 # Add the 'S' character at the header as shown below, for non-sector cache design, use 'N'
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
@@ -72,15 +72,15 @@ L1 cache design can also be configured to be streaming. In the streaming cache, 
 Contemporary GPU architectures make use of an adaptive cache mechanism, in which the device driver transparently configures the shared memory capacity
 and L1D capacity on a per-kernel basis. Using the adaptive cache, if a kernel does not utilize shared memory, all the onchip storage will be assigned to the L1D cache
 ```
-# Defualt config is 32KB DL1 and 96KB shared memory
-# In Volta, we assign the remaining shared memory to L1 cache 
-# if the assigned shd mem = 0, then L1 cache = 128KB
+# Assume defualt config is 32KB DL1 and 96KB shared memory
+# In adaptive cache, we assign the remaining shared memory to L1 cache 
+# If the assigned shd mem = 0, then L1 cache = 128KB
 # For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x 
 -gpgpu_adaptive_cache_config 1
 ```
-We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. 
+We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. The new policy conserves memory bandwidth when running write-intense GPU workload. When a write to a single byte is received, it writes the byte to the sector, sets a corresponding write bit in a byte-level write mask and sets the sector as valid and modified.  When a sector read request is received to a modified sector, it first checks if the sector write-mask is complete, otherwise, it generates a read request for this sector.
 ```
-# to use sub-sector lazy_read design, use character 'L', 'N' for no write allocate, 'W' for naive write design found in GPGPU-sim 3.x and 'F' for fetch-on-write
+# To use sub-sector lazy_read design, use character 'L', 'N' for no write allocate, 'W' for naive write design found in GPGPU-sim 3.x and 'F' for fetch-on-write
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 -gpgpu_cache:dl2 S:32:128:24,L:B:m:L:P,A:192:4,32:0,32
 ```
@@ -90,20 +90,21 @@ We added bitwise XORing and advanced polynomial hashing everywhere in the cache/
 # to select polynomial hashing function, use the character 'P', 'L' for linear indexing and 'X' for bitwise XORing
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 
-# set L1 cache set to linear
+# set L1 cache set index to linear
 -gpgpu_cache:dl1  S:1:128:256,L:L:s:N:L,A:512:8,16:0,32
 
-# set L2 cache set to polynomial
+# set L1 bank index to linear
+# 0:linear, 1:xoring, 2:polynomiay
+-gpgpu_l1_banks_hashing_function 0
+
+# set L2 cache set index to polynomial
 -gpgpu_cache:dl2 S:32:128:24,L:B:m:L:P,A:192:4,32:0,32
 
-# set L2 cache bank hashing to polynomial
+# set L2 cache bank index to polynomial
 # 0:linear, 1:xoring, 2:polynomial, 3:PAE, 4:RANDOM
 -gpgpu_memory_partition_indexing 2
 
-# set L1 banks to linear
--gpgpu_l1_banks_hashing_function 0
-
-# set dram banks to linear
+# set dram bank index to linear
 -dram_bnk_indexing_policy 0
 # select lower bits for bnkgrp to increase bnkgrp parallelism
 -dram_bnkgrp_indexing_policy 1
