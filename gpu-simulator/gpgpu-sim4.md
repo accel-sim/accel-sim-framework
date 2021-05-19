@@ -75,13 +75,27 @@ and L1D capacity on a per-kernel basis. Using the adaptive cache, if a kernel do
 # Assume defualt config is 32KB DL1 and 96KB shared memory
 # In adaptive cache, we assign the remaining shared memory to L1 cache 
 # If the assigned shd mem = 0, then L1 cache = 128KB
-# For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x 
+# Volta adpative cache configuration example:
+
+# Enable adaptive cache
 -gpgpu_adaptive_cache_config 1
+# Define shmem size that can be assigned 
+# For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x 
+-gpgpu_shmem_option 0,8,16,32,64,96
+# Max L1+shd mem in Volta = 128KB
+-gpgpu_unified_l1d_size 128
 ```
 We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. The new policy conserves memory bandwidth when running write-intense GPU workload. When a write to a single byte is received, it writes the byte to the sector, sets a corresponding write bit in a byte-level write mask and sets the sector as valid and modified.  When a sector read request is received to a modified sector, it first checks if the sector write-mask is complete, otherwise, it generates a read request for this sector.
 ```
 # To use sub-sector lazy_read design, use character 'L', 'N' for no write allocate, 'W' for naive write design found in GPGPU-sim 3.x and 'F' for fetch-on-write
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
+
+# L1 write_allocate lazy_fetch 'L'with write_through 'T' policiy as in Volta
+-gpgpu_cache:dl1  S:1:128:512,L:T:m:L:L,A:512:8,16:0,32
+# Set 25% of L1 size for write
+-gpgpu_cache_write_ratio 25
+
+# L2 write_allocate lazy_fetch 'L'with write_back 'B' policiy as in Volta
 -gpgpu_cache:dl2 S:32:128:24,L:B:m:L:P,A:192:4,32:0,32
 ```
 We added bitwise XORing and advanced polynomial hashing everywhere in the cache/memory system to reduce bank and cache set conflicts and alleviate contention. You can set five different hashing functions at different levels of the memory hierarchy: L1 cache set hashing, L1 bank hashing, L2 cache bank hashing, L2 cache set indexing, and memory banks indexing. 
