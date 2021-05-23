@@ -24,8 +24,8 @@ TODO: we will automate this process
 // we know the mshr throughput from l1_mshr ubench
 // we find that each warp can issue up to two pending cache lines (8 sector
 // reqs)
-#define L1_ACCESS_FACTOR L1_CACHE_LINE_SIZE/L1_SECTOR_SIZE
-#define L1_MSHR_ENTRIES_PER_WARP L1_ACCESS_FACTOR*2
+#define L1_ACCESS_FACTOR L1_CACHE_LINE_SIZE / L1_SECTOR_SIZE
+#define L1_MSHR_ENTRIES_PER_WARP L1_ACCESS_FACTOR * 2
 
 // L1 cache cache in Volta and above is write allocate, subsector write, write-
 // through we know that from l1_write_policy ubench and has been consistent
@@ -59,11 +59,12 @@ int main() {
       adaptive_cache = true;
       adaptive_shmem_option_string = SHMEM_ADAPTIVE_OPTION;
       std::stringstream large_shmem_size;
-      large_shmem_size << "," << deviceProp.sharedMemPerMultiprocessor/1024;
+      large_shmem_size << "," << deviceProp.sharedMemPerMultiprocessor / 1024;
       adaptive_shmem_option_string += large_shmem_size.str();
       // set l1 write allocation policy (write allocate, write through)
       cache_write_string = After_Volta_L1_Cache_Write_Policy;
-      // L1 write-to-read ratio (25%) based on rodinia kmeans workload benchmarking
+      // L1 write-to-read ratio (25%) based on rodinia kmeans workload
+      // benchmarking
       write_cache_ratio = 25;
     } else {
       adaptive_cache = false;
@@ -80,17 +81,18 @@ int main() {
     unsigned mshr = warps_num_per_sm * L1_MSHR_ENTRIES_PER_WARP;
 
     std::cout << "-gpgpu_adaptive_cache_config " << adaptive_cache << std::endl;
-    std::cout << "-gpgpu_shmem_option " << adaptive_shmem_option_string << std::endl;
-    std::cout << "-gpgpu_unified_l1d_size " << L1_SIZE/1024 << std::endl;
+    std::cout << "-gpgpu_shmem_option " << adaptive_shmem_option_string
+              << std::endl;
+    std::cout << "-gpgpu_unified_l1d_size " << L1_SIZE / 1024 << std::endl;
     std::cout << "-gpgpu_l1_banks " << WARP_SCHEDS_PER_SM << std::endl;
     std::cout << "-gpgpu_cache:dl1 " << is_sector << ":" << L1_CACHE_SETS << ":"
-              << L1_CACHE_LINE_SIZE << ":" << assoc
-              << cache_write_string << "A:" << mshr << ":"
-              << warps_num_per_sm << ",16:0,32" << std::endl;
+              << L1_CACHE_LINE_SIZE << ":" << assoc << cache_write_string
+              << "A:" << mshr << ":" << warps_num_per_sm << ",16:0,32"
+              << std::endl;
     std::cout << "-gpgpu_gmem_skip_L1D " << !deviceProp.globalL1CacheSupported
               << std::endl;
-    std::cout << "-gpgpu_l1_cache_write_ratio " << write_cache_ratio << std::endl;
-
+    std::cout << "-gpgpu_l1_cache_write_ratio " << write_cache_ratio
+              << std::endl;
   }
 
   return 1;
