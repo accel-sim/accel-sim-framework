@@ -2,7 +2,7 @@
 
 <p><a name="gpgpusim4"></a></p>
 
-This article describes the major changes that have been made in GPGPU-Sim version 4.x. If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
+This article describes the major changes that have been made in GPGPU-Sim version 4.x. If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf), [GPGPU-Sim 3.x tutorial](http://www.gpgpu-sim.org/micro2012-tutorial/), [videos](https://www.youtube.com/channel/UCMZLxSL7Ibn6uCvwdZcGqFQ/videos) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
 
 If you use GPGPU-Sim 4.x in your research, please cite:
 
