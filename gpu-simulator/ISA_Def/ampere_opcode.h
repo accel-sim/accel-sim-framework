@@ -4,10 +4,10 @@
 #ifndef AMPERE_OPCODE_H
 #define AMPERE_OPCODE_H
 
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
 #define AMPERE_RTX_BINART_VERSION 86
 #define AMPERE_A100_BINART_VERSION 80
@@ -80,7 +80,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"LOP32I", OpcodeChar(OP_LOP32I, INTP_OP)},
     {"POPC", OpcodeChar(OP_POPC, INTP_OP)},
     {"SHF", OpcodeChar(OP_SHF, INTP_OP)},
-    {"SHL", OpcodeChar(OP_SHL, INTP_OP)}, //////////
+    {"SHL", OpcodeChar(OP_SHL, INTP_OP)},  //////////
     {"SHR", OpcodeChar(OP_SHR, INTP_OP)},
     {"VABSDIFF", OpcodeChar(OP_VABSDIFF, INTP_OP)},
     {"VABSDIFF4", OpcodeChar(OP_VABSDIFF4, INTP_OP)},
@@ -98,7 +98,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     // Movement Instructions
     {"MOV", OpcodeChar(OP_MOV, ALU_OP)},
     {"MOV32I", OpcodeChar(OP_MOV32I, ALU_OP)},
-    {"MOVM", OpcodeChar(OP_MOVM, ALU_OP)}, // move matrix
+    {"MOVM", OpcodeChar(OP_MOVM, ALU_OP)},  // move matrix
     {"PRMT", OpcodeChar(OP_PRMT, ALU_OP)},
     {"SEL", OpcodeChar(OP_SEL, ALU_OP)},
     {"SGXT", OpcodeChar(OP_SGXT, ALU_OP)},
@@ -117,7 +117,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"LDG", OpcodeChar(OP_LDG, LOAD_OP)},
     {"LDL", OpcodeChar(OP_LDL, LOAD_OP)},
     {"LDS", OpcodeChar(OP_LDS, LOAD_OP)},
-    {"LDSM", OpcodeChar(OP_LDSM, LOAD_OP)}, //
+    {"LDSM", OpcodeChar(OP_LDSM, LOAD_OP)},  //
     {"ST", OpcodeChar(OP_ST, STORE_OP)},
     {"STG", OpcodeChar(OP_STG, STORE_OP)},
     {"STL", OpcodeChar(OP_STL, STORE_OP)},
@@ -194,14 +194,14 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"BRA", OpcodeChar(OP_BRA, SPECIALIZED_UNIT_1_OP)},
     {"BREAK", OpcodeChar(OP_BREAK, SPECIALIZED_UNIT_1_OP)},
     {"BRX", OpcodeChar(OP_BRX, SPECIALIZED_UNIT_1_OP)},
-    {"BRXU", OpcodeChar(OP_BRXU, SPECIALIZED_UNIT_1_OP)}, //
+    {"BRXU", OpcodeChar(OP_BRXU, SPECIALIZED_UNIT_1_OP)},  //
     {"BSSY", OpcodeChar(OP_BSSY, SPECIALIZED_UNIT_1_OP)},
     {"BSYNC", OpcodeChar(OP_BSYNC, SPECIALIZED_UNIT_1_OP)},
     {"CALL", OpcodeChar(OP_CALL, SPECIALIZED_UNIT_1_OP)},
     {"EXIT", OpcodeChar(OP_EXIT, EXIT_OPS)},
     {"JMP", OpcodeChar(OP_JMP, SPECIALIZED_UNIT_1_OP)},
     {"JMX", OpcodeChar(OP_JMX, SPECIALIZED_UNIT_1_OP)},
-    {"JMXU", OpcodeChar(OP_JMXU, SPECIALIZED_UNIT_1_OP)}, ///
+    {"JMXU", OpcodeChar(OP_JMXU, SPECIALIZED_UNIT_1_OP)},  ///
     {"KILL", OpcodeChar(OP_KILL, SPECIALIZED_UNIT_3_OP)},
     {"NANOSLEEP", OpcodeChar(OP_NANOSLEEP, SPECIALIZED_UNIT_1_OP)},
     {"RET", OpcodeChar(OP_RET, SPECIALIZED_UNIT_1_OP)},

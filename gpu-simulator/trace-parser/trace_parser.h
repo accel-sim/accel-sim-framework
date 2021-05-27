@@ -63,8 +63,8 @@ struct inst_trace_t {
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
 
-  unsigned
-  get_datawidth_from_opcode(const std::vector<std::string> &opcode) const;
+  unsigned get_datawidth_from_opcode(
+      const std::vector<std::string> &opcode) const;
 
   std::vector<std::string> get_opcode_tokens() const;
 
@@ -93,7 +93,7 @@ struct kernel_trace_t {
 };
 
 class trace_parser {
-public:
+ public:
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
@@ -109,7 +109,7 @@ public:
 
   void kernel_finalizer();
 
-private:
+ private:
   std::string kernellist_filename;
   std::ifstream ifs;
 };
