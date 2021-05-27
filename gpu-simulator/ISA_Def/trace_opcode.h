@@ -4,9 +4,9 @@
 #ifndef TRACE_OPCODE_H
 #define TRACE_OPCODE_H
 
-#include "abstract_hardware_model.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
 
 enum TraceInstrOpcode {
   // Volta (includes common insts for others cards as well)

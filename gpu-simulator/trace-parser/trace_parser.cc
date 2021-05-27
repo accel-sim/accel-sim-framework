@@ -2,21 +2,20 @@
 // abdallm@purdue.edu
 
 #include <bits/stdc++.h>
+#include <math.h>
+#include <stdio.h>
+#include <time.h>
 #include <fstream>
 #include <iostream>
-#include <math.h>
 #include <sstream>
-#include <stdio.h>
 #include <string>
-#include <time.h>
 #include <vector>
 
 #include "trace_parser.h"
 
 bool is_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
-  while (it != s.end() && std::isdigit(*it))
-    ++it;
+  while (it != s.end() && std::isdigit(*it)) ++it;
   return !s.empty() && it == s.end();
 }
 
@@ -32,8 +31,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
 inst_trace_t::inst_trace_t() { memadd_info = NULL; }
 
 inst_trace_t::~inst_trace_t() {
-  if (memadd_info != NULL)
-    delete memadd_info;
+  if (memadd_info != NULL) delete memadd_info;
 }
 
 inst_trace_t::inst_trace_t(const inst_trace_t &b) {
@@ -46,8 +44,7 @@ inst_trace_t::inst_trace_t(const inst_trace_t &b) {
 bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,
                                         std::string param) const {
   for (unsigned i = 0; i < opcode.size(); ++i)
-    if (opcode[i] == param)
-      return true;
+    if (opcode[i] == param) return true;
 
   return false;
 }
@@ -57,8 +54,7 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
   std::vector<std::string> opcode_tokens;
   std::string token;
   while (std::getline(iss, token, '.')) {
-    if (!token.empty())
-      opcode_tokens.push_back(token);
+    if (!token.empty()) opcode_tokens.push_back(token);
   }
   return opcode_tokens;
 }
@@ -76,7 +72,7 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
     }
   }
 
-  return 4; // default is 4 bytes
+  return 4;  // default is 4 bytes
 }
 
 kernel_trace_t::kernel_trace_t() {
@@ -173,7 +169,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
 
   ss >> mem_width;
 
-  if (mem_width > 0) // then it is a memory inst
+  if (mem_width > 0)  // then it is a memory inst
   {
     memadd_info = new inst_memadd_info_t();
 
@@ -273,8 +269,8 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss >> std::dec >> count;
 }
 
-kernel_trace_t
-trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
+kernel_trace_t trace_parser::parse_kernel_info(
+    const std::string &kerneltraces_filepath) {
   ifs.open(kerneltraces_filepath.c_str());
 
   if (!ifs.is_open()) {
@@ -295,7 +291,7 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
       continue;
     } else if (line[0] == '#') {
       // the trace format, ignore this and assume fixed format for now
-      break; // the begin of the instruction stream
+      break;  // the begin of the instruction stream
     } else if (line[0] == '-') {
       std::stringstream ss;
       std::string string1, string2;
@@ -353,8 +349,7 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
 }
 
 void trace_parser::kernel_finalizer() {
-  if (ifs.is_open())
-    ifs.close();
+  if (ifs.is_open()) ifs.close();
 }
 
 bool trace_parser::get_next_threadblock_traces(
@@ -392,7 +387,7 @@ bool trace_parser::get_next_threadblock_traces(
                  "finishes");
       } else if (string1 == "#END_TB") {
         assert(start_of_tb_stream_found);
-        break; // end of TB stream
+        break;  // end of TB stream
       } else if (string1 == "thread" && string2 == "block") {
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
@@ -406,7 +401,7 @@ bool trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "insts = %d", &insts_num);
         threadblock_traces[warp_id]->resize(
-            insts_num); // allocate all the space at once
+            insts_num);  // allocate all the space at once
         inst_count = 0;
       } else {
         assert(start_of_tb_stream_found);
