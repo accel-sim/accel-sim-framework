@@ -17,6 +17,10 @@ int main() {
 
     unsigned init = WARP_SIZE / throughput_per_sched;
 
+    //init cannot be larger than latency
+    if(init > latency)
+      latency = init;
+
     std::cout << "\n//Accel_Sim config: \n";
     std::cout << "-gpgpu_num_dp_units " << WARP_SCHEDS_PER_SM << std::endl;
     std::cout << "-ptx_opcode_latency_dp " << lat << "," << lat << "," << lat
