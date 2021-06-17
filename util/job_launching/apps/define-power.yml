@@ -94,6 +94,23 @@ cutlass_5_trace_validation:
             - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
             - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
 
+Deepbench:
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
+    execs:
+        - conv_bench-tencore:
+            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
+        - gemm_bench-tencore:
+            - args: train half 2048 64 2048 1 0
+            - args: inference half 35 1500 2560 0 0
+        - rnn_bench-tencore:
+            - args: inference half 512 1 25 lstm
+            - args: inference half 512 1 1 gru
+            - args: train half 128 32 1 lstm
+            - args: train half 128 32 1 gru
+
+			  
 power_ubench:
     exec_dir: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
     data_dirs: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
