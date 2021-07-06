@@ -4,10 +4,10 @@
 #ifndef TURING_OPCODE_H
 #define TURING_OPCODE_H
 
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
 #define TURING_BINART_VERSION 75
 
@@ -45,6 +45,8 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     // Tensor Core Instructions
     // Execute Tensor Core Instructions on SPECIALIZED_UNIT_3
     {"HMMA", OpcodeChar(OP_HMMA, SPECIALIZED_UNIT_3_OP)},
+    {"BMMA", OpcodeChar(OP_BMMA, SPECIALIZED_UNIT_3_OP)},
+    {"IMMA", OpcodeChar(OP_IMMA, SPECIALIZED_UNIT_3_OP)},
 
     // Double Point Instructions
     {"DADD", OpcodeChar(OP_DADD, DP_OP)},
@@ -53,7 +55,6 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"DSETP", OpcodeChar(OP_DSETP, DP_OP)},
 
     // Integer Instructions
-    {"BMMA", OpcodeChar(OP_BMMA, INTP_OP)}, ////////
     {"BMSK", OpcodeChar(OP_BMSK, INTP_OP)},
     {"BREV", OpcodeChar(OP_BREV, INTP_OP)},
     {"FLO", OpcodeChar(OP_FLO, INTP_OP)},
@@ -64,7 +65,6 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"IDP", OpcodeChar(OP_IDP, INTP_OP)},
     {"IDP4A", OpcodeChar(OP_IDP4A, INTP_OP)},
     {"IMAD", OpcodeChar(OP_IMAD, INTP_OP)},
-    {"IMMA", OpcodeChar(OP_IMMA, INTP_OP)},
     {"IMNMX", OpcodeChar(OP_IMNMX, INTP_OP)},
     {"IMUL", OpcodeChar(OP_IMUL, INTP_OP)},
     {"IMUL32I", OpcodeChar(OP_IMUL32I, INTP_OP)},
@@ -77,7 +77,7 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"LOP32I", OpcodeChar(OP_LOP32I, INTP_OP)},
     {"POPC", OpcodeChar(OP_POPC, INTP_OP)},
     {"SHF", OpcodeChar(OP_SHF, INTP_OP)},
-    {"SHL", OpcodeChar(OP_SHL, INTP_OP)}, //////////
+    {"SHL", OpcodeChar(OP_SHL, INTP_OP)},  //////////
     {"SHR", OpcodeChar(OP_SHR, INTP_OP)},
     {"VABSDIFF", OpcodeChar(OP_VABSDIFF, INTP_OP)},
     {"VABSDIFF4", OpcodeChar(OP_VABSDIFF4, INTP_OP)},
@@ -93,7 +93,7 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     // Movement Instructions
     {"MOV", OpcodeChar(OP_MOV, ALU_OP)},
     {"MOV32I", OpcodeChar(OP_MOV32I, ALU_OP)},
-    {"MOVM", OpcodeChar(OP_MOVM, ALU_OP)}, // move matrix
+    {"MOVM", OpcodeChar(OP_MOVM, ALU_OP)},  // move matrix
     {"PRMT", OpcodeChar(OP_PRMT, ALU_OP)},
     {"SEL", OpcodeChar(OP_SEL, ALU_OP)},
     {"SGXT", OpcodeChar(OP_SGXT, ALU_OP)},
@@ -112,7 +112,7 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"LDG", OpcodeChar(OP_LDG, LOAD_OP)},
     {"LDL", OpcodeChar(OP_LDL, LOAD_OP)},
     {"LDS", OpcodeChar(OP_LDS, LOAD_OP)},
-    {"LDSM", OpcodeChar(OP_LDSM, LOAD_OP)}, //
+    {"LDSM", OpcodeChar(OP_LDSM, LOAD_OP)},  //
     {"ST", OpcodeChar(OP_ST, STORE_OP)},
     {"STG", OpcodeChar(OP_STG, STORE_OP)},
     {"STL", OpcodeChar(OP_STL, STORE_OP)},
@@ -183,14 +183,14 @@ static const std::unordered_map<std::string, OpcodeChar> Turing_OpcodeMap = {
     {"BRA", OpcodeChar(OP_BRA, SPECIALIZED_UNIT_1_OP)},
     {"BREAK", OpcodeChar(OP_BREAK, SPECIALIZED_UNIT_1_OP)},
     {"BRX", OpcodeChar(OP_BRX, SPECIALIZED_UNIT_1_OP)},
-    {"BRXU", OpcodeChar(OP_BRXU, SPECIALIZED_UNIT_1_OP)}, //
+    {"BRXU", OpcodeChar(OP_BRXU, SPECIALIZED_UNIT_1_OP)},  //
     {"BSSY", OpcodeChar(OP_BSSY, SPECIALIZED_UNIT_1_OP)},
     {"BSYNC", OpcodeChar(OP_BSYNC, SPECIALIZED_UNIT_1_OP)},
     {"CALL", OpcodeChar(OP_CALL, SPECIALIZED_UNIT_1_OP)},
     {"EXIT", OpcodeChar(OP_EXIT, EXIT_OPS)},
     {"JMP", OpcodeChar(OP_JMP, SPECIALIZED_UNIT_1_OP)},
     {"JMX", OpcodeChar(OP_JMX, SPECIALIZED_UNIT_1_OP)},
-    {"JMXU", OpcodeChar(OP_JMXU, SPECIALIZED_UNIT_1_OP)}, ///
+    {"JMXU", OpcodeChar(OP_JMXU, SPECIALIZED_UNIT_1_OP)},  ///
     {"KILL", OpcodeChar(OP_KILL, SPECIALIZED_UNIT_3_OP)},
     {"NANOSLEEP", OpcodeChar(OP_NANOSLEEP, SPECIALIZED_UNIT_1_OP)},
     {"RET", OpcodeChar(OP_RET, SPECIALIZED_UNIT_1_OP)},
