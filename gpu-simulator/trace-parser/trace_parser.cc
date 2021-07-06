@@ -128,6 +128,7 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
+// Parse every trace in string to instruction type?
 bool inst_trace_t::parse_from_string(std::string trace,
                                      unsigned trace_version) {
   std::stringstream ss;
@@ -192,6 +193,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
       }
     } else if (address_mode == address_format::base_stride) {
       // read addresses as base address and stride
+      // TODO What is this?
       unsigned long long base_address = 0;
       int stride = 0;
       ss >> std::hex >> base_address;
@@ -221,6 +223,7 @@ trace_parser::trace_parser(const char *kernellist_filepath) {
   kernellist_filename = kernellist_filepath;
 }
 
+// Read the kernel commandlist file: kernelslist.g
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
   ifs.open(kernellist_filename);
 
@@ -273,6 +276,7 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss >> std::dec >> count;
 }
 
+// Read the meta info of .traceg file
 kernel_trace_t
 trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
   ifs.open(kerneltraces_filepath.c_str());
@@ -357,6 +361,7 @@ void trace_parser::kernel_finalizer() {
     ifs.close();
 }
 
+// Parse the trace of each threadblock that gets executed in the kernel 
 bool trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
     unsigned trace_version) {

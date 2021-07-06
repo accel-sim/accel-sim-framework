@@ -97,6 +97,7 @@ void group_per_block(const char *filepath) {
 
   vector<threadblock_info> insts;
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
+  unsigned warp_size = 32; // For warp size other than 32
   unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
   string line;
   stringstream ss;
@@ -112,30 +113,39 @@ void group_per_block(const char *filepath) {
     }
 
     else if (line[0] == '-') {
+      // Process header info
       ss.str(line);
       ss.ignore();
       ss >> string1 >> string2;
       if (string1 == "grid" && string2 == "dim") {
+        // Read in grid size from .trace file
         sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &grid_dim_x, &grid_dim_y,
                &grid_dim_z);
         found_grid_dim = true;
       } else if (string1 == "block" && string2 == "dim") {
+        // Read in block size from .trace file
         sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &tb_dim_x, &tb_dim_y,
                &tb_dim_z);
         found_block_dim = true;
+      } else if (string1 == "warp" && string2 == "size") {
+        // Read in warp size
+        sscanf(line.c_str(), "-warp size = %d", &warp_size);
       }
 
+      // Build up threadblock hashtable to group them
       if (found_grid_dim && found_block_dim) {
         insts.resize(grid_dim_x * grid_dim_y * grid_dim_z);
         for (unsigned i = 0; i < insts.size(); ++i) {
           insts[i].warp_insts_array.resize(
-              ceil(float(tb_dim_x * tb_dim_y * tb_dim_z) / 32));
+              ceil(float(tb_dim_x * tb_dim_y * tb_dim_z) / warp_size));
         }
       }
+
+      // Write back header info
       ofs << line << endl;
       continue;
     } else {
-
+      // Process instruction lines
       ss.str(line);
       ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb;
       tb_id =
@@ -155,8 +165,10 @@ void group_per_block(const char *filepath) {
     }
   }
 
+  // Write insts in threadblocks
   for (unsigned i = 0; i < insts.size(); ++i) {
     // ofs<<string<<endl;
+    // Threadblock header info
     if (insts[i].initialized && insts[i].warp_insts_array.size() > 0) {
       ofs << endl << "#BEGIN_TB" << endl;
       ofs << endl
@@ -170,7 +182,10 @@ void group_per_block(const char *filepath) {
       // ofs.close();
       // return;
     }
+
+    // Write insts in warps
     for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
+      // Warp header info
       ofs << endl << "warp = " << j << endl;
       ofs << "insts = " << insts[i].warp_insts_array[j].size() << endl;
       if (insts[i].warp_insts_array[j].size() == 0) {
@@ -180,10 +195,14 @@ void group_per_block(const char *filepath) {
         //	ofs.close();
         //	return;
       }
+
+      // Actual insts in a warp
       for (unsigned k = 0; k < insts[i].warp_insts_array[j].size(); ++k) {
         ofs << insts[i].warp_insts_array[j][k] << endl;
       }
     }
+
+    // Threadblock footer
     ofs << endl << "#END_TB" << endl;
   }
 

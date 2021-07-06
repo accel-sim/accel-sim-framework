@@ -448,17 +448,19 @@ bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   // calulcate the difference between addresses
   // write cosnsctive addresses with constant stride in a more
   // compressed way (i.e. start adress and stride)
+
+  // Try to find a constant stride for consecutive threads
   bool const_stride = true;
   bool first_bit1_found = false;
   bool last_bit1_found = false;
 
   for (int s = 0; s < 32; s++) {
-    if (mask.test(s) && !first_bit1_found) {
+    if (mask.test(s) && !first_bit1_found) { // Find first bit that is 1
       first_bit1_found = true;
-      base_addr = addrs[s];
-      if (s < 31 && mask.test(s + 1))
+      base_addr = addrs[s]; // Load base address into it
+      if (s < 31 && mask.test(s + 1)) // Attempt to find an initial constant stride?
         stride = addrs[s + 1] - addrs[s];
-      else {
+      else { // If no constant stride found, exit loop
         const_stride = false;
         break;
       }
@@ -485,6 +487,7 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
                          uint64_t &base_addr, std::vector<long long> &deltas) {
 
   // save the delta from the previous address
+  // Record address changes for each thread from its previous thread in the warp
   bool first_bit1_found = false;
   uint64_t last_address = 0;
   for (int s = 0; s < 32; s++) {
