@@ -100,7 +100,7 @@ int main(int argc, const char **argv) {
 
       // performance simulation
       if (m_gpgpu_sim->active()) {
-        m_gpgpu_sim->cycle();
+        m_gpgpu_sim->cycle(); // Step cycle, causing trace parsing
         sim_cycles = true;
         m_gpgpu_sim->deadlock_check();
       } else {

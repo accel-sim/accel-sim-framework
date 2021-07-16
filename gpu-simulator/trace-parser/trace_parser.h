@@ -10,6 +10,7 @@
 #define TRACE_PARSER_H
 
 #define WARP_SIZE 32
+#define DEFAULT_WARP_SIZE 32
 #define MAX_DST 1
 #define MAX_SRC 4
 
@@ -35,20 +36,22 @@ struct trace_command {
 };
 
 struct inst_memadd_info_t {
-  uint64_t addrs[WARP_SIZE];
+  std::vector<u_int64_t> addrs;
+  unsigned warp_size;
   int32_t width;
 
   void base_stride_decompress(unsigned long long base_address, int stride,
-                              const std::bitset<WARP_SIZE> &mask);
+                              unsigned mask);
   void base_delta_decompress(unsigned long long base_address,
                              const std::vector<long long> &deltas,
-                             const std::bitset<WARP_SIZE> &mask);
+                             unsigned mask);
 };
 
 struct inst_trace_t {
   inst_trace_t();
   inst_trace_t(const inst_trace_t &b);
 
+  unsigned warp_size;
   unsigned m_pc;
   unsigned mask;
   unsigned reg_dsts_num;
@@ -58,6 +61,7 @@ struct inst_trace_t {
   unsigned reg_src[MAX_SRC];
   inst_memadd_info_t *memadd_info;
 
+  void set_warp_size(unsigned warp_size);
   bool parse_from_string(std::string trace, unsigned tracer_version);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
@@ -90,6 +94,8 @@ struct kernel_trace_t {
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
+
+  unsigned warp_size;
 };
 
 class trace_parser {
@@ -112,6 +118,8 @@ class trace_parser {
  private:
   std::string kernellist_filename;
   std::ifstream ifs;
+
+  unsigned warp_size;
 };
 
 #endif
