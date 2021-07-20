@@ -69,11 +69,15 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
       token = opcode.substr(0, opcode.find("_", 5));
       opcode_tokens.push_back(token);
     } else { // Try to drop the width part
+      // todo tokenize?
       size_t lastUnderlineIdx = opcode.rfind("_");
+      size_t secLastUnderlineIdx = opcode.rfind("_", lastUnderlineIdx - 1);
       std::string lastWord = opcode.substr(lastUnderlineIdx + 1);
+      std::string secLastWord = opcode.substr(secLastUnderlineIdx + 1, lastUnderlineIdx - secLastUnderlineIdx - 1);
       if (lastWord.rfind("I", 0) == 0 || 
           lastWord.rfind("U", 0) == 0 || 
           lastWord.rfind("B", 0) == 0 || 
+          lastWord.rfind("E32", 0) == 0 ||
           lastWord.rfind("DWORD", 0) == 0 ||
           lastWord.rfind("BYTE", 0) == 0 ||
           lastWord.rfind("SBYTE", 0) == 0 ||
@@ -81,7 +85,13 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
           lastWord.rfind("SHORT", 0) == 0 ||
           lastWord.rfind("SSHORT", 0) == 0 ||
           lastWord.rfind("USHORT", 0) == 0) {
-        token = opcode.substr(0, lastUnderlineIdx);
+        if (secLastWord.rfind("I", 0) == 0 || 
+            secLastWord.rfind("U", 0) == 0 || 
+            secLastWord.rfind("B", 0) == 0) {  // Remove like V_ADD_I32_E32
+          token = opcode.substr(0, secLastUnderlineIdx);
+        } else {
+          token = opcode.substr(0, lastUnderlineIdx);
+        }
         opcode_tokens.push_back(token);
       } else {
         opcode_tokens.push_back(opcode);

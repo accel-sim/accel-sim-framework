@@ -17,13 +17,14 @@
 // Refered the Ampere_opcode for opcode matching
 static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     // Tentative GCN3 opcode mapping
-    // TODO Token get ride of the last width part (I and U and B only)
+    // TODO Better way of opcode
+    // TODO Token get ride of the last width part (I and U and B and E only)
     // TODO also drop the DWORD part and UBYTE0 UBYTE, SBYTE, SHORT, BYTE, USHORT, SSHORT
     // TODO For V_CMP, return just two first words
     // AMD SOP2 instructions
     {"S_ABSDIFF_I32", OpcodeChar(OP_VABSDIFF, INTP_OP)},
     {"S_ADD", OpcodeChar(OP_IADD, INTP_OP)},
-    {"S_ADDC_U32", OpcodeChar(OP_IADD, INTP_OP)},
+    {"S_ADDC", OpcodeChar(OP_IADD, INTP_OP)},
     {"S_AND", OpcodeChar(OP_IADD, INTP_OP)},    // TODO need to find equivalent for this
     {"S_ANDN2", OpcodeChar(OP_IADD, INTP_OP)},
     {"S_ASHR", OpcodeChar(OP_SHR, INTP_OP)},
