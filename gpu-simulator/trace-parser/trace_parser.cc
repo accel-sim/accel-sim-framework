@@ -64,8 +64,9 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
     // also drop the DWORD part and UBYTE0 UBYTE, SBYTE, SHORT, BYTE, USHORT, SSHORT
     // For V_CMP, return just two first words
     // TODO Do the same for S_CMP
-    if (opcode.compare(0, 5, "V_CMP") == 0) {  // For V_CMP, just return first two words
-      token = opcode.substr(0, opcode.find("_", 5) + 1);
+    if (opcode.find("V_CMP") == 0 ||
+        opcode.find("V_MOV") == 0) {  // For these inst, just return first two words
+      token = opcode.substr(0, opcode.find("_", 5));
       opcode_tokens.push_back(token);
     } else { // Try to drop the width part
       size_t lastUnderlineIdx = opcode.rfind("_");
@@ -170,7 +171,7 @@ void inst_trace_t::set_isa_type(std::string isa_type) {
 // Parse every trace in string to instruction type?
 bool inst_trace_t::parse_from_string(std::string trace,
                                      unsigned trace_version) {
-  std::stringstream ss;
+  std::istringstream ss;
   ss.str(trace);
 
   std::string temp;
@@ -459,7 +460,8 @@ kernel_trace_t trace_parser::parse_kernel_info(
       } else if (string1 == "isa" && string2 == "type") {
         // Get the ISA name, default to "SASS"
         const size_t equal_idx = line.find('=');
-        std::string tmp = line.substr(equal_idx + 1);
+        // TODO Naively trim whitespace, need to improve
+        std::string tmp = line.substr(equal_idx + 2);
         kernel_info.isa_type = tmp;
         this->isa_type = tmp;
       }

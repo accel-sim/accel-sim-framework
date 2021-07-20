@@ -14,7 +14,7 @@
 #define DEFAULT_ISA_TYPE "SASS"
 // TODO Change the MAX dst and src?
 #define MAX_DST 2
-#define MAX_SRC 8
+#define MAX_SRC 10
 
 enum command_type {
   kernel_launch = 1,
@@ -56,7 +56,7 @@ struct inst_trace_t {
   unsigned warp_size;
   std::string isa_type;
   unsigned m_pc;
-  unsigned mask;
+  unsigned long mask;
   unsigned reg_dsts_num;
   unsigned reg_dest[MAX_DST];
   std::string opcode;
