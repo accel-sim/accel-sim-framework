@@ -11,6 +11,7 @@
 
 #define WARP_SIZE 32
 #define DEFAULT_WARP_SIZE 32
+#define DEFAULT_ISA_TYPE "SASS"
 #define MAX_DST 1
 #define MAX_SRC 4
 
@@ -52,6 +53,7 @@ struct inst_trace_t {
   inst_trace_t(const inst_trace_t &b);
 
   unsigned warp_size;
+  std::string isa_type;
   unsigned m_pc;
   unsigned mask;
   unsigned reg_dsts_num;
@@ -62,6 +64,7 @@ struct inst_trace_t {
   inst_memadd_info_t *memadd_info;
 
   void set_warp_size(unsigned warp_size);
+  void set_isa_type(std::string isa_type);
   bool parse_from_string(std::string trace, unsigned tracer_version);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
@@ -96,6 +99,7 @@ struct kernel_trace_t {
   unsigned long long local_base_addr;
 
   unsigned warp_size;
+  std::string isa_type;
 };
 
 class trace_parser {
@@ -120,6 +124,7 @@ class trace_parser {
   std::ifstream ifs;
 
   unsigned warp_size;
+  std::string isa_type;
 };
 
 #endif

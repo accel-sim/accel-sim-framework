@@ -54,8 +54,40 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
   std::istringstream iss(opcode);
   std::vector<std::string> opcode_tokens;
   std::string token;
-  while (std::getline(iss, token, '.')) {
-    if (!token.empty()) opcode_tokens.push_back(token);
+  if (isa_type.compare("SASS") == 0) {
+    while (std::getline(iss, token, '.')) {
+        if (!token.empty()) opcode_tokens.push_back(token);
+      }
+  } else if (isa_type.compare("GCN3") == 0) {
+    // If GCN3
+    // Token get ride of the last width part (I and U and B only)
+    // also drop the DWORD part and UBYTE0 UBYTE, SBYTE, SHORT, BYTE, USHORT, SSHORT
+    // For V_CMP, return just two first words
+    // TODO Do the same for S_CMP
+    if (opcode.compare(0, 5, "V_CMP") == 0) {  // For V_CMP, just return first two words
+      token = opcode.substr(0, opcode.find("_", 5) + 1);
+      opcode_tokens.push_back(token);
+    } else { // Try to drop the width part
+      size_t lastUnderlineIdx = opcode.rfind("_");
+      std::string lastWord = opcode.substr(lastUnderlineIdx + 1);
+      if (lastWord.rfind("I", 0) == 0 || 
+          lastWord.rfind("U", 0) == 0 || 
+          lastWord.rfind("B", 0) == 0 || 
+          lastWord.rfind("DWORD", 0) == 0 ||
+          lastWord.rfind("BYTE", 0) == 0 ||
+          lastWord.rfind("SBYTE", 0) == 0 ||
+          lastWord.rfind("UBYTE", 0) == 0 ||
+          lastWord.rfind("SHORT", 0) == 0 ||
+          lastWord.rfind("SSHORT", 0) == 0 ||
+          lastWord.rfind("USHORT", 0) == 0) {
+        token = opcode.substr(0, lastUnderlineIdx);
+        opcode_tokens.push_back(token);
+      } else {
+        opcode_tokens.push_back(opcode);
+      }
+    }
+  } else {  // Default just push a single opcode as token
+    opcode_tokens.push_back(opcode);
   }
   return opcode_tokens;
 }
@@ -82,6 +114,8 @@ kernel_trace_t::kernel_trace_t() {
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
+  warp_size = DEFAULT_WARP_SIZE;
+  isa_type = DEFAULT_ISA_TYPE;
 }
 
 void inst_memadd_info_t::base_stride_decompress(
@@ -127,6 +161,10 @@ void inst_memadd_info_t::base_delta_decompress(
 
 void inst_trace_t::set_warp_size(unsigned given_warp_size) {
   this->warp_size = given_warp_size;
+}
+
+void inst_trace_t::set_isa_type(std::string isa_type) {
+  this->isa_type = isa_type;
 }
 
 // Parse every trace in string to instruction type?
@@ -246,6 +284,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
 trace_parser::trace_parser(const char *kernellist_filepath) {
   kernellist_filename = kernellist_filepath;
   warp_size = DEFAULT_WARP_SIZE;
+  isa_type = DEFAULT_ISA_TYPE;
 }
 
 // Read the kernel commandlist file: kernelslist.g
@@ -317,6 +356,7 @@ kernel_trace_t trace_parser::parse_kernel_info(
 
   // Default warp size
   kernel_info.warp_size = DEFAULT_WARP_SIZE;
+  kernel_info.isa_type = DEFAULT_ISA_TYPE;
 
   std::string line;
 
@@ -416,6 +456,12 @@ kernel_trace_t trace_parser::parse_kernel_info(
                &tmp);
         kernel_info.warp_size = tmp;
         this->warp_size = tmp;
+      } else if (string1 == "isa" && string2 == "type") {
+        // Get the ISA name, default to "SASS"
+        const size_t equal_idx = line.find('=');
+        std::string tmp = line.substr(equal_idx + 1);
+        kernel_info.isa_type = tmp;
+        this->isa_type = tmp;
       }
       std::cout << line << std::endl;
       continue;
@@ -488,6 +534,10 @@ bool trace_parser::get_next_threadblock_traces(
         threadblock_traces[warp_id]
             ->at(inst_count)
             .set_warp_size(warp_size);
+        // Set isa type for this trace
+        threadblock_traces[warp_id]
+            ->at(inst_count)
+            .set_isa_type(isa_type);
         threadblock_traces[warp_id]
             ->at(inst_count)
             .parse_from_string(line, trace_version);
