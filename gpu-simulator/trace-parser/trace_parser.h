@@ -12,8 +12,9 @@
 #define WARP_SIZE 32
 #define DEFAULT_WARP_SIZE 32
 #define DEFAULT_ISA_TYPE "SASS"
-#define MAX_DST 1
-#define MAX_SRC 4
+// TODO Change the MAX dst and src?
+#define MAX_DST 2
+#define MAX_SRC 8
 
 enum command_type {
   kernel_launch = 1,
