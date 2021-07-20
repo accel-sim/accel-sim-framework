@@ -49,6 +49,7 @@ bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,
   return false;
 }
 
+// TODO Pass deliminter?
 std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
   std::istringstream iss(opcode);
   std::vector<std::string> opcode_tokens;

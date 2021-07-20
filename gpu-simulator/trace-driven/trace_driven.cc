@@ -17,6 +17,8 @@
 #include "../ISA_Def/trace_opcode.h"
 #include "../ISA_Def/turing_opcode.h"
 #include "../ISA_Def/volta_opcode.h"
+#include "../ISA_Def/gcn3_opcode.h"
+
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
@@ -82,6 +84,8 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
     OpcodeMap = &Kepler_OpcodeMap;
   else if (kernel_trace_info->binary_verion == TURING_BINART_VERSION)
     OpcodeMap = &Turing_OpcodeMap;
+  else if (kernel_trace_info->binary_verion == GCN3_BINART_VERSION)
+    OpcodeMap = &GCN3_OpcodeMap;
   else {
     printf("unsupported binary version: %d\n",
            kernel_trace_info->binary_verion);
@@ -136,6 +140,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   mem_op = NOT_TEX;
 
   // get the opcode
+  // TODO Handle for AMD GPUs
   std::vector<std::string> opcode_tokens = trace.get_opcode_tokens();
   std::string opcode1 = opcode_tokens[0];
 
