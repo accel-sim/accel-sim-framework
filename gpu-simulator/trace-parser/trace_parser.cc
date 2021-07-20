@@ -214,10 +214,10 @@ bool inst_trace_t::parse_from_string(std::string trace,
     // Handle different reg types
     const char * regName = temp.c_str();
     if (regName[0] == 'R' && isdigit(regName[1])) {  // Vector register
-      sscanf(temp.c_str(), "R%d", &reg_dest[i]);
+      sscanf(temp.c_str(), "R%d", &reg_src[i]);
     } else if (regName[0] == 'S' && isdigit(regName[1])) { // Scalar register, treated as vector reg for now
       // TODO Might cause conflict with the vector regs?
-      sscanf(temp.c_str(), "S%d", &reg_dest[i]);
+      sscanf(temp.c_str(), "S%d", &reg_src[i]);
     } else { // Special registers, ignored
       // do nothing
     }
@@ -236,8 +236,8 @@ bool inst_trace_t::parse_from_string(std::string trace,
     memadd_info->addrs.resize(warp_size);
 
     // read the memory width from the opcode, as nvbit can report it incorrectly
-    // TODO Ignore this for AMD GPUs
-    if (warp_size == DEFAULT_WARP_SIZE) {
+    // Ignore this for AMD GPUs
+    if (isa_type.compare(DEFAULT_ISA_TYPE) == 0) {
       std::vector<std::string> opcode_tokens = get_opcode_tokens();
       memadd_info->width = get_datawidth_from_opcode(opcode_tokens);
     } else {  // MGPUSim trace has accurate width info
