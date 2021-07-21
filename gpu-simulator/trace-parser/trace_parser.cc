@@ -78,6 +78,7 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
           lastWord.rfind("U", 0) == 0 || 
           lastWord.rfind("B", 0) == 0 || 
           lastWord.rfind("E32", 0) == 0 ||
+          lastWord.rfind("E64", 0) == 0 ||
           lastWord.rfind("DWORD", 0) == 0 ||
           lastWord.rfind("BYTE", 0) == 0 ||
           lastWord.rfind("SBYTE", 0) == 0 ||
@@ -85,9 +86,9 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
           lastWord.rfind("SHORT", 0) == 0 ||
           lastWord.rfind("SSHORT", 0) == 0 ||
           lastWord.rfind("USHORT", 0) == 0) {
-        if (secLastWord.rfind("I", 0) == 0 || 
+        if ((lastWord.rfind("E32", 0) == 0 || lastWord.rfind("E64", 0) == 0) && (secLastWord.rfind("I", 0) == 0 || 
             secLastWord.rfind("U", 0) == 0 || 
-            secLastWord.rfind("B", 0) == 0) {  // Remove like V_ADD_I32_E32
+            secLastWord.rfind("B", 0) == 0)) {  // Remove like V_ADD_I32_E32
           token = opcode.substr(0, secLastUnderlineIdx);
         } else {
           token = opcode.substr(0, lastUnderlineIdx);
@@ -209,10 +210,13 @@ bool inst_trace_t::parse_from_string(std::string trace,
     if (regName[0] == 'R' && isdigit(regName[1])) {  // Vector register
       sscanf(temp.c_str(), "R%d", &reg_dest[i]);
     } else if (regName[0] == 'S' && isdigit(regName[1])) { // Scalar register, treated as vector reg for now
-      // TODO Might cause conflict with the vector regs?
-      sscanf(temp.c_str(), "S%d", &reg_dest[i]);
+      int tmp;
+      sscanf(temp.c_str(), "S%d", &tmp);
+      reg_dest[i] = tmp + 256;  // Naively Avoid conflict with vector regs 
     } else { // Special registers, ignored
-      // do nothing
+      // Not counting this reg
+      i--;
+      reg_dsts_num--;
     }
   }
 
@@ -227,10 +231,13 @@ bool inst_trace_t::parse_from_string(std::string trace,
     if (regName[0] == 'R' && isdigit(regName[1])) {  // Vector register
       sscanf(temp.c_str(), "R%d", &reg_src[i]);
     } else if (regName[0] == 'S' && isdigit(regName[1])) { // Scalar register, treated as vector reg for now
-      // TODO Might cause conflict with the vector regs?
-      sscanf(temp.c_str(), "S%d", &reg_src[i]);
+      int tmp;
+      sscanf(temp.c_str(), "S%d", &tmp);
+      reg_src[i] = tmp + 256;  // Naively Avoid conflict with vector regs 
     } else { // Special registers, ignored
-      // do nothing
+      // Not counting this reg
+      i--;
+      reg_srcs_num--;
     }
   }
 
