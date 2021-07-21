@@ -166,6 +166,7 @@ static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     {"V_CNDMASK", OpcodeChar(OP_SEL, ALU_OP)},  // TODO
     {"V_LDEXP_F16", OpcodeChar(OP_IMUL, INTP_OP)},  // TODO
     {"V_LSHLREV", OpcodeChar(OP_SHL, INTP_OP)},
+    {"V_LSHRREV", OpcodeChar(OP_SHR, INTP_OP)},
     // TODO Rest are multiply-add ops, which used MUL to simulate for now
     {"V_MAC_F16", OpcodeChar(OP_HMUL2, SP_OP)},
     {"V_MAC_F32", OpcodeChar(OP_FMUL, SP_OP)},

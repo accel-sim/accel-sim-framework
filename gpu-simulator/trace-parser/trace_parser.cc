@@ -74,9 +74,9 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
       size_t secLastUnderlineIdx = opcode.rfind("_", lastUnderlineIdx - 1);
       std::string lastWord = opcode.substr(lastUnderlineIdx + 1);
       std::string secLastWord = opcode.substr(secLastUnderlineIdx + 1, lastUnderlineIdx - secLastUnderlineIdx - 1);
-      if (lastWord.rfind("I", 0) == 0 || 
-          lastWord.rfind("U", 0) == 0 || 
-          lastWord.rfind("B", 0) == 0 || 
+      if ((lastWord.rfind("I", 0) == 0 && isdigit(lastWord[1])) || 
+          (lastWord.rfind("U", 0) == 0 && isdigit(lastWord[1])) || 
+          (lastWord.rfind("B", 0) == 0 && isdigit(lastWord[1])) || 
           lastWord.rfind("E32", 0) == 0 ||
           lastWord.rfind("E64", 0) == 0 ||
           lastWord.rfind("DWORD", 0) == 0 ||
