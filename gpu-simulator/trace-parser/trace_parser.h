@@ -12,8 +12,7 @@
 #define WARP_SIZE 32
 #define DEFAULT_WARP_SIZE 32
 #define DEFAULT_ISA_TYPE "SASS"
-// TODO Change the MAX dst and src?
-#define MAX_DST 2
+#define MAX_DST 4
 #define MAX_SRC 10
 
 enum command_type {

@@ -1,5 +1,9 @@
 # Basefile Configs
 
+# GCN3
+GCN3:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM100_GCN3/gpgpusim.config"
+
 # Pascal
 TITANX:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM6_TITANX/gpgpusim.config"

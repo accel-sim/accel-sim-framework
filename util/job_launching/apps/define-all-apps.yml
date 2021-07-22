@@ -739,3 +739,18 @@ mlperf_inference:
               # To be filled by different configurations
         - inference_mlperf_gnmt:
             - args:
+
+# MGPUSim benchmarks configs
+heteromark:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        - aes:
+            - args:  
+        - fir:
+            - args:  
+        - kmeans:
+            - args:  
+        - pagerank:
+            - args:  
+        
