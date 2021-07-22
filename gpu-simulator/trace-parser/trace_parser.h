@@ -42,10 +42,10 @@ struct inst_memadd_info_t {
   int32_t width;
 
   void base_stride_decompress(unsigned long long base_address, int stride,
-                              unsigned mask);
+                              unsigned long mask);
   void base_delta_decompress(unsigned long long base_address,
                              const std::vector<long long> &deltas,
-                             unsigned mask);
+                             unsigned long mask);
 };
 
 struct inst_trace_t {

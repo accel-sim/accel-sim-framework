@@ -132,7 +132,7 @@ kernel_trace_t::kernel_trace_t() {
 
 void inst_memadd_info_t::base_stride_decompress(
     unsigned long long base_address, int stride,
-    unsigned mask) {
+    unsigned long mask) {
   bool first_bit1_found = false;
   bool last_bit1_found = false;
   unsigned long long addra = base_address;
@@ -153,7 +153,7 @@ void inst_memadd_info_t::base_stride_decompress(
 
 void inst_memadd_info_t::base_delta_decompress(
     unsigned long long base_address, const std::vector<long long> &deltas,
-    unsigned mask) {
+    unsigned long mask) {
   bool first_bit1_found = false;
   long long last_address = 0;
   unsigned delta_index = 0;
