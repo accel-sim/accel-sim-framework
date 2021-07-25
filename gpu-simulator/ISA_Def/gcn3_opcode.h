@@ -150,12 +150,11 @@ static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     {"S_DCACHE_INV_VOL", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
     {"S_DCACHE_WB", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
     {"S_DCACHE_WB_VOL", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
-    // For now, we ignore constant loads, consider it as ALU_OP, TODO
-    {"S_LOAD", OpcodeChar(OP_LDC, ALU_OP)},
+    {"S_LOAD", OpcodeChar(OP_LDG, LOAD_OP)}, // TODO
     // TODO Return current 64-bit RTC.
     {"S_MEMREALTIME", OpcodeChar(OP_NOP, ALU_OP)},
     {"S_MEMTIME", OpcodeChar(OP_NOP, ALU_OP)},
-    {"S_STORE", OpcodeChar(OP_STL, STORE_OP)},
+    {"S_STORE", OpcodeChar(OP_STG, STORE_OP)}, // TODO
 
     // AMD GCN3 VOP2 Insts
     {"V_ADD_F16", OpcodeChar(OP_HADD2, SP_OP)},
