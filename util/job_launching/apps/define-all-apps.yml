@@ -749,16 +749,18 @@ amdappsdk:
             - args:  
         - fastwalshtransform:
             - args:  
-        - floydwarshall:
-            - args:  
+        # Segfault due to null pointer
+        # - floydwarshall:
+        #     - args:  
         - matrixmultiplication:
             - args: 
         - matrixtranspose:
             - args:  
         - nbody:
             - args:  
-        - simpleconvolution:
-            - args:  
+        # Segfault due to null pointer
+        # - simpleconvolution:
+        #     - args:  
         
 dnn:
     exec_dir: ""
@@ -788,13 +790,15 @@ heteromark:
             - args:  
         - kmeans:
             - args:  
-        - pagerank:
-            - args:  
+        # Segfault due to null pointer
+        # - pagerank:
+        #     - args:  
 
 polybench:
     exec_dir: ""
     data_dirs: ""
     execs:
+        # Hangs?
         - atax:
             - args:  
         - bicg:
@@ -811,8 +815,9 @@ shoc:
     exec_dir: ""
     data_dirs: ""
     execs:
-        - bfs:
-            - args:  
+        # Segfault due to null pointer
+        # - bfs:
+        #     - args:  
         - fft:
             - args:  
         - spmv:

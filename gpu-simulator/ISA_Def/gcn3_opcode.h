@@ -150,7 +150,8 @@ static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     {"S_DCACHE_INV_VOL", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
     {"S_DCACHE_WB", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
     {"S_DCACHE_WB_VOL", OpcodeChar(OP_NOP, ALU_OP)},  // TODO
-    {"S_LOAD", OpcodeChar(OP_LDL, LOAD_OP)},
+    // For now, we ignore constant loads, consider it as ALU_OP, TODO
+    {"S_LOAD", OpcodeChar(OP_LDC, ALU_OP)},
     // TODO Return current 64-bit RTC.
     {"S_MEMREALTIME", OpcodeChar(OP_NOP, ALU_OP)},
     {"S_MEMTIME", OpcodeChar(OP_NOP, ALU_OP)},
@@ -388,6 +389,9 @@ static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     // AMD GCN3 LDS/GDS inst
     // TODO Model write and read for now as all the benchmarks
     // todo in MGPUSim do not have ds ops beside these two
+    // TODO DS has GDS and LDS instructions, treated all as LDS for now
+    // TODO GDS: shared memory across all compute units (can be viewed as global memory access)
+    // TODO LDS: shared memory across single compute unit (per block shared memory in CUDA)
     {"DS_READ", OpcodeChar(OP_LDS, LOAD_OP)},
     {"DS_READ2", OpcodeChar(OP_LDS, LOAD_OP)},
     {"DS_READ2ST64", OpcodeChar(OP_LDS, LOAD_OP)},
@@ -402,8 +406,8 @@ static const std::unordered_map<std::string, OpcodeChar> GCN3_OpcodeMap = {
     // TODO Model latter, as not used in the benchmarks disasm
 
     // AMD GCN3 FLAT inst
-    {"FLAT_LOAD", OpcodeChar(OP_LDL, LOAD_OP)},
-    {"FLAT_STORE", OpcodeChar(OP_STL, STORE_OP)},
+    {"FLAT_LOAD", OpcodeChar(OP_LDG, LOAD_OP)},
+    {"FLAT_STORE", OpcodeChar(OP_STG, STORE_OP)},
     {"FLAT_ATOMIC", OpcodeChar(OP_ATOM, STORE_OP)},
 
 };
