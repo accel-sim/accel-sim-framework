@@ -19,6 +19,8 @@ testcases from [MGPUSim benchmarks](https://github.com/William-An/MGPUSim-Accel-
 11. `spmv`
 12. `stencil2d`
 
+Additional changes are made to the internal gpgpu-sim as well.
+
 ---
 
 The [ISCA 2020 paper](https://conferences.computer.org/isca/pdfs/ISCA2020-4QlDegUf3fKiwUXfV0KdCm/466100a473/466100a473.pdf)
