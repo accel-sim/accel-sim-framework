@@ -741,6 +741,43 @@ mlperf_inference:
             - args:
 
 # MGPUSim benchmarks configs
+amdappsdk:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        - bitonicsort:
+            - args:  
+        - fastwalshtransform:
+            - args:  
+        - floydwarshall:
+            - args:  
+        - matrixmultiplication:
+            - args: 
+        - matrixtranspose:
+            - args:  
+        - nbody:
+            - args:  
+        - simpleconvolution:
+            - args:  
+        
+dnn:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        # Might need to setup a bit in MGPUSim to generate these
+        # - lenet:
+        #     - args:
+        # - minerva:
+        #     - args:
+        - relu:
+            - args:  
+        # Same as lenet
+        # - vgg16:
+        #     - args:
+        # Some issues running with xor
+        # - xor:
+        #     - args:
+
 heteromark:
     exec_dir: ""
     data_dirs: ""
@@ -753,4 +790,32 @@ heteromark:
             - args:  
         - pagerank:
             - args:  
-        
+
+polybench:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        - atax:
+            - args:  
+        - bicg:
+            - args:
+
+rodinia:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        - nw:
+            - args:
+
+shoc:
+    exec_dir: ""
+    data_dirs: ""
+    execs:
+        - bfs:
+            - args:  
+        - fft:
+            - args:  
+        - spmv:
+            - args:  
+        - stencil2d:
+            - args:  

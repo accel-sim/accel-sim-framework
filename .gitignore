@@ -4,3 +4,6 @@ hw_run/
 sim_run_*
 *.DS_Store*
 .vscode/
+
+# Debugging
+.gdbinit
