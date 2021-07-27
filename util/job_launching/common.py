@@ -182,6 +182,8 @@ def parse_run_simulations_options():
                   help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
                         "local. By default, we test for slurm, then torque, then just use local if " \
                         "you have neither.")
+    parser.add_option("-a", "--accelwattch_HW", dest="accelwattch_HW", action="store_true",
+                      help="Enable passing hw_perf_bench_name for accelwattch hw and hybrid runs to config file.")
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it

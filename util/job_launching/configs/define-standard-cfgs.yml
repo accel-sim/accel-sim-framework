@@ -14,7 +14,11 @@ TITANK:
 
 #Turing
 RTX2060:
-    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/Turing_RTX2060/gpgpusim.config"
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM75_RTX2060/gpgpusim.config"
+
+#Turing
+RTX2060_S:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM75_RTX2060_S/gpgpusim.config"
 
 # Volta
 TITANV:
@@ -144,3 +148,29 @@ FCFS:
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
+
+#Accelwattch configs 
+Accelwattch_SASS_SIM:
+    extra_params: "-power_simulation_enabled 1
+    \n-power_simulation_mode 0
+    \n-accelwattch_xml_file accelwattch_sass_sim.xml"
+
+Accelwattch_SASS_HW:
+    extra_params: "-power_simulation_enabled 1
+    \n-power_simulation_mode 0
+    \n-accelwattch_xml_file accelwattch_sass_hw.xml"
+
+Accelwattch_SASS_HYBRID:
+    extra_params: "-power_simulation_enabled 1
+    \n-power_simulation_mode 0
+    \n-accelwattch_xml_file accelwattch_sass_hybrid.xml
+    \n-accelwattch_hybrid_perfsim_L2_RH 1
+    \n-accelwattch_hybrid_perfsim_L2_RM 1
+    \n-accelwattch_hybrid_perfsim_L2_WH 1
+    \n-accelwattch_hybrid_perfsim_L2_WM 1
+    \n-accelwattch_hybrid_perfsim_NOC 1"
+
+Accelwattch_PTX_SIM:
+    extra_params: "-power_simulation_enabled 1
+    \n-power_simulation_mode 0
+    \n-accelwattch_xml_file accelwattch_ptx_sim.xml"

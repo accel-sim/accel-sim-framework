@@ -1,23 +1,28 @@
 rodinia-3.1_validation:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
         - backprop-rodinia-3.1:
-           - args:  65536
+            - args:  65536
+              accel-sim-mem: 1G
         #- bfs-rodinia-3.1:
             #- args:  ./data/graph1MW_6.txt
         - dwt2d-rodinia-3.1:
             - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              accel-sim-mem: 1G
         #- gaussian-rodinia-3.1:
            # - args:  -f ./data/matrix208.txt
         - hotspot-rodinia-3.1:
             - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+              accel-sim-mem: 1G
         #- hybridsort-rodinia-3.1:
            #- args:  ./data/500000.txt
         - kmeans-rodinia-3.1:
             - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
         #- lavaMD-rodinia-3.1:
         #    - args:  -boxes1d 10
         #- lud-rodinia-3.1:
@@ -34,18 +39,22 @@ rodinia-3.1_validation:
             #- args:  -x 128 -y 128 -z 10 -np 1000
         - pathfinder-rodinia-3.1:
             - args:  100000 100 20 > result.txt
+              accel-sim-mem: 1G
         - srad_v1-rodinia-3.1:
             - args:  100 0.5 502 458
+              accel-sim-mem: 2G
 
 parboil_validation:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/parboil/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/parboil/"
     execs:
         - parboil-sad:
             - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
+              accel-sim-mem: 2G
             
         - parboil-sgemm:
             - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+              accel-sim-mem: 9G
    
         #- parboil-stencil:
         #    - args: -i ./data/default/input/512x512x64x100.bin -o 512x512x64x100.out -- 512 512 64 100
@@ -55,6 +64,7 @@ parboil_validation:
 
         - parboil-mri-q:
             - args: -i ./data/large/input/64_64_64_dataset.bin -o 64_64_64_dataset.out
+              accel-sim-mem: 11G
 
         #- parboil-histo:
         #    - args: -i ./data/large/input/img.bin -o ref.bmp -- 10000 4
@@ -65,38 +75,55 @@ parboil_validation:
         #- parboil-mri-gridding:
         #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
 
-cuda_samples_11.1_validation:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
+cuda_samples_11.0_validation:
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/"
     execs:
         - dct8x8:
             - args:
+              accel-sim-mem: 1G
         - binomialOptions:
             - args:
+              accel-sim-mem: 20G
         - fastWalshTransform:
             - args:
+              accel-sim-mem: 2G
         - histogram:
             - args:
+              accel-sim-mem: 4G
         - mergeSort:
             - args:
+              accel-sim-mem: 2G
         - quasirandomGenerator:
             - args:
-        - SobolQRNG:
+              accel-sim-mem: 2G
+        - sobolQRNG:
             - args:
+              accel-sim-mem: 1G
+
+cudaTensorCoreGemm_validation:
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/"
+    execs:
         - cudaTensorCoreGemm:
             - args:
+              accel-sim-mem: 20G
+
 cutlass_5_trace_validation:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/"
     execs:
         - cutlass_perf_test:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
             - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass           
+              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G           
 
 Deepbench_validation:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/"
     execs:
         - conv_bench-tencore:
             - args: train half 7 7 512 8 512 3 3 1 1 1 1
@@ -111,8 +138,8 @@ Deepbench_validation:
             - args: train half 128 32 1 gru
            
 power_ubench:
-    exec_dir: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
-    data_dirs: "$ACCELSIM_ROOT/../benchmarks/microbenchmarks/"
+    exec_dir: "$ACCELSIM_ROOT/../benchmarks_accelwattch/microbenchmarks/"
+    data_dirs: "$ACCELSIM_ROOT/../benchmarks_accelwattch/microbenchmarks/"
     execs:
         - ACT_CORE1:
             - args: 100 1 32

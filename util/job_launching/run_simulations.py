@@ -84,7 +84,7 @@ class ConfigurationSpec:
                     simdir,
                     full_exec_dir,build_handle,
                     mem_usage)
-                self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
+                self.append_gpgpusim_config(benchmark, this_run_dir, appargs_run_subdir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
@@ -147,6 +147,7 @@ class ConfigurationSpec:
                                    glob.glob(os.path.join(full_data_dir, "*.cl")) +\
                                    glob.glob(os.path.join(full_data_dir, "*.h")) +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.icnt") +\
+                                   glob.glob(os.path.dirname(self.config_file) + "/*.csv") +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
         for file_to_cp in files_to_copy_to_run_dir:
@@ -267,7 +268,7 @@ class ConfigurationSpec:
         os.chmod(justrunfile, 0o744)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
-    def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
+    def append_gpgpusim_config(self, bench_name, this_run_dir, appargs_run_subdir, config_text_file):
         benchmark_spec_opts_file = os.path.expandvars(os.path.join( "$GPUAPPS_ROOT", "benchmarks",
             "app-specific-gpgpu-sim-options", bench_name, "benchmark_options.txt" ))
         benchmark_spec_opts = ""
@@ -279,13 +280,23 @@ class ConfigurationSpec:
         config_text = open(config_text_file).read()
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params + "\n"
 
+        if options.accelwattch_HW:
+            if bench_name == "cutlass_perf_test":
+                config_text += "\n" + "-hw_perf_bench_name " + appargs_run_subdir.replace('/','_') + "\n"
+            else:
+                config_text += "\n" + "-hw_perf_bench_name " + bench_name + "\n"
+
         if options.trace_dir != "":
             cfgsubdir = re.sub(r".*(configs.*)gpgpusim.config", r"\1", config_text_file)
             config_text += "\n" + "# Accel-Sim Parameters" + "\n"
             accelsim_cfg = os.path.expandvars(os.path.join("$ACCELSIM_ROOT", cfgsubdir, "trace.config"))
             config_text += open(accelsim_cfg).read()
 
+
         open(os.path.join(this_run_dir , "gpgpusim.config"), 'w').write(config_text)
+
+        
+
 
 #-----------------------------------------------------------
 # main script start
