@@ -1,0 +1,25 @@
+#!/bin/bash
+
+SCRIPT_DIR=`pwd`
+
+output_folder="collated_power"
+if [ -e "$SCRIPT_DIR/${1}" ] && [ -d "$SCRIPT_DIR/${1}" ]; then
+	if [ -d "$output_folder" ]; then
+		rm -r "$output_folder"
+	fi
+	mkdir $output_folder
+	for bm in `ls $SCRIPT_DIR/${1}`
+	do	
+		for data in `ls $SCRIPT_DIR/${1}/$bm`
+		do
+			power=`cat $SCRIPT_DIR/${1}/$bm/$data | awk -F'Power draw = ' '{print $2}' | awk -F' W' '{print $1}'`
+			echo $power >> $output_folder/$bm.rpt
+		done
+	done
+	python generate_hw_power_csv.py $output_folder
+else
+	echo "Please enter a correct power reports directory. Example: ./collate_power.sh validation_power_reports"
+	exit 1
+fi
+
+

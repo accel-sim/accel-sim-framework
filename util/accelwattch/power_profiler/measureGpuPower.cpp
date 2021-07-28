@@ -205,7 +205,7 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
 				printf("Error: failed to get temperature for device %i: %s\n", devId, nvmlErrorString(res));
 				return 0;
 			}
-			if (temperature >= temp_cutoff_T) {
+			if (temperature == temp_cutoff_T) {
                 temp_cutoff = true;
 				printf("Cutoff temperature %d C reached: concluding power measurements\n", temp_cutoff_T);
 				samplesRemaining = 1; // record the temperature one last time

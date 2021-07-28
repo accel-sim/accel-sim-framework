@@ -10,9 +10,9 @@ rodinia-3.1_validation:
               accel-sim-mem: 1G
         #- bfs-rodinia-3.1:
             #- args:  ./data/graph1MW_6.txt
-        - dwt2d-rodinia-3.1:
-            - args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
-              accel-sim-mem: 1G
+        #- dwt2d-rodinia-3.1:
+            #- args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              #accel-sim-mem: 1G
         #- gaussian-rodinia-3.1:
            # - args:  -f ./data/matrix208.txt
         - hotspot-rodinia-3.1:
