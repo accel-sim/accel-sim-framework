@@ -97,7 +97,7 @@ cuda_samples_11.0_validation:
         - quasirandomGenerator:
             - args:
               accel-sim-mem: 2G
-        - sobolQRNG:
+        - SobolQRNG:
             - args:
               accel-sim-mem: 1G
 
