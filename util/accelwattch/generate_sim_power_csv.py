@@ -9,6 +9,7 @@ import collections
 import glob
 import sys
 from os.path import dirname, basename, isfile, join
+import shutil
 
 configs = []
 all_configs = ['volta_sass_sim', 'volta_sass_hw', 'volta_sass_hybrid', 'volta_ptx_sim']
@@ -32,7 +33,7 @@ power_counters = ['IBP,', 'ICP,', 'DCP,', 'TCP,', 'CCP,', 'SHRDP,', 'RFP,',
 rootdir = os.getcwd();
 results_dir = rootdir + '/accelwattch_results'
 if os.path.exists(results_dir):
-	os.rmdir(results_dir)
+	shutil.rmtree(results_dir, ignore_errors=True)
 os.mkdir(results_dir)
 
 for config in configs:
@@ -87,7 +88,7 @@ for config in configs:
 							}
 
 		for dirname in os.listdir(reportspath):
-			benchmarks.append(dirname[:-7])
+			benchmarks.append(dirname[:-4])
 
 		if(kernelVer != 1):
 			if 'binomialOptions' in benchmarks:
@@ -129,11 +130,11 @@ for config in configs:
 
 		kernel_count = 0
 		
-		for benchmark in benchmarks :
+		for benchmark in benchmarks:
 			if benchmark not in kernelnames:
 				continue
 
-			f = open((reportspath + '/' + benchmark + '.report'), 'r')
+			f = open((reportspath + '/' + benchmark + '.log'), 'r')
 			x = f.readlines()
 			baseline = collections.OrderedDict()
 			kernel_count = 0

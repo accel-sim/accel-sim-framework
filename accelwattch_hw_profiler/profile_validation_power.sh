@@ -12,20 +12,20 @@ samples=600
 sleep_time=30
 
 SCRIPT_DIR=`pwd`
-BINDIR="$ACCELSIM_ROOT/../benchmarks_accelwattch/validation"
+BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
 
-if [ -d $ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs ]; then
-	cd $ACCELSIM_ROOT/../benchmarks_accelwattch
+if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs ]; then
+	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
     ./get_data.sh
 fi
-if [ -d $ACCELSIM_ROOT/../benchmarks_accelwattch/validation ]; then
-	cd $ACCELSIM_ROOT/../benchmarks_accelwattch
+if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
+	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
     ./extract_binaries.sh
 fi
 
 cd $SCRIPT_DIR
-RODINIA_DATADIR="$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/cuda/rodinia/3.1"
-PARBOIL_DATADIR="$ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/parboil"
+RODINIA_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1"
+PARBOIL_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
 BENCH_FILE="$SCRIPT_DIR/validation.cfg"
 
@@ -69,7 +69,7 @@ fi
 mkdir $SCRIPT_DIR/validation_profile_output
 
 cd $SCRIPT_DIR/validation_profile_output
-cp $ACCELSIM_ROOT/../benchmarks_accelwattch/data_dirs/dct8x8/data* .
+cp $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/dct8x8/data* .
 
 for run in {1..10}
 do

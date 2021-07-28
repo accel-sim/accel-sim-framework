@@ -23,20 +23,21 @@ if [ -d ${power_dir} ] ; then
 fi
 mkdir ${power_dir}
 for bench in `ls ${runs_dir}`
-do
-	for inp in `ls ${runs_dir}/${bench}/`
-	do
-		bench_dir=${runs_dir}/${bench}/${inp}/*
-		if [ -f ${bench_dir}/${power_file} ] ; then
-		
-			if [ "${bench}" == "cutlass_perf_test" ]; then	
-				cp ${bench_dir}/${power_file} ${power_dir}/${bench}_${inp}.log 
+do	
+	if [ ! ${bench} == "gpgpu-sim-builds" ]; then
+		for inp in `ls ${runs_dir}/${bench}/`
+		do
+			bench_dir=${runs_dir}/${bench}/${inp}/*
+			if [ -f ${bench_dir}/${power_file} ] ; then
+			
+				if [ "${bench}" == "cutlass_perf_test" ]; then	
+					cp ${bench_dir}/${power_file} ${power_dir}/${bench}_${inp}.log 
+				else
+					cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log 
+				fi
 			else
-				cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log 
+				echo "Warning: No Accelwattch power report in ${bench_dir}."
 			fi
-		else
-			echo "Warning: No Accelwattch power report in ${bench_dir}."
-		fi
-	done
-
+		done
+	fi
 done

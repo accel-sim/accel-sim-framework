@@ -11,12 +11,12 @@ samples=600
 sleep_time=30
 
 SCRIPT_DIR=`pwd`
-BINDIR="$ACCELSIM_ROOT/../benchmarks_accelwattch/microbenchmarks"
+BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
 UBENCH_FILE="$SCRIPT_DIR/ubench.cfg"
 
-if [ -d $ACCELSIM_ROOT/../benchmarks_accelwattch/microbenchmarks ]; then
-	cd $ACCELSIM_ROOT/../benchmarks_accelwattch
+if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks ]; then
+	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
     ./extract_binaries.sh
 fi
 cd $SCRIPT_DIR
