@@ -17,14 +17,14 @@ elif [ "${1}" == "volta_ptx_sim" ]; then
 	config="QV100-Accelwattch_PTX_SIM"
 else
 	echo "Please provide accelwattch model; one of [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim]"
-	echo "For example: ./scripts_accelwattch/launch_jobs.sh volta_sass_sim /nfs-scratch/vkandiah/accel-sim-framework/hw_run/power_validation"
+	echo "For example: ./util/accelwattch/launch_jobs.sh volta_sass_sim /nfs-scratch/vkandiah/accel-sim-framework/hw_run/power_validation"
 	exit
 fi
 
 if [ "${2}" == "" ]; then
 	if [ ! "${1}" == "volta_ptx_sim" ]; then
 		echo "Please provide path to traces directory."
-		echo "For example: ./scripts_accelwattch/launch_jobs.sh volta_sass_sim /nfs-scratch/vkandiah/accel-sim-framework/hw_run/power_validation"
+		echo "For example: ./util/accelwattch/launch_jobs.sh volta_sass_sim /nfs-scratch/vkandiah/accel-sim-framework/hw_run/power_validation"
 		exit
 	fi
 fi

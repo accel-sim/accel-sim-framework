@@ -10,7 +10,7 @@ fi
 
 if [ ! "${1}" == "volta_sass_sim" ] && [ ! "${1}" == "volta_sass_hybrid" ] && [ ! "${1}" == "volta_sass_hw" ] && [ ! "${1}" == "volta_ptx_sim" ]; then
 	echo "Please provide accelwattch model; one of [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim]"
-	echo "For example: ./scripts_accelwattch/collect_power_reports.sh volta_sass_sim"
+	echo "For example: ./util/accelwattch/collect_power_reports.sh volta_sass_sim"
 	exit
 fi
 config=${1}
