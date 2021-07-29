@@ -123,10 +123,6 @@ for file in path:
 
 
     zeros = np.zeros(kernel_names.shape).astype(int)
-    
-    csv_titles = ["Benchmark", "Kernel", "L1_RH","L1_RM","L1_WH","L1_WM","CC_ACC","SHRD_ACC","DRAM_Rd","DRAM_Wr","L2_RH","L2_RM","L2_WH","L2_WM","NOC","Pipeline_Duty","Num_Idle_SMs","Elapsed_Cycles","Chip Voltage"]
-    csv_titles = np.array(csv_titles)
-    csv_titles = np.reshape(csv_titles,(1,19))
 
     # start processing data
     # Please don't append metrics in the middle
@@ -327,6 +323,9 @@ ones = np.ones((selected.shape[0],1))
 selected = np.concatenate((selected,ones),1)
 
 # add csv titles
+csv_titles = ["Benchmark", "Kernel", "L1_RH","L1_RM","L1_WH","L1_WM","CC_ACC","SHRD_ACC","DRAM_Rd","DRAM_Wr","L2_RH","L2_RM","L2_WH","L2_WM","NOC","Pipeline_Duty","Num_Idle_SMs","Elapsed_Cycles","Chip Voltage"]
+csv_titles = np.array(csv_titles)
+csv_titles = np.reshape(csv_titles,(1,19))
 selected = np.concatenate((csv_titles,selected),0)
 
 
