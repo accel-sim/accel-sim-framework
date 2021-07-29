@@ -89,7 +89,7 @@ do
         echo "Profiling concluded. Killing $bm with pid: $pid"
         kill -9 $pid
         
-        if [ 'grep "WARNING: TEMPERATURE CUTTOFF NOT REACHED" $SCRIPT_DIR/validation_profile_output/$bm.txt' ]; then
+        if cat $SCRIPT_DIR/validation_profile_output/$bm.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
             $BINDIR/backprop_k1 65536 &
             sleep 20
