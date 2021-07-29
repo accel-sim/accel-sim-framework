@@ -185,7 +185,7 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
 		}
         res = nvmlDeviceGetUtilizationRates ( *dev, &util);
 
-        if(util.gpu != 100) {
+        if(util.gpu < 95) {
             if (samplesRemaining >1){
                 samplesRemaining--;
                 continue;
@@ -362,7 +362,7 @@ int main(int argc, char** argv)
     int ret = 0;
 
     // Defaults
-    int devId = 2;
+    int devId = 0;
     int sampleRate = 100;
     int numSamples = -1;
     char* oFileName = NULL;

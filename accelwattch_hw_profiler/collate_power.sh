@@ -16,7 +16,7 @@ if [ -e "$SCRIPT_DIR/${1}" ] && [ -d "$SCRIPT_DIR/${1}" ]; then
 			echo $power >> $output_folder/$bm.rpt
 		done
 	done
-	python generate_hw_power_csv.py $output_folder
+	python gen_hw_power_csv.py $output_folder
 else
 	echo "Please enter a correct power reports directory. Example: ./collate_power.sh validation_power_reports"
 	exit 1
