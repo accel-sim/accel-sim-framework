@@ -11,7 +11,7 @@ temp=65
 samples=600
 sleep_time=30
 
-SCRIPT_DIR=`pwd`
+SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
 BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
 
 if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs ]; then

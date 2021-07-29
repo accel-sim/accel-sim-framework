@@ -44,6 +44,52 @@ rodinia-3.1_validation:
             - args:  100 0.5 502 458
               accel-sim-mem: 2G
 
+rodinia-3.1_validation_hw:
+    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    execs:
+        - b+tree-rodinia-3.1:
+            - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
+        - backprop-rodinia-3.1:
+            - args:  65536
+              accel-sim-mem: 1G
+        #- bfs-rodinia-3.1:
+            #- args:  ./data/graph1MW_6.txt
+        #- dwt2d-rodinia-3.1:
+            #- args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              #accel-sim-mem: 1G
+        #- gaussian-rodinia-3.1:
+           # - args:  -f ./data/matrix208.txt
+        - hotspot-rodinia-3.1:
+            - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+              accel-sim-mem: 1G
+        #- hybridsort-rodinia-3.1:
+           #- args:  ./data/500000.txt
+        - kmeans-rodinia-3.1:
+            - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
+        #- lud-rodinia-3.1:
+            #- args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+            #- args:  100 1 0
+        #- nn-rodinia-3.1:
+           #- args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+           # - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- pathfinder-rodinia-3.1:
+            #- args:  100000 100 20 > result.txt
+             # accel-sim-mem: 1G
+        - srad_v1-rodinia-3.1:
+            - args:  100 0.5 502 458
+              accel-sim-mem: 2G
+
 parboil_validation:
     exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
     data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil/"
@@ -108,6 +154,9 @@ cudaTensorCoreGemm_validation:
         - cudaTensorCoreGemm:
             - args:
               accel-sim-mem: 20G
+        - sobolQRNG:
+            - args:
+              accel-sim-mem: 1G
 
 cutlass_5_trace_validation:
     exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"

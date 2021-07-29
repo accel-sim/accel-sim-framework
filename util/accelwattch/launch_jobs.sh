@@ -1,9 +1,8 @@
 #!/bin/bash
-root_dir=`pwd`
-curr_dir=`pwd | awk -F'/' '{print $NF}'`
-if [ ! "${curr_dir}" == "accel-sim-framework" ]; then
-	echo "Please run this script from accel-sim-framework root directory."
-	exit
+
+if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
+    echo "ERROR - Please run setup_environment before running this script"
+    exit
 fi
 
 config=""
@@ -29,17 +28,17 @@ if [ "${2}" == "" ]; then
 	fi
 fi
 
-source ${root_dir}/gpu-simulator/setup_environment.sh
-mkdir -p ${root_dir}/accelwattch_runs
+
+mkdir -p $ACCELSIM_ROOT/../accelwattch_runs
 runs_dir=${1}
-if [ -d ${root_dir}/accelwattch_runs/${runs_dir} ] ; then
-	rm -r ${root_dir}/accelwattch_runs/${runs_dir}
+if [ -d $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ] ; then
+	rm -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir}
 fi
 
 if [ "${1}" == "volta_ptx_sim" ]; then
-	${root_dir}/util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -r accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "volta_sass_hybrid" ] || [ "${1}" == "volta_sass_hw" ]; then
-	${root_dir}/util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2} -N ${runs_dir} -r accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 else
-	${root_dir}/util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2} -N ${runs_dir} -r accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 fi
