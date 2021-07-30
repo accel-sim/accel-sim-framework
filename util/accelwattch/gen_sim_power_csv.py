@@ -37,6 +37,7 @@ if os.path.exists(results_dir):
 os.mkdir(results_dir)
 
 for config in configs:
+	print "Collecting AccelWattch power results for " + config
 	reportspath = rootdir + '/accelwattch_power_reports/' + config
 	power_dict = collections.OrderedDict()
 	for kernelVer in [1,2]:
@@ -54,14 +55,14 @@ for config in configs:
 							'mergeSort' : '_Z30mergeElementaryIntervalsKernelILj1EEvPjS0_S0_S0_S0_S0_jj',
 							'pathfinder-rodinia-3.1' : '_Z14dynproc_kerneliPiS_S_iiii',
 							'quasirandomGenerator' : '_Z26quasirandomGeneratorKernelPfjj',
-							'SobolQRNG' : '_Z15sobolGPU_kerneljjPjPf',
+							'sobolQRNG' : '_Z15sobolGPU_kerneljjPjPf',
 							'srad_v1-rodinia-3.1' : '_Z4sradfiilPiS_S_S_PfS0_S0_S0_fS0_S0_',
 							'parboil-mri-q' : '_Z12ComputeQ_GPUiiPfS_S_S_S_',	
 							'parboil-sad' : '_Z11mb_sad_calcPtS_ii',
 							'parboil-sgemm' : '_Z9mysgemmNTPKfiS0_iPfiiff',	
-							'cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',
-							'cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',
-							'cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',
+							'cutlass_perf_test_k1' : '',
+							'cutlass_perf_test_k2' : '',
+							'cutlass_perf_test_k3' : '',
 							'cudaTensorCoreGemm' : '',
 							}
 		else:
@@ -76,14 +77,14 @@ for config in configs:
 							'mergeSort' : '_Z21mergeSortSharedKernelILj1EEvPjS0_S0_S0_j',
 							'pathfinder-rodinia-3.1' : '_Z14dynproc_kerneliPiS_S_iiii',
 							'quasirandomGenerator' : '_Z16inverseCNDKernelPfPjj',
-							'SobolQRNG' : '_Z15sobolGPU_kerneljjPjPf',
+							'sobolQRNG' : '_Z15sobolGPU_kerneljjPjPf',
 							'srad_v1-rodinia-3.1' : '_Z4sradfiilPiS_S_S_PfS0_S0_S0_fS0_S0_',	
 							'parboil-mri-q' : '_Z12ComputeQ_GPUiiPfS_S_S_S_',	
 							'parboil-sad' : '_Z11mb_sad_calcPtS_ii',
 							'parboil-sgemm' : '_Z9mysgemmNTPKfiS0_iPfiiff',
-							'cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',
-							'cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',	
-							'cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' : '',
+							'cutlass_perf_test_k1' : '',
+							'cutlass_perf_test_k2' : '',	
+							'cutlass_perf_test_k3' : '',
 							'cudaTensorCoreGemm' : '',
 							}
 
@@ -101,8 +102,8 @@ for config in configs:
 				benchmarks.remove('kmeans-rodinia-3.1')
 			if 'pathfinder-rodinia-3.1' in benchmarks:
 				benchmarks.remove('pathfinder-rodinia-3.1')
-			if 'SobolQRNG' in benchmarks:
-				benchmarks.remove('SobolQRNG')
+			if 'sobolQRNG' in benchmarks:
+				benchmarks.remove('sobolQRNG')
 			if 'srad_v1-rodinia-3.1' in benchmarks:
 				benchmarks.remove('srad_v1-rodinia-3.1')
 			if 'parboil-mri-q' in benchmarks:
@@ -111,23 +112,25 @@ for config in configs:
 				benchmarks.remove('parboil-sad')
 			if 'parboil-sgemm' in benchmarks:
 				benchmarks.remove('parboil-sgemm')
-			if 'cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
-			if 'cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
-			if 'cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
+			if 'cutlass_perf_test_k1' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k1')
+			if 'cutlass_perf_test_k2' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k2')
+			if 'cutlass_perf_test_k3' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k3')
 			if 'cudaTensorCoreGemm' in benchmarks:
 				benchmarks.remove('cudaTensorCoreGemm')
 		
 		if config == "volta_ptx_sim":
-			if 'cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_2560___n_16___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
-			if 'cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
-			if 'cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
-				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
-		
+			if 'cutlass_perf_test_k1' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k1')
+			if 'cutlass_perf_test_k2' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k2')
+			if 'cutlass_perf_test_k3' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k3')
+			if 'hotspot-rodinia-3.1' in benchmarks:
+				benchmarks.remove('hotspot-rodinia-3.1')
+
 		if config == "volta_sass_hybrid" or config == "volta_sass_hw":
 			if 'pathfinder-rodinia-3.1' in benchmarks:
 				benchmarks.remove('pathfinder-rodinia-3.1')

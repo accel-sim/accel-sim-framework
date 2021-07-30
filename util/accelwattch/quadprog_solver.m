@@ -1,4 +1,4 @@
-input = csvread('volta_sass_sim.csv');
+input = csvread('accelwattch_volta_sass_sim.csv');
 A = input(:,1:31); % change 30 to number of power counters if different
 b = input(:,32);
 l = 0.1*ones(1,31); % lower bounds
@@ -11,7 +11,7 @@ N= [0];
 
 C = zeros(16,31);
 D = zeros(16,1);
-
+%These factors are calculated using McPAT per instruction energies * current AccelWattch scaling factors. They need to be changed after each iteration of the solver + simulator runs.
 C(1,8)=1;
 C(1,9)=-1.843582172; %INT <= FPU
 

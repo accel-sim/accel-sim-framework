@@ -29,12 +29,11 @@ do
 		do
 			bench_dir=${runs_dir}/${bench}/${inp}/*
 			if [ -f ${bench_dir}/${power_file} ] ; then
-			
-				if [ "${bench}" == "cutlass_perf_test" ]; then	
-					cp ${bench_dir}/${power_file} ${power_dir}/${bench}_${inp}.log 
-				else
-					cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log 
-				fi
+				#if [ "${bench}" == "cutlass_perf_test" ]; then	
+					#cp ${bench_dir}/${power_file} ${power_dir}/${bench}_${inp}.log 
+				#else
+				cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log 
+				#fi
 			else
 				echo "Warning: No Accelwattch power report in ${bench_dir}."
 			fi

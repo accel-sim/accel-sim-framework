@@ -36,9 +36,10 @@ if [ -d $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ] ; then
 fi
 
 if [ "${1}" == "volta_ptx_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_ptx,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "volta_sass_hybrid" ] || [ "${1}" == "volta_sass_hw" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	#$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B cutlass_5_trace_validation -a -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 else
 	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 fi

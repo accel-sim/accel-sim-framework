@@ -281,10 +281,10 @@ class ConfigurationSpec:
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params + "\n"
 
         if options.accelwattch_HW:
-            if bench_name == "cutlass_perf_test":
-                config_text += "\n" + "-hw_perf_bench_name " + appargs_run_subdir.replace('/','_') + "\n"
-            else:
-                config_text += "\n" + "-hw_perf_bench_name " + bench_name + "\n"
+            # if bench_name == "cutlass_perf_test":
+            #     config_text += "\n" + "-hw_perf_bench_name " + appargs_run_subdir.replace('/','_') + "\n"
+            # else:
+            config_text += "\n" + "-hw_perf_bench_name " + bench_name + "\n"
 
         if options.trace_dir != "":
             cfgsubdir = re.sub(r".*(configs.*)gpgpusim.config", r"\1", config_text_file)
