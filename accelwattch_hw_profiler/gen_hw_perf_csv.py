@@ -279,7 +279,7 @@ for file in path:
         # calcualte elapsed cycle (total elapsed cycle / # of kernel launch)
         combine_kernel[:,38] = combine_kernel[:,38].astype(float) / float(count)
         # Num_Idle_SMs = Num_Idle_SMs / # of kernel launch
-        combine_kernel[:,35] = combine_kernel[:,35].astype(float) / float(count)
+        # combine_kernel[:,35] = combine_kernel[:,35].astype(float) / float(count)
         # tmp = np.reshape(np.zeros_like(combine_kernel[0]),[1,-1])
         # calculate metrics that need to be added for the same kernel
         tmp_sum = combine_kernel[:,1:34].astype(float) / float(count)
