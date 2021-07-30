@@ -127,6 +127,10 @@ for config in configs:
 				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_4096___n_128___k_4096___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
 			if 'cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass' in benchmarks:
 				benchmarks.remove('cutlass_perf_test___seed_2020___dist_0____m_2560___n_512___k_2560___kernels_wmma_gemm_nn____iterations_5___providers_cutlass')
+		
+		if config == "volta_sass_hybrid" or config == "volta_sass_hw":
+			if 'pathfinder-rodinia-3.1' in benchmarks:
+				benchmarks.remove('pathfinder-rodinia-3.1')
 
 		kernel_count = 0
 		
