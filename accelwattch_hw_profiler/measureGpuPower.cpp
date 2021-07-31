@@ -1,5 +1,4 @@
  /***************************************************************************\
-|*                      Modified by Tayler                                   *|
 |*                                                                           *|
 |*                                                                           *|
 |*      Copyright 2010-2012 NVIDIA Corporation.  All rights reserved.        *|
@@ -38,6 +37,11 @@
 |*                                                                           *|
 |*                                                                           *|
  \***************************************************************************/
+/********************************************************************
+ *      Modified by:
+ * Tayler Hetherington, University of British Columbia
+ * Vijay Kandiah, Northwestern University
+ ********************************************************************/
 
 #include <stdio.h>
 #include <stdlib.h>
