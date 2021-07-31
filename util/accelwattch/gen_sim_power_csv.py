@@ -188,6 +188,9 @@ for config in configs:
 				if config == "volta_ptx_sim" or config == "turing_ptx_sim" or config == "pascal_ptx_sim":
 					for each in ['MCP,','NOCP,']:
 						del power_dict[benchmark_idx][each] # PTX model doesnt need these counters anymore
+				elif config == "volta_sass_hw" or config == "volta_sass_hybrid":
+					for each in ['ICP,','RFP,']:
+						del power_dict[benchmark_idx][each] # HW and HYBRID model doesnt need these counters anymore
 				else:
 					for each in ['MCP,','TCP,','INT_MUL24P,','INT_MUL32P,','INT_DIVP,','FP_DIVP,','DP_DIVP,','NOCP,']:
 						del power_dict[benchmark_idx][each] # SASS model doesnt need these counters anymore
