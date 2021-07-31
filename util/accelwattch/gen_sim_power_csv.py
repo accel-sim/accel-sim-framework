@@ -12,17 +12,17 @@ from os.path import dirname, basename, isfile, join
 import shutil
 
 configs = []
-all_configs = ['volta_sass_sim', 'volta_sass_hw', 'volta_sass_hybrid', 'volta_ptx_sim']
+all_configs = ['volta_sass_sim', 'volta_sass_hw', 'volta_sass_hybrid', 'volta_ptx_sim', 'turing_ptx_sim', 'turing_sass_sim', 'pascal_ptx_sim', 'pascal_sass_sim']
 if (len(sys.argv) > 1):
 	if(str(sys.argv[1]) == 'all'):
 		configs = all_configs
 	elif (str(sys.argv[1]) in all_configs):
 		configs.append(str(sys.argv[1]))
 	else:
-		print "Please enter AccelWattch config: One of [volta_sass_sim,volta_sass_hw,volta_sass_hybrid,volta_ptx_sim] or 'all'"
+		print "Please enter AccelWattch config: One of [volta_sass_sim,volta_sass_hw,volta_sass_hybrid,volta_ptx_sim,turing_ptx_sim,turing_sass_sim,pascal_ptx_sim,pascal_sass_sim] or 'all'"
 		exit()
 else:
-	print "Please enter AccelWattch config: One of [volta_sass_sim,volta_sass_hw,volta_sass_hybrid,volta_ptx_sim] or 'all'"
+	print "Please enter AccelWattch config: One of [volta_sass_sim,volta_sass_hw,volta_sass_hybrid,volta_ptx_sim,turing_ptx_sim,turing_sass_sim,pascal_ptx_sim,pascal_sass_sim] or 'all'"
 	exit()
 
 power_counters = ['IBP,', 'ICP,', 'DCP,', 'TCP,', 'CCP,', 'SHRDP,', 'RFP,', 
@@ -121,7 +121,7 @@ for config in configs:
 			if 'cudaTensorCoreGemm' in benchmarks:
 				benchmarks.remove('cudaTensorCoreGemm')
 		
-		if config == "volta_ptx_sim":
+		if config == "volta_ptx_sim" or config == "turing_ptx_sim" or config == "pascal_ptx_sim":
 			if 'cutlass_perf_test_k1' in benchmarks:
 				benchmarks.remove('cutlass_perf_test_k1')
 			if 'cutlass_perf_test_k2' in benchmarks:
@@ -130,10 +130,22 @@ for config in configs:
 				benchmarks.remove('cutlass_perf_test_k3')
 			if 'hotspot-rodinia-3.1' in benchmarks:
 				benchmarks.remove('hotspot-rodinia-3.1')
+			if 'pathfinder-rodinia-3.1' in benchmarks:
+				benchmarks.remove('pathfinder-rodinia-3.1')
 
 		if config == "volta_sass_hybrid" or config == "volta_sass_hw":
 			if 'pathfinder-rodinia-3.1' in benchmarks:
 				benchmarks.remove('pathfinder-rodinia-3.1')
+
+		if config == "pascal_ptx_sim" or config == "pascal_sass_sim":
+			if 'cudaTensorCoreGemm' in benchmarks:
+				benchmarks.remove('cudaTensorCoreGemm')
+			if 'cutlass_perf_test_k1' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k1')
+			if 'cutlass_perf_test_k2' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k2')
+			if 'cutlass_perf_test_k3' in benchmarks:
+				benchmarks.remove('cutlass_perf_test_k3')
 
 		kernel_count = 0
 		
@@ -173,7 +185,7 @@ for config in configs:
 					power_dict[benchmark_idx][each] = float(baseline[each]) / float(kernel_count)
 				power_dict[benchmark_idx]['DRAMP,'] = power_dict[benchmark_idx]['DRAMP,'] + power_dict[benchmark_idx]['MCP,']
 				power_dict[benchmark_idx]['L2CP,'] = power_dict[benchmark_idx]['L2CP,'] + power_dict[benchmark_idx]['NOCP,']
-				if config == "volta_ptx_sim":
+				if config == "volta_ptx_sim" or config == "turing_ptx_sim" or config == "pascal_ptx_sim":
 					for each in ['MCP,','NOCP,']:
 						del power_dict[benchmark_idx][each] # PTX model doesnt need these counters anymore
 				else:

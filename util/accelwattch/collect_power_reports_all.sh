@@ -9,3 +9,7 @@ $ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh volta_sass_sim
 $ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh volta_sass_hw
 $ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh volta_sass_hybrid
 $ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh volta_ptx_sim
+$ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh turing_sass_sim
+$ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh turing_ptx_sim
+$ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh pascal_sass_sim
+$ACCELSIM_ROOT/../util/accelwattch/collect_power_reports.sh pascal_ptx_sim
