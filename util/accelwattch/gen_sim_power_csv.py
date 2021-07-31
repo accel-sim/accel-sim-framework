@@ -148,7 +148,10 @@ for config in configs:
 			kernelname = 'kernel_name=' + kernelnames[benchmark]
 			for each in power_counters:
 				baseline[each] = 0
-			benchmark_idx = (benchmark + '_k' + str(kernelVer))
+			if benchmark == 'cutlass_perf_test_k1' or benchmark == 'cutlass_perf_test_k2' or benchmark == 'cutlass_perf_test_k3':
+				benchmark_idx = benchmark
+			else:
+				benchmark_idx = (benchmark + '_k' + str(kernelVer))
 			power_dict[benchmark_idx] = collections.OrderedDict()
 			for each in range(len(x)):
 				x[each] = x[each].replace(" ", "")

@@ -7,7 +7,7 @@ fi
 
 if [ "${1}" == "" ]; then
 	echo "Please provide path to traces directory."
-	echo "For example: ./util/accelwattch/launch_jobs_all.sh /nfs-scratch/vkandiah/accel-sim-framework/hw_run/power_validation"
+	echo "For example: ./util/accelwattch/launch_jobs_all.sh /nfs-scratch/vkandiah/accel-sim-framework/hw_run/accelwattch_volta_traces"
 	exit
 fi
 
