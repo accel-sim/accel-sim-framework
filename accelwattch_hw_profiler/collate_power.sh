@@ -39,7 +39,12 @@ SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
 output_folder=$SCRIPT_DIR/collated_power
 cd $SCRIPT_DIR
 if [ ! "${1}" == "validation_power_reports" ] && [ ! "${1}" == "ubench_power_reports" ]; then
-    echo "Please enter a correct power reports directory, one of: [ubench_power_reports,validation_power_reports]. For example: ./collate_power.sh validation_power_reports"
+    echo "Please enter a correct power reports directory, one of: [ubench_power_reports,validation_power_reports]. For example: ./collate_power.sh validation_power_reports volta"
+	exit 1
+fi
+
+if [ ! "${2}" == "volta" ] && [ ! "${2}" == "turing" ] && [ ! "${2}" == "pascal" ]; then
+    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./collate_power.sh validation_power_reports volta"
 	exit 1
 fi
 
@@ -58,13 +63,13 @@ if [ -e "$SCRIPT_DIR/${1}" ] && [ -d "$SCRIPT_DIR/${1}" ]; then
 	done
 	python gen_hw_power_csv.py $output_folder
     if [  "${1}" == "validation_power_reports" ]; then
-        mv hw_power_results.csv hw_power_validation.csv
+        mv hw_power_results.csv hw_power_validation_${2}.csv
     else
-        mv hw_power_results.csv hw_power_ubench.csv
+        mv hw_power_results.csv hw_power_ubench_${2}.csv
     fi
     rm -r $output_folder
 else
-	echo "Please enter a correct power reports directory. Example: ./collate_power.sh validation_power_reports"
+	echo "Please enter a correct power reports directory. Example: ./collate_power.sh validation_power_reports volta"
 	exit 1
 fi
 

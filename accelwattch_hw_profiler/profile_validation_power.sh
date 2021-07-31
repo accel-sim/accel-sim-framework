@@ -51,11 +51,16 @@ if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
     ./extract_binaries.sh
 fi
 
+if [ ! "${1}" == "volta" ] && [ ! "${1}" == "turing" ] && [ ! "${1}" == "pascal" ]; then
+    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./collate_power.sh validation_power_reports volta"
+    exit 1
+fi
+
 cd $SCRIPT_DIR
 RODINIA_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1"
 PARBOIL_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
-BENCH_FILE="$SCRIPT_DIR/validation.cfg"
+BENCH_FILE="$SCRIPT_DIR/validation_${1}.cfg"
 
 backprop_k1_r="$BINDIR/backprop_k1 65536"
 backprop_k2_r="$BINDIR/backprop_k2 65536"
