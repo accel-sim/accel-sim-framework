@@ -52,7 +52,7 @@ if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
 fi
 
 if [ ! "${1}" == "volta" ] && [ ! "${1}" == "turing" ] && [ ! "${1}" == "pascal" ]; then
-    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./collate_power.sh validation_power_reports volta"
+    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./profile_validation_power.sh validation_power_reports volta"
     exit 1
 fi
 
