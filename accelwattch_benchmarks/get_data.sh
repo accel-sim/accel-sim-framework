@@ -29,14 +29,19 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-export BASH_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
-DATA_SUBDIR="/data_dirs/"
-DATA_ROOT=$BASH_ROOT$DATA_SUBDIR
+if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
+    echo "ERROR - Please run setup_environment before running this script"
+    exit
+fi
+
+DATA_ROOT=$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs
 
 if [ ! -d $DATA_ROOT ]; then
-    wget https://engineering.purdue.edu/tgrogers/gpgpu-sim/benchmark_data/all.gpgpu-sim-app-data.tgz
-    tar xzvf all.gpgpu-sim-app-data.tgz -C $BASH_ROOT
-    rm all.gpgpu-sim-app-data.tgz 
-	tar xzvf dct.tgz -C $DATA_ROOT
+	if [ "${1}" == "" ]; then
+		echo "Please provide path to accelwattch data tarball."
+		echo "For example: ./accelwattch_benchmarks/accelwattch_datasets.tgz"
+		exit
+	fi
+    tar xzvf ${1} -C $ACCELSIM_ROOT/../accelwattch_benchmarks/
 fi
 
