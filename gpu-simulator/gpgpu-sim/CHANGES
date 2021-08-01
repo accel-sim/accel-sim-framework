@@ -1,0 +1,569 @@
+LOG:
+Version 4.0.0 (development branch) versus 3.2.3
+-Front-End:
+1- Support .nc cache modifier and __ldg function to access the read-only L1D cache
+2- Partially-support some SASS_60 in the PTXP_PLUS (not completed yet)
+3- Added parsing support for wmma.load,wmma.mma and wmma.store ptx instructions
+4- Implmented cudaLaunchKernel for CUTLASS library
+5- Added support for cuDNN and Pytorch library
+6- Added checkpoint support ([Fore more details](checkpoint.md))
+-GPU Core Functional Simulation
+1- Implemented bfe, d4pa, bfi and prmt instruction 
+2- Implemented wmma.load and wmma.store supporting all the layout configuration for TITANV GPU
+3- Implemented wmma.mma instructions supporting all of its 32 configuration for TITANV GPU
+4- debug support for wmma instruction using debug_tensorcore flag
+-GPU Core Performance Simulation:
+1- Fermi/Pascal coalescer: coalescing on 32-bytes sectors.
+2- Adding separate int and dp units pipeline.
+3- diff dual issue: allow scheduler to issue diff insts at a time
+4- Fair memory issue from multiple schedulers.
+5- Added tensorcore unit pipeline.
+6- Corrected the bug in vector load instruction
+7- Volta sub-core model (scheduler isolation)
+-Cache System:
+1- Sector L1/L2 cache
+2- Fetch-on-write and lazy-fetch-on-read write allocation policy.
+3- Improving the L1 cache throughput (streaming L1 cache)
+4- Performance model for CUDA memory copy.
+5- Support memory partition indexing to reduce partition camping (POLY, XOR and PAE (ISCA’18)  Indexing)
+6- Adaptive cache configuration
+-Memory:
+1- Performance Model for HBM (mainly the dual-bus interface)
+2- Separate Read/Write buffers.
+3- Advanced bank indexing function.
+-Statistics:
+1- Adding more detailed cache statistics to define and analyze cache bottlenecks.
+2- Adding more detailed memory statistics (BLP, RBL, etc) to define and analyze memory bottlenecks.
+3- Addig new system stats: gpu occupancy, L2BW, etc
+-Library:
+1  Enabled CUTLASS Library on GPGPU-Sim
+2  Enabled CUDA 10
+-Regression:
+1- Added TensorCore Regression Kernel
+-Configs:
+Adding the Pascal and Volta config files that has been correlated against real hardware.
+See the correlation website here: 
+https://engineering.purdue.edu/tgrogers/group/correlator.html
+-General:
+1 - Applied a code formatting standard
+2 - Minimized number of global variables (to make the simulator parallelizable across multiple threads or multiple processes).
+All previous, independent global variables are now members of an object at some level.
+
+Version 3.2.3+edits (development branch) versus 3.2.3
+- Support for running regression tests using Travis
+- Support added for CUDA dynamic parallelism (courtesy of Jin Wang from Georgia Tech)
+- Added a parameter to the cache configuration to configure the set index 
+  function. Added a hash set index function to the Fermi L1 data cache for 
+  the two default cache sizes, 16KB/48KB with 32/64 sets.
+- Added support for named barriers.
+- Added support for bar.arrive and bar.red instructions.
+- Initial support for CUDA 5.0,5.5,6.0 and 7.5 to get basic sdk running (e.g., template, vectorAdd, ...). The issues required for CUDA 5.5 support were identified by the loneStarGPU group at The University of Texas at Austin and Texas State University.
+- Removed intersim2 svn repository files
+- Changed the makefile for cuobjdump_toptxplus,libcuda,intersim2 so that it outputs temporary files into the build directory
+- Branching config file for GeForceGTX750Ti
+- Branching correlation script for GeForceGTX750Ti. Modified config to fit Maxwell architecture. Modified shader.h to allow larger CTA per warp.
+- Additional changes to config file to reflect Maxwell uarch.
+- Bug fixes:
+    - Fixed bug #81, fix ordering of pushing branch entries to the stack
+    - Fixed a bug where for each icache miss we also count a hit
+    - Fixed bug #88, Ejection buffer and Boundary buffer in Intersim2 initialization with a wrong node number
+    - Fixed a bug where sm_version was hard coded to sm_20. Now, it extracts the highest sm version that is lower than
+      the forced_max_capability configuration in GPGPUSim. 
+
+Version 3.2.3 versus 3.2.2
+- Bug fixes:
+    - Fixed bug #78, added signed types to implementation of slct instruction.
+    - Fixed bug #64, properly handing unsigned add.
+    - Fixed bug #80, sad instruction operands were not corret.
+
+Version 3.2.2 versus 3.2.1
+- Added NVIDIA Quadro FX5600 GPGPU-Sim and GPUWattch configuration files.
+- Added cache_stats class to record all memory accesses and access outcomes 
+  for each cache. Switched from the legacy cache statistics recorded in 
+  the tag_array to the cache access functions. Updated the cache_statistic 
+  printing - providing a more meaningful breakdown. Cleaned up power_stats.cc/h
+  to reflect the changes in the cache statistics.
+- Adding support for cudaFuncSetCacheConfig API, that allows changing the 
+  L1 Cache and Shared Memory configurations across kernels. The support 
+  enables the user to specify two more configurations (Preferred L1) or
+  (Preferred Shared Memory) besides the default config. If the
+  cudaFuncSetCacheConfig API is used to set the cache configuration
+  of a specific kernel to either of these configuration (cudaFuncCachePreferShared,
+  cudaFuncCachePreferL1), the simulator will change the cache configuration
+  at kernel launch accordingly, if there is no alternative configurations
+  provided to the simulator it will use the default configurations with a 
+  warning message display        
+- Removed the use of gcc in compilation and the need for a bunch of unnecessary
+  'extern "c"' statements.
+- Removed print at kernel finish that dumped a warp issue histogram.
+- Added new option '-liveness_message_freq'.  It throttles the number of
+  simulation liveness messages printed by the timing model (defaults to 
+  1 message per second in wall clock time). 
+- Added breakdown for interconnection traffic based on memory access type. 
+- Changes to the makefiles s.t. all intermediate files get output to the build
+  directory, and nothing is written to the same directory as the source code
+- Implemented the WARPSZ query in CUDA.
+- Implemented a Static Warp Limiting Scheduler similar described in Rogers et. al.
+  (MICRO 2012).
+- Some whitespace cleanup.
+- Adding an option to force global memory access to skip L1 data cache, while
+  local memory accesses can still be cached in L1 data cache.  This feature can
+  be used to emulate the behavior of '-Xptxas -dlcm=cg'.  
+- Redesigned the memory partition microarchitecture model to allow multiple L2
+  cache banks (sub partitions) in each memory partition.  Each memory partition
+  contains a single DRAM scheduler, and one or more L2 cache banks.  Each L2
+  cache bank has an independent port to the interconnection network.  The
+  address decoder is extended to use the DRAM bank ID to assign the L2 banks
+  within each memory partition.  The configuration files are changes to have a
+  larger DRAM return queue to allow the credit-based arbiter between the sub
+  partitions and the DRAM scheduler to tolerate the minimum DRAM latency.  
+- Added a bandwidth model to throttle the cache hit bandwidth.  Now accesses
+  that exceed the data port width (but still fit within a cache line) will
+  occupy the cache for multiple cycles.  This allows us to decouple the L2
+  cache bandwidth from the interconnect network port bandwidth.  
+- Updated configurations for Geforce GTX 480 and Tesla C2050 to have two
+  sub-partitions in every memory partition.  The L2 cache bank in each
+  sub-partition has half the capacity of the original L2 cache bank.  Each L2
+  cache bank is configured to access at most 32B/cycle.  With twice the number
+  of connections to the memory partitions, the interconnection network now runs
+  at half of its original speed. 
+- Replaced intersim with intersim2. intersim is the original BookSim with 
+  extentions to interface with GPGPU-Sim. We applied similar changes to 
+  BookSim 2.0.
+- Added the ability to trace all the shader cores in the SHADER_DPRINTF
+- Warning fixes for various CUDA and gcc versions
+- Bug Fixes:
+    - Fixed icnt::full() check using wrong mf size
+    - Fixed the flit count sent to GPUWattch for atomic operations. 
+    - Fix for Bug 51 - Updated the function declaration of
+      clCreateContextFromType(). 
+    - Fix for Bug 55 - clCreateContextFromType() now accepts device type
+      CL_DEVICE_TYPE_ALL, CL_DEVICE_TYPE_ACCELERATOR, CL_DEVICE_TYPE_DEFAULT
+      and CL_DEVICE_TYPE_GPU.  Before only CL_DEVICE_TYPE_GPU is accepted. 
+    - Fix for Bug 53 - Returning the CL_DEVICE_TYPE property in proper size
+      from clGetDeviceInfo(...). 
+    - Fix for Bug 54 - Added code to automatically determine workgroup size.
+    - Fixing OpenCL functional simulation. Now the functional simulation routine
+      is called instead of mistakenly printing that the functional simulation
+      is not implemented.
+    - Fixed a mismatched new[] delete[]
+    - 'Constant dynamic' power not included in average/min/max power values.
+    - Average/min/max per-kernel powers not being reset at kernel boundaries causing 
+      incorrect per-kernel values.
+    - Fixed a dependency error in the src/cuda-sim Makefile.
+    - Fixing a source of non-determinism in GPGPU-Sim (Bug 147).
+    - Eliminated some memory leaks in the pure functional simulator
+    - Added check to AerialVision to detect and warn about performance metric
+      entries with no data.  
+    - Fix for Bug 63 - Changed bk[i]->n_idle++; to bk[j]->n_idle++; in
+      dram_t::cycle(). 
+    - Fixed the segmentation faults that occur when L2 cache is diabled.  The
+      bug was introduced when GPUWattch was integrated into GPGPU-Sim. 
+    - Fixed the deadlock that occurs when L1 cache is configured with
+      write-back, write-allocate policy.  The fix involves generating different
+      types of write-allocation requests for L1 and L2 caches, so that
+      write-allocation requests from L1 cache are not consumed by the L2 cache. 
+    - Fixed a bug that caused allocated local and stack memory to be not correctly
+      aligned.
+    - Fix for Bug 67 - updated the DRAM operaion coeff so that it adapts to different
+	  calculation interval. Moved the DRAM related coeffs in XML configuration. Both  
+	  gpuwattch_gtx480.xml and gpuwattch_quadrofx5600.xml are added with GDDR5/GDDR3
+	  coeffs.
+
+Version 3.2.1 versus 3.2.0
+- Added kernel name and launch uids to performance statistics log.
+- Added l2_cache_config class to extend baseline cache_config. Allows for
+  custom, L2 cache specific functions (such as tag/set index
+  generation functions).  
+- For clarity, renaming '-gpgpu_dram_sched_queue_size' to
+  '-gpgpu_frfcfs_dram_sched_queue_size'.
+- Print the max and the average queue size statistics for FRFCFS scheduling
+  only.
+- New gpgpu_dram_return_queue_size option, which specifies the size of
+  the return queue from the DRAM. 
+- Added a dynamic_warp_id field to each shdr_warp_t. dynamic_warp_id differs
+  from warp_id in that different warps
+  using the same warp scheduling slot (because one warp has finished and
+  another has taken it's place)
+  have the same warp_id but different dynamic_warp_ids.
+- Added extensions to the cache class hierarchy to allow for the use of custom
+  tag_array objects.
+- Added some additional const-correctness
+- Added a check in cache_config to prevent configuration that specifies a
+  writeback cache with allocation-on-fill policy.  The current implementation
+  of the allocation-on-fill policy assumes a non-writeback cache and never
+  generates any writeback traffic.  Even if the writeback traffic is generated,
+  the configuration (writeback cache + allocation-on-fill) will inevitably lead
+  to deadlock.  
+- Added the ability plot stats with an increasing number of data points in
+  aerielvision. Developers can now add statistics for plotting where the number
+  of entries in each slice is not known initially.
+- Added aerialvision support for profiling which warps issue on a sampling
+  shader.
+  This is a cycle by cycle breakdown of what warpi_ids/dynamic_warp_ids the
+  shader issued on a given core over time plotted as a stacked bar chart.
+  For example, by default every 500 cycles you get a colored breakdown of what
+  warps issued during those cycles.
+- Added DPRINTF support to gpgpusim. Allows for dynamically enabled print
+  streams. Currently the warp scheduler and scoreboard use this system.
+  All prints done after reading the configuration file should be moved to use
+  it.
+  See the manual for details on how to use the system.
+- Added support in ptx_instruction to return a std::string which returns the
+  ptx/ptxplus line.
+- Added a Greedy Then Oldest (GTO) warp scheduler
+  as described by Rogers et al.(Cache-Conscious Wavefront Scheduling
+  - MICRO 45).
+- Set the GTO scheduler as the default in the GTX480 configuration.
+- Bug Fixes:
+    - Applied patch from Kito Cheng to update libopencl for checking NULL error
+      code pointer. 
+    - Set the numeric locale before the parsing to a standard locale with the
+      decimal point represented as "dot" not a "comma", so parsing is done
+      correctly independent of the system locale.
+    - Fixed L2 Writeback bug caused by using the memory partition address for 
+      both the cache set index generation and for storing tag/block address. 
+      Caused writebacks from the L2 to have a different address than the
+      original memory request.
+    - Fixed a number of warnings generated by gcc 4.7.x
+    - Fixed a delete [] problem.
+    - Fixed a potential issue memsetting *this to 0.
+    - Fix for Bug 42 - ptx parse failure on valid ptx file (Alexander Samoilov)
+    - The fix for Bug 42 uncovered a bug processing the special "null" register
+      denoted by "_".  This has been fixed.
+    - Fixed the implementation of the two level scheduler.
+      Previously testing if an instruction was dependent on a long latency
+      operation was broken
+    - Fixed a bug in setup_enironment that trashed your LD_LIBRARY_PATH if
+      GPGPUSIM_ROOT was not the first entry in the list;.
+    - Fixed a GPUWattch bug where the performance counters were not being correctly
+      reset when a kernel completes. 
+    - Fixed implementation for mov.pred with literal input (need to explicitly
+      treat zero as false and non-zero as true). 
+    - Fix for bug 47 - Issue with generating PTXPLUS with global __device__ 
+      variables: Expecting ".nv.global", provided ".nv.global.init". 
+    - Fixing GPUWattch McPAT Makefile to use -m32 for 32 bit and -m64
+      for 64 bit Linux. 
+    - Fix for [Bug 43] Incorrect power results - new gpuwattch_gtx480.xml file
+    - Fix incorrect initialization of wire_length variable in cacti/wire.cc. 
+      Caused incorrect per-access cache energy.
+       
+Version 3.2.0 versus 3.1.2
+- Added GPUWattch GPGPU power model based on McPAT 0.8beta. 
+
+Version 3.1.2 versus 3.1.1
+- Added support for CUDA 4.1 and 4.2 (PTX 3.0). 
+- Added an improved and less brittle support for associating fatbins to
+  sections from the output of cuobjdump
+- Added raw simulation time printout back for CUDA.  
+- Revived support for PTX file override via environment variables for CUDA 4.0
+  onwards.
+- Experimental support for libraries, currently not working because of
+  undocumented functions in the cuda runtime API.
+- Converted loading fat binaries to be done on demand basis
+- Added support for vote.ballot instruction. 
+- Added support for popc instruction. 
+- Changed ssy ptxplus instructions to have their own opcode but they still act
+  as a nop right now.
+- Added support for converting BRX sass instructions to brx ptxplus
+  instructions in cuobjdump_to_ptxplus and started work on getting the brx
+  ptxplus instruction to work in gpgpusim.
+- Modified the cache hierarchy (cache_t -> baseline_cache -> [read_only_cache,
+  data_cache, ...])
+- Enabled configurable cache policies (write-back, write-through) and
+  implemented a write-allocate policy
+- Added functional execution support for shared memory atomic operations
+- Updated the option parser to support strings delimited by characters such as
+  '=' and ';'.  This allow options with a long string of sub-options (e.g. DRAM
+  timing) to have a more friendly format. 
+- Changed the DRAM timing option to a more reader-friendly format. 
+- Added support for the PTX version 3.0 codes generated by NVIDIA OpenCL
+  drivers newer than version 256.40. 
+- nvopencl_wrapper now works on machine with both AMD and NVIDIA GPUs.  It will
+  automatically compile the OpenCL Kernels via the NVIDIA platform. 
+- Bug Fixes:
+    - Fixed a compile error that happens with newer gcc/g++ versions (4.7.1)
+    - Fixed a bug with the association between cuobjdump output and cubin
+      handles (Bug #7 external)
+    - Adding support for atomic operations with generic memory space.  Before
+      this, atomic operations can only work on global memory space.  (Bug #14
+      external)
+    - Fixed a bug in conversion to ptxplus that was causing local memory store
+      or load instruction to be ignored.
+    - Adding support for direct addressing using immediate values for the load
+      and store instructions.
+    - Fixed a bug that was causing inconsistency in local memory address
+      calculations
+    - Fixed incorrect counting of predicated instructions.  Now instructions
+      are counted into gpu_sim_insn regardless of predication outcome.  (Bug
+      #15 external)
+    - Added support for cudaReadModeNormalizedFloat (a texture read mode). 
+    - Fixed texture fetching for 1D texture with non-normalized coordinates. 
+    - Fixed mult-element texel fetching (e.g. texel with RGBA components).  
+    - Fixed bug where Global variables were not being declared in ptxplus.
+    - Fixed bug with IADD.CARRY sass instruction conversion to addp ptxplus
+      instruction.
+    - Fixed bug with .half ptxplus instruction modifier showing up on the wrong
+      instruction or not showing up at all. This should correct a bug where the
+      instruction addresses in ptxplus are different than sass. They need to be
+      the same for the brx ptxplus instruction to work.
+    - Fixed a bug where the L2 cache was modelling write-back for local writes
+      and write-evict for global writes - Should be write-back for all writes.
+    - Fixed bug that was causing undetermistic kernel end detection inside the 
+      simulation thread.
+    - Fixed clCreateProgramWithSource to accept NULL or 0 as string length parameter
+    - Fixed replacement of printf modifiers when compiling OpenCL code (e.g. '%f')
+    - Fixed the shared memory bank conflict model for GTX 480 and Tesla C2050.
+      Added options to configure the number of shared memory banks per shader
+      core and to allow a more flexible broadcast mechanism. 
+    - Fixed the timing model for LDU instruction, before it was not recognized
+      as a memory instruction in the timing model.
+    - Removed memory leak in cudaSetupArgument(). 
+    - Fixed .loc directive parsing for PC-Histogram (CFLog) in AerialVision. 
+
+Version 3.1.1 versus 3.1.0
+- Add checks to top level makefile to ensure setup_environment is run and
+  checks to setup_environment to ensure a compatible version of CUDA is
+  installed.
+- Change Fermi configuration folder name to GTX480.
+- Added TeslaC2050 configuration.
+- Added a two level warp scheduler (as presented at ISCA 2012 tutorial).
+- Cleaner makedepend that doesn't interfere with Makefiles
+- Removed a dependency on an inhouse implementation of a string list in
+  cuobjdump_to_ptxplus.
+- Cleaned up the information printed out to stdout/stderr during the operation
+  of cuobjdump_to_ptxplus.
+- Change cuobjdump_to_ptxplus to use std::string instead of char*.
+- Print out instructions at branch divergence/reconvergence points
+- Bug Fixes:
+    - SIMT stack correctly handles recursive functions by allocating a new
+      stack entry on every
+      function call
+    - Fixed a bug in executing call_imp and callp_imp with the pure functional
+      simulation mode.
+    - Fixed a couple of memory errors in cuobjdump_to_ptxplus code.
+    - Implemented better support for handling memory operand type modifier
+      in cuobjdump_to_ptxplus
+    - Correctly handling MVC instructions in cuobjdump_to_ptxplus; now they can
+      map to cvt or mov.
+    - Corrected calculation of average memory latency.  Before this fix, the
+      metric was only reporting the average for memory accesses from the final 
+      AerialVision sampling window.  Now the metric reports average memory 
+      latency for all memory accesses in the entire application run. 
+    - Corrected GDDR5 parameters in Fermi configuration: 
+      - Increased burst length to 8 and changed the address mapping to reflect
+        16 banks as suggested by Jungrae
+      - Decreased DRAM clock to 924MHz from 1848MHz. 
+      - Corrected CAS Latency, Write Latency and other timing constraints. 
+      - Added a new option 'dram_data_command_freq_ratio' to configure the
+        frequency ratio between the DRAM data bus and command bus.  This allows
+        GPGPU-Sim to support both GDDR3 (data rate = 2X command rate) and GDDR5
+        (data rate = 4X command rate). 
+    - Fixed the DRAM performance statistics log to display information properly
+      when there are more than 4 banks in each partition (reported by Jungrae).
+    - Fixing a bug in the opencl prebuilt ptx flow.
+      If a kernel made modifcations to the .cl code at runtime (like changed
+      the block size or some other constants) then recompiled itself, the 
+      saved_embedded_ptx flag would just overwrite the same ptx file.  
+      The same thing happened when using a prebuilt ptx file through
+      PTX_SIM_USE_PTX_FILE - It always wanted to
+      load the same ptx file even though there should have been more than one.
+    - Fixed bug that caused $p3 to be used before it was initialized.
+
+Version 3.1.0 versus 3.0.2
+- Support for CUDA 4.0 for both PTX and PTXPlus.
+- Support for using cuobjdump to extract PTX/SASS from binaries.
+- Complete rework for the SASS to PTXPlus conversion code including support for
+  code generated by cuobjdump.
+- Support for configurable pipeline widths.
+- Support for a configurable number of functional units within an SM.
+- Model for GDDR5 bank groups.
+  - GDDR5 configuration.
+- Extended the result bus model to allow issuing/retiring more than one
+  instructions from multiple function unit per cycle.
+- Support for configurable instruction latency and initiation interval
+  - Added corresponding configuration to Fermi and Quadro config files according
+    to benchmark results
+- Support for 64-bit atomicAdd, atomicExch, and atomicCAS. 
+- Support for 32-bit floating point atomicAdd. 
+- New installation instructions for AerialVision, removed deprecated install
+  script.
+- Rework for some makefiles
+- Removed the no longer supported/used decuda_to_ptxplus
+- Removed all dependencies on the boost libraries. Now GPGPU-Sim can run
+  without boost.
+- Added missing support for -gpgpu_perfect_mem. When enabled this option models
+  a memory system with single cycle latency per memory request for accesses
+  that miss in the L1 cache. Bandwidth is limited to one memory request issued
+  per SIMT core cycle. Note this means uncoalesced accessess will be slower
+  than coalesced accesses.
+- Bug Fixes:
+    - Added a missed call to operand collector writeback which fixes some
+      writebacks that were not considered by the operand collector.
+    - Fix for a bug that caused global symbol tables to be re-initialized after
+      parsing each ptx file.
+    - Fix for a rare race condition that prevented kernel stats from being
+      printed
+    - Fix for miscalculation of the gpu_total_sim_rate value printed at the end
+      of a kernel launch
+    - Fix for a bug that caused atomic accesses not to have a payload to the
+      Atomic Operation Unit; atomic accesses now have a payload both to and
+      from the Atomic Operation Unit
+    - Fixed a bug that caused deadlock check to be omitted
+    - Updated the Fermi config files such that when an access misses the L1
+      data cache, it allocates a line immediately before sending a data fetch
+      request out to the memory partition. 
+    - Changed the writeback arbitration among multiple clients in the LDST unit
+      to round-robin. 
+    - Fixed a rare pathological case that caused LD instructions with divergent
+      memory accesses to be overcounted.  
+    - Fixed linear_to_raw_address_translation::partition_address() so that it 
+      works for non-power-of-two number of memory partitions.  Before, it just 
+      returns the input memory address without any change.  
+    - Fixed warp_inst_t::memory_coalescing_arch_13() to use the 
+      gpgpu_shmem_warp_parts option to divide up the warps in the coalescing 
+      logic.  It was hardcoded to 2, which causes coalescing to always operate 
+      on half-warps. 
+
+Version 3.0.2 versus 3.0.1
+- Added Fermi configuration
+- Revived functional simulation mode
+- AerialVision: Revived support for PC-Histogram
+- AerialVision: Revived collection of source code view metrics (all except
+  exposed pipeline latency)
+- Added missing function implementations (caused static linking with GPGPU-Sim
+  to fail).
+- Fixed div_impl with 32-bit and smaller integers (Uninitialized upper bits in
+  the operands was causing the instruction to behave incorrectly).
+- Updated setup_environment script to handle host names with empty domains.
+- Forced L2 cache line size to be greater than or equal to L1 cache line size
+- L2 caches can now be disabled
+- Increased Quadro config's L2 line size to 256B and total L2 size to 256kB
+- Fixed generation of memory requests for local.s8 load instructions (fixed a
+  bug in local memory address translation)
+- Conflicting atomic accesses now generate multiple requests during coalescing
+- Updated Doxygen scripts
+- Fixed dump pipeline in case of L1 disabled.
+- Fixed a bug in the debug printing system by making the enum and string array
+  use the same list
+- Fixed a bug where the ldst_unit::cycle and ldst_unit::writeback were being
+  processed at different rates
+- Changes to setup_environment to prevent path explosion and crashing due to
+  empty host domain name
+- Changed the remote OpenCL compilation to use rsync instead of scp (scp had
+  issues with concurrent copying).
+- Fixed the data collection code for the following metrics (in 3.0.0 and 3.0.1
+  they were only counting memory instructions that generate off-core traffic):
+  gpgpu_n_load_insn
+  gpgpu_n_store_insn
+  gpgpu_n_shmem_insn
+  gpgpu_n_tex_insn
+  gpgpu_n_const_mem_insn
+  gpgpu_n_param_mem_insn
+- Fixed a bug where the PTX load and store instructions' input address register 
+  dependencies were not being registered with the scoreboard. 
+- Updated how pending hits in data cache are reported (3.0.0 and 3.0.1 reports 
+  the difference between the number of cache misses and pending hits). 
+- Fixed a bug where a configuration with non power-of-two number of memory 
+  partitions can cause two different linear address to be aliased into the 
+  same intra-partition address at the same memory partition. 
+
+Version 3.0.1 versus 3.0.0b
+- Updated README and setup_environment for more streamlined setup. 
+  Including install instructions for Ubuntu 10.04.3 LTS
+- Changed Quadro FX 5800 config to use PTX by default (not SASS/decuda)
+- Added Doxygen generated documentation
+- Removed ISPASS 2009 configuration (use Quadro FX 5800 config instead)
+- Removed common.mk (run native CUDA/OpenCL applications)
+- Removed out-of-date GPGPU-Sim documentation. This wil be updated in a 
+  later release.  Refer to Doxygen documentation and/or source code.
+- Added prints for L1 data cache statistics
+- SIMD width option removed from shader_core_pipeline_opt (was not used)
+- Added read-to-precharge constraint in DRAM
+- Disabled Stream Manager's verbose output by default, use debug level 3 to 
+  enable it
+- Addresses returned by memory allocation are now 256 bytes aligned
+- Ejection from the clock domain interface buffer between interconnection 
+  network and L2 cache happens in the L2 clock domain instead of interconnect 
+  clock domain.
+- Update OpenCL support to work with AMD OpenCL sample applications
+- Bug fixes
+   - Fixed the variation in instruction count seen under different cache
+     configurations on the same workload
+   - Fixed unnecessary flushing of instruction buffer
+   - Fixed mislabeling of stall cycles recorded by scheduler
+   - Fixed compilation issues when using gcc 4.5.1
+   - Cleanup and bugfixes to build scripts
+   - Fixed gpu_sim_cycle with sequential kernel launches
+   - Fixed memory corruption bug in decuda_to_ptxplus causing parse errors
+
+Version 3.0.0b versus 2.1.2b
+- massive refactoring of code to C++ (most global variables eliminated)
+- support for executing native SASS code via decuda
+- added to timing model:
+   - in order scoreboard allowing multiple instructions per warp in 
+     pipeline at a time
+   - operand collector for modeling access to banked register files
+   - prefetching texture cache model (Igehy et al., Graphics Hardware 1998)
+   - updated data and constant cache models with updated MSHR model
+- other changes I don't remember right now
+
+Version 2.1.2b versus 2.1.1b:
+- Better 1D texture support 
+- bar.sync timing change for compatibility with NVIDIA hardware 
+  (release barrier when all warps reach barrier, irrespective of 
+  divergence state). Functional simulation mode disabled to 
+  implement the expected barrier behavior under branch divergence 
+- Refactored memory stage 
+- Limited miss status holding registers 
+- Experimental support for running on Mac OS X 
+- Register bank conflict modeling (see MICRO-42 tutorial) 
+- Changed files to C++ 
+- Updated makefiles 
+- Various improvements to aerialvision 
+- Simulation speed improvement 
+- Various minor fixes 
+
+Version 2.1.1b versus 2.1.0b:
+- Added support for OpenCL (requires OpenCL driver from NVIDIA)
+- Added performance visualizer tool
+- Added manual documenting usage of the simulator (see doc directory)
+- Added configuration file for Quadro FX5800 (see configs directory)
+- Simultaneous release of benchmarks from ISPASS 2009 paper (separate download)
+- Improved shared memory bank conflict modeling
+- Improved default mapping of local memory accesses to global address space 
+- Added interconnect concentration modeling (to approximate effect of a TPC)
+- Added support for GPU-to-GPU memory copies (same GPU), timing not modeled
+- SimpleScalar code (for command line parsing and functional simulation of 
+  memory) removed.
+- PTX support for vector operands in mov instruction
+- Bug fixes
+   - stack overwrite bug fix (with thanks to Jake Adriaens)
+   - interconnect clock domain crossing "bottleneck" bug (was not removing
+     traffic quickly enough going from memory to shader cores)
+   - immediate post dominator detection (affected eigenvalues SDK benchmark)
+   - CTA/core calculation error with PTX containing calls and returns
+   - global symbol lookup error when building with multiple .cu files
+- Other general improvements and bugfixes
+
+Version 2.1.0b versus 2.0b:
+- Added support for parsing and functionally simulating up to CUDA 2.2 
+  generated PTX
+- Added dynamic warp formation timing model (see MICRO'07, ACM TACO'09 papers)
+- Updated gpgpusim.config and mesh in benchmark subdirectories to be similar to
+  ISPASS 2009 paper baseline configurations
+- Added OpenGL interoperability support
+- Added support for parsing embedded PTX files without requiring recompilation 
+  (suggested by Gregory Diamos)
+- Improved support for texture filtering (linear mode for 2D, closer agreement
+  to hardware for 2D point sampling where sample points are close to texel
+  boundaries)
+- Benchmark examples updated to version from CUDA 2.2 SDK (NOTE: these will not 
+  compile with earlier CUDA installations. However, GPGPU-Sim should still work 
+  with applications written for older versions of CUDA.)
+- Fixed splash screen: was reporting incorrect version
+- Fixed bug comparing strings in basic block formation code
+- Fixed bug with additional basic block (which lead to incorrect postdominator 
+  analysis on some benchmarks with recent versions of CUDA)
+- Fixed "warning: "/*" within comment" when building.
+- "Other general improvements"

@@ -1,0 +1,57 @@
+// Copyright (c) 2009 by Tor M. Aamodt, Tim Rogers and 
+// The University of British Columbia
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// Redistributions of source code must retain the above copyright notice, this
+// list of conditions and the following disclaimer.
+// Redistributions in binary form must reproduce the above copyright notice, this
+// list of conditions and the following disclaimer in the documentation and/or
+// other materials provided with the distribution.
+// Neither the name of The University of British Columbia nor the names of its
+// contributors may be used to endorse or promote products derived from this
+// software without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS" AND
+// ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
+// WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
+// DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE
+// FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL
+// DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+// SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER
+// CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY,
+// OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
+// OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
+
+MF_TUP_BEGIN( mem_fetch_status )
+    MF_TUP( MEM_FETCH_INITIALIZED ),
+    MF_TUP( IN_L1I_MISS_QUEUE ),
+    MF_TUP( IN_L1D_MISS_QUEUE ),
+    MF_TUP( IN_L1T_MISS_QUEUE ),
+    MF_TUP( IN_L1C_MISS_QUEUE ),
+    MF_TUP( IN_L1TLB_MISS_QUEUE ),
+    MF_TUP( IN_VM_MANAGER_QUEUE ),
+    MF_TUP( IN_ICNT_TO_MEM ),
+    MF_TUP( IN_PARTITION_ROP_DELAY ),
+    MF_TUP( IN_PARTITION_ICNT_TO_L2_QUEUE ),
+    MF_TUP( IN_PARTITION_L2_TO_DRAM_QUEUE ),
+    MF_TUP( IN_PARTITION_DRAM_LATENCY_QUEUE ),
+    MF_TUP( IN_PARTITION_L2_MISS_QUEUE ),
+    MF_TUP( IN_PARTITION_MC_INTERFACE_QUEUE ),
+    MF_TUP( IN_PARTITION_MC_INPUT_QUEUE ),
+    MF_TUP( IN_PARTITION_MC_BANK_ARB_QUEUE ),
+    MF_TUP( IN_PARTITION_DRAM ),
+    MF_TUP( IN_PARTITION_MC_RETURNQ ),
+    MF_TUP( IN_PARTITION_DRAM_TO_L2_QUEUE ),
+    MF_TUP( IN_PARTITION_L2_FILL_QUEUE ),
+    MF_TUP( IN_PARTITION_L2_TO_ICNT_QUEUE ),
+    MF_TUP( IN_ICNT_TO_SHADER ),
+    MF_TUP( IN_CLUSTER_TO_SHADER_QUEUE ),
+    MF_TUP( IN_SHADER_LDST_RESPONSE_FIFO ),
+    MF_TUP( IN_SHADER_FETCHED ),
+    MF_TUP( IN_SHADER_L1T_ROB ),
+    MF_TUP( MEM_FETCH_DELETED ),
+    MF_TUP( NUM_MEM_REQ_STAT )
+MF_TUP_END( mem_fetch_status )
