@@ -130,7 +130,7 @@ To launch jobs for all AccelWattch configurations needed to reproduce Figures 7 
 ```
 ./util/accelwattch/launch_jobs_all.sh <path to root accelwattch traces directory>  
 ```
-The above will create accelwattch_runs/ directory which contain all the job runs and simulator output.
+The above will create accelwattch_runs/ directory which contain all the job runs, AccelWattch configuration files, Accel-Sim configuration files, and simulator output.
 
 ### Monitoring AccelWattch jobs
 You can monitor the job status for a specific AccelWattch configuration among [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim, pascal_sass_sim, pascal_ptx_sim, turing_sass_sim, turing_ptx_sim] using:
