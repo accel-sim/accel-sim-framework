@@ -66,7 +66,7 @@ cd accelwattch_benchmarks
 ```
 
 ### Setting up datasets for AccelWattch Validation Benchmarks
-Please run setup_environment this before doing anything below:
+Please run setup_environment before doing anything below:
 ```
 source gpu-simulator/setup_environment.sh
 ```
@@ -106,20 +106,14 @@ This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv
 If you are recollecting Accel-Sim traces:
 ```
 # Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc  
-  
-# Get the applications, their data files and build them:  
-git clone https://github.com/accel-sim/gpu-app-collection  
-source ./gpu-app-collection/src/setup_environment  
-make -j -C ./gpu-app-collection/src rodinia_2.0-ft  
-make -C ./gpu-app-collection/src data  
-  
+
 # Run the applications with the tracer (remember you need a real GPU for this):  
 ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -D <gpu-device-num-to-run-on>  
 # Since Pascal does not have tensor cores, use this command instead if you're collecting Pascal traces:
 # Run the applications with the tracer (remember you need a real Volta GPU for this):  
 ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation -D <gpu-device-num-to-run-on>  
 ```
-Make sure the collected traces or the traces provided at the DOI repository inside accelwattch_traces/ are extracted and folders accelwattch_volta_traces/, accelwattch_pascal_traces/, accelwattch_turing_traces/ are present inside the same directory like accelwattch_traces/ before proceeding below. These traces are required for SASS mode of Accel-Sim simulations.
+Make sure the collected traces are placed in these respective folders per GPU arch: accelwattch_volta_traces/, accelwattch_pascal_traces/, accelwattch_turing_traces/. Thesse diectories should all be present inside the same directory like accelwattch_traces/ before proceeding below. Traces provided at the DOI repository at accelwattch_traces/ are already in this directory structure, however, you would have to extract them. These traces are required for SASS mode of Accel-Sim simulations.
 
 ### Launching AccelWattch jobs
 To launch jobs for a specific AccelWattch configuration among [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim, pascal_sass_sim, pascal_ptx_sim, turing_sass_sim, turing_ptx_sim], run:
@@ -170,11 +164,12 @@ At this point you should have a CSV file (like accelwattch_volta_sass_sim.csv) c
 
 The provided excel file AccelWattch_graphs.xlsx contains all the graphs with the raw data pre-filled. 
 
-For volta_sass_sim AccelWattch configuration: Open the provided excel file AccelWattch_graphs.xlsx and paste the numbers from accelwattch_volta_sass_sim.csv into the correct columns in sheet 'Volta_SASS_SIM'. 
-Make sure to check if the hw_power_validation_volta.csv file contains the benchmarks in the same order as the excel sheet because different configurations have a different set of validation benchmarks. Paste the mean hardware power measurements from hw_power_validation_volta.csv into the correct rows in column AF on the same sheet 'Volta_SASS_SIM'. This should update all the graphs shown in the excel file that are generated from the Power per Component table in sheet 'Volta_SASS_SIM'.
+For volta_sass_sim AccelWattch configuration: Open the provided excel file AccelWattch_graphs.xlsx and copy paste the numbers from accelwattch_results/accelwattch_volta_sass_sim.csv into the correct columns in sheet 'Volta_SASS_SIM'. 
+Make sure to check if the hw_power_validation_volta.csv file contains the benchmarks in the same order as the excel sheet because different AccelWattch configurations have a different set of validation benchmarks. Paste the mean hardware power measurements from accelwattch_hw_profiler/hw_power_validation_volta.csv into the correct rows in column AF on the same sheet 'Volta_SASS_SIM'. This should update all the graphs shown in the excel file that are generated from the Power per Component table in sheet 'Volta_SASS_SIM'.
 
-You can repeat the process above for each AccelWattch configuration. 
-Note that we apply technology node scaling for Pascal configurations. Hence, paste the data from your CSV files into the table marked at 'BEFORE SCALING' in those respective sheets in the excel file. The table above that will be updated automatically with the technology-scaled power readings which is what we present in our MICRO'21 paper. 
-Note that we apply a fudge factor for constant power component in all turing configurations. Hence, make sure to not overwrite the 'Sim_Total (in Watts)' column in the respective sheets for turing configurations.
+The same process as above can be repeated for each AccelWattch configuration. 
+
+Note that we apply technology node scaling for Pascal configurations. Hence, paste the data from your CSV files into the table marked as 'BEFORE SCALING' in those respective sheets in the excel file. The table above that will be updated automatically with the technology-scaled power readings. This is what we present in our MICRO'21 paper. 
+Also, note that we apply a fudge factor for constant power component in all turing configurations. Hence, make sure to not overwrite the 'Sim_Total (in Watts)' column in the respective sheets for turing configurations.
 
 The sheet 'Correlation plots' contains Fig 7 and Fig 10 in our MICRO'21 paper. Similarly, the sheet 'Power Breakdowns' contains Fig 8,9,11, and the sheet 'Relative Accuracy' contains Fig 12.
