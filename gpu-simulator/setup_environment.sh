@@ -40,7 +40,7 @@ fi
 
 if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
 
-    git clone https://github.com/VijayKandiah/gpgpu-sim_distribution.git  $ACCELSIM_ROOT/gpgpu-sim
+    echo "Please install a version of GPGPU-Sim here as directory gpgpu-sim/."
 
 fi
 
