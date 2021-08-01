@@ -10,6 +10,16 @@ Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
 in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
 ```
 
+This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. Please look at AccelWattch.md for a detailed guide to use AccelWattch.
+If you use any component of AccelWattch, please cite:
+
+```
+Vijay Kandiah, Scott Peverelle, Mahmoud Khairy, Amogh Manjunath, Junrui Pan, Timothy G. Rogers, Tor Aamodt, Nikos Hardavellas,
+AccelWattch: A Power Modeling Framework for Modern GPUs,
+in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
+```
+
+
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
