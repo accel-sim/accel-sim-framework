@@ -83,9 +83,9 @@ Once all the validation suite binaries are located at accelwattch_benchmarks/val
 ```
 ./accelwattch_hw_profiler/profile_validation_power.sh validation_power_reports volta
 ```
-to measure power five times for each validation set kernel. Note that this requires the presence of a Volta GV100 GPU in your system.
+to measure power five times for each validation set kernel. Note that you need to have a GPU card in your system.
 
-To collect the power reports generated above and create hw_power_validaton_volta.csv containing mean of the five power measurements recorded per validation kernel, run: 
+To collect the power reports generated above and create hw_power_validaton_volta.csv containing the mean of the five power measurements recorded per validation kernel, run: 
 ```
 ./accelwattch_hw_profiler/collate_power.sh validation_power_reports volta
 ```
