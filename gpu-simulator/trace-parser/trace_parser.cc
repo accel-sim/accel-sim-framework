@@ -357,7 +357,7 @@ void trace_parser::kernel_finalizer() {
     ifs.close();
 }
 
-bool trace_parser::get_next_threadblock_traces(
+void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
     unsigned trace_version) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
@@ -417,6 +417,4 @@ bool trace_parser::get_next_threadblock_traces(
       }
     }
   }
-
-  return true;
 }

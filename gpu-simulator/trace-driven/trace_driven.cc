@@ -88,14 +88,8 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 bool trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
-  for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
-    threadblock_traces[i]->clear();
-  }
-
-  bool success = m_parser->get_next_threadblock_traces(
+  m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion);
-
-  return success;
 }
 
 bool trace_warp_inst_t::parse_from_trace_struct(
