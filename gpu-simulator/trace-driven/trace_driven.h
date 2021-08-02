@@ -60,7 +60,7 @@ public:
                       trace_parser *parser, class trace_config *config,
                       kernel_trace_t *kernel_trace_info);
 
-  bool get_next_threadblock_traces(
+  void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces);
 
 private:

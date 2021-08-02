@@ -86,7 +86,7 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   }
 }
 
-bool trace_kernel_info_t::get_next_threadblock_traces(
+void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion);
