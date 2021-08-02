@@ -111,7 +111,7 @@ public:
   bool trace_done();
   address_type get_start_trace_pc();
   virtual address_type get_pc();
-  trace_warp_inst_t *set_kernel(trace_kernel_info_t *kernel_info) {
+  void set_kernel(trace_kernel_info_t *kernel_info) {
     m_kernel_info = kernel_info;
   }
 
