@@ -89,7 +89,9 @@ quasirandomGenerator_k2_r="$BINDIR/quasirandomGenerator_k2"
 sobolQRNG_k1_r="$BINDIR/sobolQRNG_k1"
 srad_v1_k1_r="$BINDIR/srad_v1_k1 100 0.5 502 458"
 
-
+if [ ! -f $PROFILER ]; then
+	make -C $ACCELSIM_ROOT/../accelwattch_hw_profiler
+fi
 
 if [ -d $SCRIPT_DIR/validation_power_reports ]; then
 	rm -r $SCRIPT_DIR/validation_power_reports
