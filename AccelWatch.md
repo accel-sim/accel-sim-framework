@@ -81,6 +81,7 @@ Extract the datasets required by AccelWattch Validation benchmarks into the acce
 ### Measuring power for validation kernels
 Once all the validation suite binaries are located at accelwattch_benchmarks/validation, run:
 ```
+make -C ./accelwattch_hw_profiler
 ./accelwattch_hw_profiler/profile_validation_power.sh validation_power_reports volta
 ```
 to measure power five times for each validation set kernel. Note that you need to have a GPU card in your system.
