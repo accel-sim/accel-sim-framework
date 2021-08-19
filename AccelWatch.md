@@ -77,6 +77,8 @@ To extract pre-compiled binaries for AccelWattch:
 cd $ACCELSIM_ROOT/../accelwattch_benchmarks
 ./extract_binaries.sh
 ```
+This will create a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
+
 **NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, it is best to compile the binaries yourself following the previous step above.
 
 
