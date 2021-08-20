@@ -39,6 +39,12 @@ temp=65
 samples=600
 sleep_time=30
 
+if [ "${1}" == "" ]; then
+    echo "Please enter the GPU device ID;  For example: ./profile_ubench_power.sh 1"
+    exit 1
+fi
+DEVID=${1}
+
 SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
 BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
@@ -76,8 +82,8 @@ do
         fi
         echo "Starting profiling of $bm_name"
         mkdir -p $SCRIPT_DIR/ubench_power_reports/$bm_name				
-        $BINDIR/$bm & 
-        $PROFILER -t $temp -r $rate -n $samples -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
+        CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm & 
+        $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
         kill_name=`echo $bm | awk '{print $1}'`
         pid=`nvidia-smi | grep $kill_name | awk '{ print $5 }'`
         echo "Profiling concluded. Killing $bm_name with pid: $pid"
@@ -85,12 +91,12 @@ do
         
         if cat $SCRIPT_DIR/ubench_profile_output/$bm_name.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
-            $BINDIR/mix6 2000000000 &
+            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/mix6 2000000000 &
             sleep 20
             pid=`nvidia-smi | grep mix6 | awk '{ print $5 }'`
             kill -9 $pid
-            $BINDIR/$bm & 
-            $PROFILER -t $temp -r $rate -n $samples -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
+            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm & 
+            $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
             pid=`nvidia-smi | grep $kill_name | awk '{ print $5 }'`
             echo "Profiling concluded. Killing $bm_name with pid: $pid"
             kill -9 $pid

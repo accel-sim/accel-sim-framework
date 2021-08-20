@@ -96,13 +96,13 @@ This will create a data_dirs/ folder in **$ACCELSIM_ROOT/../accelwattch_benchmar
 Once all the validation suite binaries are located at $ACCELSIM_ROOT/../accelwattch_benchmarks/validation, run this per GPU Arch among [volta, turing, pascal]:
 ```
 make -C $ACCELSIM_ROOT/../accelwattch_hw_profiler
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_power.sh <GPU_Arch>
+$ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_power.sh <GPU_Arch> <GPU_devid>
 ```
-to measure power five times for each validation set kernel. Note that you need to have a GPU card in your system.
+to measure power five times for each validation set kernel. Note that you need to have a GPU card in your system. Please also specify <GPU_devid> for the target GPU device if it's not 0. You can find out <GPU_devid> by just doing a `nvidia-smi`.
 
 To collect the power reports generated above and create **hw_power_validaton_<GPU_Arch>.csv** containing the mean of the five power measurements recorded per validation kernel, run: 
 ```
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/collate_power.sh validation_power_reports <GPU_Arch>
+$ACCELSIM_ROOT/../accelwattch_hw_profiler/collate_power.sh validation_power_reports <GPU_Arch> <GPU_devid>
 ```
 This should replace the pre-existing hw_power_validaton_<GPU_Arch>.csv with new results. 
 

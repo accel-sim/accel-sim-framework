@@ -52,16 +52,22 @@ if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
 fi
 
 if [ ! "${1}" == "volta" ] && [ ! "${1}" == "turing" ] && [ ! "${1}" == "pascal" ]; then
-    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./profile_validation_power.sh validation_power_reports volta"
+    echo "Please enter the GPU architecture; one of: [volta,turing,pascal]. For example: ./profile_validation_power.sh volta 1"
     exit 1
 fi
+
+if [ "${2}" == "" ]; then
+    echo "Please enter the GPU device ID;  For example: ./profile_validation_power.sh volta 1"
+    exit 1
+fi
+
 
 cd $SCRIPT_DIR
 RODINIA_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1"
 PARBOIL_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
 BENCH_FILE="$SCRIPT_DIR/validation_${1}.cfg"
-
+DEVID=${2}
 backprop_k1_r="$BINDIR/backprop_k1 65536"
 backprop_k2_r="$BINDIR/backprop_k2 65536"
 binomialOptions_k1_r="$BINDIR/binomialOptions_k1"
@@ -113,8 +119,8 @@ do
         bm_name="${bm}_r"
         echo "Starting profiling of ${bm} "
         mkdir -p $SCRIPT_DIR/validation_power_reports/$bm
-        ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
-        $PROFILER -t $temp -r $rate -n $samples -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
+        CUDA_VISIBLE_DEVICES=$DEVID ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
+        $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
         
         if [ $bm == "cutlass_k1" ] || [ $bm == "cutlass_k2" ] || [ $bm == "cutlass_k3" ]; then
             pid=`nvidia-smi | grep "cutlass_perf_test" | awk '{ print $5 }'`
@@ -126,12 +132,12 @@ do
         
         if cat $SCRIPT_DIR/validation_profile_output/$bm.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
-            $BINDIR/backprop_k1 65536 &
+            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/backprop_k1 65536 &
             sleep 20
             pid=`nvidia-smi | grep backprop_k1 | awk '{ print $5 }'`
             kill -9 $pid
-            ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
-            $PROFILER -t $temp -r $rate -n $samples -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
+            CUDA_VISIBLE_DEVICES=$DEVID ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
+            $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
             if [ $bm == "cutlass_k1" ] || [ $bm == "cutlass_k2" ] || [ $bm == "cutlass_k3" ]; then
                 pid=`nvidia-smi | grep "cutlass_perf_test" | awk '{ print $5 }'`
             else
