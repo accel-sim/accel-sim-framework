@@ -17,7 +17,7 @@ There is nothing special here in terms of dependencies that isn't already requir
 ```bash
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
-      libxml2-dev vim python-setuptools python-dev build-essential python-pip
+      libxml2-dev vim python-setuptools python-dev build-essential python-pip makedepend
 pip install pyyaml==5.1 plotly psutil pandas
 wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
 sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
