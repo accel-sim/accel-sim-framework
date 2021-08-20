@@ -79,7 +79,7 @@ cd $ACCELSIM_ROOT/../accelwattch_benchmarks
 ```
 This will create a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
 
-**NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, it is best to compile the binaries yourself following the previous step above.
+**NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, we **STRONGLY** recommend compiling the binaries yourself following the previous step above.
 
 
 ### Setting up datasets for AccelWattch Validation Benchmarks
@@ -115,7 +115,6 @@ Once all the validation suite binaries are located at **$ACCELSIM_ROOT/../accelw
 $ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_perf.sh
 ```
 This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/** for use in subsequent AccelWattch HW and HYBRID runs.
-
 
 ## Running AccelWattch and collecting power model results
 
