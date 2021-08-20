@@ -135,6 +135,7 @@ To build AccelWattch and Accel-Sim using multiple CPU cores, please run:
 ```
 make -j -C $ACCELSIM_ROOT/
 ```
+This will produce an executable `$ACCELSIM_ROOT/bin/release/accel-sim.out`.
 
 ## Running AccelWattch and collecting power model results
 
