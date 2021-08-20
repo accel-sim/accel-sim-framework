@@ -35,7 +35,7 @@ if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
     exit
 fi
 
-runs_dir="$ACCELSIM_ROOT/../hw_run/device-0/11.0"
+runs_dir="$ACCELSIM_ROOT/../hw_run/device-0/${CUDA_VERSION}"
 if [ -d ${runs_dir} ] ; then
 	rm -r ${runs_dir}
 fi

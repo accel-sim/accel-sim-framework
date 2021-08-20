@@ -30,7 +30,7 @@
 
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=
 export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
-
+export CUDA_VERSION=`nvcc --version | grep release | sed -re 's/.*release ([0-9]+\.[0-9]+).*/\1/'`;
 if [ $# = '1' ] ;
 then
     export ACCELSIM_CONFIG=$1
