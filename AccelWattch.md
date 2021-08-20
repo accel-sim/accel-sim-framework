@@ -126,6 +126,16 @@ $ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_perf.sh
 ```
 This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/** for use in subsequent AccelWattch HW and HYBRID runs.
 
+## Building AccelWattch
+To build AccelWattch and Accel-Sim using a single CPU core, please run:
+```
+make -C $ACCELSIM_ROOT/
+```
+To build AccelWattch and Accel-Sim using multiple CPU cores, please run:
+```
+make -j -C $ACCELSIM_ROOT/
+```
+
 ## Running AccelWattch and collecting power model results
 
 ### Recollecting traces
