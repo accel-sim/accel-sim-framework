@@ -1,43 +1,71 @@
 <?xml version="1.0" ?>
 <component id="root" name="root">
 	<component id="system" name="system">
+<!-- Copyright (c) 2018-2021, Vijay Kandiah, Junrui Pan, Mahmoud Khairy, Scott Peverelle, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+Northwestern University, Purdue University, The University of British Columbia
+All rights reserved.
+
+Redistribution and use in source and binary forms, with or without
+modification, are permitted provided that the following conditions are met:
+
+1. Redistributions of source code must retain the above copyright notice, this
+   list of conditions and the following disclaimer;
+2. Redistributions in binary form must reproduce the above copyright notice,
+   this list of conditions and the following disclaimer in the documentation
+   and/or other materials provided with the distribution;
+3. Neither the names of Northwestern University, Purdue University,
+   The University of British Columbia nor the names of their contributors
+   may be used to endorse or promote products derived from this software
+   without specific prior written permission.
+
+THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+POSSIBILITY OF SUCH DAMAGE. -->
 
 		<!-- DYNAMIC Power Activity Factors -->
 
-		<param name="TOT_INST" value="10" /> <!--Instruction Buffer Activity Factor(Total Warp Instructions)-->
-		<param name="FP_INT" value="4.661" /> <!--Scheduler Activity Factor(Non-Memory Warp Instructons)-->
-		<param name="IC_H" value="8.593489331" /> <!--Instruction Cache Hits -->
-		<param name="IC_M" value="29.735231" /> <!--Instruction Cache Misses-->
-		<param name="DC_RH" value="9.835033124" /> <!--L1 Data Cache Read Hits--> 
-		<param name="DC_RM" value="10.95446778" /> <!--L1 Data Cache Read Misses-->
-		<param name="DC_WH" value="0.679656761" /> <!--L1 Data Cache Write Hits-->
-		<param name="DC_WM" value="17.67551799" /> <!--L1 Data Cache Write Misses-->
-		<param name="CC_H" value="0.1107" /> <!--Constant Cache Hits-->
-		<param name="CC_M" value="0.1233" /> <!--Constant Cache Misses-->
-		<param name="SHRD_ACC" value="0.779992642" /> <!--Shared Memory Accesses-->
-		<param name="REG_RD" value="0.100560581" /> <!--Register Reads-->
-		<param name="REG_WR" value="0.140604679" /> <!--Register Writes-->
-		<param name="INT_ACC" value="14.98768151" /> <!--Integer ALU Accesses-->
-		<param name="FP_ACC" value="0.529670751" /> <!--FPU Accesses-->
-		<param name="DP_ACC" value="0.777229051" /> <!--Integer Accesses-->
-		<param name="INT_MUL_ACC" value="0.115098047" /> <!--Integer MUL Accesses-->
-		<param name="FP_MUL_ACC" value="0.089517055" /> <!--FP MUL Accesses-->
-		<param name="FP_SQRT_ACC" value="0.195089274" /> <!--SFU: sqrt Accesses-->
-		<param name="FP_LG_ACC" value="0.125521663" /> <!--SFU: log Accesses-->
-		<param name="FP_SIN_ACC" value="0.13336307" /> <!--SFU: sin/cos Accesses-->
-		<param name="FP_EXP_ACC" value="0.36204415" /> <!--SFU: exponent Accesses-->
-		<param name="DP_MUL_ACC" value="0.1321288" /> <!--DP MUL Accesses-->
-		<param name="TENSOR_ACC" value="0.815454621" /> <!--Tensor Accesses-->
-		<param name="TEX_ACC" value="0.115100088" /> <!--Texture Unit Accesses-->
-		<param name="MEM_RD" value="0.025941068" /> <!--DRAM Reads-->
-		<param name="MEM_WR" value="0.031443719" /> <!--DRAM Writes-->
-		<param name="MEM_PRE" value="0.008647023" /> <!--DRAM Precharge-->
-		<param name="L2_RH" value="1.260867526" /> <!--L2 Data Cache Read Hits--> 
-		<param name="L2_RM" value="2.394535301" /> <!--L2 Data Cache Read Misses-->
-		<param name="L2_WH" value="4.124916" /> <!--L2 Data Cache Write Hits-->
-		<param name="L2_WM" value="1.222707601" /> <!--L2 Data Cache Write Misses-->
-		<param name="NOC_A" value="32.09037703" /> <!--Interconnect Network Accesses-->
-		<param name="PIPE_A" value="0.514" /> <!--Pipeline Accesses-->
+		<param name="TOT_INST" value="16" /> <!--Instruction Buffer Activity Factor(Total Warp Instructions)-->
+		<param name="FP_INT" value="2" /> <!--Scheduler Activity Factor(Non-Memory Warp Instructons)-->
+		<param name="IC_H" value="9.967097889" /> <!--Instruction Cache Hits -->
+		<param name="IC_M" value="9.967097889" /> <!--Instruction Cache Misses-->
+		<param name="DC_RH" value="9.382262155" /> <!--L1 Data Cache Read Hits--> 
+		<param name="DC_RM" value="9.382262155" /> <!--L1 Data Cache Read Misses-->
+		<param name="DC_WH" value="9.382262155" /> <!--L1 Data Cache Write Hits-->
+		<param name="DC_WM" value="9.382262155" /> <!--L1 Data Cache Write Misses-->
+		<param name="CC_H" value="0.5" /> <!--Constant Cache Hits-->
+		<param name="CC_M" value="0.5" /> <!--Constant Cache Misses-->
+		<param name="SHRD_ACC" value="1.045696662" /> <!--Shared Memory Accesses-->
+		<param name="REG_RD" value="0.096144789" /> <!--Register Reads-->
+		<param name="REG_WR" value="0.134430479" /> <!--Register Writes-->
+		<param name="INT_ACC" value="18.18093465" /> <!--Integer ALU Accesses-->
+		<param name="FP_ACC" value="0.810674358" /> <!--FPU Accesses-->
+		<param name="DP_ACC" value="1.061592439" /> <!--Integer Accesses-->
+		<param name="INT_MUL_ACC" value="0.114254558" /> <!--Integer MUL Accesses-->
+		<param name="FP_MUL_ACC" value="0.155989373" /> <!--FP MUL Accesses-->
+		<param name="FP_SQRT_ACC" value="0.377990392" /> <!--SFU: sqrt Accesses-->
+		<param name="FP_LG_ACC" value="0.155990168" /> <!--SFU: log Accesses-->
+		<param name="FP_SIN_ACC" value="0.155991536" /> <!--SFU: sin/cos Accesses-->
+		<param name="FP_EXP_ACC" value="0.571396061" /> <!--SFU: exponent Accesses-->
+		<param name="DP_MUL_ACC" value="0.155989896" /> <!--DP MUL Accesses-->
+		<param name="TENSOR_ACC" value="1.013271823" /> <!--Tensor Accesses-->
+		<param name="TEX_ACC" value="0.167780179" /> <!--Texture Unit Accesses-->
+		<param name="MEM_RD" value="0.032236806" /> <!--DRAM Reads-->
+		<param name="MEM_WR" value="0.032236806" /> <!--DRAM Writes-->
+		<param name="MEM_PRE" value="0.032236806" /> <!--DRAM Precharge-->
+		<param name="L2_RH" value="1.175516289" /> <!--L2 Data Cache Read Hits--> 
+		<param name="L2_RM" value="1.175516289" /> <!--L2 Data Cache Read Misses-->
+		<param name="L2_WH" value="1.175516289" /> <!--L2 Data Cache Write Hits-->
+		<param name="L2_WM" value="1.175516289" /> <!--L2 Data Cache Write Misses-->
+		<param name="NOC_A" value="77.25" /> <!--Interconnect Network Accesses-->
+		<param name="PIPE_A" value="0.4" /> <!--Pipeline Accesses-->
 
 		<!-- STATIC & CONSTANT Power -->
 
