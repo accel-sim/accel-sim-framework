@@ -36,7 +36,7 @@ if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
 fi
 
 if [ "${1}" == "" ]; then
-    echo "No GPU device ID specified, using default GPU device ID 0. For example: ./profile_validation_power.sh volta 1"
+    echo "Please enter GPU Device ID. ./profile_validation_perf.sh <GPU_devid>"
     exit 1
 fi
 DEVID=${1}
@@ -45,10 +45,8 @@ runs_dir="$ACCELSIM_ROOT/../hw_run/device-0/${CUDA_VERSION}"
 if [ -d ${runs_dir} ] ; then
 	rm -r ${runs_dir}
 fi
-DEFAULT_DEV_ID=`echo $CUDA_VISIBLE_DEVICES`
 export CUDA_VISIBLE_DEVICES=$DEVID
 $ACCELSIM_ROOT/../util/hw_stats/run_hw.py -D $DEVID -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation --collect other_stats --nsight_profiler --disable_nvprof
-export CUDA_VISIBLE_DEVICES=$DEFAULT_DEV_ID
 $ACCELSIM_ROOT/../accelwattch_hw_profiler/gen_hw_perf_csv.py -d ${runs_dir}
 
 mv ${root_dir}/hw_perf.csv $ACCELSIM_ROOT/../accelwattch_hw_profiler/hw_perf.csv

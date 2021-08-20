@@ -73,17 +73,17 @@ if [ -d $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ] ; then
 fi
 
 if [ "${1}" == "volta_ptx_sim" ] || [ "${1}" == "turing_ptx_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_ptx,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_ptx,parboil_validation,cuda_samples_11.0_validation,cudaTensorCoreGemm_validation -C ${config} -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "pascal_ptx_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_ptx,parboil_validation,cuda_samples_11.0_validation -C ${config} -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_ptx,parboil_validation,cuda_samples_11.0_validation -C ${config} -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "volta_sass_hybrid" ] || [ "${1}" == "volta_sass_hw" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2}/accelwattch_volta_traces -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -a -C ${config} -T ${2}/accelwattch_volta_traces -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "volta_sass_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2}/accelwattch_volta_traces -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2}/accelwattch_volta_traces -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "turing_sass_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2}/accelwattch_turing_traces -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation -C ${config} -T ${2}/accelwattch_turing_traces -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 elif [ "${1}" == "pascal_sass_sim" ]; then
-	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation -C ${config} -T ${2}/accelwattch_pascal_traces -N ${runs_dir} -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
+	$ACCELSIM_ROOT/../util/job_launching/run_simulations.py -B rodinia-3.1_validation,parboil_validation,cuda_samples_11.0_validation -C ${config} -T ${2}/accelwattch_pascal_traces -N ${runs_dir} -l local -r $ACCELSIM_ROOT/../accelwattch_runs/${runs_dir} ${3}
 else
 	echo "Please provide accelwattch model; one of [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim, pascal_sass_sim, pascal_ptx_sim, turing_sass_sim, turing_ptx_sim ]"
 	echo "For example: ./util/accelwattch/launch_jobs.sh volta_sass_sim /nfs-scratch/vkandiah/accelwattch_volta_traces"

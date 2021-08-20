@@ -13,8 +13,18 @@ This Repository serves as an Artifact for the paper above and includes scripts t
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-There is nothing special here that isn't already required by Accel-Sim.
+There is nothing special here in terms of dependencies that isn't already required by Accel-Sim which can be resolved with the following commands: 
+```bash
+sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
+      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
+      libxml2-dev vim python-setuptools python-dev build-essential python-pip makedepend
+pip install pyyaml==5.1 plotly psutil pandas
+wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
+sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
+rm cuda_11.0.1_450.36.06_linux.run
+```
 Note that we use python 2.7.18 by default for our python scripts unless explicitly specified with '#!/usr/bin/python3' at the top of a python script.
+
 
 ## Setting up validation benchmarks for AccelWattch
 ### Compiling benchmarks from gpu-app-collection repository
@@ -115,6 +125,17 @@ Once all the validation suite binaries are located at **$ACCELSIM_ROOT/../accelw
 $ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_perf.sh
 ```
 This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/** for use in subsequent AccelWattch HW and HYBRID runs.
+
+## Building AccelWattch
+To build AccelWattch and Accel-Sim using a single CPU core, please run:
+```
+make -C $ACCELSIM_ROOT/
+```
+To build AccelWattch and Accel-Sim using multiple CPU cores, please run:
+```
+make -j -C $ACCELSIM_ROOT/
+```
+This will produce an executable `$ACCELSIM_ROOT/bin/release/accel-sim.out`.
 
 ## Running AccelWattch and collecting power model results
 
