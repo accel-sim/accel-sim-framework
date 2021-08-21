@@ -103,6 +103,7 @@ $ACCELSIM_ROOT/../accelwattch_benchmarks/get_data.sh <path to accelwattch_traces
 This will create a data_dirs/ folder in **$ACCELSIM_ROOT/../accelwattch_benchmarks** containing all the input datasets required by the validation benchmarks used for AccelWattch.
 
 ## Hardware profiling for AccelWattch validation
+Please do a `export CUDA_VISIBLE_DEVICES=<GPU_DEVID>` before proceeding below. You can find out <GPU_devid> of the target GPU by just doing a `nvidia-smi` while a GPU workload is running in the background.
 ### Measuring power for validation kernels
 Once all the validation suite binaries are located at $ACCELSIM_ROOT/../accelwattch_benchmarks/validation, run this per GPU Arch among [volta, turing, pascal]:
 ```
