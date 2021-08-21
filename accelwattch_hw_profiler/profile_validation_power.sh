@@ -42,13 +42,14 @@ sleep_time=30
 SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
 BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
 
-if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs ]; then
-	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
-    ./get_data.sh
+if [ ! -d $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs ]; then
+	echo "Please create a data_dirs/ directory containing the datasets at $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs"
+    exit 1
 fi
-if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
-	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
-    ./extract_binaries.sh
+
+if [ ! -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
+	echo "Please create a validation/ directory with binaries at $ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
+    exit 1
 fi
 
 if [ ! "${1}" == "volta" ] && [ ! "${1}" == "turing" ] && [ ! "${1}" == "pascal" ]; then
@@ -119,7 +120,7 @@ do
         bm_name="${bm}_r"
         echo "Starting profiling of ${bm} "
         mkdir -p $SCRIPT_DIR/validation_power_reports/$bm
-        CUDA_VISIBLE_DEVICES=$DEVID ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
+        ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
         $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
         
         if [ $bm == "cutlass_k1" ] || [ $bm == "cutlass_k2" ] || [ $bm == "cutlass_k3" ]; then
@@ -132,11 +133,11 @@ do
         
         if cat $SCRIPT_DIR/validation_profile_output/$bm.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
-            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/backprop_k1 65536 &
+            $BINDIR/backprop_k1 65536 &
             sleep 20
             pid=`nvidia-smi | grep backprop_k1 | awk '{ print $5 }'`
             kill -9 $pid
-            CUDA_VISIBLE_DEVICES=$DEVID ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
+            ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
             $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
             if [ $bm == "cutlass_k1" ] || [ $bm == "cutlass_k2" ] || [ $bm == "cutlass_k3" ]; then
                 pid=`nvidia-smi | grep "cutlass_perf_test" | awk '{ print $5 }'`

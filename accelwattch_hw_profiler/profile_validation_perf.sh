@@ -39,7 +39,6 @@ if [ "${1}" == "" ]; then
     echo "Please enter GPU Device ID. ./profile_validation_perf.sh <GPU_devid>"
     exit 1
 fi
-DEVID=${1}
 
 runs_dir="$ACCELSIM_ROOT/../hw_run/device-0/${CUDA_VERSION}"
 if [ -d ${runs_dir} ] ; then
