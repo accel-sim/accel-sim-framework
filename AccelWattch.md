@@ -76,6 +76,7 @@ This will set environment variable $ACCELSIM_ROOT to be the path to **gpu-simula
 
 **NOTE:** If you are compiling the binaries for AccelWattch validation as above, please paste the binaries found at the [GPU App Collection](https://github.com/VijayKandiah/gpu-app-collection) repository at **$GPUAPPS_ROOT/bin/11.0/release** into the accel-sim-framework repository at **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation** with 
 ```
+mkdir -p $ACCELSIM_ROOT/../accelwattch_benchmarks/validation
 cp $GPUAPPS_ROOT/bin/11.0/release/* $ACCELSIM_ROOT/../accelwattch_benchmarks/validation
 ```
 
