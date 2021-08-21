@@ -172,6 +172,13 @@ $ACCELSIM_ROOT/../util/accelwattch/launch_jobs_all.sh <path to root accelwattch 
 ```
 The above will create **$ACCELSIM_ROOT/../accelwattch_runs/** directory which contain all job runs, AccelWattch configuration files, Accel-Sim configuration files, and simulator output.
 
+**NOTE:** Some Accel-Sim jobs like `cudaTensorCoreGemm` require ~20G memory to run and might get killed when out-of-memory. To relaunch individual jobs, go to the run directory and run the launch command as shown in this example:
+```
+cd $ACCELSIM_ROOT/../accelwattch_runs/volta_sass_sim/cudaTensorCoreGemm/NO_ARGS/QV100-Accelwattch_SASS_SIM
+$ACCELSIM_ROOT/bin/release/accel-sim.out  -config ./gpgpusim.config -trace ./traces/kernelslist.g
+```
+
+
 ### Monitoring AccelWattch jobs
 You can monitor the job status for a specific AccelWattch configuration among [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim, pascal_sass_sim, pascal_ptx_sim, turing_sass_sim, turing_ptx_sim] using:
 ```
@@ -181,6 +188,7 @@ You can monitor the job status for all AccelWattch configurations:
 ```
 $ACCELSIM_ROOT/../util/accelwattch/check_job_status_all.sh
 ```
+You can use the same command in any run directory to rerun the respective job. The AccelWattch power output for all runs will be stored at a new file `accelwattch_power_report.log` in the run directory. This is all we need to validate Accelwattch. To save Accel-Sim performance output, simply append a `>>accelsim_out.txt` or something similar to the run command.
 
 ### Collecting AccelWattch results
 You can collect all available power reports for a specific AccelWattch configuration among [volta_sass_sim, volta_sass_hybrid, volta_sass_hw, volta_ptx_sim, pascal_sass_sim, pascal_ptx_sim, turing_sass_sim, turing_ptx_sim] using:
