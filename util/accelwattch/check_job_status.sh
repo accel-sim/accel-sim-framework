@@ -41,4 +41,4 @@ if [ ! "${1}" == "volta_sass_sim" ] && [ ! "${1}" == "volta_sass_hybrid" ] && [ 
 	exit
 fi
 
-$ACCELSIM_ROOT/../util/job_launching/job_status.py -N ${1} -r accelwattch_runs/${1}
+$ACCELSIM_ROOT/../util/job_launching/job_status.py -N ${1} -r accelwattch_runs/${1} -j procman
