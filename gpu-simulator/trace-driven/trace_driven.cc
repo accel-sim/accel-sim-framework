@@ -140,7 +140,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   mem_op = NOT_TEX;
 
   // get the opcode
-  // TODO Handle for AMD GPUs
   std::vector<std::string> opcode_tokens = trace.get_opcode_tokens();
   std::string opcode1 = opcode_tokens[0];
 

@@ -49,7 +49,6 @@ bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,
   return false;
 }
 
-// TODO Pass deliminter?
 std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
   std::istringstream iss(opcode);
   std::vector<std::string> opcode_tokens;
@@ -69,7 +68,6 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
       token = opcode.substr(0, opcode.find("_", 5));
       opcode_tokens.push_back(token);
     } else { // Try to drop the width part
-      // todo tokenize?
       size_t lastUnderlineIdx = opcode.rfind("_");
       size_t secLastUnderlineIdx = opcode.rfind("_", lastUnderlineIdx - 1);
       std::string lastWord = opcode.substr(lastUnderlineIdx + 1);
