@@ -30,9 +30,10 @@ Note that we use python 2.7.18 by default for our python scripts unless explicit
 ### Compiling benchmarks from gpu-app-collection repository
 
 There is an additional repo where we have collected a set of common GPU applications and a common infrastructure for building
-them with different versions of CUDA. This repository also contains all the microbenchmarks used to build AccelWattch and all the benchmakrs used to validate AccelWattch.
+them with different versions of CUDA. This repository also contains all the microbenchmarks used to build AccelWattch and all the benchmakrs used to validate AccelWattch. 
 
 [GPU App Collection](https://github.com/VijayKandiah/gpu-app-collection)
+
 First run setup_environment from the root directory of gpu-app-collection repository. 
 ```
 # Make sure CUDA_INSTALL_PATH is set.
