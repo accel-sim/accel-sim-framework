@@ -7,7 +7,7 @@ Vijay Kandiah, Scott Peverelle, Mahmoud Khairy, Amogh Manjunath, Junrui Pan, Tim
 AccelWattch: A Power Modeling Framework for Modern GPUs,
 in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ```
-This Repository serves as an Artifact for the paper above and includes scripts to reproduce the figures 7 to 12 presented in our MICRO'21 paper. Please find Accel-Sim traces and benchmark datasets used for AccelWattch at the archived repository pointed to by the Artifact Appendix in our MICRO'21 paper: https://doi.org/10.5281/zenodo.5151044
+This Repository serves as an Artifact for the paper above and includes scripts to reproduce the figures 7 to 12 presented in our MICRO'21 paper. Please find Accel-Sim traces and benchmark datasets used for AccelWattch at the archived repository pointed to by the Artifact Appendix in our MICRO'21 paper: https://doi.org/10.5281/zenodo.5398781
 
 
 ## Dependencies
