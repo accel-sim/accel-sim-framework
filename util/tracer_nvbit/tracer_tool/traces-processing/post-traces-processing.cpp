@@ -97,7 +97,7 @@ void group_per_block(const char *filepath) {
 
   vector<threadblock_info> insts;
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
-  unsigned warp_size = 32; // For warp size other than 32
+  unsigned warp_size = 32;
   unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
   string line;
   stringstream ss;

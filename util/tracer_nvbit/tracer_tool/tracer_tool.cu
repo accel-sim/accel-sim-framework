@@ -485,7 +485,7 @@ bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
     if (mask.test(s) && !first_bit1_found) { // Find first bit that is 1
       first_bit1_found = true;
       base_addr = addrs[s]; // Load base address into it
-      if (s < 31 && mask.test(s + 1)) // Attempt to find an initial constant stride?
+      if (s < 31 && mask.test(s + 1)) // Attempt to find a constant stride
         stride = addrs[s + 1] - addrs[s];
       else { // If no constant stride found, exit loop
         const_stride = false;
