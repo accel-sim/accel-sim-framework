@@ -115,6 +115,12 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   // fill active mask
   active_mask_t active_mask = trace.mask;
+  if (trace.isa_type == "GCN3") {
+    // Handle Scalar operations mask to ensure proper executioon
+    // TODO Weili: Might need a dedicate functional unit for handle scalar ops
+    active_mask = active_mask_t(0xffffffffffffffff);
+  }
+
   set_active(active_mask);
 
   // fill and initialize common params
