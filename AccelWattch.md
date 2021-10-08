@@ -73,7 +73,7 @@ Please run setup_environment from the root directory of accel-sim-framework befo
 cd accel-sim-framework
 source gpu-simulator/setup_environment.sh
 ```
-This will set environment variable $ACCELSIM_ROOT to be the path to **gpu-simulator/** directory inside accel-sim-framework repository. We refer to the root directory of accel-sim-framework using this environment variable in the steps below.
+This will set environment variable $ACCELSIM_ROOT to be the path to **gpu-simulator/** directory inside accel-sim-framework repository. We refer to the root directory of accel-sim-framework using this environment variable in the steps below. This will also fetch the release version sources of GPGPU-Sim with AccelWattch into **$ACCELSIM_ROOT/gpgpu-sim**.
 
 **NOTE:** If you are compiling the binaries for AccelWattch validation as above, please paste the binaries found at the [GPU App Collection](https://github.com/VijayKandiah/gpu-app-collection) repository at **$GPUAPPS_ROOT/bin/11.0/release** into the accel-sim-framework repository at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation** with 
 ```
