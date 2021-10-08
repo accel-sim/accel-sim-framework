@@ -331,14 +331,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         initiation_interval / 2; // FP16 has 2X throughput than FP32
     break;
   default:
-    // if (trace.memadd_info != NULL) {   
-    //   if(trace.memadd_info->width > 0){//must be using operand from Constant Address Space, generate appropriate mem accesses
-    //     data_size = 4;
-    //     const_cache_operand = 1;
-    //     space.set_type(const_space);
-    //     cache_op = CACHE_ALL;
-    //   }
-    // }
     break;
   }
 
