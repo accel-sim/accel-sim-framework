@@ -39,8 +39,9 @@ else
 fi
 
 if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
-
-    echo "Please install a version of GPGPU-Sim here as directory gpgpu-sim/."
+	git clone https://github.com/accel-sim/gpgpu-sim_distribution.git  $ACCELSIM_ROOT/gpgpu-sim
+	git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout release-accelwattch
+	#echo "Please install a version of GPGPU-Sim here as directory gpgpu-sim/."
 
 fi
 

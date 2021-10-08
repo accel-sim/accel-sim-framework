@@ -34,14 +34,14 @@ if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
     exit
 fi
 
-DATA_ROOT=$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs
+DATA_ROOT=$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs
 
 if [ ! -d $DATA_ROOT ]; then
 	if [ "${1}" == "" ]; then
 		echo "Please provide path to accelwattch data tarball."
-		echo "For example: ./accelwattch_benchmarks/accelwattch_datasets.tgz"
+		echo "For example: $ACCELSIM_ROOT/../util/accelwattch/accelwattch_datasets.tgz"
 		exit
 	fi
-    tar xzvf ${1} -C $ACCELSIM_ROOT/../accelwattch_benchmarks/
+    tar xzvf ${1} -C $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/
 fi
 

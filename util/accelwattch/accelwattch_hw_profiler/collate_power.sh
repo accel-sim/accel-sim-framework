@@ -34,7 +34,7 @@ if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
     exit
 fi
 
-SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
+SCRIPT_DIR=$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler
 
 output_folder=$SCRIPT_DIR/collated_power
 cd $SCRIPT_DIR

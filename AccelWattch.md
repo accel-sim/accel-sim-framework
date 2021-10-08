@@ -75,21 +75,21 @@ source gpu-simulator/setup_environment.sh
 ```
 This will set environment variable $ACCELSIM_ROOT to be the path to **gpu-simulator/** directory inside accel-sim-framework repository. We refer to the root directory of accel-sim-framework using this environment variable in the steps below.
 
-**NOTE:** If you are compiling the binaries for AccelWattch validation as above, please paste the binaries found at the [GPU App Collection](https://github.com/VijayKandiah/gpu-app-collection) repository at **$GPUAPPS_ROOT/bin/11.0/release** into the accel-sim-framework repository at **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation** with 
+**NOTE:** If you are compiling the binaries for AccelWattch validation as above, please paste the binaries found at the [GPU App Collection](https://github.com/VijayKandiah/gpu-app-collection) repository at **$GPUAPPS_ROOT/bin/11.0/release** into the accel-sim-framework repository at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation** with 
 ```
-mkdir -p $ACCELSIM_ROOT/../accelwattch_benchmarks/validation
-cp $GPUAPPS_ROOT/bin/11.0/release/* $ACCELSIM_ROOT/../accelwattch_benchmarks/validation
+mkdir -p $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
+cp $GPUAPPS_ROOT/bin/11.0/release/* $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
 ```
 
 ### Using pre-compiled binaries for AccelWattch
 
-Alternatively, you can use pre-compiled binaries located at **$ACCELSIM_ROOT/../accelwattch_benchmarks/**
+Alternatively, you can use pre-compiled binaries located at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/**
 To extract pre-compiled binaries for AccelWattch:
 ```
-cd $ACCELSIM_ROOT/../accelwattch_benchmarks
+cd $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks
 ./extract_binaries.sh
 ```
-This will create a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
+This will create a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
 
 **NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, we **STRONGLY** recommend compiling the binaries yourself following the previous step above.
 
@@ -99,23 +99,23 @@ This will create a folder **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation*
 
 Extract the datasets required by AccelWattch Validation benchmarks into the accelwattch_benchmarks directory with:
 ```
-$ACCELSIM_ROOT/../accelwattch_benchmarks/get_data.sh <path to accelwattch_traces.tgz file>
+$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/get_data.sh <path to accelwattch_traces.tgz file>
 ```
-This will create a data_dirs/ folder in **$ACCELSIM_ROOT/../accelwattch_benchmarks** containing all the input datasets required by the validation benchmarks used for AccelWattch.
+This will create a data_dirs/ folder in **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks** containing all the input datasets required by the validation benchmarks used for AccelWattch.
 
 ## Hardware profiling for AccelWattch validation
 Please do a `export CUDA_VISIBLE_DEVICES=<GPU_DEVID>` before proceeding below. You can find out <GPU_devid> of the target GPU by just doing a `nvidia-smi` while a GPU workload is running in the background.
 ### Measuring power for validation kernels
-Once all the validation suite binaries are located at $ACCELSIM_ROOT/../accelwattch_benchmarks/validation, run this per GPU Arch among [volta, turing, pascal]:
+Once all the validation suite binaries are located at $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation, run this per GPU Arch among [volta, turing, pascal]:
 ```
-make -C $ACCELSIM_ROOT/../accelwattch_hw_profiler
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_power.sh <GPU_Arch> <GPU_devid>
+make -C $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler
+$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/profile_validation_power.sh <GPU_Arch> <GPU_devid>
 ```
 to measure power five times for each validation set kernel. Note that you need to have a GPU card in your system. Please also specify <GPU_devid> for the target GPU device if it's not 0. You can find out <GPU_devid> by just doing a `nvidia-smi`.
 
 To collect the power reports generated above and create **hw_power_validaton_<GPU_Arch>.csv** containing the mean of the five power measurements recorded per validation kernel, run: 
 ```
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/collate_power.sh validation_power_reports <GPU_Arch> <GPU_devid>
+$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/collate_power.sh validation_power_reports <GPU_Arch> <GPU_devid>
 ```
 This should replace the pre-existing hw_power_validaton_<GPU_Arch>.csv with new results. 
 
@@ -123,9 +123,9 @@ This should replace the pre-existing hw_power_validaton_<GPU_Arch>.csv with new 
 
 ### Collecting hardware performance counter information for validation kernels
 These are required for AccelWattch HW and AccelWattch HYBRID configurations of AccelWattch.
-Once all the validation suite binaries are located at **$ACCELSIM_ROOT/../accelwattch_benchmarks/validation**, run:
+Once all the validation suite binaries are located at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation**, run:
 ```
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/profile_validation_perf.sh
+$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/profile_validation_perf.sh
 ```
 This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/** for use in subsequent AccelWattch HW and HYBRID runs.
 
@@ -222,7 +222,7 @@ At this point you should have a CSV file (like accelwattch_volta_sass_sim.csv) c
 The provided excel file AccelWattch_graphs.xlsx contains all the graphs with the raw data pre-filled. 
 
 For volta_sass_sim AccelWattch configuration: Open the provided excel file **$ACCELSIM_ROOT/../AccelWattch_graphs.xlsx** and copy paste the numbers from $ACCELSIM_ROOT/../accelwattch_results/accelwattch_volta_sass_sim.csv into the correct columns in sheet 'Volta_SASS_SIM'. 
-Make sure to check if the hw_power_validation_volta.csv file contains the benchmarks in the same order as the excel sheet because different AccelWattch configurations have a different set of validation benchmarks. Paste the mean hardware power measurements from $ACCELSIM_ROOT/../accelwattch_hw_profiler/hw_power_validation_volta.csv into the correct rows in column AF on the same sheet 'Volta_SASS_SIM'. This should update all the graphs shown in the excel file that are generated from the Power per Component table in sheet 'Volta_SASS_SIM'.
+Make sure to check if the hw_power_validation_volta.csv file contains the benchmarks in the same order as the excel sheet because different AccelWattch configurations have a different set of validation benchmarks. Paste the mean hardware power measurements from $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/hw_power_validation_volta.csv into the correct rows in column AF on the same sheet 'Volta_SASS_SIM'. This should update all the graphs shown in the excel file that are generated from the Power per Component table in sheet 'Volta_SASS_SIM'.
 
 The same process as above can be repeated for each AccelWattch configuration. 
 

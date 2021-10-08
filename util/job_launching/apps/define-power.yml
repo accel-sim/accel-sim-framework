@@ -1,6 +1,6 @@
 rodinia-3.1_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
@@ -45,8 +45,8 @@ rodinia-3.1_validation:
               accel-sim-mem: 2G
 
 rodinia-3.1_validation_ptx:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
@@ -91,8 +91,8 @@ rodinia-3.1_validation_ptx:
               accel-sim-mem: 2G
 
 rodinia-3.1_validation_hw:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
     execs:
         - b+tree-rodinia-3.1:
             - args:  file ./data/mil.txt command ./data/command.txt
@@ -137,8 +137,8 @@ rodinia-3.1_validation_hw:
               accel-sim-mem: 2G
 
 parboil_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/parboil/"
     execs:
         - parboil-sad:
             - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
@@ -168,8 +168,8 @@ parboil_validation:
         #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
 
 cuda_samples_11.0_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
     execs:
         - dct8x8:
             - args:
@@ -194,16 +194,16 @@ cuda_samples_11.0_validation:
               accel-sim-mem: 1G
 
 cudaTensorCoreGemm_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
     execs:
         - cudaTensorCoreGemm:
             - args:
               accel-sim-mem: 20G
 
 cutlass_5_trace_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test_k1:
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
@@ -216,8 +216,8 @@ cutlass_5_trace_validation:
               accel-sim-mem: 5G
 
 Deepbench_validation:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/validation/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
     execs:
         - conv_bench-tencore:
             - args: train half 7 7 512 8 512 3 3 1 1 1 1
@@ -232,8 +232,8 @@ Deepbench_validation:
             - args: train half 128 32 1 gru
            
 power_ubench:
-    exec_dir: "$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks/"
-    data_dirs: "$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks/"
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
     execs:
         - ACT_CORE1:
             - args: 100 1 32

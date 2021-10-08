@@ -39,16 +39,16 @@ temp=65
 samples=600
 sleep_time=30
 
-SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
-BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
+SCRIPT_DIR=$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler
+BINDIR="$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation"
 
-if [ ! -d $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs ]; then
-	echo "Please create a data_dirs/ directory containing the datasets at $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs"
+if [ ! -d $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs ]; then
+	echo "Please create a data_dirs/ directory containing the datasets at $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs"
     exit 1
 fi
 
-if [ ! -d $ACCELSIM_ROOT/../accelwattch_benchmarks/validation ]; then
-	echo "Please create a validation/ directory with binaries at $ACCELSIM_ROOT/../accelwattch_benchmarks/validation"
+if [ ! -d $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation ]; then
+	echo "Please create a validation/ directory with binaries at $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation"
     exit 1
 fi
 
@@ -64,8 +64,8 @@ fi
 
 
 cd $SCRIPT_DIR
-RODINIA_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1"
-PARBOIL_DATADIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/parboil"
+RODINIA_DATADIR="$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1"
+PARBOIL_DATADIR="$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/parboil"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
 BENCH_FILE="$SCRIPT_DIR/validation_${1}.cfg"
 DEVID=${2}
@@ -97,7 +97,7 @@ sobolQRNG_k1_r="$BINDIR/sobolQRNG_k1"
 srad_v1_k1_r="$BINDIR/srad_v1_k1 100 0.5 502 458"
 
 if [ ! -f $PROFILER ]; then
-	make -C $ACCELSIM_ROOT/../accelwattch_hw_profiler
+	make -C $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler
 fi
 
 if [ -d $SCRIPT_DIR/validation_power_reports ]; then
@@ -111,7 +111,7 @@ fi
 mkdir $SCRIPT_DIR/validation_profile_output
 
 cd $SCRIPT_DIR/validation_profile_output
-cp $ACCELSIM_ROOT/../accelwattch_benchmarks/data_dirs/dct8x8/data/* .
+cp $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/dct8x8/data/* .
 
 for run in {1..5}
 do

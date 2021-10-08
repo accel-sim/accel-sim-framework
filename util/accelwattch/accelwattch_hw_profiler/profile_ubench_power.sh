@@ -45,13 +45,13 @@ if [ "${1}" == "" ]; then
 fi
 DEVID=${1}
 
-SCRIPT_DIR=$ACCELSIM_ROOT/../accelwattch_hw_profiler
-BINDIR="$ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks"
+SCRIPT_DIR=$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler
+BINDIR="$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks"
 PROFILER="$SCRIPT_DIR/measureGpuPower"
 UBENCH_FILE="$SCRIPT_DIR/ubench.cfg"
 
-if [ -d $ACCELSIM_ROOT/../accelwattch_benchmarks/microbenchmarks ]; then
-	cd $ACCELSIM_ROOT/../accelwattch_benchmarks
+if [ -d $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks ]; then
+	cd $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks
     ./extract_binaries.sh
 fi
 cd $SCRIPT_DIR

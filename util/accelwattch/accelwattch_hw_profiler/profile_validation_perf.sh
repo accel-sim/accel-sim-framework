@@ -46,9 +46,9 @@ if [ -d ${runs_dir} ] ; then
 fi
 export CUDA_VISIBLE_DEVICES=$DEVID
 $ACCELSIM_ROOT/../util/hw_stats/run_hw.py -D $DEVID -B rodinia-3.1_validation_hw,parboil_validation,cuda_samples_11.0_validation,cutlass_5_trace_validation,cudaTensorCoreGemm_validation --collect other_stats --nsight_profiler --disable_nvprof
-$ACCELSIM_ROOT/../accelwattch_hw_profiler/gen_hw_perf_csv.py -d ${runs_dir}
+$ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/gen_hw_perf_csv.py -d ${runs_dir}
 
-mv ${root_dir}/hw_perf.csv $ACCELSIM_ROOT/../accelwattch_hw_profiler/hw_perf.csv
-echo "y" | cp $ACCELSIM_ROOT/../accelwattch_hw_profiler/hw_perf.csv $ACCELSIM_ROOT/gpgpu-sim/configs/tested-cfgs/SM7_QV100/hw_perf.csv
+mv ${root_dir}/hw_perf.csv $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/hw_perf.csv
+echo "y" | cp $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/hw_perf.csv $ACCELSIM_ROOT/gpgpu-sim/configs/tested-cfgs/SM7_QV100/hw_perf.csv
 echo "Done"
 
