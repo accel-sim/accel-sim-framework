@@ -1,31 +1,5 @@
-// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
-// Northwestern University, Purdue University, The University of British Columbia
-// All rights reserved.
-//
-// Redistribution and use in source and binary forms, with or without
-// modification, are permitted provided that the following conditions are met:
-//
-// 1. Redistributions of source code must retain the above copyright notice, this
-//    list of conditions and the following disclaimer;
-// 2. Redistributions in binary form must reproduce the above copyright notice,
-//    this list of conditions and the following disclaimer in the documentation
-//    and/or other materials provided with the distribution;
-// 3. Neither the names of Northwestern University, Purdue University,
-//    The University of British Columbia nor the names of their contributors
-//    may be used to endorse or promote products derived from this software
-//    without specific prior written permission.
-//
-// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
-// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
-// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
-// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
-// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
-// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
-// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
-// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
-// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
-// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
-// POSSIBILITY OF SUCH DAMAGE.
+// developed by Mahmoud Khairy, Purdue Univ
+// abdallm@purdue.edu
 
 #ifndef TRACE_OPCODE_H
 #define TRACE_OPCODE_H
@@ -240,27 +214,27 @@ enum TraceInstrOpcode {
   OP_SULDGA,
   OP_SUSTGA,
   OP_ISUB,
+  // unique insts for ampere
+  OP_HMNMX2,
+  OP_DMMA,
+  OP_I2FP,
+  OP_F2IP,
+  OP_LDGDEPBAR,
+  OP_LDGSTS,
+  OP_REDUX,
+  OP_UF2FP,
+  OP_SUQUERY,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;
 
 struct OpcodeChar {
-  OpcodeChar(unsigned m_opcode, unsigned m_opcode_category, unsigned m_opcode_power, unsigned m_opcode_type) {
-    opcode = m_opcode;
-    opcode_category = m_opcode_category;
-    opcode_power = m_opcode_power;
-    opcode_type = m_opcode_type;
-  }
   OpcodeChar(unsigned m_opcode, unsigned m_opcode_category) {
     opcode = m_opcode;
     opcode_category = m_opcode_category;
-    opcode_power = OTHER_OP;
-    opcode_type = UN_OP;
   }
   unsigned opcode;
   unsigned opcode_category;
-  unsigned opcode_power;
-  unsigned opcode_type; // INT OR FP
 };
 
 #endif

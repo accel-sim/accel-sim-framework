@@ -187,4 +187,6 @@ private:
                    kernel_info_t &kernel);
 };
 
+types_of_operands get_oprnd_type(op_type op, special_ops sp_op);
+
 #endif

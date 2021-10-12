@@ -42,6 +42,7 @@
 #include "../ISA_Def/trace_opcode.h"
 #include "../ISA_Def/turing_opcode.h"
 #include "../ISA_Def/volta_opcode.h"
+#include "../ISA_Def/accelwattch_component_mapping.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
@@ -124,6 +125,29 @@ bool trace_kernel_info_t::get_next_threadblock_traces(
   return success;
 }
 
+types_of_operands get_oprnd_type(op_type op, special_ops sp_op){
+  switch (op) {
+    case SP_OP:
+    case SFU_OP:
+    case SPECIALIZED_UNIT_2_OP:
+    case SPECIALIZED_UNIT_3_OP:
+    case DP_OP:
+    case LOAD_OP:
+    case STORE_OP:
+      return FP_OP;
+    case INTP_OP:
+    case SPECIALIZED_UNIT_4_OP:
+      return INT_OP;
+    case ALU_OP:
+      if ((sp_op == FP__OP) || (sp_op == TEX__OP) || (sp_op == OTHER_OP))
+        return FP_OP;
+      else if (sp_op == INT__OP)
+        return INT_OP;
+    default: 
+      return UN_OP;
+  }
+}
+
 bool trace_warp_inst_t::parse_from_trace_struct(
     const inst_trace_t &trace,
     const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
@@ -169,8 +193,12 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   if (it != OpcodeMap->end()) {
     m_opcode = it->second.opcode;
     op = (op_type)(it->second.opcode_category);
-    sp_op = (special_ops)(it->second.opcode_power);
-    oprnd_type = (types_of_operands)(it->second.opcode_type);
+    const std::unordered_map<unsigned, unsigned> *OpcPowerMap = &OpcodePowerMap;
+    std::unordered_map<unsigned, unsigned>::const_iterator it2 =
+      OpcPowerMap->find(m_opcode);
+    if(it2 != OpcPowerMap->end())
+      sp_op = (special_ops) (it2->second);
+      oprnd_type = get_oprnd_type(op, sp_op);
   } else {
     std::cout << "ERROR:  undefined instruction : " << trace.opcode
               << " Opcode: " << opcode1 << std::endl;
