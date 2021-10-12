@@ -10,6 +10,16 @@ Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
 in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
 ```
 
+This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. Please look at [AccelWattch.md](https://github.com/VijayKandiah/accel-sim-framework/blob/release/AccelWattch.md) for a detailed guide on how to use AccelWattch.
+If you use any component of AccelWattch, please cite:
+
+```
+Vijay Kandiah, Scott Peverelle, Mahmoud Khairy, Amogh Manjunath, Junrui Pan, Timothy G. Rogers, Tor Aamodt, Nikos Hardavellas,
+AccelWattch: A Power Modeling Framework for Modern GPUs,
+in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
+```
+
+
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
@@ -21,6 +31,7 @@ run:
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools python-dev build-essential python-pip
+
 pip3 install pyyaml plotly psutil
 wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
 sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
