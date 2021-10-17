@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from optparse import OptionParser
 import re
@@ -21,7 +21,7 @@ def get_procman_status( jobId, node_details ):
     out,err = subprocess.Popen([os.path.join(this_directory, "procman.py"), "-j", jobId],stdout=PIPE).communicate()
     if out != None:
         try:
-            procMan = pickle.load(open(out.strip()))
+            procMan = pickle.load(open(out.rstrip(), "rb"))
         except Exception as e:
             return job_status
         job = procMan.getJob(int(jobId))
@@ -122,8 +122,8 @@ def get_squeue_status( jobId, node_details ):
         else:
             # no squeue output
             out, err = Popen(["sacct" ,"--format", "Elapsed", "-j", jobId],stdout=PIPE).communicate()
-            outlines = out.split("\n")
-            if outlines > 2:
+            outlines = str(out).split("\n")
+            if len(outlines) > 2:
                 job_status[ "running_time" ] = outlines[2].strip()
             if jobId in node_details:
                job_status[ "exec_host" ],job_status[ "mem_used" ],timeStamp = node_details[jobId]
@@ -230,7 +230,7 @@ elif options.logfile == "all":
 else:
     parsed_logfiles.append(common.file_option_test( options.logfile, "", this_directory ))
 
-print "Using logfiles " + str(parsed_logfiles)
+print("Using logfiles " + str(parsed_logfiles))
 
 options.run_dir = common.dir_option_test( options.run_dir, this_directory + ("../../sim_run_%s/"%cuda_version),
                                           this_directory )
@@ -288,8 +288,8 @@ for logfile in parsed_logfiles:
                 version="Version",config="Config",
                 status="JobStatus", stat="Basic GPGPU-Sim Stats", running_time="RunningTime",
                 mem_used="Mem")
-        print header
-        print "-" * len(header)
+        print(header)
+        print("-" * len(header))
 
         failed_job_text = ""
         failed_jobs_summary = ""
@@ -349,7 +349,7 @@ for logfile in parsed_logfiles:
 
             for sim_file in files_to_check:
                 if not os.path.isfile( sim_file ):
-                    print "WARNING - " + sim_file + " does not exist"
+                    print("WARNING - " + sim_file + " does not exist")
                     continue
 
                 # Only go up for 1000 lines looking for stuff
@@ -360,7 +360,7 @@ for logfile in parsed_logfiles:
                     if count >= MAX_LINES:
                         break
                     # search for the failue conditions
-                    for token, name in status_strings.iteritems():
+                    for token, name in status_strings.items():
                         if name in status_found:
                             continue
                         if re.search( token, line.rstrip() ):
@@ -368,7 +368,7 @@ for logfile in parsed_logfiles:
                             status_found.add( name )
 
                     # pull out some stats
-                    for name,token in stats_to_pull.iteritems():
+                    for name,token in stats_to_pull.items():
                         if token in stat_found:
                             continue
                         existance_test = re.search( token, line.rstrip() )
@@ -395,7 +395,7 @@ for logfile in parsed_logfiles:
             job_summary = ROW_STRING.format( jobId=jobId, exec_node=exec_node, app=app, args=args,
                             config=config, status=status_string, stat=additional_stats,
                             version=git_commit, running_time=running_time, mem_used=mem_used )
-            print job_summary
+            print(job_summary)
 
             if ("FUNC_TEST_PASSED" not in status_found \
                 and "WAITING_TO_RUN" not in status_string \
@@ -428,13 +428,13 @@ for logfile in parsed_logfiles:
                 failed_job_text += "**********************************************************\n"
                 a_job_failed = True
 
-        print "-" * len(header)
+        print("-" * len(header))
         if num_passed == num_jobs:
-            print "Congratulations! All jobs pass!"
+            print("Congratulations! All jobs pass!")
         
         if errs != "":
-            print "There were some errors while parsing the logfiles:"
-            print errs
+            print("There were some errors while parsing the logfiles:")
+            print(errs)
 
         if a_job_failed:
             failed_job_filename = "failed_job_log_{0}".format(os.path.basename(logfile))
@@ -443,6 +443,6 @@ for logfile in parsed_logfiles:
             failed_job_file.write( failed_jobs_summary + "\n" )
             failed_job_file.write( failed_job_text )
             failed_job_file.close()
-            print "failed job log written to {0}".format(failed_job_filename)
+            print("failed job log written to {0}".format(failed_job_filename))
 
     json.dump(node_details,open(node_details_file,"w+"))

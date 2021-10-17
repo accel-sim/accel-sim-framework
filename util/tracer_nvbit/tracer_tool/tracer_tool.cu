@@ -51,6 +51,9 @@ int verbose = 0;
 int enable_compress = 1;
 int print_core_id = 0;
 int exclude_pred_off = 1;
+int active_from_start = 1;
+/* used to select region of interest when active from start is 0 */
+bool active_region = true;
 
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
@@ -76,13 +79,21 @@ void nvbit_at_init() {
               "Limit of the number kernel to be printed, 0 means no limit");
   GET_VAR_INT(dynamic_kernel_limit_start, "DYNAMIC_KERNEL_LIMIT_START", 0,
               "start to report kernel from this kernel id, 0 means starts from "
-              "the begging, i.e. first kernel");
+              "the beginning, i.e. first kernel");
+  GET_VAR_INT(
+         active_from_start, "ACTIVE_FROM_START", 1,
+         "Start instruction tracing from start or wait for cuProfilerStart "
+         "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_LIMIT options have no effect");
   GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
+
+  if (active_from_start == 0) {
+    active_region = false;
+  }
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
@@ -257,10 +268,12 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       }
     }
 
-    if (!dynamic_kernel_limit_start || dynamic_kernel_limit_start == 1)
-      stop_report = false;
-    else
-      stop_report = true;
+    if (active_from_start && !dynamic_kernel_limit_start || dynamic_kernel_limit_start == 1)
+      active_region = true;
+    else {
+      if (active_from_start)
+        active_region = false;
+    }
 
     kernelsFile = fopen("./traces/kernelslist", "w");
     statsFile = fopen("./traces/stats.csv", "w");
@@ -288,8 +301,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
     if (!is_exit) {
 
-      if (dynamic_kernel_limit_start && kernelid == dynamic_kernel_limit_start)
-        stop_report = false;
+      if (active_from_start && dynamic_kernel_limit_start && kernelid == dynamic_kernel_limit_start)
+        active_region = true;
 
       int nregs;
       CUDA_SAFECALL(
@@ -305,7 +318,13 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
       instrument_function_if_needed(ctx, p->f);
 
-      nvbit_enable_instrumented(ctx, p->f, true);
+      if (active_region) {
+        nvbit_enable_instrumented(ctx, p->f, true);
+        stop_report = false;
+      } else {
+        nvbit_enable_instrumented(ctx, p->f, false);
+        stop_report = true;
+      }
 
       char buffer[1024];
       sprintf(buffer, "./traces/kernel-%d.trace", kernelid);
@@ -405,9 +424,17 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       if (!stop_report)
         fclose(resultsFile);
 
-      if (dynamic_kernel_limit_end && kernelid > dynamic_kernel_limit_end)
-        stop_report = true;
+      if (active_from_start && dynamic_kernel_limit_end && kernelid > dynamic_kernel_limit_end)
+        active_region = false;
     }
+  } else if (cbid == API_CUDA_cuProfilerStart && is_exit) {
+      if (!active_from_start) {
+        active_region = true;
+      }
+  } else if (cbid == API_CUDA_cuProfilerStop && is_exit) {
+      if (!active_from_start) {
+        active_region = false;
+      }
   }
 }
 
@@ -546,7 +573,7 @@ void *recv_thread_fun(void *) {
             fprintf(resultsFile, "R%d ", ma->GPRSrcs[s]);
 
         // print addresses
-        std::bitset<32> mask(ma->active_mask);
+        std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
         if (ma->is_mem) {
           std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
           std::vector<std::string> tokens;
