@@ -4,10 +4,10 @@
 #ifndef PASCAL_OPCODE_H
 #define PASCAL_OPCODE_H
 
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
 #define PASCAL_TITANX_BINART_VERSION 61
 #define PASCAL_P100_BINART_VERSION 60
