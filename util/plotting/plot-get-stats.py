@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from optparse import OptionParser
 import plotly
@@ -86,11 +86,11 @@ all_stats = get_csv_data(options.csv_file)
 
 colors= ['#0F8C79','#BD2D28','#E3BA22','#E6842A','#137B80','#8E6C8A','#9A3E25', '#E6842A']
 stat_count = 0
-for stat,value in all_stats.iteritems():
+for stat,value in all_stats.items():
     traces = []
     cfg_count = 0
     apps, data = value
-    for k,v in data.iteritems():
+    for k,v in data.items():
         traces.append(Bar(
             x= apps,
             y= v,
@@ -114,7 +114,7 @@ for stat,value in all_stats.iteritems():
     )
     fig = Figure(data=data, layout=layout)
     figure_name = re.sub('[^0-9a-zA-Z]+','_',stat) + "_" + options.plotname
-    print "plotting: " + figure_name
+    print("plotting: " + figure_name)
     outdir = (os.path.join(this_directory,"htmls"))
     if not os.path.exists( outdir ):
         os.makedirs(outdir)
@@ -126,6 +126,6 @@ shutil.copy2(options.csv_file, outdir)
 if options.publish_path != None and options.publish_path != "":
     files = glob.glob(os.path.join(outdir, "*"))
     if subprocess.call(["scp"] + files + [options.publish_path]) != 0:
-        print "Error Publishing via scp"
+        print("Error Publishing via scp")
     else:
-        print "Successfully pushed results to: {0}".format(options.publish_web)
+        print("Successfully pushed results to: {0}".format(options.publish_web))

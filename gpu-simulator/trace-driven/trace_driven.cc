@@ -2,15 +2,16 @@
 // abdallm@purdue.edu
 
 #include <bits/stdc++.h>
+#include <math.h>
+#include <stdio.h>
+#include <time.h>
 #include <fstream>
 #include <iostream>
-#include <math.h>
 #include <sstream>
-#include <stdio.h>
 #include <string>
-#include <time.h>
 #include <vector>
 
+#include "../ISA_Def/ampere_opcode.h"
 #include "../ISA_Def/kepler_opcode.h"
 #include "../ISA_Def/pascal_opcode.h"
 #include "../ISA_Def/trace_opcode.h"
@@ -69,7 +70,10 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   m_kernel_trace_info = kernel_trace_info;
 
   // resolve the binary version
-  if (kernel_trace_info->binary_verion == VOLTA_BINART_VERSION)
+  if (kernel_trace_info->binary_verion == AMPERE_RTX_BINART_VERSION ||
+      kernel_trace_info->binary_verion == AMPERE_A100_BINART_VERSION)
+    OpcodeMap = &Ampere_OpcodeMap;
+  else if (kernel_trace_info->binary_verion == VOLTA_BINART_VERSION)
     OpcodeMap = &Volta_OpcodeMap;
   else if (kernel_trace_info->binary_verion == PASCAL_TITANX_BINART_VERSION ||
            kernel_trace_info->binary_verion == PASCAL_P100_BINART_VERSION)
@@ -114,7 +118,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   pc = (address_type)trace.m_pc;
 
   isize =
-      16; // starting from MAXWELL isize=16 bytes (including the control bytes)
+      16;  // starting from MAXWELL isize=16 bytes (including the control bytes)
   for (unsigned i = 0; i < MAX_OUTPUT_VALUES; i++) {
     out[i] = 0;
   }
@@ -151,15 +155,16 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   num_operands = num_regs;
   outcount = trace.reg_dsts_num;
   for (unsigned m = 0; m < trace.reg_dsts_num; ++m) {
-    out[m] = trace.reg_dest[m] + 1; // Increment by one because GPGPU-sim starts
-                                    // from R1, while SASS starts from R0
+    out[m] =
+        trace.reg_dest[m] + 1;  // Increment by one because GPGPU-sim starts
+                                // from R1, while SASS starts from R0
     arch_reg.dst[m] = trace.reg_dest[m] + 1;
   }
 
   incount = trace.reg_srcs_num;
   for (unsigned m = 0; m < trace.reg_srcs_num; ++m) {
-    in[m] = trace.reg_src[m] + 1; // Increment by one because GPGPU-sim starts
-                                  // from R1, while SASS starts from R0
+    in[m] = trace.reg_src[m] + 1;  // Increment by one because GPGPU-sim starts
+                                   // from R1, while SASS starts from R0
     arch_reg.src[m] = trace.reg_src[m] + 1;
   }
 
@@ -175,107 +180,109 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   // handle special cases and fill memory space
   switch (m_opcode) {
-  case OP_LDG:
-  case OP_LDL:
-    assert(data_size > 0);
-    memory_op = memory_load;
-    cache_op = CACHE_ALL;
-    if (m_opcode == OP_LDL)
-      space.set_type(local_space);
-    else
-      space.set_type(global_space);
-    // check the cache scope, if its strong GPU, then bypass L1
-    if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
-        trace.check_opcode_contain(opcode_tokens, "GPU")) {
-      cache_op = CACHE_GLOBAL;
-    }
-    break;
-  case OP_STG:
-  case OP_STL:
-    assert(data_size > 0);
-    memory_op = memory_store;
-    cache_op = CACHE_ALL;
-    if (m_opcode == OP_STL)
-      space.set_type(local_space);
-    else
-      space.set_type(global_space);
-    break;
-  case OP_ATOMG:
-  case OP_RED:
-  case OP_ATOM:
-    assert(data_size > 0);
-    memory_op = memory_load;
-    op = LOAD_OP;
-    space.set_type(global_space);
-    m_isatomic = true;
-    cache_op = CACHE_GLOBAL; // all the atomics should be done at L2
-    break;
-  case OP_LDS:
-  case OP_STS:
-  case OP_ATOMS:
-    assert(data_size > 0);
-    space.set_type(shared_space);
-    break;
-  case OP_ST:
-  case OP_LD:
-    assert(data_size > 0);
-    if (m_opcode == OP_LD)
+    case OP_LDG:
+    case OP_LDL:
+      assert(data_size > 0);
       memory_op = memory_load;
-    else
+      cache_op = CACHE_ALL;
+      if (m_opcode == OP_LDL)
+        space.set_type(local_space);
+      else
+        space.set_type(global_space);
+      // check the cache scope, if its strong GPU, then bypass L1
+      if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
+          trace.check_opcode_contain(opcode_tokens, "GPU")) {
+        cache_op = CACHE_GLOBAL;
+      }
+      break;
+    case OP_STG:
+    case OP_STL:
+      assert(data_size > 0);
       memory_op = memory_store;
-    // resolve generic loads
-    if (kernel_trace_info->shmem_base_addr == 0 ||
-        kernel_trace_info->local_base_addr == 0) {
-      // shmem and local addresses are not set
-      // assume all the mem reqs are shared by default
+      cache_op = CACHE_ALL;
+      if (m_opcode == OP_STL)
+        space.set_type(local_space);
+      else
+        space.set_type(global_space);
+      break;
+    case OP_ATOMG:
+    case OP_RED:
+    case OP_ATOM:
+      assert(data_size > 0);
+      memory_op = memory_load;
+      op = LOAD_OP;
+      space.set_type(global_space);
+      m_isatomic = true;
+      cache_op = CACHE_GLOBAL;  // all the atomics should be done at L2
+      break;
+    case OP_LDS:
+    case OP_STS:
+    case OP_ATOMS:
+    case OP_LDSM:
+      assert(data_size > 0);
       space.set_type(shared_space);
-    } else {
-      // check the first active address
-      for (unsigned i = 0; i < warp_size(); ++i)
-        if (active_mask.test(i)) {
-          if (trace.memadd_info->addrs[i] >=
-                  kernel_trace_info->shmem_base_addr &&
-              trace.memadd_info->addrs[i] < kernel_trace_info->local_base_addr)
-            space.set_type(shared_space);
-          else if (trace.memadd_info->addrs[i] >=
-                       kernel_trace_info->local_base_addr &&
-                   trace.memadd_info->addrs[i] <
-                       kernel_trace_info->local_base_addr +
-                           LOCAL_MEM_SIZE_MAX) {
-            space.set_type(local_space);
-            cache_op = CACHE_ALL;
-          } else {
-            space.set_type(global_space);
-            cache_op = CACHE_ALL;
+      break;
+    case OP_ST:
+    case OP_LD:
+      assert(data_size > 0);
+      if (m_opcode == OP_LD)
+        memory_op = memory_load;
+      else
+        memory_op = memory_store;
+      // resolve generic loads
+      if (kernel_trace_info->shmem_base_addr == 0 ||
+          kernel_trace_info->local_base_addr == 0) {
+        // shmem and local addresses are not set
+        // assume all the mem reqs are shared by default
+        space.set_type(shared_space);
+      } else {
+        // check the first active address
+        for (unsigned i = 0; i < warp_size(); ++i)
+          if (active_mask.test(i)) {
+            if (trace.memadd_info->addrs[i] >=
+                    kernel_trace_info->shmem_base_addr &&
+                trace.memadd_info->addrs[i] <
+                    kernel_trace_info->local_base_addr)
+              space.set_type(shared_space);
+            else if (trace.memadd_info->addrs[i] >=
+                         kernel_trace_info->local_base_addr &&
+                     trace.memadd_info->addrs[i] <
+                         kernel_trace_info->local_base_addr +
+                             LOCAL_MEM_SIZE_MAX) {
+              space.set_type(local_space);
+              cache_op = CACHE_ALL;
+            } else {
+              space.set_type(global_space);
+              cache_op = CACHE_ALL;
+            }
+            break;
           }
-          break;
-        }
-    }
+      }
 
-    break;
-  case OP_BAR:
-    // TO DO: fill this correctly
-    bar_id = 0;
-    bar_count = (unsigned)-1;
-    bar_type = SYNC;
-    // TO DO
-    // if bar_type = RED;
-    // set bar_type
-    // barrier_type bar_type;
-    // reduction_type red_type;
-    break;
-  case OP_HADD2:
-  case OP_HADD2_32I:
-  case OP_HFMA2:
-  case OP_HFMA2_32I:
-  case OP_HMUL2_32I:
-  case OP_HSET2:
-  case OP_HSETP2:
-    initiation_interval =
-        initiation_interval / 2; // FP16 has 2X throughput than FP32
-    break;
-  default:
-    break;
+      break;
+    case OP_BAR:
+      // TO DO: fill this correctly
+      bar_id = 0;
+      bar_count = (unsigned)-1;
+      bar_type = SYNC;
+      // TO DO
+      // if bar_type = RED;
+      // set bar_type
+      // barrier_type bar_type;
+      // reduction_type red_type;
+      break;
+    case OP_HADD2:
+    case OP_HADD2_32I:
+    case OP_HFMA2:
+    case OP_HFMA2_32I:
+    case OP_HMUL2_32I:
+    case OP_HSET2:
+    case OP_HSETP2:
+      initiation_interval =
+          initiation_interval / 2;  // FP16 has 2X throughput than FP32
+      break;
+    default:
+      break;
   }
 
   return true;
@@ -344,32 +351,32 @@ void trace_config::set_latency(unsigned category, unsigned &latency,
   initiation_interval = latency = 1;
 
   switch (category) {
-  case ALU_OP:
-  case INTP_OP:
-  case BRANCH_OP:
-  case CALL_OPS:
-  case RET_OPS:
-    latency = int_latency;
-    initiation_interval = int_init;
-    break;
-  case SP_OP:
-    latency = fp_latency;
-    initiation_interval = fp_init;
-    break;
-  case DP_OP:
-    latency = dp_latency;
-    initiation_interval = dp_init;
-    break;
-  case SFU_OP:
-    latency = sfu_latency;
-    initiation_interval = sfu_init;
-    break;
-  case TENSOR_CORE_OP:
-    latency = tensor_latency;
-    initiation_interval = tensor_init;
-    break;
-  default:
-    break;
+    case ALU_OP:
+    case INTP_OP:
+    case BRANCH_OP:
+    case CALL_OPS:
+    case RET_OPS:
+      latency = int_latency;
+      initiation_interval = int_init;
+      break;
+    case SP_OP:
+      latency = fp_latency;
+      initiation_interval = fp_init;
+      break;
+    case DP_OP:
+      latency = dp_latency;
+      initiation_interval = dp_init;
+      break;
+    case SFU_OP:
+      latency = sfu_latency;
+      initiation_interval = sfu_init;
+      break;
+    case TENSOR_CORE_OP:
+      latency = tensor_latency;
+      initiation_interval = tensor_init;
+      break;
+    default:
+      break;
   }
   // for specialized units
   if (category >= SPEC_UNIT_START_ID) {
@@ -414,9 +421,8 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
   *rpc = pI->pc;
 }
 
-const active_mask_t &
-trace_shader_core_ctx::get_active_mask(unsigned warp_id,
-                                       const warp_inst_t *pI) {
+const active_mask_t &trace_shader_core_ctx::get_active_mask(
+    unsigned warp_id, const warp_inst_t *pI) {
   // For Trace-driven, the active mask already set in traces, so
   // just read it from the inst
   return pI->get_active_mask();
@@ -427,15 +433,14 @@ unsigned trace_shader_core_ctx::sim_init_thread(
     unsigned threads_left, unsigned num_threads, core_t *core,
     unsigned hw_cta_id, unsigned hw_warp_id, gpgpu_t *gpu) {
   if (kernel.no_more_ctas_to_run()) {
-    return 0; // finished!
+    return 0;  // finished!
   }
 
   if (kernel.more_threads_in_cta()) {
     kernel.increment_thread_id();
   }
 
-  if (!kernel.more_threads_in_cta())
-    kernel.increment_cta_id();
+  if (!kernel.more_threads_in_cta()) kernel.increment_cta_id();
 
   return 1;
 }
@@ -470,7 +475,6 @@ void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
 
 void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
-
   std::vector<std::vector<inst_trace_t> *> threadblock_traces;
   for (unsigned i = start_warp; i < end_warp; ++i) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
@@ -492,8 +496,7 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
 void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
                                                           unsigned t,
                                                           unsigned tid) {
-  if (inst.isatomic())
-    m_warp[inst.warp_id()]->inc_n_atomic();
+  if (inst.isatomic()) m_warp[inst.warp_id()]->inc_n_atomic();
 
   if (inst.space.is_local() && (inst.is_load() || inst.is_store())) {
     new_addr_type localaddrs[MAX_ACCESSES_PER_INSN_PER_THREAD];
@@ -536,7 +539,6 @@ void trace_shader_core_ctx::issue_warp(register_set &warp,
                                        const warp_inst_t *pI,
                                        const active_mask_t &active_mask,
                                        unsigned warp_id, unsigned sch_id) {
-
   shader_core_ctx::issue_warp(warp, pI, active_mask, warp_id, sch_id);
 
   // delete warp_inst_t class here, it is not required anymore by gpgpu-sim
