@@ -1,5 +1,35 @@
 #!/usr/bin/env python
 
+# Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+# Northwestern University, Purdue University, The University of British Columbia
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer;
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution;
+# 3. Neither the names of Northwestern University, Purdue University,
+#    The University of British Columbia nor the names of their contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
 from optparse import OptionParser
 import os
 import subprocess
@@ -28,14 +58,19 @@ parser.add_option("-D", "--device_num", dest="device_num",
                  default="0")
 parser.add_option("-n", "--norun", dest="norun", action="store_true",
                  help="Do not actually run the apps, just create the dir structure and launch files")
-parser.add_option("-c", "--cycle_only", dest="cycle_only", action="store_true",
-                 help="Just get Kernel Duration")
 parser.add_option("-R", "--repeat_cycle", dest="repeat_cycle", default=1,
                  help="When running the cycle tests, do them this many times (good when DVFS is enabled)")
 parser.add_option("-N", "--nsight_profiler", dest="nsight_profiler", action="store_true",
                  help="use the new nsight cli profiler")
 parser.add_option("-d", "--disable_nvprof", dest="disable_nvprof", action="store_true",
                  help="do not use nvprof (decrecated in Turing+)")
+parser.add_option("-S", "--nsys_profiler", dest="nsys_profiler", action="store_true",
+                 help="Use the Nsys profiler for counting cycles instead of Ncu")
+parser.add_option("-l", "--limit_kernel_number", dest="kernel_number", type=int, default=-99,
+                 help="Limits the number of profiled kernels (useful in larger applications")
+parser.add_option("-C", "--collect", dest="collect", default="cycles",
+                help="Pass what you want from the hardware. Options are: \"cycles,other_stats\"")
+
 (options, args) = parser.parse_args()
 
 if not options.disable_nvprof:
@@ -87,7 +122,16 @@ for bench in benchmarks:
 
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
-        if not options.cycle_only:
+        kernel_number = ""
+        if('mlperf' in exec_path):
+            exec_path = "sh " + exec_path
+            # For MLPerf we are by default limiting the number of profiled kernels to 1000
+            # This can be overriden by explicitly indicating the number of kernels via the -c argument.
+            kernel_number = ' -c 1000 '
+        if(options.kernel_number > 0):
+            kernel_number = ' -c '+str(options.kernel_number)+' '
+
+        if "other_stats" in options.collect:
             if not options.disable_nvprof:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
                     "\" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
@@ -98,8 +142,12 @@ for bench in benchmarks:
                     "sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum," +\
                     "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum,lts__t_sectors_srcunit_tex_op_read.sum,"+\
                     "lts__t_sectors_srcunit_tex_op_write.sum,lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum,lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum," +\
-                    "lts__t_sector_op_write_hit_rate.pct,lts__t_sectors_srcunit_tex_op_read.sum.per_second,dram__sectors_read.sum,dram__sectors_write.sum,dram__bytes_read.sum " +\
-                    " --csv --page raw " +\
+                    "lts__t_sector_op_write_hit_rate.pct,lts__t_sectors_srcunit_tex_op_read.sum.per_second,dram__sectors_read.sum,dram__sectors_write.sum,dram__bytes_read.sum," +\
+                    "sm__inst_executed.sum,smsp__cycles_active.avg.pct_of_peak_sustained_elapsed,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_miss.sum," +\
+                    ",l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum," +\
+                    "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum," +\
+                    "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum" +\
+                    " --csv --page raw --target-processes all " + kernel_number +\
                     " " + exec_path + " " + str(args) +\
                     " | tee " + os.path.join(this_run_dir,logfile + ".nsight")
 
@@ -111,9 +159,14 @@ for bench in benchmarks:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
                     "\" ; timeout 5m nvprof --concurrent-kernels off --print-gpu-trace --events elapsed_cycles_sm --demangling off --csv --log-file " +\
                     os.path.join(this_run_dir,logfile + ".elapsed_cycles_sm.{0}".format(i)) + " " + exec_path + " " + str(args) + " "
-            if options.nsight_profiler:
+            if options.nsys_profiler:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                    "\" ; timeout 5m nv-nsight-cu-cli --metrics gpc__cycles_elapsed.avg --csv " +\
+                    "\" ; timeout 5m nsys profile -o "+os.path.join(this_run_dir,"out") + " " +\
+                        exec_path + " " + str(args) + "; nsys stats -f csv --report gputrace "+os.path.join(this_run_dir,"out.qdrep")+\
+                        " | tee cycles.csv; python "+os.path.join(this_directory,"postprocess-nsys-csv.py")+" --path "+this_run_dir
+            elif options.nsight_profiler:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 5m nv-nsight-cu-cli --target-processes all --metrics gpc__cycles_elapsed.avg --csv " +\
                         exec_path + " " + str(args) + " | tee " +\
                         os.path.join(this_run_dir,logfile + ".gpc__cycles_elapsed.{0}".format(i))
 

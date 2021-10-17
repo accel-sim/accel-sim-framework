@@ -214,6 +214,16 @@ enum TraceInstrOpcode {
   OP_SULDGA,
   OP_SUSTGA,
   OP_ISUB,
+  // unique insts for ampere
+  OP_HMNMX2,
+  OP_DMMA,
+  OP_I2FP,
+  OP_F2IP,
+  OP_LDGDEPBAR,
+  OP_LDGSTS,
+  OP_REDUX,
+  OP_UF2FP,
+  OP_SUQUERY,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;
