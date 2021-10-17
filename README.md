@@ -1,4 +1,4 @@
-# Welcome to the top-level repo of Accel-Sim
+# Welcome to the top-level repo of Accel-Sim and AccelWattch
 
 The [ISCA 2020 paper](https://conferences.computer.org/isca/pdfs/ISCA2020-4QlDegUf3fKiwUXfV0KdCm/466100a473/466100a473.pdf)
 describes the goals of Accel-Sim and introduces the tool. This readme is meant to provide tutorial-like details on how to use the Accel-Sim
@@ -9,6 +9,16 @@ Mahmoud Khairy, Zhensheng Shen, Tor M. Aamodt, Timothy G. Rogers,
 Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
 in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
 ```
+
+This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. The [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) introduces AccelWattch. Please look at our [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md) for detailed information on various AccelWattch components. For information on just running AccelWattch, please look at the [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/README.md#accelwattch-overview) section in this read-me.
+If you use any component of AccelWattch, please cite:
+
+```
+Vijay Kandiah, Scott Peverelle, Mahmoud Khairy, Amogh Manjunath, Junrui Pan, Timothy G. Rogers, Tor Aamodt, Nikos Hardavellas,
+AccelWattch: A Power Modeling Framework for Modern GPUs,
+in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
+```
+
 
 ## Dependencies
 
@@ -21,6 +31,7 @@ run:
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools python-dev build-essential python-pip
+
 pip3 install pyyaml plotly psutil
 wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
 sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
@@ -30,23 +41,25 @@ rm cuda_11.0.1_450.36.06_linux.run
 Note, that all the python scripts have more detailed options explanations when run with "--help"
 
 
-## Accel-Sim Repo Overview
+## Overview
 
-The code for the Accel-Sim framework is in this repo. Accel-Sim 1.0 uses the
+The code for the Accel-Sim and AccelWattch frameworks are in this repo. Accel-Sim 1.0 uses the
 [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md) performance model, which was released as part of the original
 Accel-Sim paper. Building the trace-based Accel-Sim will pull the right version of
-GPGPU-Sim 4.0 to use in Accel-Sim.
+GPGPU-Sim 4.0 and the AccelWattch power model to use in Accel-Sim. AccelWattch replaces the GPUWattch power model in GPGPU-Sim 4.0.
 
 There is an additional repo where we have collected a set of common GPU applications and a common infrastructure for building
 them with different versions of CUDA. If you use/extend this app framework, it makes Accel-Sim easily usable
 with a few simple command lines. The instructions in this README will take you through how to use Accel-Sim with
-the apps in from this collection as well as just on your own, with your own apps.
+the apps in from this collection as well as just on your own, with your own apps.  
 
 [GPU App Collection](https://github.com/accel-sim/gpu-app-collection)
 
+The 'release-accelwattch' branch of the [GPU App Collection](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch) repository also includes the AccelWattch microbenchmarks and AccelWattch validation set benchmarks. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md).
+
 ## Accel-Sim Components
 
-![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
+![Accel-Sim Overview](https://github.com/VijayKandiah/accel-sim.github.io/blob/master/assets/img/accel-sim-crop.svg)
 
 1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in ./util/tracer\_nvbit/. To make the tool:  
   
@@ -103,7 +116,7 @@ the apps in from this collection as well as just on your own, with your own apps
     ```bash
     ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
     ```
-    The above command will run the worklaods in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
+    The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
     ```bash
     ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
     ```
@@ -230,3 +243,30 @@ Just use a linux ditro with the packages detailed in dependencies, set
 CUDA\_INSTALL\_PATH, the run ./travis.sh.
 
 
+## AccelWattch Overview
+
+![AccelWattch Overview](https://github.com/VijayKandiah/accel-sim.github.io/blob/master/assets/img/accelwattch-flowchart.svg)
+
+1. **Running AccelWattch SASS SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch SASS SIM* model,
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-Accelwattch_SASS_SIM -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+```
+This will use the *AccelWattch SASS SIM* xml configuration file for the power model. The configuration files for the AccelWattch power model presented in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) can be found [here](https://github.com/accel-sim/gpgpu-sim_distribution/tree/release-accelwattch/configs/tested-cfgs/SM7_QV100). Please look at `./util/job_launching/configs/define-standard-cfgs.yml` for a list of provided AccelWattch configurations. The *AccelWattch HYBRID* configuration provided there uses activity factors for L2 and NOC from Accel-Sim and the rest from hardware performance counters. You can create your own *AccelWattch HYBRID* configuration in this file with a different mix of AccelWattch activity factors from Accel-Sim and hardware execution. 
+Upon completion of simulations, AccelWattch power estimations are stored in a *accelwattch_power_report.log* in a per-kernel format in the run directory. 
+
+2. **Running AccelWattch HW or AccelWattch HYBRID:** To run *the simple example from bullet 1* with *AccelWattch HW* or *AccelWattch HYBRID* configurations, 
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a -C <QV100-Accelwattch_SASS_HW or QV100-Accelwattch_SASS_HYBRID> -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+```
+Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a QV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`. 
+
+3. **Running AccelWattch PTX SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch PTX SIM* model,
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-Accelwattch_PTX_SIM -N myTest
+```
+
+4. **Hardware Power and Performance Profiler**: The AccelWattch hardware profiler scripts are located at `./util/accelwattch/accelwattch_hw_profiler/` in this repository. For more information on how to use them, please look at [this](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md#hardware-profiling-for-accelwattch-validation) section in our MICRO'21 Artifact Manual.
+
+5. **Microbenchmarks and Quadratic Optimization Solver**: The source code for the microbenchmarks used for AccelWattch dynamic power modeling are located [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch/src/cuda/accelwattch-ubench) and can be compiled by following the README [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch). The Quadratic Optimization Solver MATLAB script is located at `./util/accelwattch/quadprog_solver.m`.
+
+6. **SASS to Power Component Mapping**: The header file `gpu-simulator/ISA_Def/accelwattch_component_mapping.h` contains the Accel-Sim instruction opcode to AccelWattch power component mapping and can be extended to support new SASS instructions for future architectures. Please look at the *opcode.h* files for respective GPU Architectures in the same directory `gpu-simulator/ISA_Def/` for SASS instruction to Accel-Sim opcode mapping.

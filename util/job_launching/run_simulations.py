@@ -1,5 +1,35 @@
 #!/usr/bin/env python3
 
+# Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+# Northwestern University, Purdue University, The University of British Columbia
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer;
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution;
+# 3. Neither the names of Northwestern University, Purdue University,
+#    The University of British Columbia nor the names of their contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
+
 from optparse import OptionParser
 import os
 import subprocess
@@ -86,7 +116,7 @@ class ConfigurationSpec:
                     simdir,
                     full_exec_dir,build_handle,
                     mem_usage)
-                self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
+                self.append_gpgpusim_config(benchmark, this_run_dir, appargs_run_subdir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
@@ -149,6 +179,7 @@ class ConfigurationSpec:
                                    glob.glob(os.path.join(full_data_dir, "*.cl")) +\
                                    glob.glob(os.path.join(full_data_dir, "*.h")) +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.icnt") +\
+                                   glob.glob(os.path.dirname(self.config_file) + "/*.csv") +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
         for file_to_cp in files_to_copy_to_run_dir:
@@ -269,7 +300,7 @@ class ConfigurationSpec:
         os.chmod(justrunfile, 0o744)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
-    def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
+    def append_gpgpusim_config(self, bench_name, this_run_dir, appargs_run_subdir, config_text_file):
         benchmark_spec_opts_file = os.path.expandvars(os.path.join( "$GPUAPPS_ROOT", "benchmarks",
             "app-specific-gpgpu-sim-options", bench_name, "benchmark_options.txt" ))
         benchmark_spec_opts = ""
@@ -281,11 +312,18 @@ class ConfigurationSpec:
         config_text = open(config_text_file).read()
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params + "\n"
 
+        if options.accelwattch_HW:
+            # if bench_name == "cutlass_perf_test":
+            #     config_text += "\n" + "-hw_perf_bench_name " + appargs_run_subdir.replace('/','_') + "\n"
+            # else:
+            config_text += "\n" + "-hw_perf_bench_name " + bench_name + "\n"
+
         if options.trace_dir != "":
             cfgsubdir = re.sub(r".*(configs.*)gpgpusim.config", r"\1", config_text_file)
             config_text += "\n" + "# Accel-Sim Parameters" + "\n"
             accelsim_cfg = os.path.expandvars(os.path.join("$ACCELSIM_ROOT", cfgsubdir, "trace.config"))
             config_text += open(accelsim_cfg).read()
+
 
         open(os.path.join(this_run_dir , "gpgpusim.config"), 'w').write(config_text)
 
