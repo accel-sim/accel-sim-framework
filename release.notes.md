@@ -1,25 +1,11 @@
 
-# Release v1.3.0
+# Release v1.2.0
 
 Oct 19, 2021.
 
-Major changes since v1.2.0:
-
-1. Release and integration of AccelWattch v1.0 with Accel-Sim.
-
-# Release v1.2.0
-
-May 26, 2021.
-
 Major changes since v1.1.0:
 
-1. First release of Accel-Sim's tuner component
-2. Nvbit 1.5.2 support
-3. Partial support of cutting-edge MLPerf traces
-4. Turing architecture traces
-5. Ampere architecture traces (without copy-async feature: still in progress)
-6. GPGPU-Sim 4.1 release
-7. Detailed manual
+1. Release and integration of AccelWattch v1.0 with Accel-Sim.
 
 # Release v1.1.0
 
