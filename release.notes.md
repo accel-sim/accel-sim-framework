@@ -3,7 +3,7 @@
 
 Oct 19, 2021.
 
-Major changes since v1.0.0:
+Major changes since v1.1.0:
 
 1. Release and integration of AccelWattch v1.0 with Accel-Sim.
 
