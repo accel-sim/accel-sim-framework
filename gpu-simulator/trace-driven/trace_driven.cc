@@ -252,7 +252,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // handle special cases and fill memory space
   switch (m_opcode) {
   case OP_LDC: //handle Load from Constant
-    assert(trace.memadd_info->width > 0);
     data_size = 4;
     memory_op = memory_load;
     const_cache_operand = 1;
