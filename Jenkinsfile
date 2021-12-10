@@ -51,31 +51,31 @@ pipeline {
                }
             }
         }
-        stage('archive-stats') {
-            steps{
-                sh '''#!/bin/bash -xe
-                source ./env-setup/11.2.1_env_setup.sh
-                rm -rf ./statistics-archive
-                git clone git@github.com:accel-sim/statistics-archive.git
-                # either create a new branch or check it out if it already exists
-                git -C ./statistics-archive checkout ${JOB_NAME} 2>/dev/null || git -C ./statistics-archive checkout -b ${JOB_NAME}
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-${BUILD_NUMBER}.csv
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-${BUILD_NUMBER}.csv
-                ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-${BUILD_NUMBER}.csv
-                mkdir -p statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-${BUILD_NUMBER}.csv \
-                    | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-${BUILD_NUMBER}.csv \
-                    | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
-                ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-${BUILD_NUMBER}.csv \
-                    | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
-                git -C ./statistics-archive add --all
-                git -C ./statistics-archive commit \
-                    -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}" || echo "No Changes."
-                git -C ./statistics-archive push -u origin ${JOB_NAME}
-                '''
-            }
-        }
+        // stage('archive-stats') {
+        //     steps{
+        //         sh '''#!/bin/bash -xe
+        //         source ./env-setup/11.2.1_env_setup.sh
+        //         rm -rf ./statistics-archive
+        //         git clone git@github.com:accel-sim/statistics-archive.git
+        //         # either create a new branch or check it out if it already exists
+        //         git -C ./statistics-archive checkout ${JOB_NAME} 2>/dev/null || git -C ./statistics-archive checkout -b ${JOB_NAME}
+        //         ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-${BUILD_NUMBER}.csv
+        //         ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-${BUILD_NUMBER}.csv
+        //         ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-${BUILD_NUMBER}.csv
+        //         mkdir -p statistics-archive/ubench/
+        //         ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-${BUILD_NUMBER}.csv \
+        //             | tee v100-ubench-sass.csv && mv v100-ubench-sass.csv ./statistics-archive/ubench/
+        //         ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/turing-ubench-sass.csv,turing-ubench-sass-${BUILD_NUMBER}.csv \
+        //             | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
+        //         ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-${BUILD_NUMBER}.csv \
+        //             | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
+        //         git -C ./statistics-archive add --all
+        //         git -C ./statistics-archive commit \
+        //             -m "Jenkins automated checkin ${JOB_NAME} Build:${BUILD_NUMBER}" || echo "No Changes."
+        //         git -C ./statistics-archive push -u origin ${JOB_NAME}
+        //         '''
+        //     }
+        // }
         stage('correlate-ubench'){
             steps{
                 sh '''#!/bin/bash -xe
@@ -85,27 +85,28 @@ pipeline {
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/v100-ubench-sass.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/turing-ubench-sass.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
                 ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
-                ssh tgrogers@dynamo mkdir -p /home/dynamo/a/tgrogers/website/accel-sim/latest-correl/${JOB_NAME}/
-                rsync --delete -r ./util/plotting/correl-html/ tgrogers@dynamo:~/website/accel-sim/latest-correl/${JOB_NAME}/
-                echo "Correlation Report at: https://engineering.purdue.edu/tgrogers/accel-sim/latest-correl/${JOB_NAME}/"
                 '''
+                // ssh tgrogers@dynamo mkdir -p /home/dynamo/a/tgrogers/website/accel-sim/latest-correl/${JOB_NAME}/
+                // rsync --delete -r ./util/plotting/correl-html/ tgrogers@dynamo:~/website/accel-sim/latest-correl/${JOB_NAME}/
+                // echo "Correlation Report at: https://engineering.purdue.edu/tgrogers/accel-sim/latest-correl/${JOB_NAME}/"
+                // '''
             }
         }
     }
-    post {
-        success {
-            emailext body: "See ${BUILD_URL}.\n\nCorrelation at https://engineering.purdue.edu/tgrogers/accel-sim/latest-correl/${JOB_NAME}/",
-                recipientProviders: [[$class: 'CulpritsRecipientProvider'],
-                    [$class: 'RequesterRecipientProvider']],
-                subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - Success!",
-                to: 'tgrogers@purdue.edu'
-        }
-        failure {
-            emailext body: "See ${BUILD_URL}",
-                recipientProviders: [[$class: 'CulpritsRecipientProvider'],
-                    [$class: 'RequesterRecipientProvider']],
-                subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - ${currentBuild.result}",
-                to: 'tgrogers@purdue.edu'
-        }
-   }
+//     post {
+//         success {
+//             emailext body: "See ${BUILD_URL}.\n\nCorrelation at https://engineering.purdue.edu/tgrogers/accel-sim/latest-correl/${JOB_NAME}/",
+//                 recipientProviders: [[$class: 'CulpritsRecipientProvider'],
+//                     [$class: 'RequesterRecipientProvider']],
+//                 subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - Success!",
+//                 to: 'tgrogers@purdue.edu'
+//         }
+//         failure {
+//             emailext body: "See ${BUILD_URL}",
+//                 recipientProviders: [[$class: 'CulpritsRecipientProvider'],
+//                     [$class: 'RequesterRecipientProvider']],
+//                 subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - ${currentBuild.result}",
+//                 to: 'tgrogers@purdue.edu'
+//         }
+//    }
 }
