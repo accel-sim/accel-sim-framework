@@ -229,7 +229,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         f = open(outfile)
         fsize = int(os.stat(outfile).st_size)
         if fsize > BYTES_TO_READ:
-            f.seek(-BYTES_TO_READ, os.SEEK_END)
+            f.seek(fsize-BYTES_TO_READ, os.SEEK_SET)
         lines = f.readlines()
         for line in reversed(lines):
             count += 1
