@@ -10,6 +10,316 @@
 # If you have a bunch of random benchmarks in random places, then a "suite" can be just one benchmark
 
 # Rodinia 2.0 implemented with a pass/fail functional test
+# cutlass_5_trace_validation:
+#     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+#     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+#     execs:
+#         - cutlass_perf_test:
+#             - --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+#             - --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+#             - --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+# parboil_validation:
+#     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+#     data_dirs: "$GPUAPPS_ROOT/data_dirs/parboil/"
+#     execs:
+#         - parboil-sad:
+#             - -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
+            
+#         - parboil-sgemm:
+#             - -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+
+#         - parboil-mri-q:
+#             - -i ./data/large/input/64_64_64_dataset.bin -o 64_64_64_dataset.out
+# rodinia-3.1_validation:
+#     exec_dir: "/home/tgrogers-raid/a/pan251/benchmarks/validation"
+#     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/3.1/"
+#     execs:
+#         - b+tree-rodinia-3.1:
+#             - file ./data/mil.txt command ./data/command.txt
+#         - backprop-rodinia-3.1:
+#            - 65536
+#         #- bfs-rodinia-3.1:
+#             #- ./data/graph1MW_6.txt
+#         - dwt2d-rodinia-3.1:
+#             - ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+#         #- gaussian-rodinia-3.1:
+#            # - -f ./data/matrix208.txt
+#         - hotspot-rodinia-3.1:
+#             - 1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+#         #- hybridsort-rodinia-3.1:
+#            #- ./data/500000.txt
+#         - kmeans-rodinia-3.1:
+#             - -o -i ./data/819200.txt
+#         #- lavaMD-rodinia-3.1:
+#         #    - -boxes1d 10
+#         #- lud-rodinia-3.1:
+#             #- -i ./data/512.dat
+#         #- myocyte-rodinia-3.1:
+#             #- 100 1 0
+#         #- nn-rodinia-3.1:
+#            #- ./data/filelist_4 -r 5 -lat 30 -lng 90
+#         #- nw-rodinia-3.1:
+#            # - 2048 10
+#         #- particlefilter_float-rodinia-3.1:
+#             #- -x 128 -y 128 -z 10 -np 1000
+#         #- particlefilter_naive-rodinia-3.1:
+#             #- -x 128 -y 128 -z 10 -np 1000
+#         # - pathfinder-rodinia-3.1:
+#         #     - 100000 100 20 > result.txt
+#         - srad_v1-rodinia-3.1:
+#             - 100 0.5 502 458
+# cuda_samples_11.0_validation:
+#     exec_dir: "/home/tgrogers-raid/a/pan251/benchmarks/validation"
+#     data_dirs: "/home/tgrogers-raid/a/pan251/benchmarks"
+#     execs:
+#         - dct8x8:
+#             - barbara.bmp
+#         - binomialOptions:
+#             - 
+#         - fastWalshTransform:
+#             - 
+#         - histogram:
+#             - 
+#         - mergeSort:
+#             - 
+#         - quasirandomGenerator:
+#             - 
+#         - SobolQRNG:
+#             - 
+#         - cudaTensorCoreGemm:
+#             - 
+# power_ubench:
+#     exec_dir: "/home/tgrogers-raid/a/pan251/benchmarks/microbenchmarks/"
+#     data_dirs: "/home/tgrogers-raid/a/pan251/benchmarks/microbenchmarks/"
+#     execs:
+#         - ACT_CORE1:
+#             - 100 1 32
+#             - 100 16 32
+#             - 100 32 32
+#             - 100 48 32
+#             - 100 64 32
+#             - 100 80 32
+#         - ACT_CORE2:
+#             - 100 1 32
+#             - 100 16 32
+#             - 100 32 32
+#             - 100 48 32
+#             - 100 64 32
+#             - 100 80 32 
+#         - INT_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         - INT_FP_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         - INT_FP_DP_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         - INT_FP_SFU_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         - INT_FP_TEX_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         - INT_FP_TENSOR_STATIC:
+#             - 100 80 1
+#             - 100 80 8
+#             - 100 80 16
+#             - 100 80 24
+#             - 100 80 32
+#         #- LIGHT_SM:
+#         #    - 100 80 32
+#         - add_mem_1:
+#             - 10
+#         - add_mem_2:
+#             - 10
+#         - BE_DP_FP_ADD:
+#             - 100
+#         - BE_DP_FP_DIV:
+#             - 10
+#         - BE_DP_FP_MAD:
+#             - 100
+#         - BE_DP_FP_MUL:
+#             - 100
+#         - BE_L1D_HIT:
+#             - 100
+#         - BE_L2D_HIT:
+#             - 100
+#         #- BE_MEM_CNST_Acss:
+#             #- 100
+#         - BE_MEM_DRAM_Acss:
+#             - 1
+#         - BE_MEM_SHRD_Acss:
+#             - 100
+#         - BE_SFU_EXP:
+#             - 100
+#         - BE_SFU_LG2:
+#             - 100
+#         - BE_SFU_SIN:
+#             - 100
+#         - BE_SFU_SQRT:
+#             - 100
+#         - BE_SP_FP_ADD:
+#             - 100
+#         - BE_SP_FP_DIV:
+#             - 10
+#         - BE_SP_FP_MAD:
+#             - 100
+#         - BE_SP_FP_MUL:
+#             - 100
+#         - BE_SP_INT_ADD:
+#             - 100
+#         #- BE_SP_INT_ADD_l1:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l12:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l16:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l20:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l24:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l28:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l32:
+#         #   - 100
+#         #- BE_SP_INT_ADD_l4:
+#         #    - 100
+#         #- BE_SP_INT_ADD_l8:
+#         #    - 100
+#         #- BE_SP_INT_ADD_leven:
+#         #    - 100
+#         #- BE_SP_INT_ADD_lodd:
+#         #    - 100
+#         - BE_SP_INT_DIV:
+#             - 10
+#         - BE_SP_INT_LOGIC:
+#             - 100
+#         - BE_SP_INT_MUL:
+#             - 100
+#         - BE_SP_INT_MUL24:
+#             - 100
+#         - BE_SP_INT_MUL32:
+#             - 100
+#         #- BE_SP_INT_MUL_l1:
+#         #   - 100
+#         #- BE_SP_INT_MUL_l12:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l16:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l20:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l24:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l28:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l32:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l4:
+#         #    - 100
+#         #- BE_SP_INT_MUL_l8:
+#         #    - 100
+#         #- BE_SP_INT_MUL_leven:
+#         #    - 100
+#         #- BE_SP_INT_MUL_lodd:
+#         #    - 100
+#         - BE_TEXTURE_ACCESS:
+#             - 100
+#         - BE_TEXTURE_ACCESS_2:
+#             - 100
+#         - BRANCHING1:
+#             - 100
+#         - BRANCHING2:
+#             - 100
+#         - BRANCHING3:
+#             - 100
+#         - BRANCHING4:
+#             - 100
+#         - BRANCHING5:
+#             - 100
+#         #- const_mul:
+#         #    - 100
+#         - immediates_constant:
+#             - 100
+#         - immediates_texture:
+#             - 100
+#         - mix1:
+#             - 100
+#         - mix10:
+#             - 10
+#         - mix11:
+#             - 100
+#         - mix12:
+#             - 100
+#         - mix13:
+#             - 100
+#         - mix14:
+#             - 100
+#         - mix15:
+#             - 100
+#         - mix16:
+#             - 100
+#         - mix17:
+#             - 100
+#         - mix18:
+#             - 100
+#         - mix19:
+#             - 100
+#         - mix2:
+#             - 10
+#         - mix20:
+#             - 100
+#         - mix3:
+#             - 100
+#         - mix4:
+#             - 10
+#         - mix5:
+#             - 10
+#         - mix6:
+#             - 10
+#         - mix7:
+#             - 10
+#         - mix8:
+#             - 10
+#         - mix9:
+#             - 10
+#         - mul_add_tex_1:
+#             - 100
+#         - mul_add_tex_2:
+#             - 100
+#         - mul_mem_1:
+#             - 10
+#         - mul_mem_2:
+#             - 10
+#         - REG_FILE:
+#             - 100
+#         - SHRD_TEX_SFU:
+#             - 100
+#         - TENSOR:
+#             - 10
+l1d-microbench:
+    exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
+    data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"
+    execs:
+        - l1d:
+            - args:
+        - im:
+            - args:
 rodinia_2.0-ft:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/cuda/rodinia/2.0-ft/"

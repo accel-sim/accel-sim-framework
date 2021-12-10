@@ -58,7 +58,35 @@ PTX:
 # Extra configs - these are composable.
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
+test:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:1024:8,16:0,32"
+lazyfetch:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32"
+lazyfetchWT:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:T:m:L:L,A:1024:8,16:0,32"
+lazyfetchonfill:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:s:L:L,A:256:8,16:0,32"
+fow:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:F:L,A:1024:8,16:0,32"
+testing:
+    extra_params: "#for testing"
+rw0:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,0"
+rw25:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,25"
+rw50:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,50"
+rw75:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,75"
+test:
+    extra_params: "#functionality test"
+ONMISS:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:512:8,16:0,32"
 
+multiport:
+    extra_params: "-gpgpu_mem_unit_ports 4"
+singlebank:
+    extra_params: "-gpgpu_l1_banks 1"
 64SM:
     extra_params: "-gpgpu_n_clusters 64"
 

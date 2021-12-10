@@ -20,6 +20,7 @@ collect_aggregate:
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[MSHR_HIT\]\s*=\s*(.*)'
+    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[MSHR_HIT\]\s*=\s*(.*)'
     - 'gpgpu_n_tot_w_icount\s*=\s*(.*)'
     - 'total dram reads\s*=\s*(.*)'
     - 'total dram writes\s*=\s*(.*)'

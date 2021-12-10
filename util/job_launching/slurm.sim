@@ -6,7 +6,7 @@
 #SBATCH --mem-per-cpu=REPLACE_MEM_USAGE
 #SBACTH --time=200:00:00,
 #SBATCH -p REPLACE_QUEUE_NAME
-#SBATCH --mail-type=END,FAIL
+#NO SBATCH --mail-type=END,FAIL
 #SBATCH --export=ALL
 #SBATCH --output=/tmp/REPLACE_NAME.o%j
 #SBATCH --error=/tmp/REPLACE_NAME.e%j
