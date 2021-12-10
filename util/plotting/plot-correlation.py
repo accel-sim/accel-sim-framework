@@ -11,6 +11,7 @@ from plotly.graph_objs import *
 import os
 import plotly.graph_objs as go
 import pickle
+from datetime import datetime
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -978,7 +979,7 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         fig_data[ (correl.plotfile, hw_cfg) ].append((trace, layout, cfg, anno, correl.plotfile, err_dropped_stats, apps_included, correl, hw_low_drop_stats))
 
 
-correl_outdir = os.path.join(this_directory, "correl-html")
+correl_outdir = os.path.join(this_directory, "correl-html-", hw_cfg, "-",datetime.now().strftime('%Y%m%d-%H%M'))
 for (plotfile,hw_cfg), traces in fig_data.iteritems():
     make_submission_quality_image(options.image_type, traces, hw_cfg)
 print("Output Available at: file://{0}".format(correl_outdir))
