@@ -55,11 +55,11 @@ the apps in from this collection as well as just on your own, with your own apps
 
 [GPU App Collection](https://github.com/accel-sim/gpu-app-collection)
 
-The 'release-accelwattch' branch of the [GPU App Collection](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch) repository also includes the AccelWattch microbenchmarks and AccelWattch validation set benchmarks. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md).
+AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also included. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md).
 
 ## Accel-Sim Components
 
-![Accel-Sim Overview](https://github.com/VijayKandiah/accel-sim.github.io/blob/master/assets/img/accel-sim-crop.svg)
+![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
 
 1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in ./util/tracer\_nvbit/. To make the tool:  
   
