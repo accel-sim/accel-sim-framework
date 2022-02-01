@@ -36,7 +36,11 @@ else
 fi
 
 if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
-    echo "Please install a version of GPGPU-Sim in $ACCELSIM_ROOT/gpgpu-sim"
+    git clone https://github.com/accel-sim/gpgpu-sim_distribution.git  $ACCELSIM_ROOT/gpgpu-sim
+    git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout dev-accelwattch
+else
+    git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout dev-accelwattch
+    git -C $ACCELSIM_ROOT/gpgpu-sim/ pull
 fi
 
 source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
