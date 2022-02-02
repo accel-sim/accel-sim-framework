@@ -299,8 +299,21 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_GLOBAL;  // all the atomics should be done at L2
       break;
     case OP_LDS:
+      assert(data_size > 0);
+      memory_op = memory_load;
+      space.set_type(shared_space);
+      break;
     case OP_STS:
+      assert(data_size > 0);
+      memory_op = memory_store;
+      space.set_type(shared_space);
+      break;
     case OP_ATOMS:
+      assert(data_size > 0);
+      m_isatomic = true;
+      memory_op = memory_load;
+      space.set_type(shared_space);
+      break;
     case OP_LDSM:
       assert(data_size > 0);
       space.set_type(shared_space);
