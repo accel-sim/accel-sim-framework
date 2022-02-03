@@ -103,7 +103,7 @@ public:
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
                          size_t &count);
 
-  bool get_next_threadblock_traces(
+  void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
       unsigned trace_version);
 
