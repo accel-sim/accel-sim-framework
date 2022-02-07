@@ -521,10 +521,7 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
-  // here, we generate memory acessess and set the status if thread (done?)
-  if (inst.is_load() || inst.is_store()) {
-    inst.generate_mem_accesses();
-  }
+
   for (unsigned t = 0; t < m_warp_size; t++) {
     if (inst.active(t)) {
       unsigned warpId = inst.warp_id();
@@ -534,6 +531,12 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
   }
+  
+  // here, we generate memory acessess and set the status if thread (done?)
+  if (inst.is_load() || inst.is_store()) {
+    inst.generate_mem_accesses();
+  }
+  
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
   if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
