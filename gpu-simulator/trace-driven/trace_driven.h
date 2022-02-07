@@ -60,7 +60,7 @@ class trace_kernel_info_t : public kernel_info_t {
                       trace_parser *parser, class trace_config *config,
                       kernel_trace_t *kernel_trace_info);
 
-  bool get_next_threadblock_traces(
+  void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces);
 
  private:
@@ -111,7 +111,7 @@ class trace_shd_warp_t : public shd_warp_t {
   bool trace_done();
   address_type get_start_trace_pc();
   virtual address_type get_pc();
-  trace_warp_inst_t *set_kernel(trace_kernel_info_t *kernel_info) {
+  void set_kernel(trace_kernel_info_t *kernel_info) {
     m_kernel_info = kernel_info;
   }
 
