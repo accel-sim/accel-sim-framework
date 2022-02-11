@@ -736,6 +736,22 @@ mlperf_inference:
     execs:
         - inference_mlperf_bert:
             - args:
-              # To be filled by different configurations
         - inference_mlperf_gnmt:
             - args:
+        - inference_mlperf_resnet:
+            - args: 256
+            - args: 128
+            - args: 64
+        - inference_mlperf_ssd:
+            - args:
+        - inference_mlperf_3dunet:
+            - args:
+
+mlperf_training:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - training_mlperf_bert:
+              - args:
+        - training_mlperf_rnn_translation:
+              - args:
