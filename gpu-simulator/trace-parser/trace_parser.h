@@ -84,12 +84,14 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned cuda_stream_id;
+  unsigned long cuda_stream_id;
   unsigned binary_verion;
   unsigned trace_verion;
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
+  // Reference to open filestream
+  std::ifstream* ifs;
 };
 
 class trace_parser {
@@ -105,13 +107,12 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version);
+      unsigned trace_version, std::ifstream* ifs);
 
-  void kernel_finalizer();
+  void kernel_finalizer(std::ifstream* ifs);
 
  private:
   std::string kernellist_filename;
-  std::ifstream ifs;
 };
 
 #endif

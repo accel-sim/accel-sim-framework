@@ -68,6 +68,7 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   m_parser = parser;
   m_tconfig = config;
   m_kernel_trace_info = kernel_trace_info;
+  m_was_launched = false;
 
   // resolve the binary version
   if (kernel_trace_info->binary_verion == AMPERE_RTX_BINART_VERSION ||
@@ -93,7 +94,8 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(
-      threadblock_traces, m_kernel_trace_info->trace_verion);
+      threadblock_traces, m_kernel_trace_info->trace_verion,
+      this->get_ifstream());
 }
 
 bool trace_warp_inst_t::parse_from_trace_struct(

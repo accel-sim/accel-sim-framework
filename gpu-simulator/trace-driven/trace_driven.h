@@ -63,11 +63,20 @@ class trace_kernel_info_t : public kernel_info_t {
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces);
 
+  unsigned get_cuda_stream_id() { return m_kernel_trace_info->cuda_stream_id; }
+
+  std::ifstream* get_ifstream() { return m_kernel_trace_info->ifs; }
+
+  bool was_launched() { return m_was_launched; }
+
+  void set_launched() { m_was_launched = true; }
+
  private:
   trace_config *m_tconfig;
   const std::unordered_map<std::string, OpcodeChar> *OpcodeMap;
   trace_parser *m_parser;
   kernel_trace_t *m_kernel_trace_info;
+  bool m_was_launched;
 
   friend class trace_shd_warp_t;
 };

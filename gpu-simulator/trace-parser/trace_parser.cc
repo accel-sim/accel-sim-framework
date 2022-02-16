@@ -218,9 +218,10 @@ trace_parser::trace_parser(const char *kernellist_filepath) {
 }
 
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
-  ifs.open(kernellist_filename);
+  std::ifstream fs;
+  fs.open(kernellist_filename);
 
-  if (!ifs.is_open()) {
+  if (!fs.is_open()) {
     std::cout << "Unable to open file: " << kernellist_filename << std::endl;
     exit(1);
   }
@@ -233,8 +234,8 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 
   std::string line, filepath;
   std::vector<trace_command> commandlist;
-  while (!ifs.eof()) {
-    getline(ifs, line);
+  while (!fs.eof()) {
+    getline(fs, line);
     if (line.empty())
       continue;
     else if (line.substr(0, 10) == "MemcpyHtoD") {
@@ -252,7 +253,7 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
     // ignore gpu_to_cpu_memory_cpy
   }
 
-  ifs.close();
+  fs.close();
   return commandlist;
 }
 
@@ -271,21 +272,22 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 
 kernel_trace_t trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
-  ifs.open(kerneltraces_filepath.c_str());
+  kernel_trace_t kernel_info;
+  kernel_info.ifs = new std::ifstream;
+  std::ifstream* ifs = kernel_info.ifs;
+  ifs->open(kerneltraces_filepath.c_str());
 
-  if (!ifs.is_open()) {
+  if (!ifs->is_open()) {
     std::cout << "Unable to open file: " << kerneltraces_filepath << std::endl;
     exit(1);
   }
 
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
 
-  kernel_trace_t kernel_info;
-
   std::string line;
 
-  while (!ifs.eof()) {
-    getline(ifs, line);
+  while (!ifs->eof()) {
+    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
@@ -316,7 +318,7 @@ kernel_trace_t trace_parser::parse_kernel_info(
       } else if (string1 == "nregs") {
         sscanf(line.c_str(), "-nregs = %d", &kernel_info.nregs);
       } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %d",
+        sscanf(line.c_str(), "-cuda stream id = %lu",
                &kernel_info.cuda_stream_id);
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",
@@ -348,13 +350,15 @@ kernel_trace_t trace_parser::parse_kernel_info(
   return kernel_info;
 }
 
-void trace_parser::kernel_finalizer() {
-  if (ifs.is_open()) ifs.close();
+void trace_parser::kernel_finalizer(std::ifstream* ifs) {
+  assert(ifs);
+  if (ifs->is_open()) ifs->close();
+  delete ifs;
 }
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version) {
+    unsigned trace_version,std::ifstream* ifs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -366,12 +370,12 @@ void trace_parser::get_next_threadblock_traces(
   unsigned insts_num = 0;
   unsigned inst_count = 0;
 
-  while (!ifs.eof()) {
+  while (!ifs->eof()) {
     std::string line;
     std::stringstream ss;
     std::string string1, string2;
 
-    getline(ifs, line);
+    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
