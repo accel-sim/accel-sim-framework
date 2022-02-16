@@ -152,7 +152,7 @@ int main(int argc, const char **argv) {
           tracer.kernel_finalizer(k->get_ifstream());
           delete k->entry();
           delete k;
-          kernels_info.erase(j);
+          kernels_info.erase(kernels_info.begin()+j);
           break;
         }
       }
