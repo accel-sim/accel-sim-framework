@@ -95,7 +95,7 @@ void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion,
-      this->get_ifstream());
+      m_kernel_trace_info->ifs);
 }
 
 bool trace_warp_inst_t::parse_from_trace_struct(

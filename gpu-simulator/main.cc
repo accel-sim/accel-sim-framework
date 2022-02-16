@@ -74,7 +74,7 @@ int main(int argc, const char **argv) {
 
   unsigned window_size = 32;
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
-  std::unordered_map<unsigned long, unsigned> launched_streamIDkernelID;
+  std::vector<unsigned long> busy_streams;
   std::vector<trace_kernel_info_t*> kernels_info;
   kernels_info.reserve(window_size);
 
@@ -91,8 +91,8 @@ int main(int argc, const char **argv) {
     } else if (commandlist[i].m_type == command_type::kernel_launch) {
       // Read trace header info for window_size number of kernels
       while (kernels_info.size() < window_size && i < commandlist.size()) {
-        kernel_trace_t kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
-        kernel_info = create_kernel_info(&kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
+        kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
         kernels_info.push_back(kernel_info);
         std::cout << "Ready to launch kernel command : " << commandlist[i].command_string << std::endl;
         i++;
@@ -100,13 +100,22 @@ int main(int argc, const char **argv) {
       
       // Launch all kernels within window that are on a stream that isn't already running
       for (auto k : kernels_info) {
-        auto search = launched_streamIDkernelID.find(k->get_cuda_stream_id());
-        bool stream_busy = (search != launched_streamIDkernelID.end());
+        bool stream_busy = false;
+        for (auto s: busy_streams) {
+          if (s == k->get_cuda_stream_id())
+            stream_busy = true;
+        }
+        if (stream_busy)
+          std::cout << "STREAM BUSY for kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
+        if (!m_gpgpu_sim->can_start_kernel())
+          std::cout << "CANT START for kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
+        if (k->was_launched())
+          std::cout << "ALREADY LAUNCHED kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
         if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
           std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
           m_gpgpu_sim->launch(k);
           k->set_launched();
-          launched_streamIDkernelID.insert({k->get_cuda_stream_id(), k->get_uid()});
+          busy_streams.push_back(k->get_cuda_stream_id());
         }
       }
     }
@@ -148,8 +157,13 @@ int main(int argc, const char **argv) {
       for (unsigned j = 0; j < kernels_info.size(); j++) {
         k = kernels_info.at(j);
         if (k->get_uid() == finished_kernel_uid) {
-          launched_streamIDkernelID.erase(k->get_cuda_stream_id());
-          tracer.kernel_finalizer(k->get_ifstream());
+          for (int l = 0; l < busy_streams.size(); l++) {
+            if (busy_streams.at(l) == k->get_cuda_stream_id()) {
+              busy_streams.erase(busy_streams.begin()+l);
+              break;
+            }
+          }
+          tracer.kernel_finalizer(k->get_trace_info());
           delete k->entry();
           delete k;
           kernels_info.erase(kernels_info.begin()+j);
