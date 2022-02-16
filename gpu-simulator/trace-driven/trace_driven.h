@@ -63,9 +63,9 @@ class trace_kernel_info_t : public kernel_info_t {
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces);
 
-  unsigned get_cuda_stream_id() { return m_kernel_trace_info->cuda_stream_id; }
+  unsigned long get_cuda_stream_id() { return m_kernel_trace_info->cuda_stream_id; }
 
-  std::ifstream* get_ifstream() { return m_kernel_trace_info->ifs; }
+  kernel_trace_t* get_trace_info() { return m_kernel_trace_info; }
 
   bool was_launched() { return m_was_launched; }
 
