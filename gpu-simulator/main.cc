@@ -71,8 +71,9 @@ int main(int argc, const char **argv) {
   // launch
   // while loop till the end of the end kernel execution
   // prints stats
-
-  unsigned window_size = 32;
+  bool concurrent_kernel_sm =  m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm;
+  unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
+  assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
   std::vector<unsigned long> busy_streams;
   std::vector<trace_kernel_info_t*> kernels_info;
