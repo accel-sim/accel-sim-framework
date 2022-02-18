@@ -95,7 +95,7 @@ int main(int argc, const char **argv) {
         kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
         kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
         kernels_info.push_back(kernel_info);
-        std::cout << "Ready to launch kernel command : " << commandlist[i].command_string << std::endl;
+        std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
         i++;
       }
       
@@ -106,12 +106,6 @@ int main(int argc, const char **argv) {
           if (s == k->get_cuda_stream_id())
             stream_busy = true;
         }
-        if (stream_busy)
-          std::cout << "STREAM BUSY for kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
-        if (!m_gpgpu_sim->can_start_kernel())
-          std::cout << "CANT START for kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
-        if (k->was_launched())
-          std::cout << "ALREADY LAUNCHED kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
         if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
           std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
           m_gpgpu_sim->launch(k);
@@ -147,9 +141,6 @@ int main(int argc, const char **argv) {
 
       active = m_gpgpu_sim->active();
       finished_kernel_uid = m_gpgpu_sim->finished_kernel();
-      // can_issue = finished_kernel_uid && m_gpgpu_sim->can_start_kernel()
-      //                   && (!kernels_info.empty() || i < commandlist.size());
-
     } while (active && !finished_kernel_uid);
 
     // cleanup finished kernel
@@ -256,4 +247,3 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
 
   return m_gpgpu_context->the_gpgpusim->g_the_gpu;
 }
-
