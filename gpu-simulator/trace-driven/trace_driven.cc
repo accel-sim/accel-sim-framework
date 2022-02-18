@@ -93,9 +93,9 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
-  m_parser->get_next_threadblock_traces(
-      threadblock_traces, m_kernel_trace_info->trace_verion,
-      m_kernel_trace_info->ifs);
+  m_parser->get_next_threadblock_traces(threadblock_traces,
+                                        m_kernel_trace_info->trace_verion,
+                                        m_kernel_trace_info->ifs);
 }
 
 bool trace_warp_inst_t::parse_from_trace_struct(
@@ -523,7 +523,6 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
-
   for (unsigned t = 0; t < m_warp_size; t++) {
     if (inst.active(t)) {
       unsigned warpId = inst.warp_id();
@@ -533,12 +532,12 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
   }
-  
+
   // here, we generate memory acessess and set the status if thread (done?)
   if (inst.is_load() || inst.is_store()) {
     inst.generate_mem_accesses();
   }
-  
+
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
   if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
