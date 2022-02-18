@@ -120,6 +120,7 @@ int main(int argc, const char **argv) {
         }
       }
     }
+    else if (!kernels_info.empty())
     else
     	assert(0 && "Undefined Command");
 
