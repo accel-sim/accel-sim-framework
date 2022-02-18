@@ -119,7 +119,6 @@ int main(int argc, const char **argv) {
 
     bool active = false;
     bool sim_cycles = false;
-    bool can_issue = false;
     unsigned finished_kernel_uid = 0;
 
     do {
