@@ -270,11 +270,11 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss >> std::dec >> count;
 }
 
-kernel_trace_t* trace_parser::parse_kernel_info(
+kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
-  kernel_trace_t* kernel_info = new kernel_trace_t;
+  kernel_trace_t *kernel_info = new kernel_trace_t;
   kernel_info->ifs = new std::ifstream;
-  std::ifstream* ifs = kernel_info->ifs;
+  std::ifstream *ifs = kernel_info->ifs;
   ifs->open(kerneltraces_filepath.c_str());
 
   if (!ifs->is_open()) {
@@ -350,7 +350,7 @@ kernel_trace_t* trace_parser::parse_kernel_info(
   return kernel_info;
 }
 
-void trace_parser::kernel_finalizer(kernel_trace_t* trace_info) {
+void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   assert(trace_info);
   assert(trace_info->ifs);
   if (trace_info->ifs->is_open()) trace_info->ifs->close();
@@ -360,7 +360,7 @@ void trace_parser::kernel_finalizer(kernel_trace_t* trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version,std::ifstream* ifs) {
+    unsigned trace_version, std::ifstream *ifs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }

@@ -91,7 +91,7 @@ struct kernel_trace_t {
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
   // Reference to open filestream
-  std::ifstream* ifs;
+  std::ifstream *ifs;
 };
 
 class trace_parser {
@@ -100,16 +100,16 @@ class trace_parser {
 
   std::vector<trace_command> parse_commandlist_file();
 
-  kernel_trace_t* parse_kernel_info(const std::string &kerneltraces_filepath);
+  kernel_trace_t *parse_kernel_info(const std::string &kerneltraces_filepath);
 
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
                          size_t &count);
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, std::ifstream* ifs);
+      unsigned trace_version, std::ifstream *ifs);
 
-  void kernel_finalizer(kernel_trace_t* trace_info);
+  void kernel_finalizer(kernel_trace_t *trace_info);
 
  private:
   std::string kernellist_filename;
