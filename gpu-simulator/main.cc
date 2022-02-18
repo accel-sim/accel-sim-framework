@@ -147,10 +147,10 @@ int main(int argc, const char **argv) {
 
       active = m_gpgpu_sim->active();
       finished_kernel_uid = m_gpgpu_sim->finished_kernel();
-      can_issue = finished_kernel_uid && m_gpgpu_sim->can_start_kernel()
-                        && (!kernels_info.empty() || i < commandlist.size());
+      // can_issue = finished_kernel_uid && m_gpgpu_sim->can_start_kernel()
+      //                   && (!kernels_info.empty() || i < commandlist.size());
 
-    } while (active && !can_issue);
+    } while (active && !finished_kernel_uid);
 
     // cleanup finished kernel
     if (finished_kernel_uid) {

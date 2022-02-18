@@ -120,6 +120,7 @@ class trace_shd_warp_t : public shd_warp_t {
   bool trace_done();
   address_type get_start_trace_pc();
   virtual address_type get_pc();
+  virtual kernel_info_t* get_kernel_info() const { return m_kernel_info; }
   void set_kernel(trace_kernel_info_t *kernel_info) {
     m_kernel_info = kernel_info;
   }
