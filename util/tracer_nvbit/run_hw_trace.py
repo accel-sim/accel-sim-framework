@@ -30,6 +30,8 @@ parser.add_option("-n", "--norun", dest="norun", action="store_true",
                  help="Do not actually run the apps, just create the dir structure and launch files")
 parser.add_option("-l", "--limit_kernel_number", dest='kernel_number', default=-99, help="Sets a hard limit to the " +\
                         "number of traced limits")
+parser.add_option("-t", "--terminate_upon_limit", dest='terminate_upon_limit', action="store_true", help="Once the kernel limit is " +\
+                        "reached, terminate the tracing process")
 
 (options, args) = parser.parse_args()
 
@@ -51,7 +53,6 @@ for bench in benchmarks:
     for argpair in argslist:
         args = argpair["args"]
         run_name = os.path.join( exe, common.get_argfoldername( args ) )
-
         this_run_dir = os.path.abspath(os.path.expandvars(
             os.path.join(this_directory, "..", "..", "hw_run","traces","device-" + options.device_num, cuda_version, run_name)))
         this_trace_folder = os.path.join(this_run_dir, "traces")
@@ -83,24 +84,35 @@ for bench in benchmarks:
 
         if('mlperf' in exec_path):
             exec_path = '. '+exec_path
+            # We use CUDA_INJECTION_64 because sometimes Tensorflow and other Deep Learning Libraries
+            # replace the LD_PRELOAD with their own version, CUDA_INJECTION_64 is an alternative
+            sh_contents += "export CUDA_INJECTION64_PATH="+os.path.join(nvbit_tracer_path, "tracer_tool.so")+"; "
+            sh_contents += "export TERMINATE_UPON_LIMIT=1; "
             if(options.kernel_number > 0):
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)                
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)
             else:
-                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '1000'
+                os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '50'
         else:
             if(options.kernel_number > 0):
                 os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)
             else:
                 os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '0'
 
+        if(options.terminate_upon_limit):
+            os.environ['TERMINATE_UPON_LIMIT'] = '1'
+        else:
+            os.environ['TERMINATE_UPON_LIMIT'] = '0'
+
 	# first we generate the traces (.trace and kernelslist files)
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
 	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " + exec_path +\
-            " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
-            os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
+            "export TRACES_FOLDER="+ this_trace_folder + "; LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
+            exec_path + " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
+            os.path.join(this_trace_folder, "kernelslist") #+ " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 
+        if("CUDA_INJECTION_64" in sh_contents):
+            sh_contents += "; unset CUDA_INJECTION64_PATH;"
         print ("sh_contents: ", sh_contents)
         print ("this_run_dir: ", this_run_dir)
         print ("this_dir", this_directory)
