@@ -1,5 +1,31 @@
-// developed by Mahmoud Khairy, Purdue Univ
-// abdallm@purdue.edu
+// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+// Northwestern University, Purdue University, The University of British Columbia
+// All rights reserved.
+//
+// Redistribution and use in source and binary forms, with or without
+// modification, are permitted provided that the following conditions are met:
+//
+// 1. Redistributions of source code must retain the above copyright notice, this
+//    list of conditions and the following disclaimer;
+// 2. Redistributions in binary form must reproduce the above copyright notice,
+//    this list of conditions and the following disclaimer in the documentation
+//    and/or other materials provided with the distribution;
+// 3. Neither the names of Northwestern University, Purdue University,
+//    The University of British Columbia nor the names of their contributors
+//    may be used to endorse or promote products derived from this software
+//    without specific prior written permission.
+//
+// THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+// AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+// IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+// ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+// LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+// CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+// SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+// INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+// CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+// ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+// POSSIBILITY OF SUCH DAMAGE.
 
 #include <bits/stdc++.h>
 #include <math.h>
@@ -17,6 +43,7 @@
 #include "../ISA_Def/trace_opcode.h"
 #include "../ISA_Def/turing_opcode.h"
 #include "../ISA_Def/volta_opcode.h"
+#include "../ISA_Def/accelwattch_component_mapping.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
@@ -96,6 +123,29 @@ void trace_kernel_info_t::get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion);
 }
 
+types_of_operands get_oprnd_type(op_type op, special_ops sp_op){
+  switch (op) {
+    case SP_OP:
+    case SFU_OP:
+    case SPECIALIZED_UNIT_2_OP:
+    case SPECIALIZED_UNIT_3_OP:
+    case DP_OP:
+    case LOAD_OP:
+    case STORE_OP:
+      return FP_OP;
+    case INTP_OP:
+    case SPECIALIZED_UNIT_4_OP:
+      return INT_OP;
+    case ALU_OP:
+      if ((sp_op == FP__OP) || (sp_op == TEX__OP) || (sp_op == OTHER_OP))
+        return FP_OP;
+      else if (sp_op == INT__OP)
+        return INT_OP;
+    default: 
+      return UN_OP;
+  }
+}
+
 bool trace_warp_inst_t::parse_from_trace_struct(
     const inst_trace_t &trace,
     const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
@@ -127,7 +177,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   memory_op = no_memory_op;
   data_size = 0;
   op = ALU_OP;
+  sp_op = OTHER_OP;
   mem_op = NOT_TEX;
+  const_cache_operand = 0;
+  oprnd_type = UN_OP;
 
   // get the opcode
   std::vector<std::string> opcode_tokens = trace.get_opcode_tokens();
@@ -138,12 +191,34 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   if (it != OpcodeMap->end()) {
     m_opcode = it->second.opcode;
     op = (op_type)(it->second.opcode_category);
+    const std::unordered_map<unsigned, unsigned> *OpcPowerMap = &OpcodePowerMap;
+    std::unordered_map<unsigned, unsigned>::const_iterator it2 =
+      OpcPowerMap->find(m_opcode);
+    if(it2 != OpcPowerMap->end())
+      sp_op = (special_ops) (it2->second);
+      oprnd_type = get_oprnd_type(op, sp_op);
   } else {
     std::cout << "ERROR:  undefined instruction : " << trace.opcode
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
+  std::string opcode = trace.opcode;
+  if(opcode1 == "MUFU"){ // Differentiate between different MUFU operations for power model
+    if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS"))
+      sp_op = FP_SIN_OP;
+    if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP"))
+      sp_op = FP_EXP_OP;
+    if (opcode == "MUFU.RSQ") 
+      sp_op = FP_SQRT_OP;
+    if (opcode == "MUFU.LG2") 
+      sp_op = FP_LG_OP;
+  }
 
+  if(opcode1 == "IMAD"){ // Differentiate between different IMAD operations for power model
+    if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD"))
+      sp_op = INT__OP;
+  }
+  
   // fill regs information
   num_regs = trace.reg_srcs_num + trace.reg_dsts_num;
   num_operands = num_regs;
@@ -172,8 +247,16 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       set_addr(i, trace.memadd_info->addrs[i]);
   }
 
+
   // handle special cases and fill memory space
   switch (m_opcode) {
+    case OP_LDC: //handle Load from Constant
+      data_size = 4;
+      memory_op = memory_load;
+      const_cache_operand = 1;
+      space.set_type(const_space);
+      cache_op = CACHE_ALL;
+      break;
     case OP_LDG:
     case OP_LDGSTS: // Ni: Add for memcpy_async
     case OP_LDL:
