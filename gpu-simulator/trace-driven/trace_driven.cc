@@ -90,16 +90,10 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   }
 }
 
-bool trace_kernel_info_t::get_next_threadblock_traces(
+void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
-  for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
-    threadblock_traces[i]->clear();
-  }
-
-  bool success = m_parser->get_next_threadblock_traces(
+  m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion);
-
-  return success;
 }
 
 bool trace_warp_inst_t::parse_from_trace_struct(
@@ -217,8 +211,21 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_GLOBAL;  // all the atomics should be done at L2
       break;
     case OP_LDS:
+      assert(data_size > 0);
+      memory_op = memory_load;
+      space.set_type(shared_space);
+      break;
     case OP_STS:
+      assert(data_size > 0);
+      memory_op = memory_store;
+      space.set_type(shared_space);
+      break;
     case OP_ATOMS:
+      assert(data_size > 0);
+      m_isatomic = true;
+      memory_op = memory_load;
+      space.set_type(shared_space);
+      break;
     case OP_LDSM:
       assert(data_size > 0);
       space.set_type(shared_space);
@@ -515,10 +522,7 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
-  // here, we generate memory acessess and set the status if thread (done?)
-  if (inst.is_load() || inst.is_store()) {
-    inst.generate_mem_accesses();
-  }
+
   for (unsigned t = 0; t < m_warp_size; t++) {
     if (inst.active(t)) {
       unsigned warpId = inst.warp_id();
@@ -528,6 +532,12 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
   }
+  
+  // here, we generate memory acessess and set the status if thread (done?)
+  if (inst.is_load() || inst.is_store()) {
+    inst.generate_mem_accesses();
+  }
+  
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
   if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
