@@ -175,7 +175,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // handle special cases and fill memory space
   switch (m_opcode) {
     case OP_LDG:
-    case OP_LDGSTS:
     case OP_LDL:
       assert(data_size > 0);
       memory_op = memory_load;
