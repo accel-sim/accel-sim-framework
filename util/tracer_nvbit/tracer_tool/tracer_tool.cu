@@ -345,7 +345,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                 shmem_static_nbytes + p->sharedMemBytes);
         fprintf(resultsFile, "-nregs = %d\n", nregs);
         fprintf(resultsFile, "-binary version = %d\n", binary_version);
-        fprintf(resultsFile, "-cuda stream id = %d\n", (uint64_t)p->hStream);
+        fprintf(resultsFile, "-cuda stream id = %lu\n", (uint64_t)p->hStream);
         fprintf(resultsFile, "-shmem base_addr = 0x%016lx\n",
                 (uint64_t)nvbit_get_shmem_base_addr(ctx));
         fprintf(resultsFile, "-local mem base_addr = 0x%016lx\n",
