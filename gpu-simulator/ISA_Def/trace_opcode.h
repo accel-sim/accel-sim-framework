@@ -62,6 +62,7 @@ enum TraceInstrOpcode {
   OP_SHR,
   OP_VABSDIFF,
   OP_VABSDIFF4,
+  OP_VADD,
   OP_F2F,
   OP_F2I,
   OP_I2F,
