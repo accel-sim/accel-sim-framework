@@ -123,7 +123,7 @@ while True:
             "-j", job_manager],\
             stdout=jobstatus_out_file, stderr=jobstatus_out_file) != 0:
         jobstatus_out_file.seek(0)
-        print jobstatus_out_file.read()
+        print(jobstatus_out_file.read())
         exit("Error Launching job_status.py")
     else:
         jobstatus_out_file.seek(0)
@@ -135,7 +135,7 @@ while True:
         num_no_err = 0
         for line in jobstatus_out_file.readlines():
             if options.verbose:
-                print line.strip()
+                print(line.strip())
             if jobStatusCol == None:
                 jobStatusCol = getColId("(.*)JobStatus.*", line)
             else:
