@@ -180,5 +180,5 @@ for bench in benchmarks:
             print("Running {0}".format(exe))
 
             if subprocess.call(["bash", "run.sh"]) != 0:
-                print "Error invoking profiler on {0}".format(this_run_dir)
+                print("Error invoking profiler on {0}".format(this_run_dir))
             os.chdir(saved_dir)
