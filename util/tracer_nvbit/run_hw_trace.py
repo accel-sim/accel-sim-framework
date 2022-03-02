@@ -101,9 +101,9 @@ for bench in benchmarks:
             " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 
-        print ("sh_contents: ", sh_contents)
-        print ("this_run_dir: ", this_run_dir)
-        print ("this_dir", this_directory)
+        print("sh_contents: ", sh_contents)
+        print("this_run_dir: ", this_run_dir)
+        print("this_dir", this_directory)
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
