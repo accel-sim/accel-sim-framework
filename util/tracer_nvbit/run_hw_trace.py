@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from optparse import OptionParser
 import os
@@ -78,16 +78,17 @@ for bench in benchmarks:
 
         if args == None:
             args = ""
-
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
         sh_contents = ""
 
-        if('mlperf' in exec_path):
-            exec_path = '. '+exec_path
-            # We use CUDA_INJECTION_64 because sometimes Tensorflow and other Deep Learning Libraries
-            # replace the LD_PRELOAD with their own version, CUDA_INJECTION_64 is an alternative
-            sh_contents += "export CUDA_INJECTION64_PATH="+os.path.join(nvbit_tracer_path, "tracer_tool.so")+"; "
+        if options.terminate_upon_limit:
             sh_contents += "export TERMINATE_UPON_LIMIT=1; "
+
+        if('mlperf' in exec_path):
+            # For mlperf by default we turn this flag on
+            sh_contents += "export TERMINATE_UPON_LIMIT=1; "
+            exec_path = '. ' + exec_path
+
             if(options.kernel_number > 0):
                 os.environ['DYNAMIC_KERNEL_LIMIT_END'] = str(options.kernel_number)
             else:
@@ -98,24 +99,13 @@ for bench in benchmarks:
             else:
                 os.environ['DYNAMIC_KERNEL_LIMIT_END'] = '0'
 
-        if(options.terminate_upon_limit):
-            os.environ['TERMINATE_UPON_LIMIT'] = '1'
-        else:
-            os.environ['TERMINATE_UPON_LIMIT'] = '0'
-
 	# first we generate the traces (.trace and kernelslist files)
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
 	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "export TRACES_FOLDER="+ this_trace_folder + "; LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
+            "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
             exec_path + " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_trace_folder, "kernelslist") #+ " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
-
-        if("CUDA_INJECTION_64" in sh_contents):
-            sh_contents += "; unset CUDA_INJECTION64_PATH;"
-        print ("sh_contents: ", sh_contents)
-        print ("this_run_dir: ", this_run_dir)
-        print ("this_dir", this_directory)
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
@@ -124,8 +114,8 @@ for bench in benchmarks:
         if not options.norun:
             saved_dir = os.getcwd()
             os.chdir(this_run_dir)
-            print "Running {0}".format(exe)
+            print("Running {0}".format(exe))
 
             if subprocess.call(["bash", "run.sh"]) != 0:
-                print "Error invoking nvbit on {0}".format(this_run_dir)
+                print("Error invoking nvbit on {0}".format(this_run_dir))
             os.chdir(saved_dir)
