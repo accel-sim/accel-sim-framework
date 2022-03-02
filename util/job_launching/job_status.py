@@ -146,7 +146,7 @@ def isNumber( s ):
         except ValueError:
             return False
 
-millnames = ['',' K',' M',' B',' T']
+millnames = ['',' K',' M',' G',' T']
 def millify(n):
     count = 0
     for name in millnames:
