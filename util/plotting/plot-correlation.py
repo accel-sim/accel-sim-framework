@@ -480,7 +480,7 @@ def get_sim_csv_data(filepath, logger):
                     count += 1
     for stat in stats_missing:
         appargs, num, current_stat = stat
-        for cfg in all_kerns.iterkeys():
+        for cfg in all_kerns.keys():
             del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
@@ -769,7 +769,7 @@ for cfg,sim_for_cfg in sim_data.items():
         continue
 
     hw_cfg = None
-    for device in hw_data.iterkeys():
+    for device in hw_data.keys():
         logger.log("Testing hw_cfg={0}".format(device))
         logger.log("\tcfg={0}, config_maps={1}".format(cfg,config_maps))
 
