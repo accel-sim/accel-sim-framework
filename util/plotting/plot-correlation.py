@@ -804,8 +804,8 @@ for cfg,sim_for_cfg in sim_data.items():
         num_under = 0
         num_over = 0
         errs = []
-        sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
-        hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
+        sim_appargs_leftover = set(copy.deepcopy(list(sim_for_cfg.keys())))
+        hw_appargs_leftover = set(copy.deepcopy(list(hw_data[hw_cfg].keys())))
         max_axis_val = 0.0
         min_axis_val = 99999999999999999999999999999.9
         err_dropped_stats = 0
