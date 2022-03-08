@@ -184,7 +184,7 @@ int main(int argc, const char **argv) {
   printf("GPGPU-Sim: *** exit detected ***\n");
   fflush(stdout);
 
-  return 1;
+  return 0;
 }
 
 
