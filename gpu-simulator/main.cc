@@ -71,28 +71,55 @@ int main(int argc, const char **argv) {
   // launch
   // while loop till the end of the end kernel execution
   // prints stats
-
+  bool concurrent_kernel_sm =  m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm;
+  unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
+  assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
+  std::vector<unsigned long> busy_streams;
+  std::vector<trace_kernel_info_t*> kernels_info;
+  kernels_info.reserve(window_size);
 
-  for (unsigned i = 0; i < commandlist.size(); ++i) {
+  unsigned i = 0;
+  while (i < commandlist.size() || !kernels_info.empty()) {
     trace_kernel_info_t *kernel_info = NULL;
     if (commandlist[i].m_type == command_type::cpu_gpu_mem_copy) {
       size_t addre, Bcount;
       tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount);
       std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
       m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
+      i++;
       continue;
     } else if (commandlist[i].m_type == command_type::kernel_launch) {
-      kernel_trace_t kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
-      kernel_info = create_kernel_info(&kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
-      std::cout << "launching kernel command : " << commandlist[i].command_string << std::endl;
-      m_gpgpu_sim->launch(kernel_info);
+      // Read trace header info for window_size number of kernels
+      while (kernels_info.size() < window_size && i < commandlist.size()) {
+        kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
+        kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        kernels_info.push_back(kernel_info);
+        std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
+        i++;
+      }
+      
+      // Launch all kernels within window that are on a stream that isn't already running
+      for (auto k : kernels_info) {
+        bool stream_busy = false;
+        for (auto s: busy_streams) {
+          if (s == k->get_cuda_stream_id())
+            stream_busy = true;
+        }
+        if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
+          std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
+          m_gpgpu_sim->launch(k);
+          k->set_launched();
+          busy_streams.push_back(k->get_cuda_stream_id());
+        }
+      }
     }
-    else
+    else if (kernels_info.empty())
     	assert(0 && "Undefined Command");
 
     bool active = false;
     bool sim_cycles = false;
+    unsigned finished_kernel_uid = 0;
 
     do {
       if (!m_gpgpu_sim->active())
@@ -112,13 +139,29 @@ int main(int argc, const char **argv) {
       }
 
       active = m_gpgpu_sim->active();
+      finished_kernel_uid = m_gpgpu_sim->finished_kernel();
+    } while (active && !finished_kernel_uid);
 
-    } while (active);
-
-    if (kernel_info) {
-      delete kernel_info->entry();
-      delete kernel_info;
-      tracer.kernel_finalizer();
+    // cleanup finished kernel
+    if (finished_kernel_uid) {
+      trace_kernel_info_t* k = NULL;
+      for (unsigned j = 0; j < kernels_info.size(); j++) {
+        k = kernels_info.at(j);
+        if (k->get_uid() == finished_kernel_uid) {
+          for (int l = 0; l < busy_streams.size(); l++) {
+            if (busy_streams.at(l) == k->get_cuda_stream_id()) {
+              busy_streams.erase(busy_streams.begin()+l);
+              break;
+            }
+          }
+          tracer.kernel_finalizer(k->get_trace_info());
+          delete k->entry();
+          delete k;
+          kernels_info.erase(kernels_info.begin()+j);
+          break;
+        }
+      }
+      assert(k);
       m_gpgpu_sim->print_stats();
     }
 
@@ -141,7 +184,7 @@ int main(int argc, const char **argv) {
   printf("GPGPU-Sim: *** exit detected ***\n");
   fflush(stdout);
 
-  return 1;
+  return 0;
 }
 
 
@@ -203,4 +246,3 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
 
   return m_gpgpu_context->the_gpgpusim->g_the_gpu;
 }
-

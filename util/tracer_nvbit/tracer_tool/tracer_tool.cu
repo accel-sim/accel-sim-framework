@@ -55,9 +55,18 @@ int active_from_start = 1;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
+/* Should we terminate the program once we are done tracing? */
+int terminate_after_limit_number_of_kernels_reached = 0;
+int user_defined_folders = 0;
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
+
+std::string cwd = getcwd(NULL,0);
+std::string traces_location = cwd + "/traces/";
+std::string kernelslist_location = cwd + "/traces/kernelslist";
+std::string stats_location = cwd + "/traces/stats.csv";
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
@@ -88,6 +97,10 @@ void nvbit_at_init() {
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
+  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0, 
+              "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
+  GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0, "Uses the user defined "
+              "folder TRACES_FOLDER path environment");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -274,9 +287,26 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       if (active_from_start)
         active_region = false;
     }
+    
+    if(user_defined_folders == 1)
+    {
+      std::string usr_folder = std::getenv("TRACES_FOLDER");
+      std::string temp_traces_location = usr_folder;
+      std::string temp_kernelslist_location = usr_folder + "/kernelslist";
+      std::string temp_stats_location = usr_folder + "/stats.csv";
+      traces_location.resize(temp_traces_location.size());
+      kernelslist_location.resize(temp_kernelslist_location.size());
+      stats_location.resize(temp_stats_location.size());
+      traces_location.replace(traces_location.begin(), traces_location.end(),temp_traces_location);
+      kernelslist_location.replace(kernelslist_location.begin(), kernelslist_location.end(),temp_kernelslist_location);
+      stats_location.replace(stats_location.begin(), stats_location.end(),temp_stats_location);
+      printf("\n Traces location is %s \n", traces_location.c_str());
+      printf("Kernelslist location is %s \n", kernelslist_location.c_str());
+      printf("Stats location is %s \n", stats_location.c_str());
+    }
 
-    kernelsFile = fopen("./traces/kernelslist", "w");
-    statsFile = fopen("./traces/stats.csv", "w");
+    kernelsFile = fopen(kernelslist_location.c_str(), "w");
+    statsFile = fopen(stats_location.c_str(), "w");
     fprintf(statsFile,
             "kernel id, kernel mangled name, grid_dimX, grid_dimY, grid_dimZ, "
             "#blocks, block_dimX, block_dimY, block_dimZ, #threads, "
@@ -288,7 +318,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     if (!is_exit) {
       cuMemcpyHtoD_v2_params *p = (cuMemcpyHtoD_v2_params *)params;
       char buffer[1024];
-      kernelsFile = fopen("./traces/kernelslist", "a");
+      kernelsFile = fopen(kernelslist_location.c_str(), "a");
       sprintf(buffer, "MemcpyHtoD,0x%016lx,%lld", p->dstDevice, p->ByteCount);
       fprintf(kernelsFile, buffer);
       fprintf(kernelsFile, "\n");
@@ -303,6 +333,11 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
       if (active_from_start && dynamic_kernel_limit_start && kernelid == dynamic_kernel_limit_start)
         active_region = true;
+
+      if (terminate_after_limit_number_of_kernels_reached && dynamic_kernel_limit_end != 0 && kernelid > dynamic_kernel_limit_end)
+      {
+        exit(0);
+      }
 
       int nregs;
       CUDA_SAFECALL(
@@ -327,7 +362,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       }
 
       char buffer[1024];
-      sprintf(buffer, "./traces/kernel-%d.trace", kernelid);
+      sprintf(buffer, std::string(traces_location+"/kernel-%d.trace").c_str(), kernelid);
 
       if (!stop_report) {
         resultsFile = fopen(buffer, "w");
@@ -345,7 +380,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                 shmem_static_nbytes + p->sharedMemBytes);
         fprintf(resultsFile, "-nregs = %d\n", nregs);
         fprintf(resultsFile, "-binary version = %d\n", binary_version);
-        fprintf(resultsFile, "-cuda stream id = %d\n", (uint64_t)p->hStream);
+        fprintf(resultsFile, "-cuda stream id = %lu\n", (uint64_t)p->hStream);
         fprintf(resultsFile, "-shmem base_addr = 0x%016lx\n",
                 (uint64_t)nvbit_get_shmem_base_addr(ctx));
         fprintf(resultsFile, "-local mem base_addr = 0x%016lx\n",
@@ -361,15 +396,16 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         fprintf(resultsFile, "\n");
       }
 
-      kernelsFile = fopen("./traces/kernelslist", "a");
-      sprintf(buffer, "kernel-%d.trace", kernelid);
+      kernelsFile = fopen(kernelslist_location.c_str(), "a");
+      // This will be a relative path to the traces file
+      sprintf(buffer,"kernel-%d.trace", kernelid);
       if (!stop_report) {
         fprintf(kernelsFile, buffer);
         fprintf(kernelsFile, "\n");
       }
       fclose(kernelsFile);
 
-      statsFile = fopen("./traces/stats.csv", "a");
+      statsFile = fopen(stats_location.c_str(), "a");
       unsigned blocks = p->gridDimX * p->gridDimY * p->gridDimZ;
       unsigned threads = p->blockDimX * p->blockDimY * p->blockDimZ;
 
@@ -415,7 +451,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
           reported_dynamic_instr_counter - old_total_reported_insts;
       old_total_reported_insts = reported_dynamic_instr_counter;
 
-      statsFile = fopen("./traces/stats.csv", "a");
+      statsFile = fopen(stats_location.c_str(), "a");
       fprintf(statsFile, "%d,%d", total_insts_per_kernel,
               reported_insts_per_kernel);
       fprintf(statsFile, "\n");
