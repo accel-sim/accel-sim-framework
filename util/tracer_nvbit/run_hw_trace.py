@@ -105,7 +105,7 @@ for bench in benchmarks:
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
             "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
             exec_path + " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
-            os.path.join(this_trace_folder, "kernelslist") #+ " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
+            os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 
         open(os.path.join(this_run_dir,"run.sh"), "w").write(sh_contents)
         if subprocess.call(['chmod', 'u+x', os.path.join(this_run_dir,"run.sh")]) != 0:
