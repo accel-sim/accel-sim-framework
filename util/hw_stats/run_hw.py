@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
+from __future__ import print_function
 from optparse import OptionParser
 import os
 import subprocess
@@ -133,8 +133,11 @@ for bench in benchmarks:
 
         if "other_stats" in options.collect:
             if not options.disable_nvprof:
+                # Uses NVPROF
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
-                    "\" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file " +\
+                    "\" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all," +\
+                    "atomic_throughput,atomic_transactions,atomic_transactions_per_request,l2_atomic_throughput,l2_atomic_transactions,global_atomic_requests " +\
+                    "--demangling off --csv --log-file " +\
                     os.path.join(this_run_dir,logfile) + " " + exec_path + " " + str(args) + " "
             if options.nsight_profiler:
                 sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
