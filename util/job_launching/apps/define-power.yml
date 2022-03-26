@@ -1,0 +1,457 @@
+rodinia-3.1_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    execs:
+        - b+tree-rodinia-3.1:
+            - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
+        - backprop-rodinia-3.1:
+            - args:  65536
+              accel-sim-mem: 1G
+        #- bfs-rodinia-3.1:
+            #- args:  ./data/graph1MW_6.txt
+        #- dwt2d-rodinia-3.1:
+            #- args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              #accel-sim-mem: 1G
+        #- gaussian-rodinia-3.1:
+           # - args:  -f ./data/matrix208.txt
+        - hotspot-rodinia-3.1:
+            - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+              accel-sim-mem: 1G
+        #- hybridsort-rodinia-3.1:
+           #- args:  ./data/500000.txt
+        - kmeans-rodinia-3.1:
+            - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
+        #- lud-rodinia-3.1:
+            #- args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+            #- args:  100 1 0
+        #- nn-rodinia-3.1:
+           #- args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+           # - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        - pathfinder-rodinia-3.1:
+            - args:  100000 100 20 > result.txt
+              accel-sim-mem: 1G
+        - srad_v1-rodinia-3.1:
+            - args:  100 0.5 502 458
+              accel-sim-mem: 2G
+
+rodinia-3.1_validation_ptx:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    execs:
+        - b+tree-rodinia-3.1:
+            - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
+        - backprop-rodinia-3.1:
+            - args:  65536
+              accel-sim-mem: 1G
+        #- bfs-rodinia-3.1:
+            #- args:  ./data/graph1MW_6.txt
+        #- dwt2d-rodinia-3.1:
+            #- args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              #accel-sim-mem: 1G
+        #- gaussian-rodinia-3.1:
+           # - args:  -f ./data/matrix208.txt
+        #- hotspot-rodinia-3.1:
+            #- args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+            #  accel-sim-mem: 1G
+        #- hybridsort-rodinia-3.1:
+           #- args:  ./data/500000.txt
+        - kmeans-rodinia-3.1:
+            - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
+        #- lud-rodinia-3.1:
+            #- args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+            #- args:  100 1 0
+        #- nn-rodinia-3.1:
+           #- args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+           # - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- pathfinder-rodinia-3.1:
+            #- args:  100000 100 20 > result.txt
+            #  accel-sim-mem: 1G
+        - srad_v1-rodinia-3.1:
+            - args:  100 0.5 502 458
+              accel-sim-mem: 2G
+
+rodinia-3.1_validation_hw:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/cuda/rodinia/3.1/"
+    execs:
+        - b+tree-rodinia-3.1:
+            - args:  file ./data/mil.txt command ./data/command.txt
+              accel-sim-mem: 1G
+        - backprop-rodinia-3.1:
+            - args:  65536
+              accel-sim-mem: 1G
+        #- bfs-rodinia-3.1:
+            #- args:  ./data/graph1MW_6.txt
+        #- dwt2d-rodinia-3.1:
+            #- args:  ./data/rgb.bmp -d 1024x1024 -f -5 -l 3
+              #accel-sim-mem: 1G
+        #- gaussian-rodinia-3.1:
+           # - args:  -f ./data/matrix208.txt
+        - hotspot-rodinia-3.1:
+            - args:  1024 2 2 ./data/temp_1024 ./data/power_1024 output.out
+              accel-sim-mem: 1G
+        #- hybridsort-rodinia-3.1:
+           #- args:  ./data/500000.txt
+        - kmeans-rodinia-3.1:
+            - args:  -o -i ./data/819200.txt
+              accel-sim-mem: 2G
+        #- lavaMD-rodinia-3.1:
+        #    - args:  -boxes1d 10
+        #- lud-rodinia-3.1:
+            #- args:  -i ./data/512.dat
+        #- myocyte-rodinia-3.1:
+            #- args:  100 1 0
+        #- nn-rodinia-3.1:
+           #- args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
+        #- nw-rodinia-3.1:
+           # - args:  2048 10
+        #- particlefilter_float-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- particlefilter_naive-rodinia-3.1:
+            #- args:  -x 128 -y 128 -z 10 -np 1000
+        #- pathfinder-rodinia-3.1:
+            #- args:  100000 100 20 > result.txt
+             # accel-sim-mem: 1G
+        - srad_v1-rodinia-3.1:
+            - args:  100 0.5 502 458
+              accel-sim-mem: 2G
+
+parboil_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/parboil/"
+    execs:
+        - parboil-sad:
+            - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
+              accel-sim-mem: 2G
+            
+        - parboil-sgemm:
+            - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
+              accel-sim-mem: 9G
+   
+        #- parboil-stencil:
+        #    - args: -i ./data/default/input/512x512x64x100.bin -o 512x512x64x100.out -- 512 512 64 100
+
+        #- parboil-cutcp:
+        #    - args: -i ./data/large/input/watbox.sl100.pqr -o lattice.dat
+
+        - parboil-mri-q:
+            - args: -i ./data/large/input/64_64_64_dataset.bin -o 64_64_64_dataset.out
+              accel-sim-mem: 11G
+
+        #- parboil-histo:
+        #    - args: -i ./data/large/input/img.bin -o ref.bmp -- 10000 4
+
+        #- parboil-spmv:
+        #    - args: -i ./data/large/input/Dubcova3.mtx.bin,./data/large/input/vector.bin -o Dubcova3.mtx.out
+
+        #- parboil-mri-gridding:
+        #    - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
+
+cuda_samples_11.0_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
+    execs:
+        - dct8x8:
+            - args:
+              accel-sim-mem: 2G
+        - binomialOptions:
+            - args:
+              accel-sim-mem: 20G
+        - fastWalshTransform:
+            - args:
+              accel-sim-mem: 2G
+        - histogram:
+            - args:
+              accel-sim-mem: 4G
+        - mergeSort:
+            - args:
+              accel-sim-mem: 2G
+        - quasirandomGenerator:
+            - args:
+              accel-sim-mem: 2G
+        - sobolQRNG:
+            - args:
+              accel-sim-mem: 1G
+
+cudaTensorCoreGemm_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
+    execs:
+        - cudaTensorCoreGemm:
+            - args:
+              accel-sim-mem: 20G
+
+cutlass_5_trace_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
+    execs:
+        - cutlass_perf_test_k1:
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+        - cutlass_perf_test_k2:
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G           
+        - cutlass_perf_test_k3:
+            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G
+
+Deepbench_validation:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
+    execs:
+        - conv_bench-tencore:
+            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
+        - gemm_bench-tencore:
+            - args: train half 2048 64 2048 1 0
+            - args: inference half 35 1500 2560 0 0
+        - rnn_bench-tencore:
+            - args: inference half 512 1 25 lstm
+            - args: inference half 512 1 1 gru
+            - args: train half 128 32 1 lstm
+            - args: train half 128 32 1 gru
+           
+power_ubench:
+    exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
+    data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
+    execs:
+        - ACT_CORE1:
+            - args: 100 1 32
+            - args: 100 16 32
+            - args: 100 32 32
+            - args: 100 48 32
+            - args: 100 64 32
+            - args: 100 80 32
+        - ACT_CORE2:
+            - args: 100 1 32
+            - args: 100 16 32
+            - args: 100 32 32
+            - args: 100 48 32
+            - args: 100 64 32
+            - args: 100 80 32 
+        - INT_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_DP_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_SFU_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_TEX_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        - INT_FP_TENSOR_STATIC:
+            - args: 100 80 1
+            - args: 100 80 8
+            - args: 100 80 16
+            - args: 100 80 24
+            - args: 100 80 32
+        #- LIGHT_SM:
+        #    - args: 100 80 32
+        - add_mem_1:
+            - args: 10
+        - add_mem_2:
+            - args: 10
+        - BE_DP_FP_ADD:
+            - args: 100
+        - BE_DP_FP_DIV:
+            - args: 10
+        - BE_DP_FP_MAD:
+            - args: 100
+        - BE_DP_FP_MUL:
+            - args: 100
+        - BE_L1D_HIT:
+            - args: 100
+        - BE_L2D_HIT:
+            - args: 100
+        #- BE_MEM_CNST_Acss:
+            #- args: 100
+        - BE_MEM_DRAM_Acss:
+            - args: 1
+        - BE_MEM_SHRD_Acss:
+            - args: 100
+        - BE_SFU_EXP:
+            - args: 100
+        - BE_SFU_LG2:
+            - args: 100
+        - BE_SFU_SIN:
+            - args: 100
+        - BE_SFU_SQRT:
+            - args: 100
+        - BE_SP_FP_ADD:
+            - args: 100
+        - BE_SP_FP_DIV:
+            - args: 10
+        - BE_SP_FP_MAD:
+            - args: 100
+        - BE_SP_FP_MUL:
+            - args: 100
+        - BE_SP_INT_ADD:
+            - args: 100
+        #- BE_SP_INT_ADD_l1:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l12:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l16:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l20:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l24:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l28:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l32:
+        #   - args: 100
+        #- BE_SP_INT_ADD_l4:
+        #    - args: 100
+        #- BE_SP_INT_ADD_l8:
+        #    - args: 100
+        #- BE_SP_INT_ADD_leven:
+        #    - args: 100
+        #- BE_SP_INT_ADD_lodd:
+        #    - args: 100
+        - BE_SP_INT_DIV:
+            - args: 10
+        - BE_SP_INT_LOGIC:
+            - args: 100
+        - BE_SP_INT_MUL:
+            - args: 100
+        - BE_SP_INT_MUL24:
+            - args: 100
+        - BE_SP_INT_MUL32:
+            - args: 100
+        #- BE_SP_INT_MUL_l1:
+        #   - args: 100
+        #- BE_SP_INT_MUL_l12:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l16:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l20:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l24:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l28:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l32:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l4:
+        #    - args: 100
+        #- BE_SP_INT_MUL_l8:
+        #    - args: 100
+        #- BE_SP_INT_MUL_leven:
+        #    - args: 100
+        #- BE_SP_INT_MUL_lodd:
+        #    - args: 100
+        - BE_TEXTURE_ACCESS:
+            - args: 100
+        - BE_TEXTURE_ACCESS_2:
+            - args: 100
+        - BRANCHING1:
+            - args: 100
+        - BRANCHING2:
+            - args: 100
+        - BRANCHING3:
+            - args: 100
+        - BRANCHING4:
+            - args: 100
+        - BRANCHING5:
+            - args: 100
+        #- const_mul:
+        #    - args: 100
+        - immediates_constant:
+            - args: 100
+        - immediates_texture:
+            - args: 100
+        - mix1:
+            - args: 100
+        - mix10:
+            - args: 10
+        - mix11:
+            - args: 100
+        - mix12:
+            - args: 100
+        - mix13:
+            - args: 100
+        - mix14:
+            - args: 100
+        - mix15:
+            - args: 100
+        - mix16:
+            - args: 100
+        - mix17:
+            - args: 100
+        - mix18:
+            - args: 100
+        - mix19:
+            - args: 100
+        - mix2:
+            - args: 10
+        - mix20:
+            - args: 100
+        - mix3:
+            - args: 100
+        - mix4:
+            - args: 10
+        - mix5:
+            - args: 10
+        - mix6:
+            - args: 10
+        - mix7:
+            - args: 10
+        - mix8:
+            - args: 10
+        - mix9:
+            - args: 10
+        - mul_add_tex_1:
+            - args: 100
+        - mul_add_tex_2:
+            - args: 100
+        - mul_mem_1:
+            - args: 10
+        - mul_mem_2:
+            - args: 10
+        - REG_FILE:
+            - args: 100
+        - SHRD_TEX_SFU:
+            - args: 100
+        - TENSOR:
+            - args: 10
