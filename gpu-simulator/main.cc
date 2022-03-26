@@ -92,7 +92,6 @@ int main(int argc, const char **argv) {
         std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
         m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
         i++;
-        continue;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
           kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
