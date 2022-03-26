@@ -105,6 +105,227 @@ GPU_Microbenchmark:
             - args: 
               accel-sim-mem: 1G
 
+GPU_Atomic:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - atomic_add_bw:
+            - args: 
+              accel-sim-mem: 1G
+        - atomic_add_bw_conflict:
+            - args:
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 16
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 16
+              accel-sim-mem: 1G
+
+Atomic_Profile:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - atomic_add_bw_profile:
+            - args: 32
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 31
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 30
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 29
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 28
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 27
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 26
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 25
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 24
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 23
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 22
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 21
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 20
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 19
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 18
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 17
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 16
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 15
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 14
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 13
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 12
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 11
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 10
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 9
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 8
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 7
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 6
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 5
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 4
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 3
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 2
+              accel-sim-mem: 1G
+        - atomic_add_bw_profile:
+            - args: 1
+              accel-sim-mem: 1G
+
+Atomic_Diverge:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - atomic_add_bw_diverge:
+            - args: 32
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 31
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 30
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 29
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 28
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 27
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 26
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 25
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 24
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 23
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 22
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 21
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 20
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 19
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 18
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 17
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 16
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 15
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 14
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 13
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 12
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 11
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 10
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 9
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 8
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 7
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 6
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 5
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 4
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 3
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 2
+              accel-sim-mem: 1G
+        - atomic_add_bw_diverge:
+            - args: 1
+              accel-sim-mem: 1G
+
+
+
 Deepbench_nvidia_tencore:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
