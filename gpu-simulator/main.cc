@@ -143,11 +143,13 @@ int main(int argc, const char **argv) {
     } while (active && !finished_kernel_uid);
 
     // cleanup finished kernel
-    if (finished_kernel_uid) {
+    if (finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit()
+        || !m_gpgpu_sim->active()) {
       trace_kernel_info_t* k = NULL;
       for (unsigned j = 0; j < kernels_info.size(); j++) {
         k = kernels_info.at(j);
-        if (k->get_uid() == finished_kernel_uid) {
+        if (k->get_uid() == finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit()
+            || !m_gpgpu_sim->active()) {
           for (int l = 0; l < busy_streams.size(); l++) {
             if (busy_streams.at(l) == k->get_cuda_stream_id()) {
               busy_streams.erase(busy_streams.begin()+l);
@@ -158,7 +160,8 @@ int main(int argc, const char **argv) {
           delete k->entry();
           delete k;
           kernels_info.erase(kernels_info.begin()+j);
-          break;
+          if (!m_gpgpu_sim->cycle_insn_cta_max_hit() && m_gpgpu_sim->active())
+            break;
         }
       }
       assert(k);
