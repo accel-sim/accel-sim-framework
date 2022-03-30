@@ -537,6 +537,14 @@ unsigned trace_shader_core_ctx::sim_init_thread(
   return 1;
 }
 
+/**
+ * @brief Must be called once for each CTA. 
+ * 
+ * In the event of hwtid wrap-around due to subcore scheduling, 
+ * end_thread is smaller than start_thread. This case is accetable
+ * and will be resolved by callee methods.
+ * 
+ */ 
 void trace_shader_core_ctx::init_warps(unsigned cta_id, unsigned start_thread,
                                        unsigned end_thread, unsigned ctaid,
                                        int cta_size, kernel_info_t &kernel) {
@@ -565,20 +573,39 @@ void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
   // No SIMT-stack in trace-driven  mode
 }
 
+/**
+ * @brief Calls trace_parser::get_next_threadblock_traces to parse an entire 
+ * CTA section in the *.traceg file. This means the range of warp ids covered
+ * by [start_warp, end_warp) must cover all warps of the CTA. 
+ * 
+ * With the subcore model, special case is given since wrap-arounds can 
+ * happen, which means end_warp < start_warp. This is done by generating 
+ * a const vec of warp ids to iterate over in a range-based for loop, instead 
+ * of looping from start_warp to end_warp.   
+ * 
+ * @param start_warp Warp id calculated from hwtid by dividing it by warp-size
+ * @param end_warp Calculated from hwtid in the same way
+ * @param kernel 
+ */
 void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
   std::vector<std::vector<inst_trace_t> *> threadblock_traces;
-  for (unsigned i = start_warp; i < end_warp; ++i) {
+
+  auto wrap_ids = get_index_vector_from_range_with_wrap_around<unsigned>
+    (start_warp, end_warp, m_config->max_warps_per_shader);
+
+  for (unsigned i : wrap_ids) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->clear();
     threadblock_traces.push_back(&(m_trace_warp->warp_traces));
   }
+
   trace_kernel_info_t &trace_kernel =
       static_cast<trace_kernel_info_t &>(kernel);
   trace_kernel.get_next_threadblock_traces(threadblock_traces);
 
   // set the pc from the traces and ignore the functional model
-  for (unsigned i = start_warp; i < end_warp; ++i) {
+  for (unsigned i : wrap_ids) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
     m_trace_warp->set_kernel(&trace_kernel);
