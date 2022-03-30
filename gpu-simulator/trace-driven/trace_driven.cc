@@ -591,10 +591,10 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
   std::vector<std::vector<inst_trace_t> *> threadblock_traces;
 
-  auto wrap_ids = get_index_vector_from_range_with_wrap_around<unsigned>
+  auto warp_ids = get_index_vector_from_range_with_wrap_around<unsigned>
     (start_warp, end_warp, m_config->max_warps_per_shader);
 
-  for (unsigned i : wrap_ids) {
+  for (unsigned i : warp_ids) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->clear();
     threadblock_traces.push_back(&(m_trace_warp->warp_traces));
@@ -605,7 +605,7 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
   trace_kernel.get_next_threadblock_traces(threadblock_traces);
 
   // set the pc from the traces and ignore the functional model
-  for (unsigned i : wrap_ids) {
+  for (unsigned i : warp_ids) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
     m_trace_warp->set_kernel(&trace_kernel);
