@@ -105,17 +105,26 @@ exes_and_args = []
 specific_jobIds = {}
 
 stats_to_pull = {}
+
+# stat names without the regex
+statnames_to_pull = {}
+
 stats_yaml = yaml.load(open(options.stats_yml), Loader=yaml.FullLoader )
 stats= {}
-for stat in stats_yaml['collect_aggregate']:
-    stats_to_pull[stat] = re.compile(stat), "agg"
+for statname_and_regex in stats_yaml['collect_aggregate']:
+    for statname,regex in statname_and_regex.items():
+       stats_to_pull[regex] = re.compile(regex), "agg"
+       statnames_to_pull[regex] = statname
 
-for stat in stats_yaml['collect_abs']:
-    stats_to_pull[stat] = re.compile(stat), "abs"
+for statname_and_regex in stats_yaml['collect_abs']:
+    for statname,regex in statname_and_regex.items():
+       stats_to_pull[regex] = re.compile(regex), "abs"
+       statnames_to_pull[regex] = statname
 
-for stat in stats_yaml['collect_rates']:
-    stats_to_pull[stat] = re.compile(stat), "rate"
-
+for statname_and_regex in stats_yaml['collect_rates']:
+    for statname,regex in statname_and_regex.items():
+       stats_to_pull[regex] = re.compile(regex), "rate"
+       statnames_to_pull[regex] = statname
 
 if options.configs_list != "" and options.benchmark_list != "":
     for app in common.gen_apps_from_suite_list(options.benchmark_list.split(",")):
@@ -274,7 +283,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                     if existance_test != None:
                         stat_found.add(stat_name)
                         number = existance_test.group(1).strip()
-                        stat_map["final_kernel" + app_and_args + config + stat_name] = number
+                        stat_map["final_kernel" + app_and_args + config \
+								+ statnames_to_pull[stat_name]] = number
                 if len(stat_found) == len(stats_to_pull):
                     break
             del lines
@@ -295,8 +305,10 @@ for idx, app_and_args in enumerate(apps_and_args):
                 if last_kernel_break:
                     print("NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile), file=sys.stderr)
                     for stat_name in stats_to_pull.keys():
-                        if current_kernel + app_and_args + config + stat_name in stat_map:
-                            del stat_map[current_kernel + app_and_args + config + stat_name]
+                        if current_kernel + app_and_args + config + \
+							statnames_to_pull[stat_name] in stat_map:
+                            del stat_map[current_kernel + app_and_args + config \
+									+ statnames_to_pull[stat_name]]
 
                 kernel_match = re.match("kernel_name\s+=\s+(.*)", line);
                 if kernel_match:
@@ -326,8 +338,12 @@ for idx, app_and_args in enumerate(apps_and_args):
                         stat_found.add(stat_name)
                         number = existance_test.group(1).strip()
                         if statType != "agg":
-                            stat_map[current_kernel + app_and_args + config + stat_name] = number
-                        elif current_kernel + app_and_args + config + stat_name in stat_map:
+                            stat_map[current_kernel + app_and_args + config + \
+									statnames_to_pull[stat_name]] = number
+                        elif current_kernel + app_and_args + config + \
+							 statnames_to_pull[stat_name] in stat_map:
+                            stat_name = statnames_to_pull[stat_name];
+
                             if stat_name in raw_last:
                                 stat_last_kernel = raw_last[stat_name]
                             else:
@@ -335,6 +351,7 @@ for idx, app_and_args in enumerate(apps_and_args):
                             raw_last[ stat_name ] = float(number)
                             stat_map[current_kernel + app_and_args + config + stat_name] += ( float(number) - stat_last_kernel )
                         else:
+                            stat_name = statnames_to_pull[stat_name];
                             if last_kernel + app_and_args + config + stat_name in stat_map:
                                 stat_last_kernel = raw_last[stat_name]
                             else:
@@ -356,10 +373,12 @@ for appargs in apps_and_args:
 common.print_stat( "Accel-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 common.print_stat( "GPGPU-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 
-for stat_name in ( stats_yaml['collect_aggregate'] +\
+for statname_and_regex in ( stats_yaml['collect_aggregate'] +\
                    stats_yaml['collect_abs'] +\
                    stats_yaml['collect_rates'] ):
-    common.print_stat( stat_name, all_named_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
+    for stat_name,regex in statname_and_regex.items():
+       common.print_stat( stat_name, all_named_kernels, apps_and_args, configs, stat_map, \
+                                               options.configs_as_rows, options.do_averages )
 
 duration = time.time() - start_time
 

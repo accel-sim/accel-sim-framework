@@ -5,38 +5,50 @@
 # Here is a handy regex tester that helps get the thing right faster without re-running stuff:
 #   http://www.regexpal.com/
 
+# Please specify each metric in the following form:
+# - {<metric name to display>:<regular expression to fetch the metric's value>}
+# The display metric name may be customized as it is outside the regex
+
 # These stats are continuously aggregated - even between kerenels and should
 # be diff'd to get the per-kernel stats
 collect_aggregate:
-    - 'gpu_tot_sim_insn\s*=\s*(.*)'
-    - 'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'
-    - 'gpu_tot_sim_cycle\s*=\s*(.*)'
-    - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
-    - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
-    - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
-    - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
-    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
-    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
-    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
-    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
-    - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[MSHR_HIT\]\s*=\s*(.*)'
-    - 'gpgpu_n_tot_w_icount\s*=\s*(.*)'
-    - 'total dram reads\s*=\s*(.*)'
-    - 'total dram writes\s*=\s*(.*)'
-    - 'kernel_launch_uid\s*=\s*(.*)'
-
+    - {'gpu_tot_sim_insn':'gpu_tot_sim_insn\s*=\s*(.*)'}
+    - {'gpgpu_simulation_time':'gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*'}
+    - {'gpu_tot_sim_cycle':'gpu_tot_sim_cycle\s*=\s*(.*)'}
+    - {'L2_cache_stats_breakdown[GLOBAL_ACC_R][HIT]':
+       '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'}
+    - {'L2_cache_stats_breakdown[GLOBAL_ACC_R][TOTAL_ACCESS]':
+       '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'}
+    - {'L2_cache_stats_breakdown[GLOBAL_ACC_W][HIT]':
+       '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'}
+    - {'L2_cache_stats_breakdown[GLOBAL_ACC_W][TOTAL_ACCESS]':
+       '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'}
+    - {'Total_core_cache_stats_breakdown[GLOBAL_ACC_R][TOTAL_ACCESS]':
+       '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'}
+    - {'Total_core_cache_stats_breakdown[GLOBAL_ACC_R][HIT]':
+       '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'}
+    - {'Total_core_cache_stats_breakdown[GLOBAL_ACC_W][HIT]':
+       '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'}
+    - {'Total_core_cache_stats_breakdown[GLOBAL_ACC_W][TOTAL_ACCESS]':
+       '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'}
+    - {'Total_core_cache_stats_breakdown[GLOBAL_ACC_R][MSHR_HIT]':
+       '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[MSHR_HIT\]\s*=\s*(.*)'}
+    - {'gpgpu_n_tot_w_icount':'gpgpu_n_tot_w_icount\s*=\s*(.*)'}
+    - {'total_dram_reads':'total dram reads\s*=\s*(.*)'}
+    - {'total_dram_writes':'total dram writes\s*=\s*(.*)'}
+    - {'kernel_launch_uid':'kernel_launch_uid\s*=\s*(.*)'}
 
 # These stats are reset each kernel and should not be diff'd
 # They cannot be used is only collecting the final_kernel stats
 collect_abs:
-    - 'gpu_ipc\s*=\s*(.*)'
-    - 'gpu_occupancy\s*=\s*(.*)%'
-    - 'L2_BW\s*=\s*(.*)+GB\/Sec'
+    - {'gpu_ipc':'gpu_ipc\s*=\s*(.*)'}
+    - {'gpu_occupancy':'gpu_occupancy\s*=\s*(.*)%'}
+    - {'L2_BW':'L2_BW\s*=\s*(.*)+GB\/Sec'}
 
 # These stats are rates that aggregate - but cannot be diff'd
 # Only valid as a snapshot and most useful for the final kernel launch
 collect_rates:
-    - 'gpgpu_simulation_rate\s+=\s+(.*)\s+\(inst\/sec\)'
-    - 'gpgpu_simulation_rate\s+=\s+(.*)\s+\(cycle\/sec\)'
-    - 'gpgpu_silicon_slowdown\s*=\s*(.*)x'
-    - 'gpu_tot_ipc\s*=\s*(.*)'
+    - {'gpgpu_simulation_rate(inst/sec)':'gpgpu_simulation_rate\s+=\s+(.*)\s+\(inst\/sec\)'}
+    - {'gpgpu_simulation_rate(cycle/sec)':'gpgpu_simulation_rate\s+=\s+(.*)\s+\(cycle\/sec\)'}
+    - {'gpgpu_silicon_slowdown':'gpgpu_silicon_slowdown\s*=\s*(.*)x'}
+    - {'gpu_tot_ipc':'gpu_tot_ipc\s*=\s*(.*)'}
