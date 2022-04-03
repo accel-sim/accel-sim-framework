@@ -105,14 +105,6 @@ GPU_Microbenchmark:
             - args: 
               accel-sim-mem: 1G
 
-Deepbench_subcore_test:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
-    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
-    execs:
-        - gemm_bench-tencore:
-            - args: inference half 35 1500 2560 0 0
-              accel-sim-mem: 2G
-
 Deepbench_nvidia_tencore:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
