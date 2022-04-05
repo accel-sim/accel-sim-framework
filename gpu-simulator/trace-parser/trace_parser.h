@@ -63,8 +63,8 @@ struct inst_trace_t {
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
 
-  unsigned
-  get_datawidth_from_opcode(const std::vector<std::string> &opcode) const;
+  unsigned get_datawidth_from_opcode(
+      const std::vector<std::string> &opcode) const;
 
   std::vector<std::string> get_opcode_tokens() const;
 
@@ -84,34 +84,35 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned cuda_stream_id;
+  unsigned long cuda_stream_id;
   unsigned binary_verion;
   unsigned trace_verion;
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
+  // Reference to open filestream
+  std::ifstream *ifs;
 };
 
 class trace_parser {
-public:
+ public:
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
 
-  kernel_trace_t parse_kernel_info(const std::string &kerneltraces_filepath);
+  kernel_trace_t *parse_kernel_info(const std::string &kerneltraces_filepath);
 
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
                          size_t &count);
 
-  bool get_next_threadblock_traces(
+  void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version);
+      unsigned trace_version, std::ifstream *ifs);
 
-  void kernel_finalizer();
+  void kernel_finalizer(kernel_trace_t *trace_info);
 
-private:
+ private:
   std::string kernellist_filename;
-  std::ifstream ifs;
 };
 
 #endif

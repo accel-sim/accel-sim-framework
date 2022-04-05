@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
+from __future__ import print_function
 from optparse import OptionParser
 import os
 import subprocess
@@ -23,8 +24,10 @@ def get_csv_data_for_merge(filepath):
     configs = []
     cached_configs = []
     stats = []
-    build_num = None
-    build_nums = set()
+    gpgpu_build_num = None
+    gpgpu_build_nums = set()
+    accel_build_num = None
+    accel_build_nums = set()
     data = {}
     with open(filepath, 'r') as data_file:
         reader = csv.reader(data_file)        # define reader object
@@ -54,8 +57,11 @@ def get_csv_data_for_merge(filepath):
                                 appargs = appargs_kname[ :first_delimiter ]
                                 kname = appargs_kname[ first_delimiter + 2: ]
                                 if current_stat == "GPGPU-Sim-build" and data[config][count] != "NA":
-                                    build_num = data[config][count][21:28]
-                                    build_nums.add(build_num)
+                                    gpgpu_build_num = data[config][count][21:28]
+                                    gpgpu_build_nums.add(gpgpu_build_num)
+                                if current_stat == "Accel-Sim-build" and data[config][count] != "NA":
+                                    accel_build_num = data[config][count][16:23]
+                                    accel_build_nums.add(accel_build_num)
                                 stat_map[kname + appargs + config + current_stat ] = data[config][count]
                                 count += 1
                     apps = []
@@ -66,7 +72,10 @@ def get_csv_data_for_merge(filepath):
                     continue
                 else:
                     any_data = True
-                    full_config = row[0] + "-" + str(build_num)
+                    if accel_build_num != None and gpgpu_build_num != None:
+                        full_config = row[0] + "-accel-" + str(accel_build_num) + "-gpgpu-" + str(gpgpu_build_num)
+                    else:
+                        full_config = row[0]
                     configs.append(full_config)
                     data[full_config] = row[1:]
 
@@ -82,63 +91,11 @@ def get_csv_data_for_merge(filepath):
 
     # The assumption here is that every entry in each stats file is run with the same
     # git hash number, if not we are just going to warn and fail.
-    if len(build_nums) > 1:
-        exit("File {0} contains more than one build_num - this assumes one stats file has one build num: {1}"
-            .format(filepath, build_nums))
-    return all_named_kernels, stat_map, app_and_args, cached_configs, stats, build_nums
-
-
-# After collection, spew out the tables
-def print_stat(stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows):
-    csv_str = ""
-    DIVISION = "-" * 100
-    csv_str += DIVISION + "\n"
-    csv_str += stat_name + "\n,"
-    if cfg_as_rows:
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for config in configs:
-            csv_str += config + ","
-            for appargs in apps_and_args:
-                knames = all_named_kernels[appargs]
-                for kname in knames:
-                    if kname == "":
-                        continue
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                    else:
-                        csv_str += "NA,"
-            csv_str = csv_str[:-1]
-            csv_str += "\n"
-    else:
-        for config in configs:
-            csv_str += config + ","
-        csv_str = csv_str[:-1]
-        csv_str += "\n"
-        for appargs in apps_and_args:
-            knames = all_named_kernels[appargs]
-            for kname in knames:
-                if kname == "":
-                    continue
-                csv_str += appargs + "--" + kname + ","
-                for config in configs:
-                    if kname + appargs + config + stat_name in stat_map:
-                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
-                    else:
-                        csv_str += "NA,"
-                csv_str = csv_str[:-1]
-                csv_str += "\n"
-
-    csv_str = csv_str[:-1]
-    csv_str += "\n"
-    print csv_str
+    if len(gpgpu_build_nums) > 1 or len(accel_build_nums) > 1:
+        exit("File {0} contains more than one gpgpu_build_num or accelsim_build_num - this assumes one stats file has one build num: gpgpu: {1}" +\
+            " accel: {2}"\
+            .format(filepath, gpgpu_build_nums, accel_build_nums))
+    return all_named_kernels, stat_map, app_and_args, cached_configs, stats, gpgpu_build_nums
 
 parser = OptionParser()
 parser.add_option("-c", "--csv_files", dest="csv_files",
@@ -151,7 +108,10 @@ parser.add_option("-R", "--configs_as_rows", dest="configs_as_rows",
 
 csv_files = []
 for csvf in options.csv_files.split(","):
-    csv_files.append( common.file_option_test( csvf, "", this_directory ) )
+    try:
+        csv_files.append( common.file_option_test( csvf, "", this_directory ) )
+    except common.PathMissing as e:
+        print("Warning path {0}. Continuing".format(e), file=sys.stderr)
 
 stats_per_file = {}
 for csvf in csv_files:
@@ -161,10 +121,17 @@ new_stats = {}
 new_configs = []
 union_apps_args = set()
 union_stats = set()
-for fname, ( all_named_kernels, stat_map, apps_and_args, configs, stats, build_nums ) in stats_per_file.iteritems():
-    print "Processing {0}".format(fname)
+union_configs = set()
+for csvf in csv_files:
+    ( all_named_kernels, stat_map, apps_and_args, configs, stats, gpgpu_build_nums ) = stats_per_file[csvf]
+    print("Processing {0}".format(csvf), file=sys.stderr)
     new_stats = dict(new_stats, **stat_map)
-    new_configs += configs
+    for config in configs:
+        if config not in union_configs:
+            union_configs.add(config)
+            new_configs.append(config)
+        else:
+            print("Found redundant config: {0} in csvf: \"{1}\" - filtering it out.".format(config, csvf), file=sys.stderr)
 
     if len(union_apps_args) == 0:
         union_apps_args = set(apps_and_args)
@@ -176,9 +143,5 @@ for fname, ( all_named_kernels, stat_map, apps_and_args, configs, stats, build_n
     else:
         union_stats &= set(stats)
 
-print union_stats
-print union_apps_args
-print new_configs
-
 for stat in stats:
-    print_stat( stat, all_named_kernels, apps_and_args, new_configs, new_stats, options.configs_as_rows )
+    common.print_stat( stat, all_named_kernels, apps_and_args, new_configs, new_stats, options.configs_as_rows, False )

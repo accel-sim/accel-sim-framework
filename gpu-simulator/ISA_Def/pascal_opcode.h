@@ -4,10 +4,10 @@
 #ifndef PASCAL_OPCODE_H
 #define PASCAL_OPCODE_H
 
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
 #define PASCAL_TITANX_BINART_VERSION 61
 #define PASCAL_P100_BINART_VERSION 60
@@ -31,6 +31,7 @@ static const std::unordered_map<std::string, OpcodeChar> Pascal_OpcodeMap = {
     {"FSETP", OpcodeChar(OP_FSETP, SP_OP)},
     {"FSWZADD", OpcodeChar(OP_FSWZADD, SP_OP)},
     {"RRO", OpcodeChar(OP_RRO, SP_OP)},
+    {"FCMP", OpcodeChar(OP_FCMP, SP_OP)},
 
     // SFU
     {"MUFU", OpcodeChar(OP_MUFU, SFU_OP)},
@@ -78,6 +79,7 @@ static const std::unordered_map<std::string, OpcodeChar> Pascal_OpcodeMap = {
     {"SHR", OpcodeChar(OP_SHR, INTP_OP)},
     {"VABSDIFF", OpcodeChar(OP_VABSDIFF, INTP_OP)},
     {"VABSDIFF4", OpcodeChar(OP_VABSDIFF4, INTP_OP)},
+    {"VADD", OpcodeChar(OP_VADD, INTP_OP)},
     {"BFE", OpcodeChar(OP_BFE, INTP_OP)},
     {"BFI", OpcodeChar(OP_BFI, INTP_OP)},
     {"ICMP", OpcodeChar(OP_ICMP, INTP_OP)},

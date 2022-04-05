@@ -1,5 +1,6 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
+from __future__ import print_function
 from optparse import OptionParser
 import plotly
 #import chart_studio.plotly as py
@@ -57,12 +58,12 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     # For rates, take the average across all the kernels in the app
     if correlmap.stattype == "rate":
         new_map = {}
-        for k,v in app_map.iteritems():
+        for k,v in app_map.items():
             x1,y1,numk = v
             new_map[k] = (x1 / numk, y1 / numk, numk)
         app_map = new_map
 
-    for k,v in app_map.iteritems():
+    for k,v in app_map.items():
         apps.append(k)
         x1,y1,numk = v
         newx.append(x1)
@@ -101,8 +102,9 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     return apps, newx, newy, total_err, correl_co, num_over, num_under, num_less_than_one_percent, aggregate_err, ret_rpd,\
         num_less_than_ten_percent,rmse
 
-def getCorrelCsvRaw((names, x, y)):
-    out_csv = "Name,Hardware,Simulator,Sim/HW\n"
+def getCorrelCsvRaw(anno, names, x, y):
+    out_csv = anno + "\n"
+    out_csv += "Name,Hardware,Simulator,Sim/HW\n"
     count = 0
     for k in names:
         out_csv += "{0},{1:.2f},{2:.2f},{3:.2f}\n"\
@@ -179,7 +181,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_str, kernel_str = make_pretty_app_list(apps_included)
         kernellist_file_contents += "{0}\n{1}\n\n".format(anno, kernel_str)
         kernel_csv_file_contents += "{0}\n\n"\
-            .format(getCorrelCsvRaw((trace.text, trace.x, trace.y)))
+            .format(getCorrelCsvRaw(anno, trace.text, trace.x, trace.y))
 
         apps,appx,appy,avg_err,correl_co,num_over,num_under,num_less_than_one_percent,agg_err,rpd,nltenp,nmse \
             = getAppData(trace.text, trace.x, trace.y,layout.xaxis.title, correlmap)
@@ -188,7 +190,7 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
         app_min = min ( app_min, min(appx), min(appy) )
 
         app_csv_file_contents += "{0}\n\n"\
-            .format(getCorrelCsvRaw( ( apps,appx,appy ) ))
+            .format(getCorrelCsvRaw( anno, apps,appx,appy ))
         kernel_data.append(trace)
 
         app_anno = cfg + " ({0} apps ({5} < 1% Err, {3} under, {4} over, {8} < 10% Err)) [Correl={1:.4} Err={2:.2f}% Agg_Err={6:.2f}% RPD={7:.2f}%,NMSE={9:.2f}]"\
@@ -237,8 +239,8 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     f.write(app_csv_file_contents)
     f.close()
 
-    print "Plotting {0} : [{1}]\n{2}"\
-        .format(hw_cfg, layout.title.text, print_anno)
+    print("Plotting {0} : [{1}]\n{2}"\
+        .format(hw_cfg, layout.title.text, print_anno))
     TEXT_SIZE=25
 
 
@@ -394,11 +396,11 @@ class Logger:
 
     def log(self, msg):
         if self.verbose:
-            print msg
+            print(msg)
 
     def logchan(self, msg, channel):
         if self.verbose or channel == self.channel:
-            print msg
+            print(msg)
 
     def write_log(self):
         now_time = datetime.datetime.now()
@@ -465,8 +467,12 @@ def get_sim_csv_data(filepath, logger):
                 if cfg not in all_kerns:
                     all_kerns[cfg] = copy.deepcopy(all_kern_cfg)
                 for x in row[1:]:
-                    try:
+                    if count < len(klist):
                         appargs,kname,num = klist[count]
+                    else:
+                        print("More row entries than kernels processed. Likely because of an average column", file=sys.stderr)
+                        break
+                    try:
                         all_kerns[cfg][appargs][num][current_stat] = float(x)
                     except ValueError:
                         all_kerns[cfg][appargs][num][current_stat] = None
@@ -474,7 +480,7 @@ def get_sim_csv_data(filepath, logger):
                     count += 1
     for stat in stats_missing:
         appargs, num, current_stat = stat
-        for cfg in all_kerns.iterkeys():
+        for cfg in all_kerns.keys():
             del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
@@ -578,8 +584,8 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
 
                 # Set the Device
                 if cfg != "" and cfg != row[cfg_col]:
-                    print "data for more than one device in {0}..{1}:{2}"\
-                        .format(csv_file,cfg,elem)
+                    print("data for more than one device in {0}..{1}:{2}"\
+                        .format(csv_file,cfg,elem))
                     exit()
 
                 cfg = row[cfg_col]
@@ -608,18 +614,18 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
 
 def summarize_hw_data(hw_data, logger):
     print("-----------------------------------------------------------------")
-    for device,appargslist in hw_data.iteritems():
+    for device,appargslist in hw_data.items():
         print("All Card Summary:")
         print("HW Summary for {0} [Contains {1} Apps]:"
             .format(device,len(appargslist)))
     print("----------------------------------------------------------------\n\n")
     
     # Print HW data summary
-    for device,appargslist in hw_data.iteritems():
+    for device,appargslist in hw_data.items():
         logger.logchan("-----------------------------------------------------------------","hwsummary")
         logger.logchan("HW Summary for {0} [Contains {1} Apps]:"
             .format(device,len(appargslist)), "hwsummary")
-        for appargs,kdata in appargslist.iteritems():
+        for appargs,kdata in appargslist.items():
             logger.logchan("\t{0}:".format(appargs), "hwsummary")
             logger.logchan("\t\tContatins {0} kernels:".format(len(kdata)), "hwsummary")
     
@@ -741,10 +747,10 @@ if options.hardware_dict == None:
                 else:
                     parse_hw_csv(csvf,hw_data, os.path.join(os.path.basename(root),d), kdata, logger)
 else:
-    print "Begin pickle.load"
+    print("Begin pickle.load")
     with open(options.hardware_dict, 'rb') as hw_dictionary_file:
         hw_data = pickle.load(hw_dictionary_file)
-    print "End pickle.load"
+    print("End pickle.load")
 summarize_hw_data(hw_data,logger)
 #with open('hwdata.{0}.dictionary'.format(options.hardware_dir).replace('/','_'),
 #            'wb') as hw_dictionary_file:
@@ -757,16 +763,23 @@ sim_data = get_sim_csv_data(options.csv_file, logger)
 exec(open(options.data_mappings,'r').read())
 
 fig_data = {} # map of HW config to a list of scatters
-for cfg,sim_for_cfg in sim_data.iteritems():
+for cfg,sim_for_cfg in sim_data.items():
     if cfg.split('-')[0] not in config_maps:
         logger.log("cfg {0} not in config_maps:{1}.".format(cfg, config_maps))
         continue
 
     hw_cfg = None
-    for device in hw_data.iterkeys():
-        if config_maps[cfg.split('-')[0]] in device:
-            hw_cfg = device
-            continue
+    for device in hw_data.keys():
+        logger.log("Testing hw_cfg={0}".format(device))
+        logger.log("\tcfg={0}, config_maps={1}".format(cfg,config_maps))
+
+        # Each simulation config name maps to potentially more than one NVIDIA card name
+        # we iterate through them all here.
+        for hw_name in config_maps[cfg.split('-')[0]]:
+            if hw_name in device:
+                hw_cfg = device
+                logger.log("Setting hw_cfg={0}".format(device))
+                continue
 
     if hw_cfg == None:
         logger.log("Cannot find HW data for {0} skipping plots.".format(hw_cfg))
@@ -791,14 +804,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         num_under = 0
         num_over = 0
         errs = []
-        sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
-        hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
+        sim_appargs_leftover = set(copy.deepcopy(list(sim_for_cfg.keys())))
+        hw_appargs_leftover = set(copy.deepcopy(list(hw_data[hw_cfg].keys())))
         max_axis_val = 0.0
         min_axis_val = 99999999999999999999999999999.9
         err_dropped_stats = 0
         hw_low_drop_stats = 0
         apps_included = {}
-        for appargs,sim_klist in sim_for_cfg.iteritems():
+        for appargs,sim_klist in sim_for_cfg.items():
             if appargs in hw_data[hw_cfg]:
                 if (isAppBanned( appargs, blacklist )):
                     continue
@@ -966,6 +979,6 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 
 correl_outdir = os.path.join(this_directory, "correl-html")
-for (plotfile,hw_cfg), traces in fig_data.iteritems():
+for (plotfile,hw_cfg), traces in fig_data.items():
     make_submission_quality_image(options.image_type, traces, hw_cfg)
-print "Output Available at: file://{0}".format(correl_outdir)
+print("Output Available at: file://{0}".format(correl_outdir))

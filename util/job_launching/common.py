@@ -1,3 +1,31 @@
+# Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+# Northwestern University, Purdue University, The University of British Columbia
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer;
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution;
+# 3. Neither the names of Northwestern University, Purdue University,
+#    The University of British Columbia nor the names of their contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
 
 from optparse import OptionParser
 import subprocess
@@ -27,13 +55,13 @@ def get_argfoldername( args ):
 def get_config(name, defined_baseconfigs, defined_xtracfgs):
     tokens = name.split('-')
     if tokens[0] not in defined_baseconfigs:
-        print "Could not fined {0} in defined basenames {1}".format(tokens[0], defined_baseconfigs)
+        print("Could not fined {0} in defined basenames {1}".format(tokens[0], defined_baseconfigs))
         return None
     else:
         config = (name, "", defined_baseconfigs[tokens[0]])
     for token in tokens[1:]:
         if token not in defined_xtracfgs:
-            print "Could not find {0} in defined xtraconfigs {1}".format(token, defined_xtracfgs)
+            print("Could not find {0} in defined xtraconfigs {1}".format(token, defined_xtracfgs))
             return None
         else:
             oldName, oldXtra, oldBasename = config
@@ -54,8 +82,8 @@ def parse_app_definition_yaml( def_yml, apps ):
     for suite in benchmark_yaml:
         apps[suite] = []
         for exe in benchmark_yaml[suite]['execs']:
-            exe_name = exe.keys()[0]
-            args_list = exe.values()[0]
+            exe_name = list(exe.keys())[0]
+            args_list = list(exe.values())[0]
             count = 0
             for runparms in args_list:
                 args = runparms["args"]
@@ -182,6 +210,11 @@ def parse_run_simulations_options():
                   help="Specify how jobs will be launched. Select one of sbatch (slurm), qsub (torque), "\
                         "local. By default, we test for slurm, then torque, then just use local if " \
                         "you have neither.")
+    parser.add_option("-c", "--cores", dest="cores", default=None,
+                  help="Specify the core limit when using procman. If nothing is specified, all the cores"\
+                       " on the local node will be used.")
+    parser.add_option("-a", "--accelwattch_HW", dest="accelwattch_HW", action="store_true",
+                      help="Enable passing hw_perf_bench_name for accelwattch hw and hybrid runs to config file.")
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it
@@ -196,3 +229,96 @@ def parse_run_simulations_options():
     if options.job_mem != None:
         options.job_mem = options.job_mem.strip()
     return (options, args)
+
+# After collection, spew out the tables
+def print_stat(stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows, do_averages):
+    csv_str = ""
+    DIVISION = "-" * 100
+    if cfg_as_rows:
+        num_commas = len(apps_and_args)
+    else:
+        num_commas = len(configs)
+    if do_averages:
+        num_commas += 1
+    csv_str += DIVISION + ("," * num_commas) + "\n"
+
+    running_total = 0
+    total_num = 0
+    if cfg_as_rows:
+        csv_str += stat_name + ("," * num_commas) +  "\nCFG,"
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
+                csv_str += appargs + "--" + kname + ","
+        if do_averages:
+            csv_str += "AVG,"
+
+        csv_str = csv_str[:-1]
+        csv_str += "\n"
+        for config in configs:
+            csv_str += config + ","
+            for appargs in apps_and_args:
+                knames = all_named_kernels[appargs]
+                for kname in knames:
+                    if kname == "":
+                        continue
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
+                    else:
+                        csv_str += "NA,"
+            if do_averages:
+                if total_num != 0:
+                    csv_str += "{0:.1f},".format(running_total/total_num)
+                else:
+                    csv_str += "NA,"
+            running_total = 0
+            total_num = 0
+            csv_str = csv_str[:-1]
+            csv_str += "\n"
+
+    else:
+        csv_str += stat_name + ("," * num_commas) + "\nAPPS,"
+        for config in configs:
+            csv_str += config + ","
+
+        if do_averages:
+            csv_str += "AVG,"
+        csv_str = csv_str[:-1]
+        csv_str += "\n"
+        for appargs in apps_and_args:
+            knames = all_named_kernels[appargs]
+            for kname in knames:
+                if kname == "":
+                    continue
+                csv_str += appargs + "--" + kname + ","
+                for config in configs:
+                    if kname + appargs + config + stat_name in stat_map:
+                        csv_str += str(stat_map[kname + appargs + config + stat_name]) + ","
+                        try:
+                            running_total += float(stat_map[kname + appargs + config + stat_name])
+                            total_num += 1
+                        except:
+                            pass
+                    else:
+                        csv_str += "NA,"
+
+                if do_averages:
+                    if total_num != 0:
+                        csv_str += "{0:.1f},".format(running_total/total_num)
+                    else:
+                        csv_str += "NA,"
+                running_total = 0
+                total_num = 0
+                csv_str = csv_str[:-1]
+                csv_str += "\n"
+
+    csv_str = csv_str[:-1]
+    csv_str += "\n"
+    print(csv_str)

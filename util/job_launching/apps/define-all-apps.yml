@@ -729,3 +729,49 @@ lonestargpu-2.0:
             - args: ./data/rmat12.sym.gr
             - args: ./data/USA-road-d.FLA.sym.gr
             - args: ./data/2d-2e20.sym.gr
+
+mlperf_inference:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - inference_mlperf_bert:
+            - args:
+              accel-sim-mem: 60G
+#        - inference_mlperf_gnmt:
+#            - args:
+#              accel-sim-mem: 20G
+        - inference_mlperf_resnet:
+            - args: 256
+              accel-sim-mem: 40G
+            - args: 128
+              accel-sim-mem: 30G
+            - args: 64
+              accel-sim-mem: 20G
+        - inference_mlperf_ssd:
+            - args:
+              accel-sim-mem: 60G
+        - inference_mlperf_3dunet:
+            - args:
+              accel-sim-mem: 20G
+
+mlperf_training:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - training_mlperf_ssd:
+              - args:
+                accel-sim-mem: 90G
+        - training_mlperf_rnn:
+              - args:
+                accel-sim-mem: 90G
+
+mlperf_inference_no_external_datasets:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - inference_mlperf_bert:
+            - args:
+              accel-sim-mem: 60G
+        - inference_mlperf_ssd:
+            - args:
+              accel-sim-mem: 60G

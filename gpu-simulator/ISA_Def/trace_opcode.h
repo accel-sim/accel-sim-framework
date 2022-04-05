@@ -4,9 +4,9 @@
 #ifndef TRACE_OPCODE_H
 #define TRACE_OPCODE_H
 
-#include "abstract_hardware_model.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
 
 enum TraceInstrOpcode {
   // Volta (includes common insts for others cards as well)
@@ -62,6 +62,7 @@ enum TraceInstrOpcode {
   OP_SHR,
   OP_VABSDIFF,
   OP_VABSDIFF4,
+  OP_VADD,
   OP_F2F,
   OP_F2I,
   OP_I2F,
@@ -214,6 +215,16 @@ enum TraceInstrOpcode {
   OP_SULDGA,
   OP_SUSTGA,
   OP_ISUB,
+  // unique insts for ampere
+  OP_HMNMX2,
+  OP_DMMA,
+  OP_I2FP,
+  OP_F2IP,
+  OP_LDGDEPBAR,
+  OP_LDGSTS,
+  OP_REDUX,
+  OP_UF2FP,
+  OP_SUQUERY,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;

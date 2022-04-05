@@ -1,4 +1,34 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
+
+# Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
+# Northwestern University, Purdue University, The University of British Columbia
+# All rights reserved.
+
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions are met:
+
+# 1. Redistributions of source code must retain the above copyright notice, this
+#    list of conditions and the following disclaimer;
+# 2. Redistributions in binary form must reproduce the above copyright notice,
+#    this list of conditions and the following disclaimer in the documentation
+#    and/or other materials provided with the distribution;
+# 3. Neither the names of Northwestern University, Purdue University,
+#    The University of British Columbia nor the names of their contributors
+#    may be used to endorse or promote products derived from this software
+#    without specific prior written permission.
+
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+
 
 from optparse import OptionParser
 import os
@@ -21,12 +51,13 @@ def extract_version( exec_path ):
         regex_base = "gpgpu-sim_git-commit"
     else:
         regex_base = "accelsim-commit"
-    regex_str = r".*({0}[^\s]+).*".format(regex_base)
+    regex_str = r".*({0}[^\s^']+).*".format(regex_base)
     strings_process = Popen(['strings', exec_path], stdout=PIPE)
     grep_process = Popen(['grep', regex_base], stdin=strings_process.stdout, stdout=PIPE)
     strings_process.stdout.close() 
     out, err = grep_process.communicate()
-    return re.sub(regex_str, r"\1", out.rstrip())
+    version = re.sub(regex_str, r"\1", str(out.rstrip()))
+    return version
 
 #######################################################################################
 # Class the represents each configuration you are going to run
@@ -38,15 +69,16 @@ class ConfigurationSpec:
     # Public Interface methods
     #########################################################################################
     # Class is constructed with a single line of text from the sweep_param file
-    def __init__(self, ( name, params, config_file ) ):
+    def __init__(self, nameTuple ):
+        name, params, config_file = nameTuple
         self.run_subdir = name
         self.params = params
         self.config_file = config_file
 
     def my_print(self):
-        print "Run Subdir = " + self.run_subdir
-        print "Parameters = " + self.params
-        print "Base config file = " + self.config_file
+        print("Run Subdir = " + self.run_subdir)
+        print("Parameters = " + self.params)
+        print("Base config file = " + self.config_file)
 
     def run(self, build_handle, benchmarks, run_directory, cuda_version, simdir):
         for dir_bench in benchmarks:
@@ -84,7 +116,7 @@ class ConfigurationSpec:
                     simdir,
                     full_exec_dir,build_handle,
                     mem_usage)
-                self.append_gpgpusim_config(benchmark, this_run_dir, self.config_file)
+                self.append_gpgpusim_config(benchmark, this_run_dir, appargs_run_subdir, self.config_file)
                 
                 # Submit the job to torque and dump the output to a file
                 if not options.no_launch:
@@ -124,14 +156,14 @@ class ConfigurationSpec:
                         logfile = open(this_directory +\
                                        "logfiles/"+ log_name + "." +\
                                        day_string + ".txt",'a')
-                        print >> logfile, "%s %6s %-22s %-100s %-25s %s.%s" %\
+                        print("%s %6s %-22s %-100s %-25s %s.%s" %\
                                ( time_string ,\
                                torque_out ,\
                                benchmark ,\
                                self.benchmark_args_subdirs[args] ,\
                                self.run_subdir,\
                                benchmark,\
-                               build_handle )
+                               build_handle ), file=logfile)
                         logfile.close()
             self.benchmark_args_subdirs.clear()
 
@@ -147,6 +179,7 @@ class ConfigurationSpec:
                                    glob.glob(os.path.join(full_data_dir, "*.cl")) +\
                                    glob.glob(os.path.join(full_data_dir, "*.h")) +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.icnt") +\
+                                   glob.glob(os.path.dirname(self.config_file) + "/*.csv") +\
                                    glob.glob(os.path.dirname(self.config_file) + "/*.xml")
 
         for file_to_cp in files_to_copy_to_run_dir:
@@ -231,7 +264,7 @@ class ConfigurationSpec:
             if command_line_args == None:
                 txt_args = ""
             else:
-                txt_args = command_line_args
+                txt_args = str(command_line_args)
         else:
             txt_args = " -config ./gpgpusim.config -trace ./traces/kernelslist.g"
 
@@ -263,11 +296,11 @@ class ConfigurationSpec:
         open(os.path.join(this_run_dir , job_template), 'w').write(torque_text)
         exec_line = torque_text.splitlines()[-1]
         justrunfile = os.path.join(this_run_dir , "justrun.sh")
-        open(justrunfile, 'w').write(exec_line + " | tee gpgpu-sim-out_`date '+%b_%d_%H:%M.%S'`.txt")
+        open(justrunfile, 'w').write(exec_name + " " + txt_args + "\n")
         os.chmod(justrunfile, 0o744)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
-    def append_gpgpusim_config(self, bench_name, this_run_dir, config_text_file):
+    def append_gpgpusim_config(self, bench_name, this_run_dir, appargs_run_subdir, config_text_file):
         benchmark_spec_opts_file = os.path.expandvars(os.path.join( "$GPUAPPS_ROOT", "benchmarks",
             "app-specific-gpgpu-sim-options", bench_name, "benchmark_options.txt" ))
         benchmark_spec_opts = ""
@@ -279,11 +312,18 @@ class ConfigurationSpec:
         config_text = open(config_text_file).read()
         config_text += "\n" + benchmark_spec_opts + "\n" + self.params + "\n"
 
+        if options.accelwattch_HW:
+            # if bench_name == "cutlass_perf_test":
+            #     config_text += "\n" + "-hw_perf_bench_name " + appargs_run_subdir.replace('/','_') + "\n"
+            # else:
+            config_text += "\n" + "-hw_perf_bench_name " + bench_name + "\n"
+
         if options.trace_dir != "":
             cfgsubdir = re.sub(r".*(configs.*)gpgpusim.config", r"\1", config_text_file)
             config_text += "\n" + "# Accel-Sim Parameters" + "\n"
             accelsim_cfg = os.path.expandvars(os.path.join("$ACCELSIM_ROOT", cfgsubdir, "trace.config"))
             config_text += open(accelsim_cfg).read()
+
 
         open(os.path.join(this_run_dir , "gpgpusim.config"), 'w').write(config_text)
 
@@ -352,7 +392,7 @@ elif any([os.path.isfile(os.path.join(p, "qsub")) for p in os.getenv("PATH").spl
     job_submit_call = "qsub"
     job_template = "torque.sim"
 else:
-    print "Cannot find a supported job management system. Spawning jobs locally."
+    print("Cannot find a supported job management system. Spawning jobs locally.")
     job_submit_call = os.path.join(this_directory, "procman.py")
     job_template = "slurm.sim"
 
@@ -375,5 +415,8 @@ for config in configurations:
     config.my_print()
     config.run(version_string, benchmarks, options.run_directory, cuda_version, options.simulator_dir)
 
-if "procman" in job_submit_call:
-    subprocess.call([job_submit_call, "-S"])
+if "procman" in job_submit_call and not options.no_launch:
+    if options.cores == None:
+        subprocess.call([job_submit_call, "-S"])
+    else:
+        subprocess.call([job_submit_call, "-S", "-c", options.cores])

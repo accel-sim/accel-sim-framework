@@ -2,21 +2,20 @@
 // abdallm@purdue.edu
 
 #include <bits/stdc++.h>
+#include <math.h>
+#include <stdio.h>
+#include <time.h>
 #include <fstream>
 #include <iostream>
-#include <math.h>
 #include <sstream>
-#include <stdio.h>
 #include <string>
-#include <time.h>
 #include <vector>
 
 #include "trace_parser.h"
 
 bool is_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
-  while (it != s.end() && std::isdigit(*it))
-    ++it;
+  while (it != s.end() && std::isdigit(*it)) ++it;
   return !s.empty() && it == s.end();
 }
 
@@ -32,8 +31,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
 inst_trace_t::inst_trace_t() { memadd_info = NULL; }
 
 inst_trace_t::~inst_trace_t() {
-  if (memadd_info != NULL)
-    delete memadd_info;
+  if (memadd_info != NULL) delete memadd_info;
 }
 
 inst_trace_t::inst_trace_t(const inst_trace_t &b) {
@@ -46,8 +44,7 @@ inst_trace_t::inst_trace_t(const inst_trace_t &b) {
 bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,
                                         std::string param) const {
   for (unsigned i = 0; i < opcode.size(); ++i)
-    if (opcode[i] == param)
-      return true;
+    if (opcode[i] == param) return true;
 
   return false;
 }
@@ -57,8 +54,7 @@ std::vector<std::string> inst_trace_t::get_opcode_tokens() const {
   std::vector<std::string> opcode_tokens;
   std::string token;
   while (std::getline(iss, token, '.')) {
-    if (!token.empty())
-      opcode_tokens.push_back(token);
+    if (!token.empty()) opcode_tokens.push_back(token);
   }
   return opcode_tokens;
 }
@@ -76,7 +72,7 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
     }
   }
 
-  return 4; // default is 4 bytes
+  return 4;  // default is 4 bytes
 }
 
 kernel_trace_t::kernel_trace_t() {
@@ -173,7 +169,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
 
   ss >> mem_width;
 
-  if (mem_width > 0) // then it is a memory inst
+  if (mem_width > 0)  // then it is a memory inst
   {
     memadd_info = new inst_memadd_info_t();
 
@@ -222,9 +218,10 @@ trace_parser::trace_parser(const char *kernellist_filepath) {
 }
 
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
-  ifs.open(kernellist_filename);
+  std::ifstream fs;
+  fs.open(kernellist_filename);
 
-  if (!ifs.is_open()) {
+  if (!fs.is_open()) {
     std::cout << "Unable to open file: " << kernellist_filename << std::endl;
     exit(1);
   }
@@ -237,8 +234,8 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 
   std::string line, filepath;
   std::vector<trace_command> commandlist;
-  while (!ifs.eof()) {
-    getline(ifs, line);
+  while (!fs.eof()) {
+    getline(fs, line);
     if (line.empty())
       continue;
     else if (line.substr(0, 10) == "MemcpyHtoD") {
@@ -256,7 +253,7 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
     // ignore gpu_to_cpu_memory_cpy
   }
 
-  ifs.close();
+  fs.close();
   return commandlist;
 }
 
@@ -273,29 +270,30 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss >> std::dec >> count;
 }
 
-kernel_trace_t
-trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
-  ifs.open(kerneltraces_filepath.c_str());
+kernel_trace_t *trace_parser::parse_kernel_info(
+    const std::string &kerneltraces_filepath) {
+  kernel_trace_t *kernel_info = new kernel_trace_t;
+  kernel_info->ifs = new std::ifstream;
+  std::ifstream *ifs = kernel_info->ifs;
+  ifs->open(kerneltraces_filepath.c_str());
 
-  if (!ifs.is_open()) {
+  if (!ifs->is_open()) {
     std::cout << "Unable to open file: " << kerneltraces_filepath << std::endl;
     exit(1);
   }
 
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
 
-  kernel_trace_t kernel_info;
-
   std::string line;
 
-  while (!ifs.eof()) {
-    getline(ifs, line);
+  while (!ifs->eof()) {
+    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
     } else if (line[0] == '#') {
       // the trace format, ignore this and assume fixed format for now
-      break; // the begin of the instruction stream
+      break;  // the begin of the instruction stream
     } else if (line[0] == '-') {
       std::stringstream ss;
       std::string string1, string2;
@@ -306,42 +304,42 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
 
       if (string1 == "kernel" && string2 == "name") {
         const size_t equal_idx = line.find('=');
-        kernel_info.kernel_name = line.substr(equal_idx + 2);
+        kernel_info->kernel_name = line.substr(equal_idx + 2);
       } else if (string1 == "kernel" && string2 == "id") {
-        sscanf(line.c_str(), "-kernel id = %d", &kernel_info.kernel_id);
+        sscanf(line.c_str(), "-kernel id = %d", &kernel_info->kernel_id);
       } else if (string1 == "grid" && string2 == "dim") {
-        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &kernel_info.grid_dim_x,
-               &kernel_info.grid_dim_y, &kernel_info.grid_dim_z);
+        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &kernel_info->grid_dim_x,
+               &kernel_info->grid_dim_y, &kernel_info->grid_dim_z);
       } else if (string1 == "block" && string2 == "dim") {
-        sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &kernel_info.tb_dim_x,
-               &kernel_info.tb_dim_y, &kernel_info.tb_dim_z);
+        sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &kernel_info->tb_dim_x,
+               &kernel_info->tb_dim_y, &kernel_info->tb_dim_z);
       } else if (string1 == "shmem" && string2 == "=") {
-        sscanf(line.c_str(), "-shmem = %d", &kernel_info.shmem);
+        sscanf(line.c_str(), "-shmem = %d", &kernel_info->shmem);
       } else if (string1 == "nregs") {
-        sscanf(line.c_str(), "-nregs = %d", &kernel_info.nregs);
+        sscanf(line.c_str(), "-nregs = %d", &kernel_info->nregs);
       } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %d",
-               &kernel_info.cuda_stream_id);
+        sscanf(line.c_str(), "-cuda stream id = %lu",
+               &kernel_info->cuda_stream_id);
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",
-               &kernel_info.binary_verion);
+               &kernel_info->binary_verion);
       } else if (string1 == "nvbit" && string2 == "version") {
         const size_t equal_idx = line.find('=');
-        kernel_info.nvbit_verion = line.substr(equal_idx + 1);
+        kernel_info->nvbit_verion = line.substr(equal_idx + 1);
 
       } else if (string1 == "accelsim" && string2 == "tracer") {
         sscanf(line.c_str(), "-accelsim tracer version = %d",
-               &kernel_info.trace_verion);
+               &kernel_info->trace_verion);
 
       } else if (string1 == "shmem" && string2 == "base_addr") {
         const size_t equal_idx = line.find('=');
         ss.str(line.substr(equal_idx + 1));
-        ss >> std::hex >> kernel_info.shmem_base_addr;
+        ss >> std::hex >> kernel_info->shmem_base_addr;
 
       } else if (string1 == "local" && string2 == "mem") {
         const size_t equal_idx = line.find('=');
         ss.str(line.substr(equal_idx + 1));
-        ss >> std::hex >> kernel_info.local_base_addr;
+        ss >> std::hex >> kernel_info->local_base_addr;
       }
       std::cout << line << std::endl;
       continue;
@@ -352,14 +350,17 @@ trace_parser::parse_kernel_info(const std::string &kerneltraces_filepath) {
   return kernel_info;
 }
 
-void trace_parser::kernel_finalizer() {
-  if (ifs.is_open())
-    ifs.close();
+void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
+  assert(trace_info);
+  assert(trace_info->ifs);
+  if (trace_info->ifs->is_open()) trace_info->ifs->close();
+  delete trace_info->ifs;
+  delete trace_info;
 }
 
-bool trace_parser::get_next_threadblock_traces(
+void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version) {
+    unsigned trace_version, std::ifstream *ifs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -371,12 +372,12 @@ bool trace_parser::get_next_threadblock_traces(
   unsigned insts_num = 0;
   unsigned inst_count = 0;
 
-  while (!ifs.eof()) {
+  while (!ifs->eof()) {
     std::string line;
     std::stringstream ss;
     std::string string1, string2;
 
-    getline(ifs, line);
+    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
@@ -392,7 +393,7 @@ bool trace_parser::get_next_threadblock_traces(
                  "finishes");
       } else if (string1 == "#END_TB") {
         assert(start_of_tb_stream_found);
-        break; // end of TB stream
+        break;  // end of TB stream
       } else if (string1 == "thread" && string2 == "block") {
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
@@ -406,7 +407,7 @@ bool trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "insts = %d", &insts_num);
         threadblock_traces[warp_id]->resize(
-            insts_num); // allocate all the space at once
+            insts_num);  // allocate all the space at once
         inst_count = 0;
       } else {
         assert(start_of_tb_stream_found);
@@ -417,6 +418,4 @@ bool trace_parser::get_next_threadblock_traces(
       }
     }
   }
-
-  return true;
 }
