@@ -138,6 +138,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     uint32_t cnt = 0;
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
+
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
         cnt++;
         continue;
@@ -155,86 +156,82 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       int opcode_id = opcode_to_id_map[instr->getOpcode()];
 
-      /* insert call to the instrumentation function with its
-       * arguments */
-      nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
-
-      /* pass predicate value */
-      nvbit_add_call_arg_guard_pred_val(instr);
-
-      /* send opcode and pc */
-      nvbit_add_call_arg_const_val32(instr, opcode_id);
-      nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
-
-      /* check all operands. For now, we ignore constant, TEX, predicates and
+      /* check all operands. For now, we ignore constant, TEX, predicates and 
        * unified registers. We only report vector regisers */
       int src_oprd[MAX_SRC];
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
 
-      /* find dst reg and handle the special case if the oprd[0] is mem (e.g.
-       * store and RED)*/
-      if (instr->getNumOperands() > 0 &&
-          instr->getOperand(0)->type == InstrType::OperandType::REG)
-        dst_oprd = instr->getOperand(0)->u.reg.num;
-      else if (instr->getNumOperands() > 0 &&
-               instr->getOperand(0)->type == InstrType::OperandType::MREF) {
-        src_oprd[0] = instr->getOperand(0)->u.mref.ra_num;
-        mem_oper_idx = 0;
-        srcNum++;
-      }
-
-      // find src regs and mem
-      for (int i = 1; i < MAX_SRC; i++) {
-        if (i < instr->getNumOperands()) {
-          const InstrType::operand_t *op = instr->getOperand(i);
-          if (op->type == InstrType::OperandType::MREF) {
-            // mem is found
-            assert(srcNum < MAX_SRC);
-            src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
-            srcNum++;
-            // TO DO: handle LDGSTS with two mem refs
-            assert(mem_oper_idx == -1); // ensure one memory operand per inst
-            mem_oper_idx++;
-          } else if (op->type == InstrType::OperandType::REG) {
-            // reg is found
+      for(int i = 0; i < instr->getNumOperands(); ++i){
+        const InstrType::operand_t *op = instr->getOperand(i);
+        if (op->type == InstrType::OperandType::MREF) {
+          assert(srcNum < MAX_SRC);
+          src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
+          srcNum++;
+          mem_oper_idx++;
+          if(mem_oper_idx == 0){
+            mem_oper_idx = 1; // loop control
+          }
+        }
+        else if (op->type == InstrType::OperandType::REG){
+          if (i == 0){
+            // find dst reg
+            dst_oprd = instr->getOperand(0)->u.reg.num;
+          }
+          else {
+            // find src regs
             assert(srcNum < MAX_SRC);
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           }
-          // skip anything else (constant and predicates)
         }
       }
 
-      /* mem addresses info */
-      if (mem_oper_idx >= 0) {
-        nvbit_add_call_arg_const_val32(instr, 1);
-        nvbit_add_call_arg_mref_addr64(instr, 0);
-        nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
-      } else {
-        nvbit_add_call_arg_const_val32(instr, 0);
-        nvbit_add_call_arg_const_val64(instr, -1);
-        nvbit_add_call_arg_const_val32(instr, -1);
-      }
+      do{
+        mem_oper_idx--;
+        /* insert call to the instrumentation function with its
+        * arguments */
+        nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
 
-      /* reg info */
-      nvbit_add_call_arg_const_val32(instr, dst_oprd);
-      for (int i = 0; i < srcNum; i++) {
-        nvbit_add_call_arg_const_val32(instr, src_oprd[i]);
-      }
-      for (int i = srcNum; i < MAX_SRC; i++) {
-        nvbit_add_call_arg_const_val32(instr, -1);
-      }
-      nvbit_add_call_arg_const_val32(instr, srcNum);
+        /* pass predicate value */
+        nvbit_add_call_arg_guard_pred_val(instr);
 
-      /* add pointer to channel_dev and other counters*/
-      nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
-      nvbit_add_call_arg_const_val64(instr,
-                                     (uint64_t)&total_dynamic_instr_counter);
-      nvbit_add_call_arg_const_val64(instr,
-                                     (uint64_t)&reported_dynamic_instr_counter);
-      nvbit_add_call_arg_const_val64(instr, (uint64_t)&stop_report);
+        /* send opcode and pc */
+        nvbit_add_call_arg_const_val32(instr, opcode_id);
+        nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
+
+        /* mem addresses info */
+        if (mem_oper_idx >= 0) {
+          nvbit_add_call_arg_const_val32(instr, 1);
+          nvbit_add_call_arg_mref_addr64(instr, 1-mem_oper_idx);
+          nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
+        } else {
+          nvbit_add_call_arg_const_val32(instr, 0);
+          nvbit_add_call_arg_const_val64(instr, -1);
+          nvbit_add_call_arg_const_val32(instr, -1);
+        }
+
+        /* reg info */
+        nvbit_add_call_arg_const_val32(instr, dst_oprd);
+        for (int i = 0; i < srcNum; i++) {
+          nvbit_add_call_arg_const_val32(instr, src_oprd[i]);
+        }
+        for (int i = srcNum; i < MAX_SRC; i++) {
+          nvbit_add_call_arg_const_val32(instr, -1);
+        }
+        nvbit_add_call_arg_const_val32(instr, srcNum);
+       
+        /* add pointer to channel_dev and other counters*/
+        nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
+        nvbit_add_call_arg_const_val64(instr,
+                                      (uint64_t)&total_dynamic_instr_counter);
+        nvbit_add_call_arg_const_val64(instr,
+                                      (uint64_t)&reported_dynamic_instr_counter);
+        nvbit_add_call_arg_const_val64(instr, (uint64_t)&stop_report);
+
+      } while (mem_oper_idx > 0);
+
       cnt++;
     }
   }
@@ -262,7 +259,6 @@ unsigned old_total_reported_insts = 0;
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                          const char *name, void *params, CUresult *pStatus) {
-
   if (skip_flag)
     return;
 
@@ -330,7 +326,6 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
 
     if (!is_exit) {
-
       if (active_from_start && dynamic_kernel_limit_start && kernelid == dynamic_kernel_limit_start)
         active_region = true;
 
@@ -564,7 +559,6 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
 
 void *recv_thread_fun(void *) {
   char *recv_buffer = (char *)malloc(CHANNEL_SIZE);
-
   while (recv_thread_started) {
     uint32_t num_recv_bytes = 0;
     if (recv_thread_receiving &&
