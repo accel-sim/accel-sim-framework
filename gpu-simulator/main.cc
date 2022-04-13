@@ -94,11 +94,15 @@ int main(int argc, const char **argv) {
         i++;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
-          kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
-          kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
-          kernels_info.push_back(kernel_info);
-          std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
-          i++;
+        kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
+        kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        kernels_info.push_back(kernel_info);
+        std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
+        i++;
+      }
+      else{
+        //unsupported commands will fail the simulation
+        assert(0 && "Undefined Command");
       }
     }
 
