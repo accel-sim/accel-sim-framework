@@ -83,7 +83,7 @@ int main(int argc, const char **argv) {
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has exceeded
-    //the window_size or there are no more command left in the commandlist to process
+    //the window_size or we have read every command from commandlist
     while (kernels_info.size() < window_size && i < commandlist.size()) {
       trace_kernel_info_t *kernel_info = NULL;
       if (commandlist[i].m_type == command_type::cpu_gpu_mem_copy) {
