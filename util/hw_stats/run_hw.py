@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 # Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
 # Northwestern University, Purdue University, The University of British Columbia
@@ -177,8 +177,8 @@ for bench in benchmarks:
         if not options.norun:
             saved_dir = os.getcwd()
             os.chdir(this_run_dir)
-            print "Running {0}".format(exe)
+            print("Running {0}".format(exe))
 
             if subprocess.call(["bash", "run.sh"]) != 0:
-                print "Error invoking profiler on {0}".format(this_run_dir)
+                print("Error invoking profiler on {0}".format(this_run_dir))
             os.chdir(saved_dir)

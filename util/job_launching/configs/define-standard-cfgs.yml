@@ -62,6 +62,8 @@ PTX:
 # Extra configs - these are composable.
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
+MULTI_KERNEL:
+    extra_params: "-gpgpu_concurrent_kernel_sm 1"
 
 64SM:
     extra_params: "-gpgpu_n_clusters 64"

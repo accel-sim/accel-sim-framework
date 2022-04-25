@@ -95,6 +95,7 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   m_parser = parser;
   m_tconfig = config;
   m_kernel_trace_info = kernel_trace_info;
+  m_was_launched = false;
 
   // resolve the binary version
   if (kernel_trace_info->binary_verion == AMPERE_RTX_BINART_VERSION ||
@@ -119,8 +120,9 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
-  m_parser->get_next_threadblock_traces(
-      threadblock_traces, m_kernel_trace_info->trace_verion);
+  m_parser->get_next_threadblock_traces(threadblock_traces,
+                                        m_kernel_trace_info->trace_verion,
+                                        m_kernel_trace_info->ifs);
 }
 
 types_of_operands get_oprnd_type(op_type op, special_ops sp_op){
@@ -605,7 +607,6 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
-
   for (unsigned t = 0; t < m_warp_size; t++) {
     if (inst.active(t)) {
       unsigned warpId = inst.warp_id();
@@ -615,12 +616,12 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
   }
-  
+
   // here, we generate memory acessess and set the status if thread (done?)
   if (inst.is_load() || inst.is_store()) {
     inst.generate_mem_accesses();
   }
-  
+
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
   if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
