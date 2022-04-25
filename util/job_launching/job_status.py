@@ -311,7 +311,7 @@ for logfile in parsed_logfiles:
                 continue
 
             num_jobs += 1
-            torquefile_base = re.sub(r".*\.([^\s]*-commit.*)", r"\1", jobname)
+            torquefile_base = re.sub(r".*\.([^\s]*-commit-.*-commit-.*)", r"\1", jobname)
             errfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
                 torquefile_base + "." + "e" + jobId)
             outfile = os.path.join(output_dir, os.path.basename(app) + "-" + args + "." + \
