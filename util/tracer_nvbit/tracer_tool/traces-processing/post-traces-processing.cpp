@@ -104,7 +104,7 @@ void group_per_block(const char *filepath) {
   bool found_grid_dim = false, found_block_dim = false;
 
   // Ni: Add a flag for LDGSTS instruction to indicate which one to remove
-  bool LDGSTS_flag = true;  // true to remove, false to not
+  vector<vector<bool>> LDGSTS_flag;  // true to remove, false to not
 
   while (!ifs.eof()) {
     getline(ifs, line);
@@ -130,9 +130,19 @@ void group_per_block(const char *filepath) {
 
       if (found_grid_dim && found_block_dim) {
         insts.resize(grid_dim_x * grid_dim_y * grid_dim_z);
+
+        // Ni: Size the LDGSTS_flag vector
+        LDGSTS_flag.resize(grid_dim_x * grid_dim_y * grid_dim_z);
+
         for (unsigned i = 0; i < insts.size(); ++i) {
           insts[i].warp_insts_array.resize(
               ceil(float(tb_dim_x * tb_dim_y * tb_dim_z) / 32));
+
+          // Ni: Size the LDGSTS_flag vector
+          LDGSTS_flag[i].resize(ceil(float(tb_dim_x * tb_dim_y * tb_dim_z) / 32));
+          for (unsigned j = 0; j < LDGSTS_flag[i].size(); j++) {
+            LDGSTS_flag[i][j] = true;
+          }
         }
       }
       ofs << line << endl;
@@ -156,23 +166,23 @@ void group_per_block(const char *filepath) {
 
       // Ni: ignore the shmem LDGSTS instruction
       stringstream opcode_ss;
-      string opcode, temp, dest_num;
+      string opcode, temp;
+      unsigned dest_num;
       opcode_ss << rest_of_line;
       for (int i = 0; i < 2; i++) {
         opcode_ss >> temp;
       }
       opcode_ss >> dest_num;
-      int dest_num_int = stoi(dest_num);
-      for (int i = 0; i < dest_num_int; i++) {
+      for (unsigned i = 0; i < dest_num; i++) {
         opcode_ss >> temp;
       }
       opcode_ss >> opcode;
 
       if (opcode.find("LDGSTS") != string::npos) {
-        if (!LDGSTS_flag) {
+        if (!LDGSTS_flag[tb_id][warpid_tb]) {
           insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
         }
-        LDGSTS_flag = !LDGSTS_flag;
+        LDGSTS_flag[tb_id][warpid_tb] = !LDGSTS_flag[tb_id][warpid_tb];
       }
       else {
         insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
