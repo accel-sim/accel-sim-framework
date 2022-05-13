@@ -103,6 +103,9 @@ void group_per_block(const char *filepath) {
   string string1, string2;
   bool found_grid_dim = false, found_block_dim = false;
 
+  // Ni: Add a flag for LDGSTS instruction to indicate which one to remove
+  bool LDGSTS_flag = true;  // true to remove, false to not
+
   while (!ifs.eof()) {
     getline(ifs, line);
 
@@ -149,9 +152,31 @@ void group_per_block(const char *filepath) {
 	//ss.ignore(); //remove the space
 	//rest_of_line.clear();
       // getline(ss, rest_of_line); //get rest of the string!
-	string rest_of_line(ss.str().substr(ss.tellg()+1));
+	    string rest_of_line(ss.str().substr(ss.tellg()+1));
 
-      insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
+      // Ni: ignore the shmem LDGSTS instruction
+      stringstream opcode_ss;
+      string opcode, temp, dest_num;
+      opcode_ss << rest_of_line;
+      for (int i = 0; i < 2; i++) {
+        opcode_ss >> temp;
+      }
+      opcode_ss >> dest_num;
+      int dest_num_int = stoi(dest_num);
+      for (int i = 0; i < dest_num_int; i++) {
+        opcode_ss >> temp;
+      }
+      opcode_ss >> opcode;
+
+      if (opcode.find("LDGSTS") != string::npos) {
+        if (!LDGSTS_flag) {
+          insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
+        }
+        LDGSTS_flag = !LDGSTS_flag;
+      }
+      else {
+        insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
+      }
     }
   }
 
