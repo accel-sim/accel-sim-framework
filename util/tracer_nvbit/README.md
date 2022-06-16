@@ -7,7 +7,7 @@
     # compile the tools
     ./make
     ```
-* To generate traces for benchamrk suite, run the following command:
+* To generate traces for benchamark suite, run the following command:
     ```bash
     # example: to run the tracer on hardware device 0 for rodinia workloads
     ./run_hw_trace.py -B rodinia-3.1 -D 0
@@ -66,6 +66,7 @@
     ```
 
 * Adding line numbers from source code:
+
     This feature can be used to see which SASS instructions where generated from which lines of kernel source code. By default it is disabled.
     To enable source code line numbers to the tracer compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags. Then set the following environment variable:
     ```bash
