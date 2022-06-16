@@ -68,9 +68,13 @@
 * Adding line numbers from source code:
 
     This feature can be used to see which SASS instructions were generated from which lines of kernel source code. By default it is disabled.
-    To enable source code line numbers compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags. Then set the following environment variable:
+    To enable source code line numbers compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags and set the `TRACE_LINEINFO=1`. For example:
     ```bash
     export TRACE_LINEINFO=1
+
+    # Rebuild application suite, the above flag will turn on the nvcc -lineinfo flag for you
+    source ./gpu-app-collection/src/setup_environment  
+    make -j -C ./gpu-app-collection/src rodinia_2.0-ft  
     ```
 
 * Traces format:
