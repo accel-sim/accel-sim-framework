@@ -67,8 +67,8 @@
 
 * Adding line numbers from source code:
 
-    This feature can be used to see which SASS instructions where generated from which lines of kernel source code. By default it is disabled.
-    To enable source code line numbers to the tracer compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags. Then set the following environment variable:
+    This feature can be used to see which SASS instructions were generated from which lines of kernel source code. By default it is disabled.
+    To enable source code line numbers compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags. Then set the following environment variable:
     ```bash
     export TRACE_LINEINFO=1
     ```
