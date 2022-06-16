@@ -60,9 +60,16 @@
     ```
     In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Ids you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels. 
 
-    As an alternative to the method described above, you can wrap the region you want to trace with `cudaProfileStart()` and `cudaProfilerStop()` calls then set the following environment variable to trace only within that region. Note: setting `ACTIVE_FROM_START` to zero disables the effects of the `DYNAMIC_KERNEL_LIMIT_START/STOP` variables.
+    As an alternative to the method described above, you can wrap the region you want to trace with `cudaProfilerStart()` and `cudaProfilerStop()` calls then set the following environment variable to trace only within that region. Note: setting `ACTIVE_FROM_START` to zero disables the effects of the `DYNAMIC_KERNEL_LIMIT_START/STOP` variables.
     ```bash
     export ACTIVE_FROM_START=0
+    ```
+
+* Adding line numbers from source code:
+    This feature can be used to see which SASS instructions where generated from which lines of kernel source code. By default it is disabled.
+    To enable source code line numbers to the tracer compile your target benchmark applications with `-lineinfo` or `--generate-line-info` nvcc flags. Then set the following environment variable:
+    ```bash
+    export TRACE_LINEINFO=1
     ```
 
 * Traces format:
@@ -70,7 +77,7 @@
     The instruction format contains the following columns. Any column that is NOT contained in brackets [] must exist in any instruction format, so any instruction should have at least 10 column entries as reported below. 
     
     ```bash
-    #traces format = threadblock_x threadblock_y threadblock_z warpid_tb PC mask dest_num [reg_dests] opcode src_num [reg_srcs] mem_width [adrrescompress?] [mem_addresses]
+    #traces format = [line_num] PC mask dest_num [reg_dests] opcode src_num [reg_srcs] mem_width [adrrescompress?] [mem_addresses]
     ```
     
     The other columns that are in brackets [] may or may not exist based on the instruction characteristics, for example:
