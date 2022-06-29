@@ -103,7 +103,8 @@ for bench in benchmarks:
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
 	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
+            "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") +\
+            " " + "; LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
             exec_path + " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 
