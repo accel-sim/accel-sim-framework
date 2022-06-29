@@ -79,7 +79,7 @@ for bench in benchmarks:
         if args == None:
             args = ""
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
-        sh_contents = ""
+        sh_contents = "set -e\n"
 
         if options.terminate_upon_limit:
             sh_contents += "export TERMINATE_UPON_LIMIT=1; "
@@ -116,6 +116,6 @@ for bench in benchmarks:
             os.chdir(this_run_dir)
             print("Running {0}".format(exe))
 
-            if subprocess.call(["bash", "run.sh"]) != 0:
-                print("Error invoking nvbit on {0}".format(this_run_dir))
+            if subprocess.call(["bash","run.sh"]) != 0:
+                sys.exit("Error invoking nvbit on {0}".format(this_run_dir))
             os.chdir(saved_dir)
