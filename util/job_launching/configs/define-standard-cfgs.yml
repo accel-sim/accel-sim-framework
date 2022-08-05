@@ -12,7 +12,7 @@ TITANK:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM3_KEPLER_TITAN/gpgpusim.config"
 
 #Jetson Orin Developer Kit (Ampere)
-RTX3070:
+ORIN:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM87_ORIN/gpgpusim.config"
 
 #Ampere RTX 3070

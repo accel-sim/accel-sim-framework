@@ -12,6 +12,7 @@ config_maps = \
     "QV100" : set(["TITAN V", "Quadro GV100","Tesla V100-SXM2-32GB"]),
     "RTX2060" : set("GeForce RTX 2060"),
     "RTX3070" : set("GeForce RTX 3070"),
+    "ORIN" : set("Orin"),
 }
 
 
