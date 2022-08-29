@@ -21,6 +21,7 @@ extern "C" __device__ __noinline__ void instrument_inst(
     int pred, int opcode_id, int32_t vpc, bool is_mem, uint64_t addr,
     int32_t width, int32_t desReg, int32_t srcReg1, int32_t srcReg2,
     int32_t srcReg3, int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
+    uint64_t immediate,
     uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
     uint64_t preported_dynamic_instr_counter, uint64_t pstop_report) {
 
@@ -67,6 +68,7 @@ extern "C" __device__ __noinline__ void instrument_inst(
   ma.GPRSrcs[3] = srcReg4;
   ma.GPRSrcs[4] = srcReg5;
   ma.numSrcs = srcNum;
+  ma.imm = immediate;
   ma.active_mask = active_mask;
   ma.predicate_mask = predicate_mask;
   ma.sm_id = get_smid();

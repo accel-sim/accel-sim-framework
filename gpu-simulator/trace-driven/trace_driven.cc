@@ -374,6 +374,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     // Ni: Add for depbar
     case OP_DEPBAR:
       m_is_depbar = true;
+      m_depbar_group_no = trace.imm;
       break;
     case OP_HADD2:
     case OP_HADD2_32I:

@@ -28,5 +28,5 @@ typedef struct {
   int32_t width;
   uint32_t active_mask;
   uint32_t predicate_mask;
-
+  uint64_t imm;
 } inst_trace_t;

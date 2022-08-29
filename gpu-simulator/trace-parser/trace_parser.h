@@ -56,6 +56,8 @@ struct inst_trace_t {
   std::string opcode;
   unsigned reg_srcs_num;
   unsigned reg_src[MAX_SRC];
+  uint64_t imm;
+
   inst_memadd_info_t *memadd_info;
 
   bool parse_from_string(std::string trace, unsigned tracer_version);
