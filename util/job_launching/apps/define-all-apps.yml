@@ -775,3 +775,11 @@ mlperf_inference_no_external_datasets:
         - inference_mlperf_ssd:
             - args:
               accel-sim-mem: 60G
+
+Deepbench_nvidia_gemm_Ni:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - gemm_bench:
+            - args: inference half 512 3000 1536 0 0
+              accel-sim-mem: 7G
