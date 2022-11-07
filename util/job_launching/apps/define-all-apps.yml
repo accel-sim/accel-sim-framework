@@ -312,6 +312,16 @@
 #             - 100
 #         - TENSOR:
 #             - 10
+vulkan:
+    exec_dir: "$HOME/test/"
+    data_dirs: "$HOME/test/"
+    execs:
+        - instancing:
+            - args:
+        - render_passes:
+            - args:
+        - klt_tracker:
+            - args: "cam0"
 l1d-microbench:
     exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
     data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"
@@ -319,6 +329,8 @@ l1d-microbench:
         - l1d:
             - args:
         - im:
+            - args:
+        - qr.o:
             - args:
 rodinia_2.0-ft:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"

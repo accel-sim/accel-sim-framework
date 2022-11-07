@@ -294,6 +294,13 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       initiation_interval =
           initiation_interval / 2;  // FP16 has 2X throughput than FP32
       break;
+    case OP_TEX:
+      assert(data_size > 0);
+      memory_op = memory_load;
+      mem_op = TEX;
+      cache_op = CACHE_ALL;
+      space.set_type(tex_space);
+      break;
     default:
       break;
   }

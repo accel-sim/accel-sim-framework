@@ -185,3 +185,45 @@ FCFS:
 # Experimental - for SM 60 PTXplus support
 PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
+
+DRAM:
+    extra_params: "-gpgpu_dram_buswidth 2 -gpgpu_dram_burst_length 32"
+DRAMTIMING:
+    extra_params: "-gpgpu_dram_timing_opt nbk=16:CCD=1:RRD=6:RCD=19:RAS=43:RP=19:RC=62:CL=19:WL=3:CDLR=4:WR=16:nbkgrp=4:CCDL=3:RTPL=6 -dram_dual_bus_interface 1"
+DUALBUS:
+    extra_params: "-dram_dual_bus_interface 1"
+SIMPLEDRAM:
+    extra_params: "-gpgpu_simple_dram_model 1"
+latency:
+    extra_params: "-gpgpu_kernel_launch_latency 5000"
+BUS4:
+    extra_params: "-gpgpu_dram_buswidth 4"
+TEST:
+    extra_params: "#TEST"
+reg4:
+    extra_params: "-gpgpu_reg_file_port_throughput 4"
+regbank16:
+    extra_params: "-gpgpu_num_reg_banks 16"
+regbank32:
+    extra_params: "-gpgpu_num_reg_banks 32"
+l1bank8:
+    extra_params: "-gpgpu_l1_banks 8"
+l1bank16:
+    extra_params: "-gpgpu_l1_banks 16"
+mem2600:
+    extra_params: "-gpgpu_clock_domains 1300:1300:1300:2600"
+mem16:
+    extra_params: "-gpgpu_n_mem 16"
+DRAMTIMING:
+    extra_params: "-gpgpu_dram_timing_opt nbk=16:CCD=16:RRD=5:RCD=22:RAS=21:RP=22:RC=29:CL=22:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
+memport4:
+    extra_params: "-gpgpu_mem_unit_ports 4"
+l2:
+    extra_params: "-gpgpu_cache:dl2 S:16:128:128,L:B:m:L:X,A:192:4,32:0,32"
+# compare these with mem16 (default one for now)
+sub1:
+    extra_params: "-gpgpu_n_sub_partition_per_mchannel 1"
+mem8:
+    extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4"
+mem8b8:
+    extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4 -gpgpu_dram_timing_opt nbk=8:CCD=16:RRD=5:RCD=9:RAS=21:RP=9:RC=29:CL=9:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
