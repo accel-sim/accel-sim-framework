@@ -1,7 +1,7 @@
 #! /usr/bin/python3
 import os
 
-file = "/home/tgrogers-raid/a/pan251/test/traces/traces.traceg"
+file = "/home/pan251/Vulkan-Samples/traces.traceg"
 folder = "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
 
 trace = open(file, 'r')
@@ -14,11 +14,16 @@ block_dim = 2
 big_str=[]
 counter = 0
 
+file = folder + "kernelslist.g"
+os.system("mkdir -p " + folder)
+infof = open(file, "w")
 warp_range.append(0)
 for line in lines:
     if 'graphics kernel end:' in line:
         warp_range.append(max_warp+1)
         kernel_name.append(line.split(': ')[1].replace("\n", ""))
+        continue
+    if 'MemcpyHtoD' in line:
         continue
     substr = line.split(', ')
     assert(len(substr) == 2)
@@ -26,10 +31,6 @@ for line in lines:
     inst = substr[1]
     if warp_id > max_warp:
         max_warp = warp_id
-
-file = folder + "kernelslist.g"
-os.system("mkdir -p " + folder)
-infof = open(file, "w")
 
 block_id = 0
 for dumb in range(0,max_warp+1):
@@ -40,6 +41,9 @@ for dumb in range(0,max_warp+1):
 # start parsing!
 index_k = 0
 for line in lines:
+    if 'MemcpyHtoD' in line:
+        infof.write(line)
+        continue
     if 'graphics kernel end:' in line:
         file = folder + "kernel-" + kernel_name[index_k] + "_" + str(counter) + ".traceg"
         infof.write("kernel-" + kernel_name[index_k] + "_" + str(counter) + ".traceg\n")
