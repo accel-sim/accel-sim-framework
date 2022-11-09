@@ -18,3 +18,4 @@ For more information about the major changes and new features in GPGPU-Sim 4.x, 
 
 For more information about GPGPU-Sim, see the [original GPGPU-Sim manual](http://gpgpu-sim.org/manual/index.php/Main_Page).
 
+The GPGPU-SIM 4.x integrated with Accel-Sim includes AccelWattch. For more information on AccelWattch, please see [AccelWattch Overview](https://github.com/VijayKandiah/accel-sim-framework#accelwattch-overview) entry in the main read-me page and the [AccelWattch MICRO'21 Artifact Manual](https://github.com/VijayKandiah/accel-sim-framework/blob/release/AccelWattch.md).

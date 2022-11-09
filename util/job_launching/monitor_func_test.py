@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from optparse import OptionParser
 import re
@@ -37,21 +37,21 @@ def kill_all_running_jobs(jobstatus_out_filename):
                     app = tokens[appCol].strip()
                     appArgs = tokens[appArgsCol].strip()
                     nodeName = tokens[nodeCol].strip()
-                    print "Calling qdel {0}: {1}/{2} ({3})".format(torqueID, app, appArgs, nodeName)
+                    print("Calling qdel {0}: {1}/{2} ({3})".format(torqueID, app, appArgs, nodeName))
                     if subprocess.call( ["qdel" , torqueID] ) != 0:
-                        print "WARNING error calling qdel"
-    print "Sleeping 30s to wait for the file system to calm down"
+                        print("WARNING error calling qdel")
+    print("Sleeping 30s to wait for the file system to calm down")
     time.sleep(30)
     jobstatus_out_file.close()
 
 def print_statsfile(options, this_directory):
     get_stats_out_file = open(options.statsfile, 'w+')
-    print "Calling get_stats.py"
+    print("Calling get_stats.py")
     if subprocess.call([os.path.join(this_directory, "get_stats.py") ,"-R" ,"-l", options.logfile, "-N", options.sim_name, "-A"],
         stdout=get_stats_out_file, stderr=get_stats_out_file) != 0:
-        print "Error Launching get_stats.py"
+        print("Error Launching get_stats.py")
     get_stats_out_file.seek(0)
-    print get_stats_out_file.read()
+    print(get_stats_out_file.read())
     get_stats_out_file.close()
 
 def handle_exit(jobstatus_out_filename):
@@ -117,14 +117,14 @@ failed_job_file = ""
 while True:
     jobstatus_out_file = open(jobstatus_out_filename, 'w+')
     if options.verbose:
-        print "Calling job_status.py"
+        print("Calling job_status.py")
     if subprocess.call([os.path.join(this_directory, "job_status.py"),\
             "-l", options.logfile, \
             "-N", options.sim_name, \
             "-j", job_manager],\
             stdout=jobstatus_out_file, stderr=jobstatus_out_file) != 0:
         jobstatus_out_file.seek(0)
-        print jobstatus_out_file.read()
+        print(jobstatus_out_file.read())
         exit("Error Launching job_status.py")
     else:
         jobstatus_out_file.seek(0)
@@ -136,7 +136,7 @@ while True:
         num_no_err = 0
         for line in jobstatus_out_file.readlines():
             if options.verbose:
-                print line.strip()
+                print(line.strip())
             if jobStatusCol == None:
                 jobStatusCol = getColId("(.*)JobStatus.*", line)
             else:
@@ -160,27 +160,27 @@ while True:
         jobstatus_out_file.close()
     
     total = num_passed + num_running + num_waiting + num_error + num_no_err
-    print "Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Running:{4}/{1}, Waiting:{5}/{1}"\
-        .format(num_passed, total, num_no_err, num_error, num_running, num_waiting)
+    print("Passed:{0}/{1}, No error:{2}/{1}, Failed/Error:{3}/{1}, Running:{4}/{1}, Waiting:{5}/{1}"\
+        .format(num_passed, total, num_no_err, num_error, num_running, num_waiting))
     if num_error > 0:
-        print "Contents {0}:".format(failed_job_file)
+        print("Contents {0}:".format(failed_job_file))
         if options.verbose and os.path.exists(failed_job_file):
-            print open(failed_job_file).read()
+            print(open(failed_job_file).read())
 
     if num_running + num_waiting == 0:
-        print "All {0} Tests Done.".format(total)
+        print("All {0} Tests Done.".format(total))
         if num_error == 0:
-            print "Congratulations! All Tests Pass!"
+            print("Congratulations! All Tests Pass!")
         else:
-            print "Something did not pass."
+            print("Something did not pass.")
 
         handle_exit(jobstatus_out_filename)
     else:
-        print "Sleeping for {0}s".format(options.sleep_time)
+        print("Sleeping for {0}s".format(options.sleep_time))
         time.sleep(int(options.sleep_time))
         options.timeout -= float(options.sleep_time)
         if options.timeout <= 0:
-            print "Monitor has timed-out"
+            print("Monitor has timed-out")
             if options.killwhentimedout:
                 kill_all_running_jobs(jobstatus_out_filename)
             handle_exit(jobstatus_out_filename)

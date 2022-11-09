@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python3
 
 from __future__ import print_function
 from optparse import OptionParser
@@ -59,12 +59,12 @@ def getAppData(kernels, x, y, xaxis_title, correlmap):
     # For rates, take the average across all the kernels in the app
     if correlmap.stattype == "rate":
         new_map = {}
-        for k,v in app_map.iteritems():
+        for k,v in app_map.items():
             x1,y1,numk = v
             new_map[k] = (x1 / numk, y1 / numk, numk)
         app_map = new_map
 
-    for k,v in app_map.iteritems():
+    for k,v in app_map.items():
         apps.append(k)
         x1,y1,numk = v
         newx.append(x1)
@@ -481,7 +481,7 @@ def get_sim_csv_data(filepath, logger):
                     count += 1
     for stat in stats_missing:
         appargs, num, current_stat = stat
-        for cfg in all_kerns.iterkeys():
+        for cfg in all_kerns.keys():
             del all_kerns[cfg][appargs][num][current_stat]
     return all_kerns
 
@@ -615,18 +615,18 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
 
 def summarize_hw_data(hw_data, logger):
     print("-----------------------------------------------------------------")
-    for device,appargslist in hw_data.iteritems():
+    for device,appargslist in hw_data.items():
         print("All Card Summary:")
         print("HW Summary for {0} [Contains {1} Apps]:"
             .format(device,len(appargslist)))
     print("----------------------------------------------------------------\n\n")
     
     # Print HW data summary
-    for device,appargslist in hw_data.iteritems():
+    for device,appargslist in hw_data.items():
         logger.logchan("-----------------------------------------------------------------","hwsummary")
         logger.logchan("HW Summary for {0} [Contains {1} Apps]:"
             .format(device,len(appargslist)), "hwsummary")
-        for appargs,kdata in appargslist.iteritems():
+        for appargs,kdata in appargslist.items():
             logger.logchan("\t{0}:".format(appargs), "hwsummary")
             logger.logchan("\t\tContatins {0} kernels:".format(len(kdata)), "hwsummary")
     
@@ -764,13 +764,13 @@ sim_data = get_sim_csv_data(options.csv_file, logger)
 exec(open(options.data_mappings,'r').read())
 
 fig_data = {} # map of HW config to a list of scatters
-for cfg,sim_for_cfg in sim_data.iteritems():
+for cfg,sim_for_cfg in sim_data.items():
     if cfg.split('-')[0] not in config_maps:
         logger.log("cfg {0} not in config_maps:{1}.".format(cfg, config_maps))
         continue
 
     hw_cfg = None
-    for device in hw_data.iterkeys():
+    for device in hw_data.keys():
         logger.log("Testing hw_cfg={0}".format(device))
         logger.log("\tcfg={0}, config_maps={1}".format(cfg,config_maps))
 
@@ -805,14 +805,14 @@ for cfg,sim_for_cfg in sim_data.iteritems():
         num_under = 0
         num_over = 0
         errs = []
-        sim_appargs_leftover = set(copy.deepcopy(sim_for_cfg.keys()))
-        hw_appargs_leftover = set(copy.deepcopy(hw_data[hw_cfg].keys()))
+        sim_appargs_leftover = set(copy.deepcopy(list(sim_for_cfg.keys())))
+        hw_appargs_leftover = set(copy.deepcopy(list(hw_data[hw_cfg].keys())))
         max_axis_val = 0.0
         min_axis_val = 99999999999999999999999999999.9
         err_dropped_stats = 0
         hw_low_drop_stats = 0
         apps_included = {}
-        for appargs,sim_klist in sim_for_cfg.iteritems():
+        for appargs,sim_klist in sim_for_cfg.items():
             if appargs in hw_data[hw_cfg]:
                 if (isAppBanned( appargs, blacklist )):
                     continue
@@ -980,6 +980,6 @@ for cfg,sim_for_cfg in sim_data.iteritems():
 
 
 correl_outdir = os.path.join(this_directory, "correl-html", hw_cfg + "-" + dt.now().strftime('%Y%m%d-%H%M'))
-for (plotfile,hw_cfg), traces in fig_data.iteritems():
+for (plotfile,hw_cfg), traces in fig_data.items():
     make_submission_quality_image(options.image_type, traces, hw_cfg)
 print("Output Available at: file://{0}".format(correl_outdir))
