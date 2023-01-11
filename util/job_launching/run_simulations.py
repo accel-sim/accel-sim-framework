@@ -46,8 +46,8 @@ import common
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
-def extract_version( exec_path ):
-    if options.trace_dir == "":
+def extract_version( exec_path, simulator):
+    if simulator == "gpgpusim":
         regex_base = "gpgpu-sim_git-commit"
     else:
         regex_base = "accelsim-commit"
@@ -356,7 +356,11 @@ else:
     this_directory )
     simulator_path = os.path.join( options.simulator_dir, "accel-sim.out" )
 
-version_string = extract_version( simulator_path )
+if options.trace_dir == "":
+    version_string = extract_version( simulator_path, "gpgpusim")
+else:
+    gpgpusim_path = os.path.join( os.getenv("GPGPUSIM_ROOT"), "lib", os.getenv("GPGPUSIM_CONFIG"), "libcudart.so")
+    version_string = extract_version(simulator_path, "accelsim") + extract_version(gpgpusim_path, "gpgpusim")
 running_sim_dir = os.path.join( options.run_directory, "gpgpu-sim-builds", version_string )
 if not os.path.exists( running_sim_dir ):
     # In the very rare case that concurrent builds try to make the directory at the same time
