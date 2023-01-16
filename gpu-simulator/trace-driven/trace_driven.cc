@@ -162,6 +162,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // fill and initialize common params
   m_decoded = true;
   pc = (address_type)trace.m_pc;
+  m_kernel_uid = kernel_trace_info->kernel_id;
 
   isize =
       16;  // starting from MAXWELL isize=16 bytes (including the control bytes)
