@@ -97,7 +97,7 @@ int main(int argc, const char **argv) {
         kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
         kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
         kernels_info.push_back(kernel_info);
-        m_gpgpu_sim->update_cache_stats_size(kernel_info->get_uid());
+        m_gpgpu_sim->update_stats_size(kernel_info->get_uid());
         std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
         i++;
       }
@@ -162,8 +162,8 @@ int main(int argc, const char **argv) {
             }
           }
           tracer.kernel_finalizer(k->get_trace_info());
-          delete k->entry();
-          delete k;
+          // delete k->entry();
+          // delete k;
           kernels_info.erase(kernels_info.begin()+j);
           if (!m_gpgpu_sim->cycle_insn_cta_max_hit() && m_gpgpu_sim->active())
             break;
