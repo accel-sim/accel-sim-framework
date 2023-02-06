@@ -74,7 +74,7 @@ class trace_warp_inst_t : public warp_inst_t {
       const inst_trace_t &trace,
       const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
       const class trace_config *tconfig,
-      const class kernel_trace_t *kernel_trace_info);
+      const class kernel_trace_t *kernel_trace_info, unsigned kernel_id);
 
  private:
   unsigned m_opcode;

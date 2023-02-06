@@ -322,6 +322,10 @@ vulkan:
             - args:
         - klt_tracker:
             - args: "cam0"
+        - concurrent:
+            - args:
+        - render_passes_mip_srgb:
+            - args:
 l1d-microbench:
     exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
     data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"

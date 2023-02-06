@@ -66,6 +66,16 @@ PTX:
 # Extra configs - these are composable.
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
+# -gpgpu_cache:dl1 S:4:128:384,L:T:m:L:L,A:384:48,16:0,32
+no_L1L2_wr:
+    extra_params: "-gpgpu_cache:dl1 S:4:128:384,L:L:m:N:L,A:384:48,16:0,32\n
+                    -gpgpu_cache:dl2 S:128:128:16,L:B:m:N:X,A:192:4,32:0,32"
+no_L1_wr:
+    extra_params: "-gpgpu_cache:dl1 S:4:128:384,L:L:m:N:L,A:384:48,16:0,32"
+no_L2_wr:
+    extra_params: "-gpgpu_cache:dl2 S:128:128:16,L:B:m:N:X,A:192:4,32:0,32"
+bypassl1:
+    extra_params: "-gpgpu_gmem_skip_L1D 1"
 test:
     extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:1024:8,16:0,32"
 lazyfetch:
@@ -92,7 +102,8 @@ ONMISS:
     extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:512:8,16:0,32"
 MULTI_KERNEL:
     extra_params: "-gpgpu_concurrent_kernel_sm 1"
-
+concurrent:
+    extra_params: "-gpgpu_concurrent_kernel_sm 1 -gpgpu_max_concurrent_kernel 64"
 multiport:
     extra_params: "-gpgpu_mem_unit_ports 4"
 singlebank:
@@ -258,3 +269,5 @@ mem8:
     extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4"
 mem8b8:
     extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4 -gpgpu_dram_timing_opt nbk=8:CCD=16:RRD=5:RCD=9:RAS=21:RP=9:RC=29:CL=9:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
+14SM:
+    extra_params: "-gpgpu_n_clusters 14"

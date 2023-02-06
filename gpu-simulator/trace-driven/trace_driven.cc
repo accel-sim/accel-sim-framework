@@ -60,7 +60,8 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
         new trace_warp_inst_t(get_shader()->get_config());
     new_inst->parse_from_trace_struct(
         warp_traces[trace_pc], m_kernel_info->OpcodeMap,
-        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
+        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info,
+        m_kernel_info->get_uid());
     trace_pc++;
     return new_inst;
   } else
@@ -152,7 +153,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     const inst_trace_t &trace,
     const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
     const class trace_config *tconfig,
-    const class kernel_trace_t *kernel_trace_info) {
+    const class kernel_trace_t *kernel_trace_info, unsigned kernel_id) {
   // fill the inst_t and warp_inst_t params
 
   // fill active mask
@@ -162,7 +163,14 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // fill and initialize common params
   m_decoded = true;
   pc = (address_type)trace.m_pc;
-  m_kernel_uid = kernel_trace_info->kernel_id;
+  m_kernel_uid = kernel_id;
+
+  if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos) {
+    m_is_vertex = true;
+  } else if (kernel_trace_info->kernel_name.find("FRAGMENT") !=
+             std::string::npos) {
+    m_is_fragment = true;
+  }
 
   isize =
       16;  // starting from MAXWELL isize=16 bytes (including the control bytes)

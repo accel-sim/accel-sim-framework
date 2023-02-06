@@ -80,6 +80,9 @@ int main(int argc, const char **argv) {
   kernels_info.reserve(window_size);
 
   unsigned i = 0;
+  unsigned last_launched_graphics = -1;
+  std::vector<unsigned long> kernel_vb_addr;
+  std::vector<unsigned long> kernel_vb_size;
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has reached
@@ -91,11 +94,31 @@ int main(int argc, const char **argv) {
         tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount);
         std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
         m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
+        kernel_vb_addr.push_back(addre);
+        kernel_vb_size.push_back(Bcount);
         i++;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
         kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
         kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        if (kernel_info->is_graphic_kernel) {
+          unsigned kernel_id = kernel_info->get_uid();
+          kernel_info->prerequisite_kernel = last_launched_graphics;
+          last_launched_graphics = kernel_id;
+
+          for (auto vb = kernel_vb_size.begin(); vb != kernel_vb_size.end();
+               vb++) {
+            *vb = *vb / kernel_info->num_blocks();
+          }
+          // save kernel info
+          m_gpgpu_sim->vb_addr[kernel_id] = kernel_vb_addr;
+          m_gpgpu_sim->vb_size_per_cta[kernel_id] = kernel_vb_size;
+          // clear buffers for next kernel
+          kernel_vb_addr.clear();
+          kernel_vb_size.clear();
+        } else {
+          kernel_info->prerequisite_kernel = -1;
+        }
         kernels_info.push_back(kernel_info);
         m_gpgpu_sim->update_stats_size(kernel_info->get_uid());
         std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
@@ -212,6 +235,10 @@ trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
   trace_kernel_info_t *kernel_info =
       new trace_kernel_info_t(gridDim, blockDim, function_info,
     		  parser, config, kernel_trace_info);
+  if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos ||
+      kernel_trace_info->kernel_name.find("FRAG") != std::string::npos) {
+    kernel_info->is_graphic_kernel = true;
+  }
 
   return kernel_info;
 }

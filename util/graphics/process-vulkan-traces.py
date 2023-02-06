@@ -1,8 +1,9 @@
 #! /usr/bin/python3
 import os
 
+cwd = os.getcwd() + "/"
 file = "/home/pan251/Vulkan-Samples/traces.traceg"
-folder = "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
+folder = cwd + "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
 
 trace = open(file, 'r')
 lines = trace.readlines()
@@ -10,7 +11,6 @@ warp_range = []
 max_warp = 0
 total = []
 kernel_name = []
-block_dim = 2
 big_str=[]
 counter = 0
 
@@ -24,6 +24,8 @@ for line in lines:
         kernel_name.append(line.split(': ')[1].replace("\n", ""))
         continue
     if 'MemcpyHtoD' in line:
+        continue
+    if 'block_dim' in line:
         continue
     substr = line.split(', ')
     assert(len(substr) == 2)
@@ -40,9 +42,14 @@ for dumb in range(0,max_warp+1):
 
 # start parsing!
 index_k = 0
+block_dim = -1
 for line in lines:
-    if 'MemcpyHtoD' in line:
+    if 'Memcpy' in line:
         infof.write(line)
+        continue
+    if 'block_dim' in line:
+        block_dim = int(line.split(', ')[1])
+        warp_per_block = block_dim / 32
         continue
     if 'graphics kernel end:' in line:
         file = folder + "kernel-" + kernel_name[index_k] + "_" + str(counter) + ".traceg"
@@ -54,14 +61,15 @@ for line in lines:
         # write kernel info
         f.write("-kernel name = " + kernel_name[index_k] + "\n")
         f.write("-kernel id = " + str(index_k) + "\n")
-        f.write("-grid dim = (" + str(int((warp_range[index_k+1]-warp_range[index_k])/2)) + ",1,1)\n")
-        f.write("-block dim = (64,1,1)\n")
+        f.write("-grid dim = (" + str(int((warp_range[index_k+1]-warp_range[index_k])/warp_per_block)) + ",1,1)\n")
+        f.write("-block dim = (" + str(block_dim) + ",1,1)\n")
         f.write("-shmem = 0\n")
-        f.write("-nregs = /*UPDATE_ME*/\n")
+        f.write("-nregs = 16\n")
+        # f.write("-nregs = /*UPDATE_ME*/\n")
         f.write("-binary version = 80\n")
         f.write("-cuda stream id = " + str(index_k) + "\n")
         f.write("-shmem base_addr = 0xffffffff\n")
-        f.write("-local mem base_addr = 0xc0000000\n")
+        f.write("-local mem base_addr = 0xffffffff\n")
         f.write("-nvbit version = 1.5.3\n")
         f.write("-accelsim tracer version = 3\n")
         f.write("#traces format = threadblock_x threadblock_y threadblock_z warpid_tb PC mask dest_num [reg_dests] opcode src_num [reg_srcs] mem_width [adrrescompress?] [mem_addresses]\n")
@@ -69,14 +77,14 @@ for line in lines:
         warp_count = 0
         # 17325
         for warp_id in range(warp_range[index_k],warp_range[index_k+1]):
-            if warp_count % block_dim == 0 or warp_count == 0:
+            if warp_count % warp_per_block == 0 or warp_count == 0:
                 f.write("\n#BEGIN_TB\n\n")
-                f.write("thread block = " + str(int((warp_id-warp_range[index_k])/block_dim)) + ",0,0\n")
+                f.write("thread block = " + str(int((warp_id-warp_range[index_k])/warp_per_block)) + ",0,0\n")
             f.write("\nwarp = " + str(warp_count) + "\n")
             f.write("insts = " + str(len(big_str[warp_id])) + "\n")
             for inst in big_str[warp_id]:
                 f.write(inst)
-            if warp_count % block_dim == 1:
+            if warp_count % block_dim == (warp_per_block - 1):
                 f.write("\n#END_TB\n\n")
                 warp_count = 0
             else:
@@ -92,3 +100,9 @@ for line in lines:
 
 # make sure we printed all kernel
 assert(index_k == len(kernel_name))
+
+# upload stats
+os.system("rsync -a ../../hw_run/traces/vulkan " + \
+          " tgrogers-raid.ecn.purdue.edu:/home/tgrogers-raid/a/pan251/accel-sim-framework/hw_run/traces/vulkan")
+os.system("rsync -a ../../hw_run/traces/vulkan " + \
+          " tgrogers-pc02.ecn.purdue.edu:/home/pan251/accel-sim-framework/hw_run/traces/vulkan")
