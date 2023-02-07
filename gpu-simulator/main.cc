@@ -98,24 +98,25 @@ int main(int argc, const char **argv) {
         std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
         i++;
       }
-      
-      // Launch all kernels within window that are on a stream that isn't already running
-      for (auto k : kernels_info) {
-        bool stream_busy = false;
-        for (auto s: busy_streams) {
-          if (s == k->get_cuda_stream_id())
-            stream_busy = true;
-        }
-        if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
-          std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << " cuda_stream_id: " << k->get_cuda_stream_id() << std::endl;
-          m_gpgpu_sim->launch(k);
-          k->set_launched();
-          busy_streams.push_back(k->get_cuda_stream_id());
-        }
-      }
     }
     else if (kernels_info.empty())
     	assert(0 && "Undefined Command");
+
+    // This code can't be part of the populating kernels_info because multi-stream applications may launch kernels in non-monotonically increasing order
+    // Launch all kernels within window that are on a stream that isn't already running
+    for (auto k : kernels_info) {
+      bool stream_busy = false;
+      for (auto s: busy_streams) {
+        if (s == k->get_cuda_stream_id())
+          stream_busy = true;
+      }
+      if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
+        std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << " cuda_stream_id: " << k->get_cuda_stream_id() << std::endl;
+        m_gpgpu_sim->launch(k);
+        k->set_launched();
+        busy_streams.push_back(k->get_cuda_stream_id());
+      }
+    }
 
     bool active = false;
     bool sim_cycles = false;
