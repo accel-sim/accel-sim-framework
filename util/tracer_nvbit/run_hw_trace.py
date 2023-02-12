@@ -79,7 +79,7 @@ for bench in benchmarks:
         if args == None:
             args = ""
         exec_path = common.file_option_test(os.path.join(edir, exe),"",this_directory)
-        sh_contents = ""
+        sh_contents = "set -e\n"
 
         if options.terminate_upon_limit:
             sh_contents += "export TERMINATE_UPON_LIMIT=1; "
@@ -103,7 +103,8 @@ for bench in benchmarks:
 	# then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
 	# then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num + "\" ; " +\
-            "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
+            "export TRACES_FOLDER="+ this_trace_folder + "; CUDA_INJECTION64_PATH=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") +\
+            " " + "; LD_PRELOAD=" + os.path.join(nvbit_tracer_path, "tracer_tool.so") + " " +\
             exec_path + " " + str(args) + " ; " + os.path.join(nvbit_tracer_path,"traces-processing", "post-traces-processing") + " " +\
             os.path.join(this_trace_folder, "kernelslist") + " ; rm -f " + this_trace_folder + "/*.trace ; rm -f " + this_trace_folder + "/kernelslist "
 
@@ -116,6 +117,6 @@ for bench in benchmarks:
             os.chdir(this_run_dir)
             print("Running {0}".format(exe))
 
-            if subprocess.call(["bash", "run.sh"]) != 0:
-                print("Error invoking nvbit on {0}".format(this_run_dir))
+            if subprocess.call(["bash","run.sh"]) != 0:
+                sys.exit("Error invoking nvbit on {0}".format(this_run_dir))
             os.chdir(saved_dir)

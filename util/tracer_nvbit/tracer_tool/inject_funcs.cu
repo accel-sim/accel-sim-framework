@@ -22,7 +22,7 @@ extern "C" __device__ __noinline__ void instrument_inst(
     int32_t width, int32_t desReg, int32_t srcReg1, int32_t srcReg2,
     int32_t srcReg3, int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
     uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
-    uint64_t preported_dynamic_instr_counter, uint64_t pstop_report) {
+    uint64_t preported_dynamic_instr_counter, uint64_t pstop_report, uint32_t line_num) {
 
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
@@ -52,6 +52,7 @@ extern "C" __device__ __noinline__ void instrument_inst(
   int4 cta = get_ctaid();
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
+  ma.line_num = line_num;
   ma.warpid_tb = uniqe_threadId / 32;
 
   ma.cta_id_x = cta.x;
