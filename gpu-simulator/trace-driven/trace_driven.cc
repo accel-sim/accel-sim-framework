@@ -123,6 +123,7 @@ void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(threadblock_traces,
                                         m_kernel_trace_info->trace_verion,
+                                        m_kernel_trace_info->enable_lineinfo,
                                         m_kernel_trace_info->ifs);
 }
 
