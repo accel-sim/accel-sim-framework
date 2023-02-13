@@ -246,6 +246,11 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                 fprintf(traceFp, "%f/%d/", *(float *)(*tmp), sizeof(float));
             } else if (type.compare("int") == 0) {
                 fprintf(traceFp, "%d/%d/", *(int *)(*tmp), sizeof(int));
+            } else {
+                // Waiting on NVBit to recognize argument types
+                // but you could add your own data types here to parse the
+                // function signature
+                assert(0 && "Waiting on NVBit 1.5.6 release to recognize argument sizes automatically");
             }
 
             // Increment the argument pointer
