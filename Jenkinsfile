@@ -97,14 +97,14 @@ pipeline {
             emailext body: "See ${BUILD_URL}.\n\nCorrelation at https://engineering.purdue.edu/tgrogers/accel-sim/latest-correl/${JOB_NAME}/",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'],
                     [$class: 'RequesterRecipientProvider']],
-                subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - Success!",
+                subject: "[AALP Jenkins] ${JOB_NAME} Build #${BUILD_NUMBER} - Success!",
                 to: 'tgrogers@purdue.edu'
         }
         failure {
             emailext body: "See ${BUILD_URL}",
                 recipientProviders: [[$class: 'CulpritsRecipientProvider'],
                     [$class: 'RequesterRecipientProvider']],
-                subject: "[AALP Jenkins] Build #${BUILD_NUMBER} - ${currentBuild.result}",
+                subject: "[AALP Jenkins] ${JOB_NAME} Build #${BUILD_NUMBER} - ${currentBuild.result}",
                 to: 'tgrogers@purdue.edu'
         }
    }
