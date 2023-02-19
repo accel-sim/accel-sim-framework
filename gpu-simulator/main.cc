@@ -75,7 +75,7 @@ int main(int argc, const char **argv) {
   unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
   assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
-  std::vector<unsigned long> busy_streams;
+  std::vector<unsigned long long> busy_streams;
   std::vector<trace_kernel_info_t*> kernels_info;
   kernels_info.reserve(window_size);
 
@@ -121,6 +121,8 @@ int main(int argc, const char **argv) {
     bool active = false;
     bool sim_cycles = false;
     unsigned finished_kernel_uid = 0;
+    // stream id is not likely to be 0xFFF...F, using as default
+    unsigned long long finished_kernel_cuda_stream_id = -1;
 
     do {
       if (!m_gpgpu_sim->active())
@@ -151,6 +153,7 @@ int main(int argc, const char **argv) {
         if (k->get_uid() == finished_kernel_uid) {
           for (int l = 0; l < busy_streams.size(); l++) {
             if (busy_streams.at(l) == k->get_cuda_stream_id()) {
+              finished_kernel_cuda_stream_id = k->get_cuda_stream_id();
               busy_streams.erase(busy_streams.begin()+l);
               break;
             }
@@ -163,7 +166,7 @@ int main(int argc, const char **argv) {
         }
       }
       assert(k);
-      m_gpgpu_sim->print_stats();
+      m_gpgpu_sim->print_stats(finished_kernel_cuda_stream_id);
     }
 
     if (sim_cycles) {
