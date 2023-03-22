@@ -17,6 +17,7 @@ enum command_type {
   kernel_launch = 1,
   cpu_gpu_mem_copy,
   gpu_cpu_mem_copy,
+  tex_mem_cpy,
 };
 
 enum address_space { GLOBAL_MEM = 1, SHARED_MEM, LOCAL_MEM, TEX_MEM };
@@ -113,6 +114,8 @@ class trace_parser {
       unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
+  unsigned graphics_count;
+  unsigned compute_count;
 
  private:
   std::string kernellist_filename;

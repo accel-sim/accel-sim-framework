@@ -99,6 +99,7 @@ class trace_kernel_info_t : public kernel_info_t {
   bool was_launched() { return m_was_launched; }
 
   void set_launched() { m_was_launched = true; }
+  void unset_launched() { m_was_launched = false; }
 
  private:
   trace_config *m_tconfig;

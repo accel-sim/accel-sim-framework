@@ -75,6 +75,7 @@ int main(int argc, const char **argv) {
   unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
   assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
+  std::vector<trace_command> compute_commands;
   std::vector<unsigned long> busy_streams;
   std::vector<trace_kernel_info_t*> kernels_info;
   kernels_info.reserve(window_size);
@@ -83,6 +84,8 @@ int main(int argc, const char **argv) {
   unsigned last_launched_graphics = -1;
   std::vector<unsigned long> kernel_vb_addr;
   std::vector<unsigned long> kernel_vb_size;
+  unsigned finished_computes = 0;
+  unsigned finished_graphics = 0;
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has reached
@@ -118,6 +121,7 @@ int main(int argc, const char **argv) {
           kernel_vb_size.clear();
         } else {
           kernel_info->prerequisite_kernel = -1;
+          compute_commands.push_back(commandlist[i]);
         }
         kernels_info.push_back(kernel_info);
         m_gpgpu_sim->update_stats_size(kernel_info->get_uid());
@@ -187,8 +191,13 @@ int main(int argc, const char **argv) {
           tracer.kernel_finalizer(k->get_trace_info());
           // delete k->entry();
           // delete k;
+          if (k->is_graphic_kernel) {
+            finished_graphics++;
+          } else {
+            finished_computes++;
+          }
           kernels_info.erase(kernels_info.begin()+j);
-          if (!m_gpgpu_sim->cycle_insn_cta_max_hit() && m_gpgpu_sim->active())
+          if (!m_gpgpu_sim->cycle_insn_cta_max_hit())
             break;
         }
       }
@@ -207,6 +216,20 @@ int main(int argc, const char **argv) {
              "instructions) **\n");
       fflush(stdout);
       break;
+    }
+    if (finished_graphics == tracer.graphics_count && tracer.graphics_count > 0) {
+      printf("GPGPU-Sim: ** break due to finishing all graphics kernels **\n");
+      fflush(stdout);
+      break;
+    }
+    if (finished_computes == tracer.compute_count &&
+        tracer.graphics_count > 0 && tracer.compute_count > 0) {
+      for (auto cmd : compute_commands) {
+        commandlist.push_back(cmd);
+      }
+      finished_computes = 0;
+      compute_commands.clear();
+      printf("relaunching compute kernels\n");
     }
   }
 

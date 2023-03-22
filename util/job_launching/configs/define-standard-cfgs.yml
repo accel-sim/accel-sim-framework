@@ -271,3 +271,37 @@ mem8b8:
     extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4 -gpgpu_dram_timing_opt nbk=8:CCD=16:RRD=5:RCD=9:RAS=21:RP=9:RC=29:CL=9:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
 14SM:
     extra_params: "-gpgpu_n_clusters 14"
+1GR:
+    extra_params: '-gpgpu_graphics_sm_count 1'
+2GR:
+    extra_params: '-gpgpu_graphics_sm_count 2'
+3GR:
+    extra_params: '-gpgpu_graphics_sm_count 3'
+4GR:
+    extra_params: '-gpgpu_graphics_sm_count 4'
+5GR:
+    extra_params: '-gpgpu_graphics_sm_count 5'
+6GR:
+    extra_params: '-gpgpu_graphics_sm_count 6'
+7GR:
+    extra_params: '-gpgpu_graphics_sm_count 7'
+8GR:
+    extra_params: '-gpgpu_graphics_sm_count 8'
+9GR:
+    extra_params: '-gpgpu_graphics_sm_count 9'
+10GR:
+    extra_params: '-gpgpu_graphics_sm_count 10'
+11GR:
+    extra_params: '-gpgpu_graphics_sm_count 11'
+12GR:
+    extra_params: '-gpgpu_graphics_sm_count 12'
+13GR:
+    extra_params: '-gpgpu_graphics_sm_count 13'
+14GR:
+    extra_params: '-gpgpu_graphics_sm_count 14'
+15GR:
+    extra_params: '-gpgpu_graphics_sm_count 15'
+ASTC:
+    extra_params: '# '
+SRGB:
+    extra_params: '# '

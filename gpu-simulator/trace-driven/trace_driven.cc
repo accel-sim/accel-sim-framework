@@ -58,11 +58,20 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
   if (trace_pc < warp_traces.size()) {
     trace_warp_inst_t *new_inst =
         new trace_warp_inst_t(get_shader()->get_config());
-    new_inst->parse_from_trace_struct(
+    bool success = new_inst->parse_from_trace_struct(
         warp_traces[trace_pc], m_kernel_info->OpcodeMap,
         m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info,
         m_kernel_info->get_uid());
     trace_pc++;
+    while (!success) {
+      // skip texture instructions that has 0 data size
+      assert(new_inst->mem_op == TEX);
+      success = new_inst->parse_from_trace_struct(
+          warp_traces[trace_pc], m_kernel_info->OpcodeMap,
+          m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info,
+          m_kernel_info->get_uid());
+      trace_pc++;
+    }
     return new_inst;
   } else
     return NULL;
@@ -383,12 +392,19 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       initiation_interval =
           initiation_interval / 2;  // FP16 has 2X throughput than FP32
       break;
+    case OP_TLD4:
     case OP_TEX:
-      assert(data_size > 0);
+    case OP_TLD:
+    case OP_TMML:
+    case OP_TXD:
+    case OP_TXQ:
       memory_op = memory_load;
       mem_op = TEX;
       cache_op = CACHE_ALL;
       space.set_type(tex_space);
+      if (data_size == 0) {
+        return false;
+      }
       break;
     default:
       break;

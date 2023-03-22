@@ -316,16 +316,97 @@ vulkan:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"
     execs:
+        # - instancing:
+        #     - args:
+        # - render_passes:
+        #     - args:
+        # - klt_tracker:
+        #     - args: "cam0"
+        # - concurrent:
+        #     - args:
+        # - render_passes_mip_srgb:
+        #     - args:
+        # - render_passes_mip_astc:
+        #     - args:
+        # - dumb:
+        #     - args:
+        - pbrtexture_2k:
+            - args:
+              accel-sim-mem: 5G
+            - args: "vpi_sample_03_harris_corners"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_11_fisheye"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_12_optflow_lk_refined"
+              accel-sim-mem: 5G
+            - args: "klt_tracker"
+              accel-sim-mem: 5G
+            - args: "all"
+              accel-sim-mem: 5G
+        - pbrtexture_4k:
+            - args:
+              accel-sim-mem: 5G
+            - args: "vpi_sample_03_harris_corners"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_11_fisheye"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_12_optflow_lk_refined"
+              accel-sim-mem: 5G
+            - args: "klt_tracker"
+              accel-sim-mem: 5G
+            - args: "all"
+              accel-sim-mem: 5G
+        - render_passes_2k:
+            - args:
+              accel-sim-mem: 5G
+            - args: "vpi_sample_03_harris_corners"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_11_fisheye"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_12_optflow_lk_refined"
+              accel-sim-mem: 5G
+            - args: "klt_tracker"
+              accel-sim-mem: 5G
+            - args: "all"
+              accel-sim-mem: 5G
+        - render_passes_4k:
+            - args:
+              accel-sim-mem: 5G
+            - args: "vpi_sample_03_harris_corners"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_11_fisheye"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_12_optflow_lk_refined"
+              accel-sim-mem: 5G
+            - args: "klt_tracker"
+              accel-sim-mem: 5G
+            - args: "all"
+              accel-sim-mem: 5G
         - instancing:
             - args:
-        - render_passes:
-            - args:
+              accel-sim-mem: 5G
+            - args: "vpi_sample_03_harris_corners"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_11_fisheye"
+              accel-sim-mem: 5G
+            - args: "vpi_sample_12_optflow_lk_refined"
+              accel-sim-mem: 5G
+            - args: "klt_tracker"
+              accel-sim-mem: 5G
+            - args: "all"
+              accel-sim-mem: 5G
+compute:
+    exec_dir: "$HOME/test/"
+    data_dirs: "$HOME/test/"
+    execs:
         - klt_tracker:
-            - args: "cam0"
-        - concurrent:
-            - args:
-        - render_passes_mip_srgb:
-            - args:
+          - args: "cam0"
+        - vpi_sample_03_harris_corners:
+          - args: "cuda__home_pan251_cam0_img_0126_png"
+        - vpi_sample_11_fisheye:
+          - args: "_c_10_7__s_22___cam0_img_0000_png"
+        - vpi_sample_12_optflow_lk_refined:
+          - args: "cuda__home_pan251_cam0_10_img__4d_png_5_frames_png"
 l1d-microbench:
     exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
     data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"

@@ -219,6 +219,8 @@ bool inst_trace_t::parse_from_string(std::string trace,
 
 trace_parser::trace_parser(const char *kernellist_filepath) {
   kernellist_filename = kernellist_filepath;
+  compute_count = 0;
+  graphics_count = 0;
 }
 
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
@@ -247,12 +249,28 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
       command.command_string = line;
       command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
-    } else if (line.substr(0, 6) == "kernel") {
+    } else if (line.find("kernel") != std::string::npos) {
+    // } else if (line.substr(0, 6) == "kernel") {
       trace_command command;
       command.m_type = command_type::kernel_launch;
       filepath = directory + "/" + line;
       command.command_string = filepath;
       commandlist.push_back(command);
+      if (line.find("MESA") != std::string::npos) {
+        graphics_count++;
+      } else {
+        compute_count++;
+      }
+    } else if (line.substr(0, 12) == "MemcpyVulkan") {
+      trace_command command;
+      command.command_string = line;
+      command.m_type = command_type::cpu_gpu_mem_copy;
+      commandlist.push_back(command);
+    // } else if (line.substr(0, 12) == "dumpTextures") {
+    //   trace_command command;
+    //   command.command_string = line;
+    //   command.m_type = command_type::tex_mem_cpy;
+    //   commandlist.push_back(command);
     }
     // ignore gpu_to_cpu_memory_cpy
   }
@@ -265,7 +283,7 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
                                      size_t &address, size_t &count) {
   std::vector<std::string> params;
   split(memcpy_command, params, ',');
-  assert(params.size() == 3);
+  // assert(params.size() == 3);
   std::stringstream ss;
   ss.str(params[1]);
   ss >> std::hex >> address;

@@ -2,7 +2,8 @@
 import os
 
 cwd = os.getcwd() + "/"
-file = "/home/pan251/Vulkan-Samples/traces.traceg"
+file = "./complete.traceg"
+# file = "/home/pan251/Vulkan-Samples/complete.traceg"
 folder = cwd + "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
 
 trace = open(file, 'r')
@@ -14,6 +15,8 @@ kernel_name = []
 big_str=[]
 counter = 0
 
+assert(not os.path.exists("../../hw_run/traces/vulkan/RENAME_ME"))
+
 file = folder + "kernelslist.g"
 os.system("mkdir -p " + folder)
 infof = open(file, "w")
@@ -23,7 +26,9 @@ for line in lines:
         warp_range.append(max_warp+1)
         kernel_name.append(line.split(': ')[1].replace("\n", ""))
         continue
-    if 'MemcpyHtoD' in line:
+    if 'Memcpy' in line:
+        continue
+    if 'dumpTexture' in line:
         continue
     if 'block_dim' in line:
         continue
@@ -47,6 +52,9 @@ for line in lines:
     if 'Memcpy' in line:
         infof.write(line)
         continue
+    if 'dumpTexture' in line:
+        infof.write(line)
+        continue
     if 'block_dim' in line:
         block_dim = int(line.split(', ')[1])
         warp_per_block = block_dim / 32
@@ -67,7 +75,7 @@ for line in lines:
         f.write("-nregs = 16\n")
         # f.write("-nregs = /*UPDATE_ME*/\n")
         f.write("-binary version = 80\n")
-        f.write("-cuda stream id = " + str(index_k) + "\n")
+        f.write("-cuda stream id = 0" + "\n")
         f.write("-shmem base_addr = 0xffffffff\n")
         f.write("-local mem base_addr = 0xffffffff\n")
         f.write("-nvbit version = 1.5.3\n")
@@ -89,6 +97,7 @@ for line in lines:
                 warp_count = 0
             else:
                 warp_count = warp_count + 1
+            big_str[warp_id] = []
         f.close()
         index_k = index_k + 1
         continue
@@ -100,9 +109,9 @@ for line in lines:
 
 # make sure we printed all kernel
 assert(index_k == len(kernel_name))
+infof.close()
 
 # upload stats
-os.system("rsync -a ../../hw_run/traces/vulkan " + \
-          " tgrogers-raid.ecn.purdue.edu:/home/tgrogers-raid/a/pan251/accel-sim-framework/hw_run/traces/vulkan")
-os.system("rsync -a ../../hw_run/traces/vulkan " + \
-          " tgrogers-pc02.ecn.purdue.edu:/home/pan251/accel-sim-framework/hw_run/traces/vulkan")
+# os.system("rsync -aP ../../hw_run/traces/vulkan/RENAME_ME/ tgrogers-raid.ecn.purdue.edu:/home/tgrogers-raid/a/pan251/accel-sim-framework/hw_run/traces/vulkan/RENAME_ME/")
+# os.system("rsync -a ../../hw_run/traces/vulkan " + \
+#           " tgrogers-pc02.ecn.purdue.edu:/home/pan251/accel-sim-framework/hw_run/traces/vulkan")
