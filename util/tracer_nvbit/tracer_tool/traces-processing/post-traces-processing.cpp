@@ -98,6 +98,7 @@ void group_per_block(const char *filepath) {
   vector<threadblock_info> insts;
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
   unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
+  unsigned lineinfo, linenum;
   string line;
   stringstream ss;
   string string1, string2;
@@ -123,6 +124,8 @@ void group_per_block(const char *filepath) {
         sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &tb_dim_x, &tb_dim_y,
                &tb_dim_z);
         found_block_dim = true;
+      } else if (string1 == "enable" && string2 == "lineinfo") {
+        sscanf(line.c_str(), "-enable lineinfo = %d", &lineinfo);
       }
 
       if (found_grid_dim && found_block_dim) {
