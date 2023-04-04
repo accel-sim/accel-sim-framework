@@ -312,6 +312,22 @@
 #             - 100
 #         - TENSOR:
 #             - 10
+graphics:
+    exec_dir: "$HOME/test/"
+    data_dirs: "$HOME/test/"
+    execs:
+        - pbrtexture_2k:
+          - args:
+        - pbrtexture_4k:
+          - args:
+        - instancing_2k:
+          - args:
+        - instancing_4k:
+          - args:
+        - render_passes_2k:
+          - args:
+        - render_passes_4k:
+          - args:
 vulkan:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"
@@ -331,70 +347,53 @@ vulkan:
         # - dumb:
         #     - args:
         - pbrtexture_2k:
-            - args:
-              accel-sim-mem: 5G
-            - args: "vpi_sample_03_harris_corners"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_11_fisheye"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_12_optflow_lk_refined"
-              accel-sim-mem: 5G
-            - args: "klt_tracker"
-              accel-sim-mem: 5G
-            - args: "all"
-              accel-sim-mem: 5G
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
         - pbrtexture_4k:
-            - args:
-              accel-sim-mem: 5G
-            - args: "vpi_sample_03_harris_corners"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_11_fisheye"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_12_optflow_lk_refined"
-              accel-sim-mem: 5G
-            - args: "klt_tracker"
-              accel-sim-mem: 5G
-            - args: "all"
-              accel-sim-mem: 5G
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
         - render_passes_2k:
-            - args:
-              accel-sim-mem: 5G
-            - args: "vpi_sample_03_harris_corners"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_11_fisheye"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_12_optflow_lk_refined"
-              accel-sim-mem: 5G
-            - args: "klt_tracker"
-              accel-sim-mem: 5G
-            - args: "all"
-              accel-sim-mem: 5G
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
         - render_passes_4k:
-            - args:
-              accel-sim-mem: 5G
-            - args: "vpi_sample_03_harris_corners"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_11_fisheye"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_12_optflow_lk_refined"
-              accel-sim-mem: 5G
-            - args: "klt_tracker"
-              accel-sim-mem: 5G
-            - args: "all"
-              accel-sim-mem: 5G
-        - instancing:
-            - args:
-              accel-sim-mem: 5G
-            - args: "vpi_sample_03_harris_corners"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_11_fisheye"
-              accel-sim-mem: 5G
-            - args: "vpi_sample_12_optflow_lk_refined"
-              accel-sim-mem: 5G
-            - args: "klt_tracker"
-              accel-sim-mem: 5G
-            - args: "all"
-              accel-sim-mem: 5G
+          - args:
+            accel-sim-mem: 5G
+          - args: "vpi_sample_03_harris_corners"
+            accel-sim-mem: 5G
+          - args: "vpi_sample_11_fisheye"
+            accel-sim-mem: 5G
+          - args: "vpi_sample_12_optflow_lk_refined"
+            accel-sim-mem: 5G
+          - args: "klt_tracker"
+            accel-sim-mem: 5G
+          - args: "all"
+            accel-sim-mem: 5G
+        - instancing_2k:
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
+        - instancing_4k:
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
 compute:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"

@@ -398,10 +398,14 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_TMML:
     case OP_TXD:
     case OP_TXQ:
+      // memory_op = memory_load;
+      // mem_op = TEX;
+      // cache_op = CACHE_ALL;
+      // space.set_type(tex_space);
       memory_op = memory_load;
-      mem_op = TEX;
       cache_op = CACHE_ALL;
-      space.set_type(tex_space);
+      mem_op = TEX;
+      space.set_type(global_space);
       if (data_size == 0) {
         return false;
       }

@@ -280,7 +280,7 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 }
 
 void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
-                                     size_t &address, size_t &count) {
+                                     size_t &address, size_t &count, size_t &per_CTA) {
   std::vector<std::string> params;
   split(memcpy_command, params, ',');
   // assert(params.size() == 3);
@@ -290,6 +290,11 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss.clear();
   ss.str(params[2]);
   ss >> std::dec >> count;
+  if (params.size() == 4) {
+    ss.clear();
+    ss.str(params[3]);
+    ss >> std::dec >> per_CTA;
+  }
 }
 
 kernel_trace_t *trace_parser::parse_kernel_info(

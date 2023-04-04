@@ -107,7 +107,7 @@ class trace_parser {
   kernel_trace_t *parse_kernel_info(const std::string &kerneltraces_filepath);
 
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
-                         size_t &count);
+                         size_t &count, size_t &per_CTA);
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,

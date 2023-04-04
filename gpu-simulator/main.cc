@@ -76,16 +76,21 @@ int main(int argc, const char **argv) {
   assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
   std::vector<trace_command> compute_commands;
+  std::vector<trace_command> graphics_commands;
   std::vector<unsigned long> busy_streams;
   std::vector<trace_kernel_info_t*> kernels_info;
   kernels_info.reserve(window_size);
+  printf("%u MESA kernels parsed\n", tracer.graphics_count);
 
   unsigned i = 0;
   unsigned last_launched_graphics = -1;
   std::vector<unsigned long> kernel_vb_addr;
   std::vector<unsigned long> kernel_vb_size;
+  std::vector<unsigned long> kernel_per_CTA;
   unsigned finished_computes = 0;
   unsigned finished_graphics = 0;
+  bool computes_done = false;
+  bool graphics_done = false;
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has reached
@@ -94,31 +99,47 @@ int main(int argc, const char **argv) {
       trace_kernel_info_t *kernel_info = NULL;
       if (commandlist[i].m_type == command_type::cpu_gpu_mem_copy) {
         size_t addre, Bcount;
-        tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount);
-        std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
-        m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
-        kernel_vb_addr.push_back(addre);
-        kernel_vb_size.push_back(Bcount);
+        size_t per_CTA = -1;
+        tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount, per_CTA);
+        if (commandlist[i].command_string.find("MemcpyVulkan") ==
+            std::string::npos) {
+          std::cout << "launching memcpy command : "
+                    << commandlist[i].command_string << std::endl;
+          m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
+        } else {
+          assert(per_CTA != -1);
+          std::cout << "Saving MemcpyVulkan for CTA launch : "
+                    << commandlist[i].command_string << std::endl;
+          kernel_vb_addr.push_back(addre);
+          kernel_vb_size.push_back(Bcount);
+          kernel_per_CTA.push_back(per_CTA);
+        }
         i++;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
         kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
         kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
         if (kernel_info->is_graphic_kernel) {
+          graphics_commands.push_back(commandlist[i]);
           unsigned kernel_id = kernel_info->get_uid();
           kernel_info->prerequisite_kernel = last_launched_graphics;
           last_launched_graphics = kernel_id;
 
-          for (auto vb = kernel_vb_size.begin(); vb != kernel_vb_size.end();
-               vb++) {
-            *vb = *vb / kernel_info->num_blocks();
-          }
+          // for (auto vb = kernel_vb_size.begin(); vb != kernel_vb_size.end();
+          //      vb++) {
+          //   unsigned byte_per_CTA = *vb / kernel_info->num_blocks();
+          //   if (byte_per_CTA != 0) {
+          //     *vb = byte_per_CTA;
+          //   }
+          // }
           // save kernel info
           m_gpgpu_sim->vb_addr[kernel_id] = kernel_vb_addr;
-          m_gpgpu_sim->vb_size_per_cta[kernel_id] = kernel_vb_size;
+          m_gpgpu_sim->vb_size[kernel_id] = kernel_vb_size;
+          m_gpgpu_sim->vb_size_per_cta[kernel_id] = kernel_per_CTA;
           // clear buffers for next kernel
           kernel_vb_addr.clear();
           kernel_vb_size.clear();
+          kernel_per_CTA.clear();
         } else {
           kernel_info->prerequisite_kernel = -1;
           compute_commands.push_back(commandlist[i]);
@@ -217,10 +238,38 @@ int main(int argc, const char **argv) {
       fflush(stdout);
       break;
     }
-    if (finished_graphics == tracer.graphics_count && tracer.graphics_count > 0) {
-      printf("GPGPU-Sim: ** break due to finishing all graphics kernels **\n");
-      fflush(stdout);
+    // if (finished_graphics == tracer.graphics_count && tracer.graphics_count > 0) {
+    //   printf("GPGPU-Sim: ** break due to finishing all graphics kernels **\n");
+    //   fflush(stdout);
+    //   break;
+    // }
+    // if (finished_computes == tracer.compute_count && tracer.compute_count > 0) {
+    //   printf("GPGPU-Sim: ** break due to finishing all compute kernels **\n");
+    //   fflush(stdout);
+    //   break;
+    // }
+
+    if (finished_graphics == tracer.graphics_count) {
+      printf("All graphics kernels finished one iteration\n");
+      graphics_done = true;
+    }
+    if (finished_computes == tracer.compute_count) {
+      printf("All compute kernels finished one iteration\n");
+      computes_done = true;
+    }
+    if (graphics_done && computes_done) {
+      printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");
       break;
+    }
+
+    if (finished_graphics == tracer.graphics_count &&
+        tracer.graphics_count > 0 && tracer.compute_count > 0) {
+      for (auto cmd : graphics_commands) {
+        commandlist.push_back(cmd);
+      }
+      finished_graphics = 0;
+      graphics_commands.clear();
+      printf("relaunching graphics kernels\n");
     }
     if (finished_computes == tracer.compute_count &&
         tracer.graphics_count > 0 && tracer.compute_count > 0) {
