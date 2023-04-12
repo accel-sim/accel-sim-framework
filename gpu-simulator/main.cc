@@ -82,6 +82,74 @@ int main(int argc, const char **argv) {
   kernels_info.reserve(window_size);
   printf("%u MESA kernels parsed\n", tracer.graphics_count);
 
+  // hardcode the previous frame info for now
+  unsigned *compute_cycles = new unsigned[tracer.compute_count]{
+    // harris conrner 6
+    40312, 21679, 21514, 84511, 15334, 5813,
+    // klt tracker 7
+    27505,26807,30498,35058,10376,11590,95894,
+    // distortion 4
+    447050,62830,135116,22671,
+    // opt flow 20
+    40302,8366,6423,6243,6230,5822,5420,10917,5814,5414,10268,5417,5414,10237,5417,5414,10251,5417,5414,10233
+  };
+  m_gpgpu_sim->predicted_render_cycle = 0;
+  for (unsigned i = 0; i < tracer.compute_count; i++) {
+    m_gpgpu_sim->compute_cycles[i + 1 + tracer.graphics_count] = compute_cycles[i];
+  }
+  int64_t predicted = 0;
+  /*
+  // below: render_passes_dev
+  unsigned *graphics_cycles =
+      new unsigned[tracer.graphics_count]{
+          36952, 10779, 12322, 8366,   15129, 8667,  72379, 42623,
+          12394, 10192, 9447,  265291, 18146, 83690, 12627, 35149,
+          34125, 85216, 24885, 16419,  9376,  13124, 7731,  48662,
+          65976, 9916,  23612, 8121,   7713,  9941,  44402, 8027,
+          35996, 10778, 8316,  7270,   28490, 85504, 36277, 115834,
+          27931, 18698, 29922, 9702,   28770, 15377, 21360, 12481};
+  */
+ 
+  // below: render_passes_2k
+  unsigned *graphics_cycles = new unsigned[tracer.graphics_count]{
+      36617, 23539,  12037, 10327,   14963, 10888,  72830, 152444,
+      12415, 19372,  9269,  1080844, 18204, 343158, 12613, 121515,
+      34131, 348325, 24511, 42931,   9205,  33789,  7734,  180056,
+      67422, 18844,  23449, 8920,    7911,  19150,  44392, 8804,
+      35907, 24019,  8355,  8363,    28418, 341819, 36797, 480426,
+      27655, 57341,  29215, 18006,   28875, 41267,  21608, 28977};
+  double *graphics_error =
+      new double[tracer.graphics_count]{
+          -0.009106505, 0.00196099,   -0.001769781, -0.008679811, -0.004621328,
+          0.000987261,  0.017523652,  0.003755501,  0.014833661,  0.005469204,
+          -0.227559841, -0.0015228,   0.022571026,  -0.005920848, -0.061801381,
+          -0.022776911, -0.004001749, -0.00891049,  -0.077729955, 0.03054575,
+          0.000377782,  0.002648109,  -0.000641255, -0.000588002
+      };
+  for (unsigned i = 0; i < tracer.graphics_count-1; i+=2) {
+    m_gpgpu_sim->grpahics_error[i + 1] = graphics_error[i/2];
+    m_gpgpu_sim->grpahics_error[i + 2] = graphics_error[i/2];
+
+    unsigned cycle = (double)graphics_cycles[i] * (1.0 - graphics_error[i / 2]);
+    m_gpgpu_sim->predicted_kernel_cycles[i] = cycle;
+    predicted += cycle;
+
+    cycle = (double)graphics_cycles[i + 1] * (1.0 - graphics_error[i / 2]);
+    m_gpgpu_sim->predicted_kernel_cycles[i + 1] = cycle;
+    predicted += cycle;
+  }
+  m_gpgpu_sim->predicted_render_cycle = predicted;
+  m_gpgpu_sim->gpu_last_frame_cycle = 4047657;
+  // m_gpgpu_sim->gpu_last_frame_cycle = 2969324;
+  m_gpgpu_sim->gpu_last_compute_cycle = 1400930;
+  for (unsigned i = 0; i < tracer.graphics_count; i++) {
+    m_gpgpu_sim->last_frame_kernels_elapsed_time[i + 1] = graphics_cycles[i];
+  }
+  for (unsigned i = 0; i < tracer.compute_count; i++) {
+    m_gpgpu_sim
+        ->last_frame_kernels_elapsed_time[i + 1 + tracer.graphics_count] =
+        compute_cycles[i];
+  }
   unsigned i = 0;
   unsigned last_launched_graphics = -1;
   std::vector<unsigned long> kernel_vb_addr;
@@ -164,6 +232,28 @@ int main(int argc, const char **argv) {
       }
       if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
         std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
+        std::string kernel_name = k->get_name();
+        if (kernel_name.find("CalculateCornerStrength") != std::string::npos) {
+          printf("STEP1: CalculateCornerStrength detected\n");
+          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          m_gpgpu_sim->dynamic_sm_count = 10;
+        } else if (kernel_name.find("ConvertToYUV") != std::string::npos) {
+          printf("STEP1: ConvertToYUV detected\n");
+          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          m_gpgpu_sim->dynamic_sm_count = 10;
+        } else if (kernel_name.find("ConvertPlane") != std::string::npos) {
+          printf("STEP1: ConvertPlane detected\n");
+          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          m_gpgpu_sim->dynamic_sm_count = 10;
+        } else if (kernel_name.find("Remap") != std::string::npos) {
+          printf("STEP1: Remap detected\n");
+          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          m_gpgpu_sim->dynamic_sm_count = 8;
+        } else {
+          m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().static_graphics_sm();
+          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+        }
+        m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
         m_gpgpu_sim->launch(k);
         k->set_launched();
         busy_streams.push_back(k->get_cuda_stream_id());
@@ -251,10 +341,15 @@ int main(int argc, const char **argv) {
 
     if (finished_graphics == tracer.graphics_count) {
       printf("All graphics kernels finished one iteration\n");
+      printf("STEP1 - rendering done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
+      m_gpgpu_sim->graphics_done = true;
       graphics_done = true;
     }
-    if (finished_computes == tracer.compute_count) {
+    if (finished_computes == tracer.compute_count && !computes_done) {
       printf("All compute kernels finished one iteration\n");
+      printf("STEP1 - computes done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
+      m_gpgpu_sim->gpu_compute_end_cycle = m_gpgpu_sim->gpu_tot_sim_cycle;
+      m_gpgpu_sim->compute_done = true;
       computes_done = true;
     }
     if (graphics_done && computes_done) {
@@ -262,26 +357,45 @@ int main(int argc, const char **argv) {
       break;
     }
 
-    if (finished_graphics == tracer.graphics_count &&
-        tracer.graphics_count > 0 && tracer.compute_count > 0) {
-      for (auto cmd : graphics_commands) {
-        commandlist.push_back(cmd);
-      }
-      finished_graphics = 0;
-      graphics_commands.clear();
-      printf("relaunching graphics kernels\n");
-    }
-    if (finished_computes == tracer.compute_count &&
-        tracer.graphics_count > 0 && tracer.compute_count > 0) {
-      for (auto cmd : compute_commands) {
-        commandlist.push_back(cmd);
-      }
-      finished_computes = 0;
-      compute_commands.clear();
-      printf("relaunching compute kernels\n");
-    }
-  }
+    // if (finished_graphics == tracer.graphics_count &&
+    //     tracer.graphics_count > 0 && tracer.compute_count > 0) {
+    //   for (auto cmd : graphics_commands) {
+    //     commandlist.push_back(cmd);
+    //   }
+    //   finished_graphics = 0;
+    //   graphics_commands.clear();
 
+    //   m_gpgpu_sim->new_frame();
+
+    //   printf("relaunching graphics kernels\n");
+    // }
+    // if (finished_computes == tracer.compute_count &&
+    //     tracer.graphics_count > 0 && tracer.compute_count > 0) {
+    //   for (auto cmd : compute_commands) {
+    //     commandlist.push_back(cmd);
+    //   }
+    //   finished_computes = 0;
+    //   compute_commands.clear();
+    //   printf("relaunching compute kernels\n");
+    // }
+  }
+  unsigned long long compute_cycle = m_gpgpu_sim->gpu_compute_end_cycle - m_gpgpu_sim->gpu_compute_start_cycle;
+  float compute_slowdown =
+      (float)compute_cycle / m_gpgpu_sim->gpu_last_compute_cycle;
+  float graphics_slowdown = (float)(m_gpgpu_sim->gpu_tot_sim_cycle -
+                                    m_gpgpu_sim->gpu_render_start_cycle) /
+                            m_gpgpu_sim->gpu_last_frame_cycle;
+  printf(
+      "STEP1 - compute start time : %llu, compute end time : %llu, compute "
+      "slowdown : %f\n",
+      m_gpgpu_sim->gpu_compute_start_cycle,
+      m_gpgpu_sim->gpu_compute_end_cycle, compute_slowdown);
+  printf(
+      "STEP1 - graphics start time : %llu, graphics end time : %llu, rendering "
+      "slowdown: %f\n",
+      m_gpgpu_sim->gpu_render_start_cycle, m_gpgpu_sim->gpu_tot_sim_cycle,
+      m_gpgpu_sim->gpu_tot_sim_cycle - m_gpgpu_sim->gpu_render_start_cycle,
+      graphics_slowdown);
   // we print this message to inform the gpgpu-simulation stats_collect script
   // that we are done
   printf("GPGPU-Sim: *** simulation thread exiting ***\n");

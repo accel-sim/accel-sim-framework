@@ -328,24 +328,12 @@ graphics:
           - args:
         - render_passes_4k:
           - args:
+        - render_passes_dev:
+          - args:
 vulkan:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"
     execs:
-        # - instancing:
-        #     - args:
-        # - render_passes:
-        #     - args:
-        # - klt_tracker:
-        #     - args: "cam0"
-        # - concurrent:
-        #     - args:
-        # - render_passes_mip_srgb:
-        #     - args:
-        # - render_passes_mip_astc:
-        #     - args:
-        # - dumb:
-        #     - args:
         - pbrtexture_2k:
           - args:
           - args: "vpi_sample_03_harris_corners"
@@ -388,6 +376,13 @@ vulkan:
           - args: "klt_tracker"
           - args: "all"
         - instancing_4k:
+          - args:
+          - args: "vpi_sample_03_harris_corners"
+          - args: "vpi_sample_11_fisheye"
+          - args: "vpi_sample_12_optflow_lk_refined"
+          - args: "klt_tracker"
+          - args: "all"
+        - render_passes_dev:
           - args:
           - args: "vpi_sample_03_harris_corners"
           - args: "vpi_sample_11_fisheye"
