@@ -81,7 +81,7 @@ int main(int argc, const char **argv) {
   std::vector<trace_kernel_info_t*> kernels_info;
   kernels_info.reserve(window_size);
   printf("%u MESA kernels parsed\n", tracer.graphics_count);
-
+  /*
   // hardcode the previous frame info for now
   unsigned *compute_cycles = new unsigned[tracer.compute_count]{
     // harris conrner 6
@@ -98,6 +98,7 @@ int main(int argc, const char **argv) {
     m_gpgpu_sim->compute_cycles[i + 1 + tracer.graphics_count] = compute_cycles[i];
   }
   int64_t predicted = 0;
+  */
   /*
   // below: render_passes_dev
   unsigned *graphics_cycles =
@@ -109,7 +110,7 @@ int main(int argc, const char **argv) {
           35996, 10778, 8316,  7270,   28490, 85504, 36277, 115834,
           27931, 18698, 29922, 9702,   28770, 15377, 21360, 12481};
   */
- 
+  /*
   // below: render_passes_2k
   unsigned *graphics_cycles = new unsigned[tracer.graphics_count]{
       36617, 23539,  12037, 10327,   14963, 10888,  72830, 152444,
@@ -150,6 +151,7 @@ int main(int argc, const char **argv) {
         ->last_frame_kernels_elapsed_time[i + 1 + tracer.graphics_count] =
         compute_cycles[i];
   }
+  */
   unsigned i = 0;
   unsigned last_launched_graphics = -1;
   std::vector<unsigned long> kernel_vb_addr;
@@ -159,6 +161,27 @@ int main(int argc, const char **argv) {
   unsigned finished_graphics = 0;
   bool computes_done = false;
   bool graphics_done = false;
+  m_gpgpu_sim->start_compute = true;
+  if (finished_graphics == tracer.graphics_count) {
+      printf("No graphics kernel parsed\n");
+      printf("STEP1 - rendering done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
+      m_gpgpu_sim->graphics_done = true;
+      m_gpgpu_sim->all_graphics_done = true;
+      graphics_done = true;
+  }
+  if (finished_computes == tracer.compute_count) {
+      printf("No compute kernel parsed\n");
+      printf("STEP1 - computes done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
+      m_gpgpu_sim->gpu_compute_end_cycle = m_gpgpu_sim->gpu_tot_sim_cycle;
+      m_gpgpu_sim->compute_done = true;
+      m_gpgpu_sim->all_compute_done = true;
+      computes_done = true;
+    }
+  m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+  m_gpgpu_sim->concurrent_granularity = 6;
+  // m_gpgpu_sim->dynamic_sm_count = 4;
+  m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().dynamic_sm_count;
+  printf("defualt dynamic ratio %d\n", m_gpgpu_sim->dynamic_sm_count);
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has reached
@@ -173,7 +196,7 @@ int main(int argc, const char **argv) {
             std::string::npos) {
           std::cout << "launching memcpy command : "
                     << commandlist[i].command_string << std::endl;
-          m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
+          m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount, false);
         } else {
           assert(per_CTA != -1);
           std::cout << "Saving MemcpyVulkan for CTA launch : "
@@ -233,27 +256,39 @@ int main(int argc, const char **argv) {
       if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
         std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
         std::string kernel_name = k->get_name();
-        if (kernel_name.find("CalculateCornerStrength") != std::string::npos) {
-          printf("STEP1: CalculateCornerStrength detected\n");
-          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          m_gpgpu_sim->dynamic_sm_count = 10;
-        } else if (kernel_name.find("ConvertToYUV") != std::string::npos) {
-          printf("STEP1: ConvertToYUV detected\n");
-          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          m_gpgpu_sim->dynamic_sm_count = 10;
-        } else if (kernel_name.find("ConvertPlane") != std::string::npos) {
-          printf("STEP1: ConvertPlane detected\n");
-          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          m_gpgpu_sim->dynamic_sm_count = 10;
-        } else if (kernel_name.find("Remap") != std::string::npos) {
-          printf("STEP1: Remap detected\n");
-          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          m_gpgpu_sim->dynamic_sm_count = 8;
+        if (!k->is_graphic_kernel) {
+          m_gpgpu_sim->compute_done = false;
+          m_gpgpu_sim->gipc = 0;
+          // if (kernel_name.find("CalculateCornerStrength") !=
+          //     std::string::npos) {
+          //   m_gpgpu_sim->dynamic_sm_count = 3;
+          //   printf("STEP1 - CalculateCornerStrength detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
+          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          // } else if (kernel_name.find("ConvertToYUV") != std::string::npos) {
+          //   m_gpgpu_sim->dynamic_sm_count = 3;
+          //   printf("STEP1 - ConvertToYUV detected - %u\n",m_gpgpu_sim->dynamic_sm_count);
+          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          // } else if (kernel_name.find("ConvertPlane") != std::string::npos) {
+          //   m_gpgpu_sim->dynamic_sm_count = 3;
+          //   printf("STEP1 - ConvertPlane detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
+          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          // } else if (kernel_name.find("Remap") != std::string::npos) {
+          //   m_gpgpu_sim->dynamic_sm_count = 3;
+          //   printf("STEP1 - Remap detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
+          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+          // } else {
+          //   m_gpgpu_sim->dynamic_sm_count = 3;
+          //   printf("STEP1 - Default ratio - %u\n", m_gpgpu_sim->dynamic_sm_count);
+          //   // m_gpgpu_sim->dynamic_sm_count =
+          //   //     m_gpgpu_sim->get_config().static_graphics_sm();
+          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+          // }
         } else {
-          m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().static_graphics_sm();
-          // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+          // graphics
+          m_gpgpu_sim->cipc = 0;
+          m_gpgpu_sim->graphics_done = false;
         }
-        m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+        
         m_gpgpu_sim->launch(k);
         k->set_launched();
         busy_streams.push_back(k->get_cuda_stream_id());
@@ -339,10 +374,16 @@ int main(int argc, const char **argv) {
     //   break;
     // }
 
+    if (m_gpgpu_sim->all_compute_done && tracer.compute_count > 0) {
+      // break after the *next kernel after all compute done* is done
+      break;
+    }
+
     if (finished_graphics == tracer.graphics_count) {
       printf("All graphics kernels finished one iteration\n");
       printf("STEP1 - rendering done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
       m_gpgpu_sim->graphics_done = true;
+      m_gpgpu_sim->all_graphics_done = true;
       graphics_done = true;
     }
     if (finished_computes == tracer.compute_count && !computes_done) {
@@ -350,6 +391,7 @@ int main(int argc, const char **argv) {
       printf("STEP1 - computes done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
       m_gpgpu_sim->gpu_compute_end_cycle = m_gpgpu_sim->gpu_tot_sim_cycle;
       m_gpgpu_sim->compute_done = true;
+      m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
     }
     if (graphics_done && computes_done) {
@@ -358,14 +400,16 @@ int main(int argc, const char **argv) {
     }
 
     // if (finished_graphics == tracer.graphics_count &&
-    //     tracer.graphics_count > 0 && tracer.compute_count > 0) {
+    //     tracer.graphics_count > 0 && tracer.compute_count > 0 && m_gpgpu_sim->concurrent_mode) {
     //   for (auto cmd : graphics_commands) {
     //     commandlist.push_back(cmd);
     //   }
     //   finished_graphics = 0;
     //   graphics_commands.clear();
+    //   m_gpgpu_sim->graphics_done = false;
+    //   graphics_done = false;
 
-    //   m_gpgpu_sim->new_frame();
+    // //   m_gpgpu_sim->new_frame();
 
     //   printf("relaunching graphics kernels\n");
     // }

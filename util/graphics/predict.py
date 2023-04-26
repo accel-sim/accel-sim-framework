@@ -34,7 +34,7 @@ for frame in range(3,file.shape[0]):
         predicted_cycle = (file.iloc[frame-1,draw] + file.iloc[frame-2,draw] + file.iloc[frame-3,draw])/3
         frame_cycle = frame_cycle + predicted_cycle
         real_cycle = real_cycle + file.iloc[frame,draw]
-    # print("Frame: ", frame+1, " Cycle: ", frame_cycle, " Real: ", real_cycle, " percent error: ", "%.2f" % ((frame_cycle-real_cycle)/real_cycle*100), "%")
+    print("Frame: ", frame+1, " Cycle: ", frame_cycle, " Real: ", real_cycle, " percent error: ", "%.2f" % ((frame_cycle-real_cycle)/real_cycle*100), "%")
     avg.append((frame_cycle-real_cycle)/real_cycle*100)
 
 # linear regression
@@ -50,8 +50,8 @@ for frame in range(3,file.shape[0]):
         frame_cycle = frame_cycle + predicted_cycle
         real_cycle = real_cycle + file.iloc[frame,draw]
         # print("predicted: ", predicted_cycle)
-        print(str((predicted_cycle-file.iloc[frame,draw])/file.iloc[frame,draw]) + ", ", end='')
-    print("")
+        # print(str((predicted_cycle-file.iloc[frame,draw])/file.iloc[frame,draw]) + ", ", end='')
+    # print("")
 
-    # print("Frame: ", frame+1, " Cycle: ", frame_cycle, " Real: ", real_cycle, " percent error: ", "%.2f" % ((frame_cycle-real_cycle)/real_cycle*100), "%")
+    print("Frame: ", frame+1, " Cycle: ", frame_cycle, " Real: ", real_cycle, " percent error: ", "%.2f" % ((frame_cycle-real_cycle)/real_cycle*100), "%")
     linear_reg.append((frame_cycle-real_cycle)/real_cycle*100)

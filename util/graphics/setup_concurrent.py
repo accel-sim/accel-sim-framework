@@ -6,7 +6,7 @@ cwd = os.path.dirname(os.path.realpath(__file__)) + "/"
 trace_dir = cwd + "../../hw_run/traces/vulkan/"
 
 gs = ["pbrtexture_2k","pbrtexture_4k", "render_passes_2k", "render_passes_4k", "instancing_2k","instancing_4k","render_passes_dev"]
-cs = ["vpi_sample_03_harris_corners", "klt_tracker", "vpi_sample_11_fisheye", "vpi_sample_12_optflow_lk_refined"]
+cs = ["vpi_sample_03_harris_corners", "klt_tracker", "vpi_sample_11_fisheye", "vpi_sample_12_optflow_lk_refined", "ritnet"]
 
 # to clean up
 for g in gs:
@@ -53,7 +53,8 @@ for g in gs:
             kernelslist_c = open(sub_dir + "/traces/kernelslist.g", "r")
             for line in kernelslist_c:
                 kernelslist.write(c + "-" + line)
-                kernelslist_all.write(c + "-" + line)
+                if "ritnet" not in sub_dir:
+                    kernelslist_all.write(c + "-" + line)
             kernelslist_c.close()
         kernelslist.close()
         kernelslist_all.close()
@@ -63,5 +64,3 @@ for g in gs:
                 continue
             os.system("ln -s " + sub_dir + "/traces/" + file + " " + trace_dir + g + "/" + c + "/traces/" + c + "-" + file)
             os.system("ln -s " + sub_dir + "/traces/" + file + " " + trace_dir + g + "/" + "all/" + "/traces/" + c + "-" + file)
-
-

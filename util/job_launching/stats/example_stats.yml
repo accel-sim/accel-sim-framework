@@ -40,11 +40,14 @@ collect_abs:
     - 'gpu_sim_insn\s*=\s*(.*)'
     - 'gpu_sim_cycle\s*=\s*(.*)'
     - 'gpu_ipc\s*=\s*(.*)'
+    - 'gpu_tot_ipc\s*=\s*(.*)'
     - 'gpu_occupancy\s*=\s*(.*)%'
+    - 'gpu_tot_occupancy\s*=\s*(.*)%'
     - 'total dram reads\s*=\s*(.*)'
     - 'total dram writes\s*=\s*(.*)'
     - 'kernel_launch_uid\s*=\s*(.*)'
     - 'L2_BW\s*=\s*(.*)GB\/Sec'
+    - 'L2_BW_total\s*=\s*(.*)GB\/Sec'
 
 # These stats are rates that aggregate - but cannot be diff'd
 # Only valid as a snapshot and most useful for the final kernel launch

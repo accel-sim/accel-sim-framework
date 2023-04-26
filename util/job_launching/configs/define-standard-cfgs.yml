@@ -315,7 +315,27 @@ SUB_PART_4:
     extra_params: '-gpgpu_n_sub_partition_per_mchannel 4'
 perf_l2:
     extra_params: '-gpgpu_perfect_l2 1'
+perf_l1:
+    extra_params: '-gpgpu_perfect_l1 1'
 ASTC:
     extra_params: '# '
 SRGB:
     extra_params: '# '
+50l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 50'
+60l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 60'
+70l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 70'
+80l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 80'
+90l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 90'
+2sm:
+    extra_params: '-gpgpu_dynamic_sm_count 2'
+3sm:
+    extra_params: '-gpgpu_dynamic_sm_count 3'
+4sm:
+    extra_params: '-gpgpu_dynamic_sm_count 4'
+5sm:
+    extra_params: '-gpgpu_dynamic_sm_count 5'
