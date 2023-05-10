@@ -11,7 +11,7 @@ in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ```
 This Repository serves as an Artifact for the paper above and includes scripts to reproduce the figures 7 to 12 presented in our MICRO'21 paper. Please find Accel-Sim traces and benchmark datasets used for AccelWattch at the archived repository pointed to by the Artifact Appendix in our MICRO'21 paper: https://doi.org/10.5281/zenodo.5398781
 
-Please see [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/README.md#accelwattch-overview) entry in the main read-me page if you are only looking for information on running AccelWattch power estimations for your applications.
+Please see [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/tree/dev#accelwattch-overview) entry in the main read-me page if you are only looking for information on running AccelWattch power estimations for your applications.
 
 
 ## Dependencies
