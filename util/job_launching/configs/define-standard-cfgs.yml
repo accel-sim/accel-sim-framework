@@ -321,6 +321,10 @@ ASTC:
     extra_params: '# '
 SRGB:
     extra_params: '# '
+dumb12:
+    extra_params: '# '
+dumb8:
+    extra_params: '# '
 50l2:
     extra_params: '-gpgpu_l2_graphics_ratio 50'
 60l2:
