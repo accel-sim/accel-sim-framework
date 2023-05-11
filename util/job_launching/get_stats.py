@@ -195,7 +195,7 @@ for idx, app_and_args in enumerate(apps_and_args):
 
         if config + app_and_args in specific_jobIds:
             jobId,jobname = specific_jobIds[ config + app_and_args ]
-            torque_submname = re.sub(r".*\.([^\s]*-commit-.*)", r"\1", jobname)
+            torque_submname = re.sub(r".*\.([^\s]*-commit-.*-commit-.*)", r"\1", jobname)
             outfile = os.path.join(output_dir, exes_and_args[idx].replace("/", "-") + "." +\
                torque_submname + "." + "o" + jobId)
         else:
