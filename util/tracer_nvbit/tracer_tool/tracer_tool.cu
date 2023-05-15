@@ -162,6 +162,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
+      int num_mref = 0;
       uint64_t imm_value = 0;
 
       for(int i = 0; i < instr->getNumOperands(); ++i){
@@ -171,9 +172,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           src_oprd[srcNum] = instr->getOperand(i)->u.mref.ra_num;
           srcNum++;
           mem_oper_idx++;
-          if(mem_oper_idx == 0){
-            mem_oper_idx = 1; // loop control
-          }
+          num_mref++;
+          // if(mem_oper_idx == 0){
+          //   mem_oper_idx = 1; // loop control
+          // }
         }
         else if (op->type == InstrType::OperandType::REG){
           if (i == 0){
@@ -194,7 +196,6 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       }
 
       do{
-        mem_oper_idx--;
         /* insert call to the instrumentation function with its
         * arguments */
         nvbit_insert_call(instr, "instrument_inst", IPOINT_BEFORE);
@@ -209,7 +210,13 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         /* mem addresses info */
         if (mem_oper_idx >= 0) {
           nvbit_add_call_arg_const_val32(instr, 1);
-          nvbit_add_call_arg_mref_addr64(instr, 1-mem_oper_idx);
+          assert(num_mref <= 2);
+          if (num_mref == 2) {  // LDGSTS
+            nvbit_add_call_arg_mref_addr64(instr, 1-mem_oper_idx);
+          }
+          else {
+            nvbit_add_call_arg_mref_addr64(instr, mem_oper_idx);
+          }
           nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
         } else {
           nvbit_add_call_arg_const_val32(instr, 0);
@@ -238,7 +245,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
                                       (uint64_t)&reported_dynamic_instr_counter);
         nvbit_add_call_arg_const_val64(instr, (uint64_t)&stop_report);
 
-      } while (mem_oper_idx > 0);
+        mem_oper_idx--;
+      } while (mem_oper_idx >= 0);
 
       cnt++;
     }
