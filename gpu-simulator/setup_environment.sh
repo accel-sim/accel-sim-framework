@@ -28,6 +28,12 @@
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=
 export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 
+#   Different branches of Accel-Sim should have different values here
+#   For development, we use our internal repo and the dev branch
+#       Ideally, when we release, it should be based off a GPGPU-Sim release.
+export GPGPUSIM_REPO="${GPGPUSIM_REPO:=https://github.com/accel-sim/gpgpu-sim_distribution.git}"
+export GPGPUSIM_BRANCH="${GPGPUSIM_BRANCH:=dev}"
+
 if [ $# = '1' ] ;
 then
     export ACCELSIM_CONFIG=$1
@@ -35,11 +41,22 @@ else
     export ACCELSIM_CONFIG=release
 fi
 
-if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
-    git clone https://github.com/accel-sim/gpgpu-sim_distribution.git $ACCELSIM_ROOT/gpgpu-sim
-    git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout dev
+# If the setup environment was already run and the root folder for GPGPU-Sim exists, then just use it
+if [ ! -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -a -d "$GPGPUSIM_ROOT" ]; then
+    echo "Using \$GPGPUSIM_ROOT=\"$GPGPUSIM_ROOT\"."
+    echo "Assuming GPGPU-Sim is located here - and not running gpgpu-sim's setup enironment."
+    echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
+# If we can't find an already set version of GPGPU-Sim, then pull one locally using the repos specificed above
+else
+    echo "No \$GPGPUSIM_ROOT, testing for local folder in: \"$ACCELSIM_ROOT/gpgpu-sim\""
+    if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
+        echo "No \$ACCELSIM_ROOT/gpgpu-sim, syncing to $GPGPUSIM_REPO"
+        git clone $GPGPUSIM_REPO $ACCELSIM_ROOT/gpgpu-sim
+        git -C $ACCELSIM_ROOT/gpgpu-sim/ checkout $GPGPUSIM_BRANCH
+    else
+        echo "Found $ACCELSIM_ROOT/gpgpu-sim, using existing local location. Not sycning anything."
+    fi
+    source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
 fi
-
-source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
 
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
