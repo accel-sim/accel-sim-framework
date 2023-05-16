@@ -41,13 +41,8 @@ else
     export ACCELSIM_CONFIG=release
 fi
 
-# If the setup environment was already run and the root folder for GPGPU-Sim exists, then just use it
-if [ ! -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -a -d "$GPGPUSIM_ROOT" ]; then
-    echo "Using \$GPGPUSIM_ROOT=\"$GPGPUSIM_ROOT\"."
-    echo "Assuming GPGPU-Sim is located here - and not running gpgpu-sim's setup enironment."
-    echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
 # If we can't find an already set version of GPGPU-Sim, then pull one locally using the repos specificed above
-else
+if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     echo "No \$GPGPUSIM_ROOT, testing for local folder in: \"$ACCELSIM_ROOT/gpgpu-sim\""
     if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
         echo "No \$ACCELSIM_ROOT/gpgpu-sim."
@@ -65,7 +60,9 @@ else
     else
         echo "Found $ACCELSIM_ROOT/gpgpu-sim, using existing local location. Not sycning anything."
     fi
-    source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
 fi
 
+source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG
+echo "Accel-Sim setup succeeded, using GPGPU-Sim in $GPGPUSIM_ROOT"
+#echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
