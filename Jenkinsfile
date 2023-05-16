@@ -19,8 +19,7 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
                 rm -rf ./gpu-simulator/gpgpu-sim
-                source ./gpu-simulator/setup_environment.sh
-                make -j -C gpu-simulator
+                source ./gpu-simulator/setup_environment.sh < /dev/null
                 make clean -C gpu-simulator
                 make -j -C gpu-simulator'''
             }
@@ -30,7 +29,7 @@ pipeline {
                 parallel "sass": {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
-                source ./gpu-simulator/setup_environment.sh
+                source ./gpu-simulator/setup_environment.sh < /dev/null
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-${BUILD_NUMBER}
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-${BUILD_NUMBER}
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-${BUILD_NUMBER}
@@ -38,7 +37,7 @@ pipeline {
                }, "ptx": {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
-                source ./gpu-simulator/setup_environment.sh
+                source ./gpu-simulator/setup_environment.sh < /dev/null
 
                 rm -rf ./gpu-app-collection
                 git clone git@github.com:accel-sim/gpu-app-collection.git
