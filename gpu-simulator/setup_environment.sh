@@ -60,9 +60,12 @@ if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     else
         echo "Found $ACCELSIM_ROOT/gpgpu-sim, using existing local location. Not sycning anything."
     fi
+    source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
+else
+    source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG
 fi
 
-source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG
+
 echo "Accel-Sim setup succeeded, using GPGPU-Sim in $GPGPUSIM_ROOT"
 #echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
