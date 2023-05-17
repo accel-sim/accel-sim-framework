@@ -19,7 +19,7 @@ pipeline {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
                 rm -rf ./gpu-simulator/gpgpu-sim
-                source ./gpu-simulator/setup_environment.sh
+                source ./gpu-simulator/setup_environment.sh < /dev/null
                 make clean -C gpu-simulator
                 make -j -C gpu-simulator'''
             }
@@ -28,7 +28,7 @@ pipeline {
             steps{
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
-                source ./gpu-simulator/setup_environment.sh
+                source ./gpu-simulator/setup_environment.sh < /dev/null
                 ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
                 cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/ -N rodinia_2.0-ft-online-$$
@@ -82,7 +82,7 @@ pipeline {
             steps{
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.0_env_setup.sh
-                source ./gpu-simulator/setup_environment.sh
+                source ./gpu-simulator/setup_environment.sh < /dev/null
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/11.0/ -N rodinia_2.0-ft-$$
                 ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$'''
             }
