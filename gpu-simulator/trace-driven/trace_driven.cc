@@ -373,6 +373,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_HSETP2:
       initiation_interval =
           initiation_interval / 2;  // FP16 has 2X throughput than FP32
+      if (initiation_interval < 1)  // Make sure initiaion interval never goes below 1
+        initiation_interval = 1;
       break;
     default:
       break;
