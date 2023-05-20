@@ -46,12 +46,16 @@ if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     echo "No \$GPGPUSIM_ROOT, testing for local folder in: \"$ACCELSIM_ROOT/gpgpu-sim\""
     if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
         echo "No \$ACCELSIM_ROOT/gpgpu-sim."
-        read -e -p "Please specify the repo you want to sync for GPGPU-Sim (default is $GPGPUSIM_REPO):" user_repo
+        if [ ! -z "$PS1" ]; then
+            read -e -p "Please specify the repo you want to sync for GPGPU-Sim (default is $GPGPUSIM_REPO):" user_repo
+        fi
         if [ -z $user_repo ] ; then
             user_repo=$GPGPUSIM_REPO
         fi
 
-        read -e -p "Please specify the branch for GPGPU-Sim you would like to use (default is $GPGPUSIM_BRANCH):" user_branch
+        if [ ! -z "$PS1" ]; then
+            read -e -p "Please specify the branch for GPGPU-Sim you would like to use (default is $GPGPUSIM_BRANCH):" user_branch
+        fi
         if [ -z $user_branch ] ; then
             user_branch=$GPGPUSIM_BRANCH
         fi
@@ -60,12 +64,13 @@ if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     else
         echo "Found $ACCELSIM_ROOT/gpgpu-sim, using existing local location. Not sycning anything."
     fi
-    source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG
+    source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG || return 1
 else
-    source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG
+    source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG || return 1
 fi
 
 
-echo "Accel-Sim setup succeeded, using GPGPU-Sim in $GPGPUSIM_ROOT"
+echo "Using GPGPU-Sim in $GPGPUSIM_ROOT"
 #echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
+echo "Accel-Sim setup succeeded."
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
