@@ -21,7 +21,7 @@ pipeline {
                 rm -rf ./gpu-simulator/gpgpu-sim
                 source ./gpu-simulator/setup_environment.sh
                 make clean -C gpu-simulator
-                make -j -C gpu-simulator'''
+                srun -c20 make -j20 -C gpu-simulator'''
             }
         }
         stage('short-test'){
@@ -42,7 +42,7 @@ pipeline {
                 rm -rf ./gpu-app-collection
                 git clone git@github.com:accel-sim/gpu-app-collection.git
                 source ./gpu-app-collection/src/setup_environment
-                make rodinia_2.0-ft GPU_Microbenchmark -j -C ./gpu-app-collection/src
+                srun -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
                 ./gpu-app-collection/get_regression_data.sh
 
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-${BUILD_NUMBER}
