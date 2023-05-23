@@ -90,6 +90,7 @@ static const std::unordered_map<unsigned, unsigned> OpcodePowerMap = {
     {OP_VABSDIFF, INT__OP},
     {OP_VABSDIFF4, INT__OP},
     {OP_F2F, FP__OP},
+    {OP_F2FP, FP__OP},
     {OP_F2I, FP__OP},
     {OP_I2F, FP__OP},
     {OP_I2I, INT__OP},
