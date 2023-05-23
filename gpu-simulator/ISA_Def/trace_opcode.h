@@ -225,6 +225,8 @@ enum TraceInstrOpcode {
   OP_REDUX,
   OP_UF2FP,
   OP_SUQUERY,
+  // Shared between ampere and turing
+  OP_F2FP,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;
