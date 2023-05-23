@@ -175,6 +175,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   is_vectorin = 0;
   is_vectorout = 0;
+  pred = 0;
   ar1 = 0;
   ar2 = 0;
   memory_op = no_memory_op;
