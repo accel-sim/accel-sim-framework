@@ -163,6 +163,8 @@ bool inst_trace_t::parse_from_string(std::string trace,
     sscanf(temp.c_str(), "R%d", &reg_src[i]);
   }
 
+  // ss >> imm;
+   
   // parse mem info
   unsigned address_mode = 0;
   unsigned mem_width = 0;
@@ -209,7 +211,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
     }
   }
 
-  ss >> imm;
+  ss >> imm; // Ni: Should be here
 
   // Finish Parsing
 
