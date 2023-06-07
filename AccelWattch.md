@@ -85,18 +85,6 @@ mkdir -p $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
 cp $GPUAPPS_ROOT/bin/11.0/release/* $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
 ```
 
-### Using pre-compiled binaries for AccelWattch
-
-Alternatively, you can use pre-compiled binaries located at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/**
-To extract pre-compiled binaries for AccelWattch:
-```
-cd $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks
-./extract_binaries.sh
-```
-This will create a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
-
-**NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, we **STRONGLY** recommend compiling the binaries yourself following the previous step above.
-
 
 ### Setting up datasets for AccelWattch Validation Benchmarks
 
