@@ -69,7 +69,7 @@ parser.add_option("-S", "--nsys_profiler", dest="nsys_profiler", action="store_t
 parser.add_option("-l", "--limit_kernel_number", dest="kernel_number", type=int, default=-99,
                  help="Limits the number of profiled kernels (useful in larger applications")
 parser.add_option("-C", "--collect", dest="collect", default="cycles",
-                help="Pass what you want from the hardware. Options are: \"cycles,other_stats\"")
+                help="Pass what you want from the hardware. Options are: \"cycles,other_stats,full_set\"")
 
 (options, args) = parser.parse_args()
 
@@ -147,6 +147,14 @@ for bench in benchmarks:
                     ",l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum," +\
                     "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum," +\
                     "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum" +\
+                    "l1tex__data_bank_conflicts_pipe_lsu_mem_shared.sum,l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum,l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_st.sum" +\
+                    " --csv --page raw --target-processes all " + kernel_number +\
+                    " " + exec_path + " " + str(args) +\
+                    " | tee " + os.path.join(this_run_dir,logfile + ".nsight")
+        elif "full_set" in options.collect:
+            if options.nsight_profiler:
+                sh_contents += "\nexport CUDA_VERSION=\"" + cuda_version + "\"; export CUDA_VISIBLE_DEVICES=\"" + options.device_num +\
+                    "\" ; timeout 30m nv-nsight-cu-cli --set full" +\
                     " --csv --page raw --target-processes all " + kernel_number +\
                     " " + exec_path + " " + str(args) +\
                     " | tee " + os.path.join(this_run_dir,logfile + ".nsight")
