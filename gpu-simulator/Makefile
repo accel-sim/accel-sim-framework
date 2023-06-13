@@ -51,7 +51,7 @@ makedirs:
 	if [ ! -d $(BUILD_DIR) ]; then mkdir -p $(BUILD_DIR); fi;
 
 gpgpu-sim: checkenv makedirs
-	$(MAKE) -C gpgpu-sim
+	$(MAKE) -C $(GPGPUSIM_ROOT)
 
 checkenv: makedirs
 	 @if [ ! -n "$(ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN)" ]; then \
@@ -83,7 +83,7 @@ trace-parser: checkenv makedirs
 clean:
 	rm -rf $(BIN_DIR)
 	rm -rf $(BUILD_DIR)
-	$(MAKE) clean -C gpgpu-sim
+	$(MAKE) clean -C $(GPGPUSIM_ROOT)
 
 
 include $(BUILD_DIR)/main.makedepend
