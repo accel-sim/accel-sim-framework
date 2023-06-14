@@ -274,8 +274,11 @@ class ConfigurationSpec:
             queue_name = os.getenv("TORQUE_QUEUE_NAME")
 
         # do the text replacement for the .sim file
-        replacement_dict = {"NAME":benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
-                                gpgpusim_build_handle,
+        sim_name = benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
+                                gpgpusim_build_handle
+        # Truncate long simulation file names
+        sim_name = sim_name[:200]
+        replacement_dict = {"NAME":sim_name,
                             "NODES":"1", 
                             "GPGPUSIM_ROOT":os.getenv("GPGPUSIM_ROOT"),
                             "LIBPATH": libpath,
