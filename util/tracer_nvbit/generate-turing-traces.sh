@@ -52,4 +52,3 @@ ssh tgrogers-raid.ecn.purdue.edu mkdir -p /scratch/tgrogers-disk01/a/$USER/tmp-t
 echo "Copying Deepbench_nvidia"
 rsync --progress -avhe ssh ../../hw_run/traces/Deepbench_nvidia tgrogers-raid.ecn.purdue.edu:/scratch/tgrogers-disk01/a/$USER/tmp-turing-traces
 rm -rf ../../hw_run/traces/Deepbench_nvidia
-

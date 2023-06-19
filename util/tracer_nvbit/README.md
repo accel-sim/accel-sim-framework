@@ -112,5 +112,3 @@
     src_num=2  <br />
     reg_srcs=R255 R255  <br />
     mem_width = 0 (if mem_width>0, then there will be some addresses listed afterwards) <br />
-
-
