@@ -72,5 +72,3 @@ else
 	echo "Please enter a correct power reports directory. Example: ./collate_power.sh validation_power_reports volta"
 	exit 1
 fi
-
-
