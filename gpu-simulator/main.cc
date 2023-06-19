@@ -1,26 +1,26 @@
 // developed by Mahmoud Khairy, Purdue Univ
 // abdallm@purdue.edu
 
+#include <math.h>
+#include <stdio.h>
+#include <time.h>
 #include <fstream>
 #include <iostream>
-#include <math.h>
 #include <sstream>
-#include <stdio.h>
 #include <string>
-#include <time.h>
 #include <vector>
 
-#include "gpgpu_context.h"
+#include "../ISA_Def/trace_opcode.h"
+#include "../trace-parser/trace_parser.h"
 #include "abstract_hardware_model.h"
+#include "accelsim_version.h"
 #include "cuda-sim/cuda-sim.h"
 #include "gpgpu-sim/gpu-sim.h"
 #include "gpgpu-sim/icnt_wrapper.h"
+#include "gpgpu_context.h"
 #include "gpgpusim_entrypoint.h"
 #include "option_parser.h"
-#include "../ISA_Def/trace_opcode.h"
 #include "trace_driven.h"
-#include "../trace-parser/trace_parser.h"
-#include "accelsim_version.h"
 
 /* TO DO:
  * NOTE: the current version of trace-driven is functionally working fine,
@@ -31,7 +31,8 @@
  * limited by disk speed)
  *
  * 2- traces compression format a) cfg format and remove
- * thread/block Id from the head and b) using zlib library to save in binary format
+ * thread/block Id from the head and b) using zlib library to save in binary
+ * format
  *
  * 3- Efficient memory improvement (save string not objects - parse only 10 in
  * the buffer)
@@ -47,10 +48,10 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
                                            gpgpu_context *m_gpgpu_context,
                                            class trace_config *m_config);
 
-trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
-		                      gpgpu_context *m_gpgpu_context, class trace_config *config,
-							  trace_parser *parser);
-
+trace_kernel_info_t *create_kernel_info(kernel_trace_t *kernel_trace_info,
+                                        gpgpu_context *m_gpgpu_context,
+                                        class trace_config *config,
+                                        trace_parser *parser);
 
 int main(int argc, const char **argv) {
   std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
@@ -71,50 +72,59 @@ int main(int argc, const char **argv) {
   // launch
   // while loop till the end of the end kernel execution
   // prints stats
-  bool concurrent_kernel_sm =  m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm;
-  unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
+  bool concurrent_kernel_sm =
+      m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm;
+  unsigned window_size =
+      concurrent_kernel_sm
+          ? m_gpgpu_sim->get_config().get_max_concurrent_kernel()
+          : 1;
   assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
   std::vector<unsigned long> busy_streams;
-  std::vector<trace_kernel_info_t*> kernels_info;
+  std::vector<trace_kernel_info_t *> kernels_info;
   kernels_info.reserve(window_size);
 
   unsigned i = 0;
   while (i < commandlist.size() || !kernels_info.empty()) {
-    //gulp up as many commands as possible - either cpu_gpu_mem_copy 
-    //or kernel_launch - until the vector "kernels_info" has reached
-    //the window_size or we have read every command from commandlist
+    // gulp up as many commands as possible - either cpu_gpu_mem_copy
+    // or kernel_launch - until the vector "kernels_info" has reached
+    // the window_size or we have read every command from commandlist
     while (kernels_info.size() < window_size && i < commandlist.size()) {
       trace_kernel_info_t *kernel_info = NULL;
       if (commandlist[i].m_type == command_type::cpu_gpu_mem_copy) {
         size_t addre, Bcount;
         tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount);
-        std::cout << "launching memcpy command : " << commandlist[i].command_string << std::endl;
+        std::cout << "launching memcpy command : "
+                  << commandlist[i].command_string << std::endl;
         m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount);
         i++;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
-        kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
-        kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        kernel_trace_t *kernel_trace_info =
+            tracer.parse_kernel_info(commandlist[i].command_string);
+        kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context,
+                                         &tconfig, &tracer);
         kernels_info.push_back(kernel_info);
-        std::cout << "Header info loaded for kernel command : " << commandlist[i].command_string << std::endl;
+        std::cout << "Header info loaded for kernel command : "
+                  << commandlist[i].command_string << std::endl;
         i++;
-      }
-      else{
-        //unsupported commands will fail the simulation
+      } else {
+        // unsupported commands will fail the simulation
         assert(0 && "Undefined Command");
       }
     }
 
-    // Launch all kernels within window that are on a stream that isn't already running
+    // Launch all kernels within window that are on a stream that isn't already
+    // running
     for (auto k : kernels_info) {
       bool stream_busy = false;
-      for (auto s: busy_streams) {
-        if (s == k->get_cuda_stream_id())
-          stream_busy = true;
+      for (auto s : busy_streams) {
+        if (s == k->get_cuda_stream_id()) stream_busy = true;
       }
-      if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
-        std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
+      if (!stream_busy && m_gpgpu_sim->can_start_kernel() &&
+          !k->was_launched()) {
+        std::cout << "launching kernel name: " << k->get_name()
+                  << " uid: " << k->get_uid() << std::endl;
         m_gpgpu_sim->launch(k);
         k->set_launched();
         busy_streams.push_back(k->get_cuda_stream_id());
@@ -126,8 +136,7 @@ int main(int argc, const char **argv) {
     unsigned finished_kernel_uid = 0;
 
     do {
-      if (!m_gpgpu_sim->active())
-        break;
+      if (!m_gpgpu_sim->active()) break;
 
       // performance simulation
       if (m_gpgpu_sim->active()) {
@@ -147,23 +156,23 @@ int main(int argc, const char **argv) {
     } while (active && !finished_kernel_uid);
 
     // cleanup finished kernel
-    if (finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit()
-        || !m_gpgpu_sim->active()) {
-      trace_kernel_info_t* k = NULL;
+    if (finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit() ||
+        !m_gpgpu_sim->active()) {
+      trace_kernel_info_t *k = NULL;
       for (unsigned j = 0; j < kernels_info.size(); j++) {
         k = kernels_info.at(j);
-        if (k->get_uid() == finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit()
-            || !m_gpgpu_sim->active()) {
+        if (k->get_uid() == finished_kernel_uid ||
+            m_gpgpu_sim->cycle_insn_cta_max_hit() || !m_gpgpu_sim->active()) {
           for (int l = 0; l < busy_streams.size(); l++) {
             if (busy_streams.at(l) == k->get_cuda_stream_id()) {
-              busy_streams.erase(busy_streams.begin()+l);
+              busy_streams.erase(busy_streams.begin() + l);
               break;
             }
           }
           tracer.kernel_finalizer(k->get_trace_info());
           delete k->entry();
           delete k;
-          kernels_info.erase(kernels_info.begin()+j);
+          kernels_info.erase(kernels_info.begin() + j);
           if (!m_gpgpu_sim->cycle_insn_cta_max_hit() && m_gpgpu_sim->active())
             break;
         }
@@ -178,8 +187,9 @@ int main(int argc, const char **argv) {
     }
 
     if (m_gpgpu_sim->cycle_insn_cta_max_hit()) {
-      printf("GPGPU-Sim: ** break due to reaching the maximum cycles (or "
-             "instructions) **\n");
+      printf(
+          "GPGPU-Sim: ** break due to reaching the maximum cycles (or "
+          "instructions) **\n");
       fflush(stdout);
       break;
     }
@@ -194,22 +204,22 @@ int main(int argc, const char **argv) {
   return 0;
 }
 
-
-trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
-		                      gpgpu_context *m_gpgpu_context, class trace_config *config,
-							  trace_parser *parser){
-
+trace_kernel_info_t *create_kernel_info(kernel_trace_t *kernel_trace_info,
+                                        gpgpu_context *m_gpgpu_context,
+                                        class trace_config *config,
+                                        trace_parser *parser) {
   gpgpu_ptx_sim_info info;
   info.smem = kernel_trace_info->shmem;
   info.regs = kernel_trace_info->nregs;
-  dim3 gridDim(kernel_trace_info->grid_dim_x, kernel_trace_info->grid_dim_y, kernel_trace_info->grid_dim_z);
-  dim3 blockDim(kernel_trace_info->tb_dim_x, kernel_trace_info->tb_dim_y, kernel_trace_info->tb_dim_z);
+  dim3 gridDim(kernel_trace_info->grid_dim_x, kernel_trace_info->grid_dim_y,
+               kernel_trace_info->grid_dim_z);
+  dim3 blockDim(kernel_trace_info->tb_dim_x, kernel_trace_info->tb_dim_y,
+                kernel_trace_info->tb_dim_z);
   trace_function_info *function_info =
       new trace_function_info(info, m_gpgpu_context);
   function_info->set_name(kernel_trace_info->kernel_name.c_str());
-  trace_kernel_info_t *kernel_info =
-      new trace_kernel_info_t(gridDim, blockDim, function_info,
-    		  parser, config, kernel_trace_info);
+  trace_kernel_info_t *kernel_info = new trace_kernel_info_t(
+      gridDim, blockDim, function_info, parser, config, kernel_trace_info);
 
   return kernel_info;
 }
@@ -230,10 +240,10 @@ gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
   m_gpgpu_context->the_gpgpusim->g_the_gpu_config =
       new gpgpu_sim_config(m_gpgpu_context);
   m_gpgpu_context->the_gpgpusim->g_the_gpu_config->reg_options(
-      opp); // register GPU microrachitecture options
+      opp);  // register GPU microrachitecture options
   m_config->reg_options(opp);
 
-  option_parser_cmdline(opp, argc, argv); // parse configuration options
+  option_parser_cmdline(opp, argc, argv);  // parse configuration options
   fprintf(stdout, "GPGPU-Sim: Configuration options:\n\n");
   option_parser_print(opp, stdout);
   // Set the Numeric locale to a standard locale where a decimal point is a

@@ -21,13 +21,13 @@
 // see slide 22 at
 // https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s21730-inside-the-nvidia-ampere-architecture.pdf
 // number of SASS HMMA per 16x16 PTX WMMA for FP16 - FP32 accumlate operation
-#define SASS_hmma_per_PTX_wmma  16 
+#define SASS_hmma_per_PTX_wmma 16
 
 // These vars are almost constant between HW generations
 // see slide 24 at
 // https://developer.download.nvidia.com/video/gputechconf/gtc/2020/presentations/s21730-inside-the-nvidia-ampere-architecture.pdf
 // each memory channel is supported by 2 L2 banks
-#define L2_BANKS_PER_MEM_CHANNEL 2 
+#define L2_BANKS_PER_MEM_CHANNEL 2
 #define L2_BANK_WIDTH_in_BYTE 32
 
 #endif

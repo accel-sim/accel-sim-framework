@@ -17,8 +17,8 @@ int main() {
 
     unsigned init = WARP_SIZE / throughput_per_sched;
 
-    //init cannot be larger than latency
-    if(init > latency)
+    // init cannot be larger than latency
+    if (init > latency)
       latency = init;
 
     std::cout << "\n//Accel_Sim config: \n";

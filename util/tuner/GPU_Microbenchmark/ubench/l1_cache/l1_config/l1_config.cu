@@ -65,20 +65,21 @@ int main() {
       large_shmem_size << "," << shd_mem_inKB;
       adaptive_shmem_option_string += large_shmem_size.str();
       unified_l1d_size_inKB = L1_SIZE / 1024;
-      //increase unified cache by 32KB in case the shd is larger
-      //this case happens in Turing, we need to write ubench to get the exact size
-      if(unified_l1d_size_inKB <= shd_mem_inKB)
+      // increase unified cache by 32KB in case the shd is larger
+      // this case happens in Turing, we need to write ubench to get the exact
+      // size
+      if (unified_l1d_size_inKB <= shd_mem_inKB)
         unified_l1d_size_inKB = unified_l1d_size_inKB + 32;
       // set l1 write allocation policy (write allocate, write through)
       cache_write_string = After_Volta_L1_Cache_Write_Policy;
       // L1 write-to-read ratio (25%) based on rodinia kmeans workload
       // benchmarking
       write_cache_ratio = 25;
-      //always configure l1 as 32KB in adaptive cache
-      //accel-sim will adjust the assoc adpatively during run-time
-      config_l1_size = 32*1024;
-      //ensure unified cache is multiple of l1 cache size
-      assert((unified_l1d_size_inKB*1024) % config_l1_size == 0);
+      // always configure l1 as 32KB in adaptive cache
+      // accel-sim will adjust the assoc adpatively during run-time
+      config_l1_size = 32 * 1024;
+      // ensure unified cache is multiple of l1 cache size
+      assert((unified_l1d_size_inKB * 1024) % config_l1_size == 0);
     } else {
       adaptive_cache = false;
       cache_write_string = Before_Volta_L1_Cache_Write_Policy;
@@ -98,7 +99,8 @@ int main() {
     std::cout << "-gpgpu_adaptive_cache_config " << adaptive_cache << std::endl;
     std::cout << "-gpgpu_shmem_option " << adaptive_shmem_option_string
               << std::endl;
-    std::cout << "-gpgpu_unified_l1d_size " << unified_l1d_size_inKB << std::endl;
+    std::cout << "-gpgpu_unified_l1d_size " << unified_l1d_size_inKB
+              << std::endl;
     std::cout << "-gpgpu_l1_banks " << WARP_SCHEDS_PER_SM << std::endl;
     std::cout << "-gpgpu_cache:dl1 " << is_sector << ":" << L1_CACHE_SETS << ":"
               << L1_CACHE_LINE_SIZE << ":" << assoc << cache_write_string
