@@ -319,11 +319,11 @@ rodinia-3.1:
               accel-sim-mem: 1G
 #        - cfd-rodinia-3.1:
 #            - args:  ./data/fvcorr.domn.097K
-              accel-sim-mem: 1G
+#             accel-sim-mem: 1G
 #            - args:  ./data/fvcorr.domn.193K
-              accel-sim-mem: 1G
+#              accel-sim-mem: 1G
 #            - args:  ./data/missile.domn.0.2M
-              accel-sim-mem: 4G
+#              accel-sim-mem: 4G
         - dwt2d-rodinia-3.1:
             - args:  ./data/192.bmp -d 192x192 -f -5 -l 3
               accel-sim-mem: 1G
