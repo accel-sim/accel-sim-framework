@@ -51,7 +51,7 @@ GPGPU-Sim 4.0 and the AccelWattch power model to use in Accel-Sim. AccelWattch r
 There is an additional repo where we have collected a set of common GPU applications and a common infrastructure for building
 them with different versions of CUDA. If you use/extend this app framework, it makes Accel-Sim easily usable
 with a few simple command lines. The instructions in this README will take you through how to use Accel-Sim with
-the apps in from this collection as well as just on your own, with your own apps.  
+the apps in from this collection as well as just on your own, with your own apps.
 
 [GPU App Collection](https://github.com/accel-sim/gpu-app-collection)
 
@@ -61,46 +61,46 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
 
 ![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
 
-1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in ./util/tracer\_nvbit/. To make the tool:  
-  
-    ```bash  
-    export CUDA_INSTALL_PATH=<your_cuda>  
-    export PATH=$CUDA_INSTALL_PATH/bin:$PATH  
-    ./util/tracer_nvbit/install_nvbit.sh  
-    make -C ./util/tracer_nvbit/  
-    ```  
+1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in ./util/tracer\_nvbit/. To make the tool:
+
+    ```bash
+    export CUDA_INSTALL_PATH=<your_cuda>
+    export PATH=$CUDA_INSTALL_PATH/bin:$PATH
+    ./util/tracer_nvbit/install_nvbit.sh
+    make -C ./util/tracer_nvbit/
+    ```
     ---
-    *A simple example*  
-      
-    The following example demonstrates how to trace the simple rodinia functional tests  
-    that get run in our travis regressions:  
-      
-    ```bash  
-    # Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc  
-      
-    # Get the applications, their data files and build them:  
-    git clone https://github.com/accel-sim/gpu-app-collection  
-    source ./gpu-app-collection/src/setup_environment  
-    make -j -C ./gpu-app-collection/src rodinia_2.0-ft  
-    make -C ./gpu-app-collection/src data  
-      
-    # Run the applications with the tracer (remember you need a real GPU for this):  
-    ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on>  
-    ```  
-      
-    That's it. The traces for the short-running rodinia tests will be generated in:  
-    ```bash  
-    ./hw_run/traces/  
-    ```  
-      
-    To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).  
-      
+    *A simple example*
+
+    The following example demonstrates how to trace the simple rodinia functional tests
+    that get run in our travis regressions:
+
+    ```bash
+    # Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc
+
+    # Get the applications, their data files and build them:
+    git clone https://github.com/accel-sim/gpu-app-collection
+    source ./gpu-app-collection/src/setup_environment
+    make -j -C ./gpu-app-collection/src rodinia_2.0-ft
+    make -C ./gpu-app-collection/src data
+
+    # Run the applications with the tracer (remember you need a real GPU for this):
+    ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on>
+    ```
+
+    That's it. The traces for the short-running rodinia tests will be generated in:
+    ```bash
+    ./hw_run/traces/
+    ```
+
+    To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).
+
     ---
-    For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:  
-    ```bash  
-    ./get-accel-sim-traces.py  
-    ```  
-    and follow the instructions.  
+    For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:
+    ```bash
+    ./get-accel-sim-traces.py
+    ```
+    and follow the instructions.
 
 2. **Accel-Sim SASS Frontend and Simulation Engine**: A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md), which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
     ```bash
@@ -117,7 +117,7 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
     ```bash
     ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
     ```
-    The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using: 
+    The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
     ```txt
     PTX mode usage: ./util/job_launching/run_simulations.py -B <benchmark> -C <gpu_config> -N <run_identifier>
     Optional:
@@ -128,8 +128,8 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
     ```bash
     ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
     ```
-    
-    
+
+
     You can monitor the tests using:
     ```bash
     ./util/job_launching/monitor_func_test.py -v -N myTest
@@ -145,8 +145,8 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
     ```
     However, we encourage you to use our workload launch manager 'run_simulations' script as shown above, which will greatly simplify the simulation process and increase productivity.
 
-    To understand what is going on and how to just run the simulator in isolation without the framework, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/job_launching/README.md).  
-    
+    To understand what is going on and how to just run the simulator in isolation without the framework, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/job_launching/README.md).
+
     To better undersatnd the Accel-Sim front-end and the interface with GPGPU-Sim, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/README.md).
 
 3. **Accel-Sim Correlator**: A tool that matches, plots and correlates statistics from the performance model with real hardware statistics generated by profiling tools. To use the correlator, you must first generate hardware output and simulation statistics. To generate output from the GPU, use the scripts in [./util/hw_stats](./util/hw_stats).
@@ -207,19 +207,19 @@ For a true validation, you should attempt correlating the fully-scaled set of ap
 4. **Accel-Sim Tuner**: An automated tuner that automates configuration file generation from a detailed microbenchmark suite. You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). Then, compile and run the microbenchmarks and the tuner:
 
   ```bash
-  # Make sure PATH includes nvcc  
+  # Make sure PATH includes nvcc
   # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
   # Compile microbenchmarks
   make -C ./util/tuner/GPU_Microbenchmark/
-  # Set the device id that you want to tune to 
+  # Set the device id that you want to tune to
   # If you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
-  export CUDA_VISIBLE_DEVICES=0  
+  export CUDA_VISIBLE_DEVICES=0
   # Run the ubench and save output in stats.txt
   ./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
   # Run the tuner with the stats.txt from the previous step
   ./util/tuner/tuner.py -s stats.txt
-  ```  
-  
+  ```
+
   The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "RTX_3060"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suite, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
 
 
@@ -261,14 +261,14 @@ CUDA\_INSTALL\_PATH, the run ./travis.sh.
 ```bash
 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_SASS_SIM -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
 ```
-This will use the *AccelWattch SASS SIM* xml configuration file for the power model. The configuration files for the AccelWattch power model presented in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) can be found [here](https://github.com/accel-sim/gpgpu-sim_distribution/tree/release-accelwattch/configs/tested-cfgs/SM7_QV100). Please look at `./util/job_launching/configs/define-standard-cfgs.yml` for a list of provided AccelWattch configurations. The *AccelWattch HYBRID* configuration provided there uses activity factors for L2 and NOC from Accel-Sim and the rest from hardware performance counters. You can create your own *AccelWattch HYBRID* configuration in this file with a different mix of AccelWattch activity factors from Accel-Sim and hardware execution. 
-Upon completion of simulations, AccelWattch power estimations are stored in a *accelwattch_power_report.log* in a per-kernel format in the run directory. 
+This will use the *AccelWattch SASS SIM* xml configuration file for the power model. The configuration files for the AccelWattch power model presented in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) can be found [here](https://github.com/accel-sim/gpgpu-sim_distribution/tree/release-accelwattch/configs/tested-cfgs/SM7_QV100). Please look at `./util/job_launching/configs/define-standard-cfgs.yml` for a list of provided AccelWattch configurations. The *AccelWattch HYBRID* configuration provided there uses activity factors for L2 and NOC from Accel-Sim and the rest from hardware performance counters. You can create your own *AccelWattch HYBRID* configuration in this file with a different mix of AccelWattch activity factors from Accel-Sim and hardware execution.
+Upon completion of simulations, AccelWattch power estimations are stored in a *accelwattch_power_report.log* in a per-kernel format in the run directory.
 
-2. **Running AccelWattch HW or AccelWattch HYBRID:** To run *the simple example from bullet 1* with *AccelWattch HW* or *AccelWattch HYBRID* configurations, 
+2. **Running AccelWattch HW or AccelWattch HYBRID:** To run *the simple example from bullet 1* with *AccelWattch HW* or *AccelWattch HYBRID* configurations,
 ```bash
 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a -C <GV100-Accelwattch_SASS_HW or GV100-Accelwattch_SASS_HYBRID> -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
 ```
-Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a GV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`. 
+Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a GV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`.
 
 3. **Running AccelWattch PTX SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch PTX SIM* model,
 ```bash

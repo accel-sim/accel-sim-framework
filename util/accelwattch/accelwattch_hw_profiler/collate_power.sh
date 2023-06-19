@@ -54,7 +54,7 @@ if [ -e "$SCRIPT_DIR/${1}" ] && [ -d "$SCRIPT_DIR/${1}" ]; then
 	fi
 	mkdir $output_folder
 	for bm in `ls $SCRIPT_DIR/${1}`
-	do	
+	do
 		for data in `ls $SCRIPT_DIR/${1}/$bm`
 		do
 			power=`cat $SCRIPT_DIR/${1}/$bm/$data | awk -F'Power draw = ' '{print $2}' | awk -F' W' '{print $1}'`
