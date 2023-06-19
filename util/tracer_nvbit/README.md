@@ -1,4 +1,4 @@
-# Instructions on using tracer tool for Accel-sim 
+# Instructions on using tracer tool for Accel-sim
 
 * First insall the nvbit tool:
     ```bash
@@ -37,7 +37,7 @@
     ./gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
     ```
 
-    .trace files are not required anymore. These are intermediate files and you can delete them to save disk space. 
+    .trace files are not required anymore. These are intermediate files and you can delete them to save disk space.
     Note that the above run_hw_trace.py script do all the steps automatically for you.
 
 * Tracing Specific kernels (kernel-based checkpointing):
@@ -54,11 +54,11 @@
     export DYNAMIC_KERNEL_LIMIT_END=3
     ```
 
-    If you do not really know the kernel id that you are interested in, you can set kernel start with a big number like 1000000 
+    If you do not really know the kernel id that you are interested in, you can set kernel start with a big number like 1000000
     ```bash
     export DYNAMIC_KERNEL_LIMIT_START=1000000
     ```
-    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Ids you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels. 
+    In this case, the tracer will trace nothing. However, it will still list kernels name and ids in stats.csv file. So, check the stats.csv file and see the exact kernel Ids you want to trace. This feature is very important if your application generates large traces, and you want to skip some kernels and trace specific important kernels.
 
     As an alternative to the method described above, you can wrap the region you want to trace with `cudaProfilerStart()` and `cudaProfilerStop()` calls then set the following environment variable to trace only within that region. Note: setting `ACTIVE_FROM_START` to zero disables the effects of the `DYNAMIC_KERNEL_LIMIT_START/STOP` variables.
     ```bash
@@ -73,29 +73,29 @@
     export TRACE_LINEINFO=1
 
     # Rebuild application suite, TRACE_LINEINFO=1 will turn on the nvcc -lineinfo flag for you
-    source ./gpu-app-collection/src/setup_environment  
-    make -j -C ./gpu-app-collection/src rodinia_2.0-ft  
+    source ./gpu-app-collection/src/setup_environment
+    make -j -C ./gpu-app-collection/src rodinia_2.0-ft
     ```
 
 * Traces format:
 
-    The instruction format contains the following columns. Any column that is NOT contained in brackets [] must exist in any instruction format, so any instruction should have at least 10 column entries as reported below. 
-    
+    The instruction format contains the following columns. Any column that is NOT contained in brackets [] must exist in any instruction format, so any instruction should have at least 10 column entries as reported below.
+
     ```bash
     #traces format = [line_num] PC mask dest_num [reg_dests] opcode src_num [reg_srcs] mem_width [adrrescompress?] [mem_addresses]
     ```
-    
+
     The other columns that are in brackets [] may or may not exist based on the instruction characteristics, for example:
     "dest_num" tells us the number of destination registers.
     If dest_num=0, then "reg_dests" will be empty and not exist in the trace.
-    If dest_num>0, this means that this instruction has dest_num destination registers, the [reg_dests] will list these registers values. 
+    If dest_num>0, this means that this instruction has dest_num destination registers, the [reg_dests] will list these registers values.
 	Similarly, the "src_num" and "reg_srcs".
 
     Finally, the mem_width rule is as following:
     If mem_width=0, this implies that it is not a memory instruction and [adrrescompress?] [mem_addresses] will be empty.
     If mem_width>0, this implies that this is a memory instruction with mem_width as the memory width of the data to be loaded per thread, and [adrrescompress?] [mem_addresses] will list the memory addresses in a compressed format.
 
-    Example: 
+    Example:
 
 
 		31 0 0 3 0000 ffffffff 1 R1 IMAD.MOV.U32 2 R255 R255 0

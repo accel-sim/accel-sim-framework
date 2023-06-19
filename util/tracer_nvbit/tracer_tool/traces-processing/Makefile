@@ -6,5 +6,5 @@ $(TARGET): post-traces-processing.cpp
 run: $(TARGET)
 	./$(TARGET)
 
-clean: 
+clean:
 	rm -f $(TARGET) *.o
