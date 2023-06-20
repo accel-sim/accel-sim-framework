@@ -200,7 +200,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       OpcPowerMap->find(m_opcode);
     if(it2 != OpcPowerMap->end())
       sp_op = (special_ops) (it2->second);
-      oprnd_type = get_oprnd_type(op, sp_op);
+    oprnd_type = get_oprnd_type(op, sp_op);
   } else {
     std::cout << "ERROR:  undefined instruction : " << trace.opcode
               << " Opcode: " << opcode1 << std::endl;
