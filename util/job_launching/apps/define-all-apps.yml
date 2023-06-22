@@ -786,3 +786,17 @@ Deepbench_nvidia_LDGSTS:
         - gemm_bench:
             - args: inference half 512 3000 1536 0 0
               accel-sim-mem: 7G
+
+ldgsts_ubench:
+    exec_dir: "$HOME/test_apps/bin/"
+    data_dirs: ""
+    execs:
+            - async_memcpy_test:
+                    - args:
+                      accel-sim-mem: 1G
+            - async_memcpy_test_group:
+                    - args:
+                      accel-sim-mem: 1G
+            - test_correl:
+                    - args:
+                      accel-sim-mem: 1G

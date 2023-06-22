@@ -125,7 +125,8 @@ void inst_memadd_info_t::base_delta_decompress(
 }
 
 bool inst_trace_t::parse_from_string(std::string trace,
-                                     unsigned trace_version) {
+                                     unsigned trace_version,
+                                     unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -140,6 +141,9 @@ bool inst_trace_t::parse_from_string(std::string trace,
 
     ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z >>
         warpid_tb;
+  }
+  if (enable_lineinfo) {
+    ss >> std::dec >> line_num;
   }
 
   ss >> std::hex >> m_pc;
@@ -278,6 +282,7 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
   kernel_trace_t *kernel_info = new kernel_trace_t;
+  kernel_info->enable_lineinfo = 0; // default disabled
   kernel_info->ifs = new std::ifstream;
   std::ifstream *ifs = kernel_info->ifs;
   ifs->open(kerneltraces_filepath.c_str());
@@ -328,6 +333,9 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",
                &kernel_info->binary_verion);
+      } else if (string1 == "enable" && string2 == "lineinfo") {
+        sscanf(line.c_str(), "-enable lineinfo = %d",
+               &kernel_info->enable_lineinfo);
       } else if (string1 == "nvbit" && string2 == "version") {
         const size_t equal_idx = line.find('=');
         kernel_info->nvbit_verion = line.substr(equal_idx + 1);
@@ -365,7 +373,7 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, std::ifstream *ifs) {
+    unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -418,7 +426,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version);
+            .parse_from_string(line, trace_version, enable_lineinfo);
         inst_count++;
       }
     }
