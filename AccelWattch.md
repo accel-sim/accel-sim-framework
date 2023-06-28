@@ -85,18 +85,6 @@ mkdir -p $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
 cp $GPUAPPS_ROOT/bin/11.0/release/* $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation
 ```
 
-### Using pre-compiled binaries for AccelWattch
-
-Alternatively, you can use pre-compiled binaries located at **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/**
-To extract pre-compiled binaries for AccelWattch:
-```
-cd $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks
-./extract_binaries.sh
-```
-This will create a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/validation** with the binaries for validation workloads and a folder **$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks** with the binaries for AccelWattch microbenchmarks.
-
-**NOTE:** These binaries include dynamically-linked libraries and may not run on your system. Hence, we **STRONGLY** recommend compiling the binaries yourself following the previous step above.
-
 
 ### Setting up datasets for AccelWattch Validation Benchmarks
 
@@ -131,7 +119,7 @@ Once all the validation suite binaries are located at **$ACCELSIM_ROOT/../util/a
 ```
 $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/profile_validation_perf.sh
 ```
-This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/** for use in subsequent AccelWattch HW and HYBRID runs.
+This will replace the pre-existing hw_perf.csv with new results. The hw_perf.csv is also copied over to **$ACCELSIM_ROOT/../gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_GV100/** for use in subsequent AccelWattch HW and HYBRID runs.
 
 ## Building AccelWattch
 To build AccelWattch and Accel-Sim using a single CPU core, please run:
@@ -181,7 +169,7 @@ The above will create **$ACCELSIM_ROOT/../accelwattch_runs/** directory which co
 
 **NOTE:** Some Accel-Sim jobs like `cudaTensorCoreGemm` require ~20G memory to run and might get killed when out-of-memory. To relaunch individual jobs, go to the run directory and run the launch command as shown in this example:
 ```
-cd $ACCELSIM_ROOT/../accelwattch_runs/volta_sass_sim/cudaTensorCoreGemm/NO_ARGS/QV100-Accelwattch_SASS_SIM
+cd $ACCELSIM_ROOT/../accelwattch_runs/volta_sass_sim/cudaTensorCoreGemm/NO_ARGS/GV100-Accelwattch_SASS_SIM
 $ACCELSIM_ROOT/bin/release/accel-sim.out  -config ./gpgpusim.config -trace ./traces/kernelslist.g
 ```
 

@@ -51,7 +51,7 @@ Also, in trace-driven mode, we provide the flexibility and ability to add new ex
 
 Our GPU cache model supports sectored, banked L1 cache design. Our sector size is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks: 
 ```
-# Add the 'S' character at the header as shown below, for non-sector cache design, use 'N'
+# Add the 'S' character at the header as shown below; for non-sector cache design use 'N'
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 -gpgpu_cache:dl1  S:4:128:64,L:L:m:N:L,A:512:8,16:0,32
 
@@ -59,6 +59,11 @@ Our GPU cache model supports sectored, banked L1 cache design. Our sector size i
 -gpgpu_l1_banks 4
 -gpgpu_l1_banks_byte_interleaving 32
 ```
+
+> **_Note well:_** When using sector cache ('S'), the sector size is hard-coded
+> to 32 and the sector number is hard-coded to 4. Any value other than 128
+> passed to `bsize` will result in assertion error at run time!   
+
 In GPGPU-sim 3.x, L1 and shared latency was 1 cycle constant. To set different latencies:
 ```
 -gpgpu_l1_latency 20
