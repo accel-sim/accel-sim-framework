@@ -154,7 +154,7 @@ int main(int argc, const char **argv) {
         k = kernels_info.at(j);
         if (k->get_uid() == finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit()
             || !m_gpgpu_sim->active()) {
-          for (int l = 0; l < busy_streams.size(); l++) {
+          for (unsigned int l = 0; l < busy_streams.size(); l++) {
             if (busy_streams.at(l) == k->get_cuda_stream_id()) {
               busy_streams.erase(busy_streams.begin()+l);
               break;
