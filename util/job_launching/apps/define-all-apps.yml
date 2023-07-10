@@ -511,12 +511,12 @@ cutlass_5_trace:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
-        - cutlass_perf_test:
+        - cutlass_profiler:
             #sparse gemm kernels
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
               accel-sim-mem: 13G
-            # - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
-            #   accel-sim-mem: 13G
+            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+              accel-sim-mem: 13G
             # - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
             #   accel-sim-mem: 13G
             # - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
