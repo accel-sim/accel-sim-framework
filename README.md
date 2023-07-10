@@ -259,20 +259,20 @@ CUDA\_INSTALL\_PATH, the run ./travis.sh.
 
 1. **Running AccelWattch SASS SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch SASS SIM* model,
 ```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-Accelwattch_SASS_SIM -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_SASS_SIM -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
 ```
 This will use the *AccelWattch SASS SIM* xml configuration file for the power model. The configuration files for the AccelWattch power model presented in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) can be found [here](https://github.com/accel-sim/gpgpu-sim_distribution/tree/release-accelwattch/configs/tested-cfgs/SM7_QV100). Please look at `./util/job_launching/configs/define-standard-cfgs.yml` for a list of provided AccelWattch configurations. The *AccelWattch HYBRID* configuration provided there uses activity factors for L2 and NOC from Accel-Sim and the rest from hardware performance counters. You can create your own *AccelWattch HYBRID* configuration in this file with a different mix of AccelWattch activity factors from Accel-Sim and hardware execution. 
 Upon completion of simulations, AccelWattch power estimations are stored in a *accelwattch_power_report.log* in a per-kernel format in the run directory. 
 
 2. **Running AccelWattch HW or AccelWattch HYBRID:** To run *the simple example from bullet 1* with *AccelWattch HW* or *AccelWattch HYBRID* configurations, 
 ```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a -C <QV100-Accelwattch_SASS_HW or QV100-Accelwattch_SASS_HYBRID> -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a -C <GV100-Accelwattch_SASS_HW or GV100-Accelwattch_SASS_HYBRID> -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
 ```
-Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a QV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`. 
+Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a GV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`. 
 
 3. **Running AccelWattch PTX SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch PTX SIM* model,
 ```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-Accelwattch_PTX_SIM -N myTest
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_PTX_SIM -N myTest
 ```
 
 4. **Hardware Power and Performance Profiler**: The AccelWattch hardware profiler scripts are located at `./util/accelwattch/accelwattch_hw_profiler/` in this repository. For more information on how to use them, please look at [this](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md#hardware-profiling-for-accelwattch-validation) section in our MICRO'21 Artifact Manual.

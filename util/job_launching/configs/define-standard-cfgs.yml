@@ -43,6 +43,8 @@ QV100_SASS:
 
 QV100_old:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_old/gpgpusim.config"
+GV100:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_GV100/gpgpusim.config"
 
 # Fermi
 GTX480:

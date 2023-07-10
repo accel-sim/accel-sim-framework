@@ -132,7 +132,7 @@ def main():
     selectionValid = False
     while not selectionValid:
         if options.apps == None:
-            selection = raw_input("\n-------\nWhat do you want to download?"\
+            selection = input("\n-------\nWhat do you want to download?"\
                 "\n<card/suite>,<card/suite> (i.e. tesla-v100/rodinia-3.1,tesla-v100/cudasdk)"\
                 "\n(Default=all/all) : ")
             if selection == "" or selection == None:

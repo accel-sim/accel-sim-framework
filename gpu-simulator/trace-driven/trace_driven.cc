@@ -122,6 +122,7 @@ void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(threadblock_traces,
                                         m_kernel_trace_info->trace_verion,
+                                        m_kernel_trace_info->enable_lineinfo,
                                         m_kernel_trace_info->ifs);
 }
 
@@ -174,6 +175,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   is_vectorin = 0;
   is_vectorout = 0;
+  pred = 0;
   ar1 = 0;
   ar2 = 0;
   memory_op = no_memory_op;
@@ -372,6 +374,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_HSETP2:
       initiation_interval =
           initiation_interval / 2;  // FP16 has 2X throughput than FP32
+      if (initiation_interval < 1)  // Make sure initiaion interval never goes below 1
+        initiation_interval = 1;
       break;
     default:
       break;
