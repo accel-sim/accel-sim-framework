@@ -199,9 +199,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     op = (op_type)(it->second.opcode_category);
     const std::unordered_map<unsigned, unsigned> *OpcPowerMap = &OpcodePowerMap;
     std::unordered_map<unsigned, unsigned>::const_iterator it2 =
-      OpcPowerMap->find(m_opcode);
-    if(it2 != OpcPowerMap->end())
-      sp_op = (special_ops) (it2->second);
+        OpcPowerMap->find(m_opcode);
+    if (it2 != OpcPowerMap->end()) sp_op = (special_ops)(it2->second);
     oprnd_type = get_oprnd_type(op, sp_op);
   } else {
     std::cout << "ERROR:  undefined instruction : " << trace.opcode
