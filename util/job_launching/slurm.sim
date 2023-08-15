@@ -19,7 +19,7 @@ copy_output() {
 trap copy_output ERR
 
 #citing https://stackoverflow.com/questions/35800082/how-to-trap-err-when-using-set-e-in-bash
-#Setting -E alongside -e makes any trap on ERR inherited by shell funcs, command substitutions and commands executed in a subshell environment 
+#Setting -E alongside -e makes any trap on ERR inherited by shell funcs, command substitutions and commands executed in a subshell environment
 set -eE
 
 if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then

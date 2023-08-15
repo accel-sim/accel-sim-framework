@@ -51,4 +51,3 @@ $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/gen_hw_perf_csv.py -d
 mv ${root_dir}/hw_perf.csv $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/hw_perf.csv
 echo "y" | cp $ACCELSIM_ROOT/../util/accelwattch/accelwattch_hw_profiler/hw_perf.csv $ACCELSIM_ROOT/gpgpu-sim/configs/tested-cfgs/SM7_QV100/hw_perf.csv
 echo "Done"
-
