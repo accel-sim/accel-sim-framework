@@ -90,7 +90,7 @@ squeue.id       Node                            App                     AppArgs 
 Some useful ways to use `get_stats.py` are as follows:
 
 ```bash
-# Just get me all the per-app stats for the set of 
+# Just get me all the per-app stats for the set of
 ./get_stats.py -N rodinia-sass-test | tee per-app-fromlaunch.csv
 
 # Ignoring how the tests were run, get me the latest results for a particular set of configs/apps
