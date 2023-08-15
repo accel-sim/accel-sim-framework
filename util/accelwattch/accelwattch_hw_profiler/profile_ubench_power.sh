@@ -74,34 +74,34 @@ mkdir -p $SCRIPT_DIR/ubench_profile_output
 for run in {1..5}
 do
     while IFS= read -r bm
-    do  
+    do
         if [ `echo $bm | awk '{print NF}'` == "4" ]; then
             bm_name=`echo $bm | awk '{print $1"_"$2"_"$3"_"$4}'`
         else
             bm_name=`echo $bm | awk '{print $1"_"$2}'`
         fi
         echo "Starting profiling of $bm_name"
-        mkdir -p $SCRIPT_DIR/ubench_power_reports/$bm_name				
-        CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm & 
+        mkdir -p $SCRIPT_DIR/ubench_power_reports/$bm_name
+        CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm &
         $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
         kill_name=`echo $bm | awk '{print $1}'`
         pid=`nvidia-smi | grep $kill_name | awk '{ print $5 }'`
         echo "Profiling concluded. Killing $bm_name with pid: $pid"
         kill -9 $pid
-        
+
         if cat $SCRIPT_DIR/ubench_profile_output/$bm_name.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
             CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/mix6 2000000000 &
             sleep 20
             pid=`nvidia-smi | grep mix6 | awk '{ print $5 }'`
             kill -9 $pid
-            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm & 
+            CUDA_VISIBLE_DEVICES=$DEVID $BINDIR/$bm &
             $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/ubench_power_reports/$bm_name/run_$run.rpt >> $SCRIPT_DIR/ubench_profile_output/$bm_name.txt
             pid=`nvidia-smi | grep $kill_name | awk '{ print $5 }'`
             echo "Profiling concluded. Killing $bm_name with pid: $pid"
             kill -9 $pid
         fi
-        
+
         echo "Sleeping..."
         sleep $sleep_time
     done < $UBENCH_FILE

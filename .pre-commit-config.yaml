@@ -1,0 +1,31 @@
+default_language_version:
+    #Let pre-commit run hooks written in Python with python3.8 (unless specified
+    #by the hook otherwise)
+    python: python3.8
+repos:
+-   repo: https://github.com/pre-commit/pre-commit-hooks
+    rev: v3.2.0
+    hooks:
+    -   id: trailing-whitespace
+    -   id: end-of-file-fixer
+    -   id: check-yaml
+    -   id: check-added-large-files
+-   repo: https://github.com/psf/black
+    rev: 22.10.0
+    hooks:
+    -   id: black
+        name: black (python formatter)
+-   repo: https://github.com/pre-commit/mirrors-clang-format
+    rev: v15.0.7
+    hooks:
+    -   id: clang-format
+        name: clang-format (cpp formatter)
+        # The following regex is a YAML multiline string
+        # (?x) is a regex modifier that allows common whitespaces to be ignored
+        # To specify a file pattern, add it between ^( and )$
+        files: |
+            (?x)^(
+                gpu-simulator/trace-driven/[^/]*\.(h|cc)
+                |gpu-simulator/ISA_Def/[^/]*\.(h|cc)
+                |gpu-simulator/main.cc
+            )$

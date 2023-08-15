@@ -101,7 +101,7 @@ void nvbit_at_init() {
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
-  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0, 
+  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0,
               "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
   GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0, "Uses the user defined "
               "folder TRACES_FOLDER path environment");
@@ -166,7 +166,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       int opcode_id = opcode_to_id_map[instr->getOpcode()];
 
-      /* check all operands. For now, we ignore constant, TEX, predicates and 
+      /* check all operands. For now, we ignore constant, TEX, predicates and
        * unified registers. We only report vector regisers */
       int src_oprd[MAX_SRC];
       int srcNum = 0;
@@ -302,7 +302,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       if (active_from_start)
         active_region = false;
     }
-    
+
     if(user_defined_folders == 1)
     {
       std::string usr_folder = std::getenv("TRACES_FOLDER");
