@@ -124,8 +124,7 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
-bool inst_trace_t::parse_from_string(std::string trace,
-                                     unsigned trace_version,
+bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
                                      unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
@@ -277,7 +276,7 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
   kernel_trace_t *kernel_info = new kernel_trace_t;
-  kernel_info->enable_lineinfo = 0; // default disabled
+  kernel_info->enable_lineinfo = 0;  // default disabled
   kernel_info->ifs = new std::ifstream;
   std::ifstream *ifs = kernel_info->ifs;
   ifs->open(kerneltraces_filepath.c_str());

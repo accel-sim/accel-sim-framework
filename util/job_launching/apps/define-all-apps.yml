@@ -54,43 +54,43 @@ GPU_Microbenchmark:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - l1_bw_32f:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_bw_64f:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_bw_128:
-            - args: 
+            - args:
               accel-sim-mem: 2G
         - l1_lat:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_lat:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l2_bw_32f:
-            - args: 
+            - args:
               accel-sim-mem: 6G
         - l2_bw_64f:
-            - args: 
+            - args:
               accel-sim-mem: 6G
 #        - l2_bw_128:
-#            - args: 
+#            - args:
 #              accel-sim-mem: 1G
         - l2_lat:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - mem_bw:
-            - args: 
+            - args:
               accel-sim-mem: 2G
         - mem_lat:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - shared_bw:
-            - args: 
+            - args:
               accel-sim-mem: 2G
         - shared_lat:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - shared_bank_conflicts:
         ## argument 1 kernel has conflicts
@@ -100,16 +100,16 @@ GPU_Microbenchmark:
             - args: 2
               accel-sim-mem: 1G
         - MaxFlops:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_shared_bw:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_bw_32f_unroll:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - l1_bw_32f_unroll_large:
-            - args: 
+            - args:
               accel-sim-mem: 1G
 
 Deepbench_nvidia_tencore:
@@ -326,11 +326,11 @@ rodinia-3.1:
               accel-sim-mem: 1G
 #        - cfd-rodinia-3.1:
 #            - args:  ./data/fvcorr.domn.097K
-              accel-sim-mem: 1G
+#             accel-sim-mem: 1G
 #            - args:  ./data/fvcorr.domn.193K
-              accel-sim-mem: 1G
+#              accel-sim-mem: 1G
 #            - args:  ./data/missile.domn.0.2M
-              accel-sim-mem: 4G
+#              accel-sim-mem: 4G
         - dwt2d-rodinia-3.1:
             - args:  ./data/192.bmp -d 192x192 -f -5 -l 3
               accel-sim-mem: 1G
@@ -452,10 +452,10 @@ parboil:
         - parboil-mri-gridding:
             - args: -i ./data/small/input/small.uks -o output.txt -- 32 0
               accel-sim-mem: 1G
-        
+
         - parboil-bfs:
 #            - args: -i ./data/1M/input/graph_input.dat -o bfs-1M.out
-            - args: -i ./data/NY/input/graph_input.dat -o bfs-NY.out 
+            - args: -i ./data/NY/input/graph_input.dat -o bfs-NY.out
               accel-sim-mem: 2G
 #            - args: -i ./data/SF/input/graph_input.dat -o bfs-SF.out
 #            - args: -i ./data/UT/input/graph_input.dat -o bfs-UT.out
@@ -469,16 +469,16 @@ polybench:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - polybench-2DConvolution:
-            - args: 
+            - args:
               accel-sim-mem: 1G
         - polybench-2mm:
-            - args: 
+            - args:
               accel-sim-mem: 13G
         - polybench-3DConvolution:
             - args:
               accel-sim-mem: 1G
         - polybench-3mm:
-            - args: 
+            - args:
               accel-sim-mem: 4G
         - polybench-atax:
             - args:
@@ -499,7 +499,7 @@ polybench:
             - args:
               accel-sim-mem: 4G
         - polybench-gesummv:
-            - args: 
+            - args:
               accel-sim-mem: 2G
         - polybench-gramschmidt:
             - args:
@@ -578,15 +578,15 @@ ispass-2009:
         #benchmarks/cp/build/cuda_short/cp
         #../bin/release/DG ./data/cubeK268.neu
         - ispass-2009-LIB:
-            - args: 
+            - args:
         - ispass-2009-LPS:
-            - args: 
+            - args:
         - ispass-2009-MUM:
             - args:  ./data/NC_003997.20k.fna ./data/NC_003997_q25bp.50k.fna
         - ispass-2009-NN:
             - args:  28
         - ispass-2009-NQU:
-            - args: 
+            - args:
         - ispass-2009-RAY:
             - args:  256 256
         - ispass-2009-STO:
@@ -689,13 +689,13 @@ lonestargpu-2.0:
             - args: ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
-        - lonestar-bfs-wlw: 
+        - lonestar-bfs-wlw:
             - args: ./data/r4-2e20.gr
             - args: ./data/rmat20.gr
             - args: ./data/USA-road-d.NY.gr
 #            - ./data/USA-road-d.FLA.gr
 #            - ./data/USA-road-d.USA.gr
-        - lonestar-bfs-wla: 
+        - lonestar-bfs-wla:
             - args: ./data/r4-2e20.gr
             - args: ./data/rmat20.gr
             - args: ./data/USA-road-d.NY.gr
@@ -710,14 +710,14 @@ lonestargpu-2.0:
             #deadlock
 #            - args: ./data/USA-road-d.NY.gr
         # Needs Texture
-        - lonestar-sssp-wln: 
+        - lonestar-sssp-wln:
             - args: ./data/r4-2e20.gr
             - args: ./data/rmat20.gr
             - args: ./data/USA-road-d.NY.gr
             - args: ./data/USA-road-d.FLA.gr
             - args: ./data/USA-road-d.USA.gr
         # Some register sizing problems
-        - lonestar-bfs-wlc: 
+        - lonestar-bfs-wlc:
             - args: ./data/r4-2e20.gr
             - args: ./data/rmat20.gr
             - args: ./data/USA-road-d.NY.gr

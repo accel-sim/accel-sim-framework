@@ -31,7 +31,7 @@
 |*   227.7202-4 (JUNE 1995), all U.S. Government End Users acquire the       *|
 |*   source code with only those rights set forth herein.                    *|
 |*                                                                           *|
-|*   Any use of this source code in individual and commercial software must  *| 
+|*   Any use of this source code in individual and commercial software must  *|
 |*   include, in the user documentation and internal comments to the code,   *|
 |*   the above Disclaimer and U.S. Government End Users Notice.              *|
 |*                                                                           *|
@@ -54,7 +54,7 @@
 
 // CTRL+C handler
 static volatile int exitFlag = 0;
-void intHandler(int v) 
+void intHandler(int v)
 {
     exitFlag = 1;
 }
@@ -64,7 +64,7 @@ int init()
     printf("Initializing NVML... ");
     nvmlReturn_t res;
     res = nvmlInit();
-    if( res != NVML_SUCCESS ) { 
+    if( res != NVML_SUCCESS ) {
         printf("Error: failed to initialize NVML: %s\n", nvmlErrorString(res));
         return 0;
     }
@@ -93,7 +93,7 @@ int getDevice(int devId, nvmlDevice_t* dev, nvmlUnit_t* unit)
     printf("Getting device... ");
 
     res = nvmlDeviceGetCount(&numDev);
-    if( res != NVML_SUCCESS ) { 
+    if( res != NVML_SUCCESS ) {
         printf("Error: Failed to get number of devices: %s\n", nvmlErrorString(res));
         return 0;
     }
@@ -106,17 +106,17 @@ int getDevice(int devId, nvmlDevice_t* dev, nvmlUnit_t* unit)
     char devName[NVML_DEVICE_NAME_BUFFER_SIZE];
 
     res = nvmlDeviceGetHandleByIndex(devId, dev);
-    if( res != NVML_SUCCESS ) { 
+    if( res != NVML_SUCCESS ) {
         printf("Error: failed to get handle for device %i: %s\n", devId, nvmlErrorString(res));
         return 0;
     }
 
     res = nvmlDeviceGetName(*dev, devName, NVML_DEVICE_NAME_BUFFER_SIZE);
-    if( res != NVML_SUCCESS ) { 
+    if( res != NVML_SUCCESS ) {
         printf("Error: failed to get name of device %i: %s\n", devId, nvmlErrorString(res));
         return 0;
     }
-    
+
     printf("Selected device %d: %s\n", devId, devName);
 
 #if 0
@@ -162,7 +162,7 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
     nvmlPSUInfo_t psu;
     nvmlPstates_t pState;
     int samplesRemaining = (numSamples == -1 ? 1 : numSamples);
-    double avgWatts = 0.0; 
+    double avgWatts = 0.0;
     unsigned int sampleCount = 0;
     FILE *f;
     nvmlUtilization_t util;
@@ -173,15 +173,15 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
             printf("Error: failed to open file %s\n", oFileName);
             return 0;
         }
-    } 
-    
+    }
+
     printf("\n\nStarting power measurement...\n");
 
     while( samplesRemaining > 0 ) {
         // Throttle to sample rate
         usleep(sampleRate * 1000.0);
         //increment number of samples processed
-        
+
 
 		if (pid != 0 && processIsAlive(pid) == 0) {
 			printf("Application terminated. Closing profiler...\n");
@@ -195,12 +195,12 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
                 continue;
             }
             else if( numSamples == -1 )
-				continue; 
+				continue;
 			else
                 break;
         }
 
-        
+
 
 		if (temp_cutoff_T)
 		{
@@ -238,16 +238,16 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
 
         if(( numSamples != -1 ) || (temp_cutoff == true))
             samplesRemaining--;
-         
+
         if( exitFlag ) {
             printf("Stopping power measurement...\n");
             break;
          }
     }
 
-    if (sampleCount == 0) 
+    if (sampleCount == 0)
         avgWatts = 0.0;
-    else 
+    else
         avgWatts /= sampleCount;
     if( csv ) {
         if( oFileName ) {
@@ -271,7 +271,7 @@ int measurePower(char* oFileName, int csv, int devId, nvmlDevice_t* dev, int sam
                 printf("Power draw = %.4lf W, power state = %d \n", avgWatts, pState);
         }
     }
-        
+
 
     if ((temp_cutoff_T) && (!temp_cutoff))
         printf("WARNING: TEMPERATURE CUTTOFF NOT REACHED \n\n");
@@ -338,7 +338,7 @@ int parseOptions(int argc, char** argv, char** outFileName, int* csv, int* devId
 				*temp_cutoff_T = atoi(optarg);
 				break;
 
-            default: 
+            default:
                 printf("Error: unknown option\n");
                 return 0;
         }
@@ -386,7 +386,7 @@ int main(int argc, char** argv)
     if( ret == 2)
         return EXIT_SUCCESS;
 
-    if( !init() ) 
+    if( !init() )
         return EXIT_FAILURE;
 
     if( !getDevice(devId, &dev, &unit) ) {
@@ -439,4 +439,4 @@ int main(int argc, char** argv)
 
     return EXIT_SUCCESS;
 
-} 
+}

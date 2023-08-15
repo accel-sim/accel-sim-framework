@@ -43,6 +43,8 @@ QV100_SASS:
 
 QV100_old:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_old/gpgpusim.config"
+GV100:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_GV100/gpgpusim.config"
 
 # Fermi
 GTX480:
@@ -160,7 +162,7 @@ FCFS:
 PTXPLUS_SM6:
     extra_params: "-gpgpu_ptx_convert_to_ptxplus 1 -gpgpu_ptx_force_max_capability 62 -gpgpu_ptx_force_min_capability 60"
 
-#Accelwattch configs 
+#Accelwattch configs
 Accelwattch_SASS_SIM:
     extra_params: "-power_simulation_enabled 1
     \n-power_simulation_mode 0

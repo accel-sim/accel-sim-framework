@@ -16,7 +16,7 @@
 #define WARP_SCHEDS_PER_SM 4              // number of warp schedulers per SM
 
 // number of SASS HMMA per 16x16 PTX WMMA for FP16 - FP32 accumlate operation
-#define SASS_hmma_per_PTX_wmma 4 
+#define SASS_hmma_per_PTX_wmma 4
 
 // These vars are almost constant between HW generation
 // see slide 24 from Nvidia at
