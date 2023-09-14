@@ -1,11 +1,14 @@
-// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
-// Northwestern University, Purdue University, The University of British Columbia
+// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor
+// M. Aamodt, Nikos Hardavellas
+// Northwestern University, Purdue University, The University of British
+// Columbia
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
-// 1. Redistributions of source code must retain the above copyright notice, this
+// 1. Redistributions of source code must retain the above copyright notice,
+// this
 //    list of conditions and the following disclaimer;
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
@@ -27,14 +30,12 @@
 // ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 // POSSIBILITY OF SUCH DAMAGE.
 
-
-#include "abstract_hardware_model.h"
-#include "trace_opcode.h"
 #include <string>
 #include <unordered_map>
+#include "abstract_hardware_model.h"
+#include "trace_opcode.h"
 
-
-/* This is the SASS instruction to Power Component mapping for AccelWattch */ 
+/* This is the SASS instruction to Power Component mapping for AccelWattch */
 static const std::unordered_map<unsigned, unsigned> OpcodePowerMap = {
     // Volta (includes common insts for others cards as well)
     {OP_FADD, FP__OP},
@@ -49,7 +50,8 @@ static const std::unordered_map<unsigned, unsigned> OpcodePowerMap = {
     {OP_FSET, FP__OP},
     {OP_FSETP, FP__OP},
     {OP_FSWZADD, FP__OP},
-    {OP_MUFU, FP_SIN_OP}, // We differentiate between different MUFU operations (SIN,EX2,RSQ,LG2) in ../trace-driven/trace_driven.cc 
+    {OP_MUFU, FP_SIN_OP},  // We differentiate between different MUFU operations
+    // (SIN,EX2,RSQ,LG2) in ../trace-driven/trace_driven.cc
     {OP_HADD2, FP__OP},
     {OP_HADD2_32I, FP__OP},
     {OP_HFMA2, FP_MUL_OP},

@@ -215,7 +215,7 @@ void nvbit_at_function_first_load(CUcontext ctx, CUfunction func) {
     }
 
     // First time seeing the kernel, allocate space here too
-    kbb_map.insert(std::pair<std::string,int>(nvbit_get_func_name(ctx, func), cfg.bbs.size())); 
+    kbb_map.insert(std::pair<std::string,int>(nvbit_get_func_name(ctx, func), cfg.bbs.size()));
     int *bbs;
     basic_blocks = cfg.bbs.size();
     cudaMallocManaged(&bbs, (tot_threads / 32) * (basic_blocks) * sizeof(int));
@@ -282,7 +282,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
             // Set global number of threads
             tot_threads = gx * gy * bx * by;
-            
+
             // Allocate some space for each warp
             if(first){
                 first = false;
@@ -312,7 +312,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                     bbv[i] = 0;
                 }
             }
-            
+
 
 
         } else {
@@ -333,7 +333,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                 }
                 fprintf(f, "\n");
             }
-            fclose(f); 
+            fclose(f);
             /*
             tot_app_instrs += counter;
             int num_ctas = 0;
