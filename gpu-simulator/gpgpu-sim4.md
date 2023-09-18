@@ -2,7 +2,7 @@
 
 <p><a name="gpgpusim4"></a></p>
 
-This article describes the major changes that have been made in GPGPU-Sim version 4.x. If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf), [GPGPU-Sim 3.x tutorial](http://www.gpgpu-sim.org/micro2012-tutorial/), [videos](https://www.youtube.com/channel/UCMZLxSL7Ibn6uCvwdZcGqFQ/videos) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page). 
+This article describes the major changes that have been made in GPGPU-Sim version 4.x. If you are not familiar already with GPGPU-Sim, please see the original [GPGPU-Sim ISPASS paper](https://people.ece.ubc.ca/aamodt/papers/gpgpusim.ispass09.pdf), [GPGPU-Sim 3.x tutorial](http://www.gpgpu-sim.org/micro2012-tutorial/), [videos](https://www.youtube.com/channel/UCMZLxSL7Ibn6uCvwdZcGqFQ/videos) and [GPGPU-Sim 3.x manual](http://gpgpu-sim.org/manual/index.php/Main_Page).
 
 If you use GPGPU-Sim 4.x in your research, please cite:
 
@@ -29,7 +29,7 @@ To enable sub_core model, you need to set sub_core model in the config file:
  # Volta has sub core model, in which each scheduler has its own register file and EUs
  # i.e. schedulers are isolated
 -gpgpu_sub_core_model 1
-  ```  
+  ```
 
 In sub_core model, warp schedulers are restrictively partitioned the pipeline, and each has its own register file, operand collectors, execution unit, and pipeline registers as shown in the below image:
 
@@ -45,13 +45,13 @@ Also, in trace-driven mode, we provide the flexibility and ability to add new ex
 -trace_opcode_latency_initiation_spec_op_3 8,4
 ```
 
-2. **Caches**: 
+2. **Caches**:
 
 <img src="https://accel-sim.github.io/assets/img/memory.png" width="700" height="400">
 
-Our GPU cache model supports sectored, banked L1 cache design. Our sector size is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks: 
+Our GPU cache model supports sectored, banked L1 cache design. Our sector size is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks:
 ```
-# Add the 'S' character at the header as shown below, for non-sector cache design, use 'N'
+# Add the 'S' character at the header as shown below; for non-sector cache design use 'N'
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
 -gpgpu_cache:dl1  S:4:128:64,L:L:m:N:L,A:512:8,16:0,32
 
@@ -59,6 +59,11 @@ Our GPU cache model supports sectored, banked L1 cache design. Our sector size i
 -gpgpu_l1_banks 4
 -gpgpu_l1_banks_byte_interleaving 32
 ```
+
+> **_Note well:_** When using sector cache ('S'), the sector size is hard-coded
+> to 32 and the sector number is hard-coded to 4. Any value other than 128
+> passed to `bsize` will result in assertion error at run time!
+
 In GPGPU-sim 3.x, L1 and shared latency was 1 cycle constant. To set different latencies:
 ```
 -gpgpu_l1_latency 20
@@ -74,19 +79,19 @@ Contemporary GPU architectures make use of an adaptive cache mechanism, in which
 and L1D capacity on a per-kernel basis. Using the adaptive cache, if a kernel does not utilize shared memory, all the onchip storage will be assigned to the L1D cache
 ```
 # Assume defualt config is 32KB DL1 and 96KB shared memory
-# In adaptive cache, we assign the remaining shared memory to L1 cache 
+# In adaptive cache, we assign the remaining shared memory to L1 cache
 # If the assigned shd mem = 0, then L1 cache = 128KB
 
 # Volta adpative cache configuration example:
 # Enable adaptive cache
 -gpgpu_adaptive_cache_config 1
 # Define shmem size options
-# For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x 
+# For more info, see https://docs.nvidia.com/cuda/cuda-c-programming-guide/index.html#shared-memory-7-x
 -gpgpu_shmem_option 0,8,16,32,64,96
 # Max L1+shd mem = 128KB
 -gpgpu_unified_l1d_size 128
 ```
-We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. The new policy conserves memory bandwidth when running a write-intensive GPU workload. When a write to a single byte is received, it writes the byte to the sector, sets a corresponding write bit in a byte-level write mask, and sets the sector as valid and modified. When a sector read request is received to a modified sector, it first checks if the sector write-mask is complete, otherwise, it generates a read request for this sector. In [Volta cards](https://on-demand.gputechconf.com/gtc/2018/presentation/s81006-volta-architecture-and-performance-optimization.pdf) and above, L1 cache is write_allocate write_through, and L2 cache is write_allocate write_back. For the L1 cache, we specify the percentage of L1 size dedicated for write to mitigate read-write interference. 
+We support sub-sector fetch-on-read write design with true write-allocate modeling for both L1&L2 caches. The new policy conserves memory bandwidth when running a write-intensive GPU workload. When a write to a single byte is received, it writes the byte to the sector, sets a corresponding write bit in a byte-level write mask, and sets the sector as valid and modified. When a sector read request is received to a modified sector, it first checks if the sector write-mask is complete, otherwise, it generates a read request for this sector. In [Volta cards](https://on-demand.gputechconf.com/gtc/2018/presentation/s81006-volta-architecture-and-performance-optimization.pdf) and above, L1 cache is write_allocate write_through, and L2 cache is write_allocate write_back. For the L1 cache, we specify the percentage of L1 size dedicated for write to mitigate read-write interference.
 ```
 # To use sub-sector lazy_read design, use character 'L', 'N' for no write allocate, 'W' for naive write design found in GPGPU-sim 3.x and 'F' for fetch-on-write
 # cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
@@ -99,7 +104,7 @@ We support sub-sector fetch-on-read write design with true write-allocate modeli
 # configure L2 write_allocate lazy_fetch 'L' with write_back 'B' policiy as in Volta
 -gpgpu_cache:dl2 S:32:128:24,L:B:m:L:P,A:192:4,32:0,32
 ```
-We added bitwise XORing and advanced polynomial hashing everywhere in the cache/memory system to reduce bank and cache set conflicts and thus alleviate contention. You can set  different hashing functions at different levels of the memory hierarchy: L1 cache set hashing, L1 bank hashing, L2 cache bank hashing, L2 cache set indexing, and memory banks indexing. 
+We added bitwise XORing and advanced polynomial hashing everywhere in the cache/memory system to reduce bank and cache set conflicts and thus alleviate contention. You can set  different hashing functions at different levels of the memory hierarchy: L1 cache set hashing, L1 bank hashing, L2 cache bank hashing, L2 cache set indexing, and memory banks indexing.
 
 ```
 # to select polynomial hashing function, use the character 'P', 'L' for linear indexing and 'X' for bitwise XORing
@@ -132,7 +137,7 @@ We developed a fast built-in xbar interconnect instead of the complex Booksim-ba
 
 ```
 # interconnection
-#-network_mode 1 
+#-network_mode 1
 #-inter_config_file config_volta_islip.icnt
 # to use built-in local xbar
 -network_mode 2
