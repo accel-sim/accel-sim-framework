@@ -262,7 +262,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_ALL;
       break;
     case OP_LDG:
-    case OP_LDGSTS: // Ni: Add for memcpy_async
+    case OP_LDGSTS: // Add for memcpy_async
     case OP_LDL:
       if (data_size == 0) {
         printf("pc: 0x%llx\n", pc);
@@ -275,7 +275,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         space.set_type(local_space);
       else
         space.set_type(global_space);
-      // Ni: Add for LDGSTS instruction
+      // Add for LDGSTS instruction
       if (m_opcode == OP_LDGSTS)
         m_is_ldgsts = true;
       // check the cache scope, if its strong GPU, then bypass L1
@@ -373,11 +373,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // barrier_type bar_type;
       // reduction_type red_type;
       break;
-    // Ni: Add for ldgdepbar
+    // Add for ldgdepbar
     case OP_LDGDEPBAR:
       m_is_ldgdepbar = true;
       break;
-    // Ni: Add for depbar
+    // Add for depbar
     case OP_DEPBAR:
       m_is_depbar = true;
       m_depbar_group_no = trace.imm;
