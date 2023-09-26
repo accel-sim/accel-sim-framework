@@ -28,7 +28,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
   }
 }
 
-inst_trace_t::inst_trace_t() { memadd_info = NULL; }
+inst_trace_t::inst_trace_t() { memadd_info = NULL; imm = 0;}
 
 inst_trace_t::~inst_trace_t() {
   if (memadd_info != NULL) delete memadd_info;

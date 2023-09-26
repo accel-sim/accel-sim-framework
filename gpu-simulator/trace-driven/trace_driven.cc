@@ -264,10 +264,6 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     // the shared memory.
     case OP_LDGSTS: // Add for memcpy_async
     case OP_LDL:
-      if (data_size == 0) {
-        printf("pc: 0x%llx\n", pc);
-        fflush(stdout);
-      }
       assert(data_size > 0);
       memory_op = memory_load;
       cache_op = CACHE_ALL;
