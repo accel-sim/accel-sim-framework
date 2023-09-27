@@ -181,6 +181,11 @@ void group_per_block(const char *filepath) {
       }
       opcode_ss >> opcode;
 
+
+      // One actual LDGSTS instruction includes 2 LDGSTS instructions in the trace, 
+      // because it has two memory references. 
+      // This is trying to remove the one with the shared memory address.
+      
       if (opcode.find("LDGSTS") != string::npos) {
         if (!ldgsts_flags[tb_id][warpid_tb]) {
           insts[tb_id].warp_insts_array[warpid_tb].push_back(rest_of_line);
