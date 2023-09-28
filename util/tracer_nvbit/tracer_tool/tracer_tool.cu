@@ -173,6 +173,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int dst_oprd = -1;
       int mem_oper_idx = -1;
       int num_mref = 0;
+      uint64_t imm_value = 0;
 
       for(int i = 0; i < instr->getNumOperands(); ++i){
         const InstrType::operand_t *op = instr->getOperand(i);
@@ -197,6 +198,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           }
+        }
+        // Add immediate value for DEPBAR instruction
+        else if (op->type == InstrType::OperandType::IMM_UINT64) {
+          imm_value = instr->getOperand(i)->u.imm_uint64.value;
         }
       }
 
@@ -238,6 +243,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, -1);
         }
         nvbit_add_call_arg_const_val32(instr, srcNum);
+
+        /* immediate info */
+        nvbit_add_call_arg_const_val64(instr, imm_value);
+       
         /* add pointer to channel_dev and other counters*/
         nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
         nvbit_add_call_arg_const_val64(instr,
@@ -406,7 +415,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
         fprintf(resultsFile,
                 "#traces format = [line_num] PC mask dest_num [reg_dests] opcode src_num "
-                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses]\n");
+                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] immediate\n");
         fprintf(resultsFile, "\n");
       }
 
@@ -673,6 +682,9 @@ void *recv_thread_fun(void *) {
         } else {
           fprintf(resultsFile, "0 ");
         }
+
+        // Print the immediate
+        fprintf(resultsFile, "%d ", ma->imm);
 
         fprintf(resultsFile, "\n");
 

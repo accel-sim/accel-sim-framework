@@ -28,7 +28,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
   }
 }
 
-inst_trace_t::inst_trace_t() { memadd_info = NULL; }
+inst_trace_t::inst_trace_t() { memadd_info = NULL; imm = 0;}
 
 inst_trace_t::~inst_trace_t() {
   if (memadd_info != NULL) delete memadd_info;
@@ -165,7 +165,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     ss >> temp;
     sscanf(temp.c_str(), "R%d", &reg_src[i]);
   }
-
+   
   // parse mem info
   unsigned address_mode = 0;
   unsigned mem_width = 0;
@@ -211,6 +211,9 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
   }
+
+  ss >> imm;
+
   // Finish Parsing
 
   return true;
