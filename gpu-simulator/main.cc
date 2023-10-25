@@ -374,10 +374,10 @@ int main(int argc, const char **argv) {
     //   break;
     // }
 
-    if (m_gpgpu_sim->all_compute_done && tracer.compute_count > 0) {
-      // break after the *next kernel after all compute done* is done
-      break;
-    }
+    // if (m_gpgpu_sim->all_compute_done && tracer.compute_count > 0) {
+    //   // break after the *next kernel after all compute done* is done
+    //   break;
+    // }
 
     if (finished_graphics == tracer.graphics_count) {
       printf("All graphics kernels finished one iteration\n");
@@ -394,10 +394,10 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
     }
-    if (graphics_done && computes_done) {
-      printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");
-      break;
-    }
+    // if (graphics_done && computes_done) {
+    //   printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");
+    //   break;
+    // }
 
     // if (finished_graphics == tracer.graphics_count &&
     //     tracer.graphics_count > 0 && tracer.compute_count > 0 && m_gpgpu_sim->concurrent_mode) {

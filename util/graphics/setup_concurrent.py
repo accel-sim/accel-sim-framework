@@ -5,8 +5,8 @@ import os
 cwd = os.path.dirname(os.path.realpath(__file__)) + "/"
 trace_dir = cwd + "../../hw_run/traces/vulkan/"
 
-gs = ["pbrtexture_2k","pbrtexture_4k", "render_passes_2k", "render_passes_4k", "instancing_2k","instancing_4k","render_passes_dev"]
-cs = ["vpi_sample_03_harris_corners", "klt_tracker", "vpi_sample_11_fisheye", "vpi_sample_12_optflow_lk_refined", "ritnet"]
+gs = ["pbrtexture_2k","pbrtexture_4k", "render_passes_2k", "render_passes_4k", "instancing_2k","instancing_4k","render_passes_dev", "sponza_2k"]
+cs = ["vpi_sample_03_harris_corners", "klt_tracker", "vpi_sample_11_fisheye", "vpi_sample_12_optflow_lk_refined"]
 
 # to clean up
 for g in gs:

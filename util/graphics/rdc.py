@@ -12,6 +12,8 @@ rd = renderdoc
 all = {}
 
 actions = {}
+draws = 0
+frame = 0
 
 # Define a recursive function for iterating over actions
 def iterDraw(d, indent = ''):
@@ -53,6 +55,7 @@ def sampleCode(controller):
 
 	# Look in the results for any draws with 0 samples written - this is an indication
 	# that if a lot of draws appear then culling could be better.
+	drawtime = []
 	for r in results:
 		draw = actions[r.eventId]
 
@@ -64,12 +67,24 @@ def sampleCode(controller):
 			val = r.value.u32
 		else:
 			val = r.value.u64
+		drawtime.append(val)
+		print(r.eventId, val)
+	global frame
+	all[frame] = drawtime
+	frame += 1
+	# print(len(drawtime))
 
-		# print(r.eventId, val)
+		
 
-		if r.eventId not in all.keys():
-			all[r.eventId] = []
-		all[r.eventId].append(val)
+	# 	if r.eventId not in all.keys():
+	# 		all[r.eventId] = []
+	# 		for i in range(draws-1):
+	# 			all[r.eventId].append(0)
+	# 	all[r.eventId].append(val)
+	# for (k,v) in all.items():
+	# 	if len(v) < draws:
+	# 		all[k].append(0)
+	# 	assert(len(v) == draws)
 
 def loadCapture(filename):
 	# Open a capture file handle
@@ -105,14 +120,15 @@ rd.InitialiseReplay(rd.GlobalEnvironment(), [])
 #     print('Usage: python3 {} filename.rdc'.format(sys.argv[0]))
 #     sys.exit(0)
 
-dir_name = '/home/pan/rdc_captures/'
+dir_name = '/home/pan/Documents/sponza-capture/'
 # Get list of all files in a given directory sorted by name
 files = sorted( filter( os.path.isfile,
                         glob.glob(dir_name + '*') ) )
 for file in files:
-    path = "/home/pan/rdc_captures/" + file
+    path = "/home/pan/Documents/sponza-capture/" + file
     print(file)
     cap,controller = loadCapture(file)
+    draws += 1
 
     sampleCode(controller)
 
@@ -125,5 +141,10 @@ for(k,v) in all.items():
 	for val in v:
 		to_print += str(val) + ","
 	print(to_print)
+# for k in sorted(all.keys()):
+# 	to_print = str(k) + ","
+# 	for val in all[k]:
+# 		to_print += str(val) + ","
+# 	print(to_print)
 		
 rd.ShutdownReplay()

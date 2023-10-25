@@ -301,16 +301,20 @@ mem8b8:
     extra_params: '-gpgpu_graphics_sm_count 15'
 concurrent:
     extra_params: "-gpgpu_concurrent_kernel_sm 1 -gpgpu_max_concurrent_kernel 64 -gpgpu_local_mem_map 0 -gpgpu_l1_cache_write_ratio 0"
+best:
+    extra_params: "-gpgpu_scheduler best"
 MIG:
     extra_params: '-gpgpu_concurrent_mig 1'
 finegrain:
     extra_params: '-gpgpu_concurrent_finegrain 1'
 WR0:
     extra_params: '-gpgpu_l1_cache_write_ratio 0'
-4MB_L2:
-    extra_params: '-gpgpu_cache:dl2 S:64:128:16,L:B:m:L:X,A:192:4,32:0,32'
+2XL2:
+    extra_params: '-gpgpu_cache:dl2 S:128:128:16,L:B:m:L:X,A:192:4,32:0,32'
 256KB_L1:
     extra_params: '-gpgpu_cache:dl1 S:4:128:512,L:T:m:L:L,A:512:48,16:0,32 -gpgpu_unified_l1d_size 256'
+512KB_L1:
+    extra_params: '-gpgpu_cache:dl1 S:8:128:512,L:T:m:L:L,A:512:48,16:0,32 -gpgpu_unified_l1d_size 512'
 SUB_PART_4:
     extra_params: '-gpgpu_n_sub_partition_per_mchannel 4'
 perf_l2:

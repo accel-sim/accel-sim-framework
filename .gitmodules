@@ -1,3 +1,0 @@
-[submodule "gpu-simulator/gpgpu-sim"]
-	path = gpu-simulator/gpgpu-sim
-	url = git@github.com:JRPan/gpgpu-sim_distribution.git
