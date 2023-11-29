@@ -143,11 +143,11 @@ parboil_validation:
         - parboil-sad:
             - args: -i ./data/large/input/reference.bin,./data/large/input/frame.bin -o out.bin
               accel-sim-mem: 2G
-            
+
         - parboil-sgemm:
             - args: -i ./data/medium/input/matrix1.txt,./data/medium/input/matrix2t.txt,./data/medium/input/matrix2t.txt -o matrix3.txt
               accel-sim-mem: 9G
-   
+
         #- parboil-stencil:
         #    - args: -i ./data/default/input/512x512x64x100.bin -o 512x512x64x100.out -- 512 512 64 100
 
@@ -230,7 +230,7 @@ Deepbench_validation:
             - args: inference half 512 1 1 gru
             - args: train half 128 32 1 lstm
             - args: train half 128 32 1 gru
-           
+
 power_ubench:
     exec_dir: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
     data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/microbenchmarks/"
@@ -248,7 +248,7 @@ power_ubench:
             - args: 100 32 32
             - args: 100 48 32
             - args: 100 64 32
-            - args: 100 80 32 
+            - args: 100 80 32
         - INT_STATIC:
             - args: 100 80 1
             - args: 100 80 8

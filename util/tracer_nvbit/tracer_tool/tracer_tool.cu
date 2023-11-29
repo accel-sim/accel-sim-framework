@@ -101,7 +101,7 @@ void nvbit_at_init() {
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
-  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0, 
+  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0,
               "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
   GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0, "Uses the user defined "
               "folder TRACES_FOLDER path environment");
@@ -166,13 +166,14 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       int opcode_id = opcode_to_id_map[instr->getOpcode()];
 
-      /* check all operands. For now, we ignore constant, TEX, predicates and 
+      /* check all operands. For now, we ignore constant, TEX, predicates and
        * unified registers. We only report vector regisers */
       int src_oprd[MAX_SRC];
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
       int num_mref = 0;
+      uint64_t imm_value = 0;
 
       for(int i = 0; i < instr->getNumOperands(); ++i){
         const InstrType::operand_t *op = instr->getOperand(i);
@@ -197,6 +198,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           }
+        }
+        // Add immediate value for DEPBAR instruction
+        else if (op->type == InstrType::OperandType::IMM_UINT64) {
+          imm_value = instr->getOperand(i)->u.imm_uint64.value;
         }
       }
 
@@ -238,6 +243,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, -1);
         }
         nvbit_add_call_arg_const_val32(instr, srcNum);
+
+        /* immediate info */
+        nvbit_add_call_arg_const_val64(instr, imm_value);
+       
         /* add pointer to channel_dev and other counters*/
         nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
         nvbit_add_call_arg_const_val64(instr,
@@ -302,7 +311,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       if (active_from_start)
         active_region = false;
     }
-    
+
     if(user_defined_folders == 1)
     {
       std::string usr_folder = std::getenv("TRACES_FOLDER");
@@ -406,7 +415,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
         fprintf(resultsFile,
                 "#traces format = [line_num] PC mask dest_num [reg_dests] opcode src_num "
-                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses]\n");
+                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] immediate\n");
         fprintf(resultsFile, "\n");
       }
 
@@ -673,6 +682,9 @@ void *recv_thread_fun(void *) {
         } else {
           fprintf(resultsFile, "0 ");
         }
+
+        // Print the immediate
+        fprintf(resultsFile, "%d ", ma->imm);
 
         fprintf(resultsFile, "\n");
 

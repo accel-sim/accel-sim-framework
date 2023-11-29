@@ -28,7 +28,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
   }
 }
 
-inst_trace_t::inst_trace_t() { memadd_info = NULL; }
+inst_trace_t::inst_trace_t() { memadd_info = NULL; imm = 0;}
 
 inst_trace_t::~inst_trace_t() {
   if (memadd_info != NULL) delete memadd_info;
@@ -124,8 +124,7 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
-bool inst_trace_t::parse_from_string(std::string trace,
-                                     unsigned trace_version,
+bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
                                      unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
@@ -166,7 +165,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
     ss >> temp;
     sscanf(temp.c_str(), "R%d", &reg_src[i]);
   }
-
+   
   // parse mem info
   unsigned address_mode = 0;
   unsigned mem_width = 0;
@@ -212,6 +211,9 @@ bool inst_trace_t::parse_from_string(std::string trace,
       memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
   }
+
+  ss >> imm;
+
   // Finish Parsing
 
   return true;
@@ -277,7 +279,7 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
   kernel_trace_t *kernel_info = new kernel_trace_t;
-  kernel_info->enable_lineinfo = 0; // default disabled
+  kernel_info->enable_lineinfo = 0;  // default disabled
   kernel_info->ifs = new std::ifstream;
   std::ifstream *ifs = kernel_info->ifs;
   ifs->open(kerneltraces_filepath.c_str());
