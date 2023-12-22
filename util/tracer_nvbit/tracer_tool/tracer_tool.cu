@@ -60,6 +60,9 @@ bool active_region = true;
 int terminate_after_limit_number_of_kernels_reached = 0;
 int user_defined_folders = 0;
 
+/* Use xz to compress the *.trace file */
+int xz_compress_trace = 0;
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
@@ -105,6 +108,8 @@ void nvbit_at_init() {
               "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
   GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0, "Uses the user defined "
               "folder TRACES_FOLDER path environment");
+  GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 0, "Create xz-compressed trace"
+              "file");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -388,9 +393,15 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       sprintf(buffer, std::string(traces_location+"/kernel-%d.trace").c_str(), kernelid);
 
       if (!stop_report) {
-        resultsFile = fopen(buffer, "w");
-
-        printf("Writing results to %s\n", buffer);
+        if(!xz_compress_trace){
+          resultsFile = fopen(buffer, "w");
+          printf("Writing results to %s\n", buffer);
+        } else {
+          char cmd_buffer[1039];
+          sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
+          resultsFile = popen(cmd_buffer, "w");
+          printf("Writing results to %s.xz\n", buffer);
+        }
 
         fprintf(resultsFile, "-kernel name = %s\n",
                 nvbit_get_func_name(ctx, p->f, true));
@@ -421,7 +432,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
       kernelsFile = fopen(kernelslist_location.c_str(), "a");
       // This will be a relative path to the traces file
-      sprintf(buffer,"kernel-%d.trace", kernelid);
+      sprintf(buffer,"kernel-%d.trace%s", kernelid, xz_compress_trace?".xz":"");
       if (!stop_report) {
         fprintf(kernelsFile, buffer);
         fprintf(kernelsFile, "\n");
@@ -480,8 +491,10 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       fprintf(statsFile, "\n");
       fclose(statsFile);
 
-      if (!stop_report)
-        fclose(resultsFile);
+      if (!stop_report){
+        if(!xz_compress_trace){fclose(resultsFile);} 
+        else{pclose(resultsFile);}
+      }
 
       if (active_from_start && dynamic_kernel_limit_end && kernelid > dynamic_kernel_limit_end)
         active_region = false;
