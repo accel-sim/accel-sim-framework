@@ -96,7 +96,10 @@ struct kernel_trace_t {
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
   // Reference to open filestream
-  std::ifstream *ifs;
+  std::istream *ifs;
+  // Anonymous pipe through which the trace is transmitted from a trace reader
+  // process to the simulator process
+  int pipefd[2]={};
 };
 
 class trace_parser {
@@ -112,7 +115,7 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs);
+      unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
 
