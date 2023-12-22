@@ -285,6 +285,20 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   kernel_trace_t *kernel_info = new kernel_trace_t;
   kernel_info->enable_lineinfo = 0;  // default disabled
 
+  std::string read_trace_cmd;
+  int _l = kerneltraces_filepath.length();
+  if(_l > 3 && kerneltraces_filepath.substr(_l-3, 3) == ".xz"){
+    // this is xz-compressed trace
+    read_trace_cmd = "xz -dc " + kerneltraces_filepath;
+  } else if(_l > 7 && kerneltraces_filepath.substr(_l-7, 7) == ".traceg"){
+    // this is plain text trace
+    read_trace_cmd ="cat " + kerneltraces_filepath; 
+  } else {
+    std::cerr << "Can't read trace. Only .xz and plain text are supported: " 
+              << kerneltraces_filepath <<"\n";
+    exit(1);
+  }
+
   // Create an interprocess channel, and fork out a data source process. The
   // data source process reads trace from disk, write to the channel, and the
   // simulator process read from the channel. 
@@ -301,23 +315,11 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     // stdout to the write end of the pipe.
     close(pipefd[0]);
     dup2(pipefd[1], STDOUT_FILENO);
-    std::string read_trace_cmd;
-    int _l = kerneltraces_filepath.length();
-    if(_l > 3 && kerneltraces_filepath.substr(_l-3, 3) == ".xz"){
-      // this is xz-compressed trace
-      read_trace_cmd = "xz -dc " + kerneltraces_filepath;
-    } else if(_l > 7 && kerneltraces_filepath.substr(_l-7, 7) == ".traceg"){
-      // this is plain text trace
-      read_trace_cmd ="cat " + kerneltraces_filepath; 
-    } else {
-      std::cerr << "Can't read trace. Only .xz and plain text are supported: " 
-                << kerneltraces_filepath <<"\n";
-      exit(1);
-    }
     execle("/bin/sh", "sh", "-c", read_trace_cmd.c_str(), NULL, environ);
     perror("execle"); // the child process shouldn't reach here if all is well.
     exit(1);
   } else {
+    // parent (simulator)
     close(pipefd[1]);
     dup2(pipefd[0], STDIN_FILENO);
   }
