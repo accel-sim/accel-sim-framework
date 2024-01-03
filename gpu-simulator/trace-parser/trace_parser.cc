@@ -315,6 +315,14 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     // stdout to the write end of the pipe.
     close(pipefd[0]);
     dup2(pipefd[1], STDOUT_FILENO);
+
+    // When using GDB, sending Ctrl+C to the simulator will send a SIGINT signal
+    // to the child process as well, subsequently causing it to terminate. To
+    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal. 
+    // Reference:
+    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes 
+    signal(SIGINT, SIG_IGN);
+
     execle("/bin/sh", "sh", "-c", read_trace_cmd.c_str(), NULL, environ);
     perror("execle"); // the child process shouldn't reach here if all is well.
     exit(1);

@@ -206,6 +206,14 @@ void group_per_block(const char *filepath) {
     //  child process
     close(source_pipe_fd[0]);
     dup2(source_pipe_fd[1], STDOUT_FILENO);
+    
+    // When using GDB, sending Ctrl+C to the program will send a SIGINT signal
+    // to the child process as well, subsequently causing it to terminate. To
+    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal. 
+    // Reference:
+    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes 
+    signal(SIGINT, SIG_IGN);
+
     execle("/bin/sh", "sh", "-c", trace_source_cmd.c_str(), NULL, environ);
     perror("execle"); // child shouldn't reach here if all is well.
     exit(1);
@@ -220,7 +228,7 @@ void group_per_block(const char *filepath) {
     exit(1);
   }
 
-  // for a child process as the trace sink
+  // fork a child process as the trace sink
   if(pipe(sink_pipe_fd)!=0){
     cerr << "Failed to create pipe\n";
     perror("pipe");
@@ -231,6 +239,7 @@ void group_per_block(const char *filepath) {
     // child process
     close(sink_pipe_fd[1]);
     dup2(sink_pipe_fd[0], STDIN_FILENO);
+    signal(SIGINT, SIG_IGN); // ignore SIGINT 
     execle("/bin/sh", "sh", "-c", trace_sink_cmd.c_str(), NULL, environ);
     perror("execle"); // child shouldn't reach here if all is well.
     exit(1);
