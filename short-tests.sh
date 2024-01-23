@@ -8,7 +8,7 @@ fi
 #Make the simulator
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH;
 source ./gpu-simulator/setup_environment.sh
-make -C ./gpu-simulator
+make -j -C ./gpu-simulator
 
 #Get the pre-run trace files
 rm -rf ./hw_run/rodinia_2.0-ft
