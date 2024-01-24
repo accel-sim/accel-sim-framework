@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 
+#include <errno.h>
+#include <unistd.h>
+#include <signal.h>
+
 #include "trace_parser.h"
 
 bool is_number(const std::string &s) {
@@ -280,19 +284,65 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
   kernel_trace_t *kernel_info = new kernel_trace_t;
   kernel_info->enable_lineinfo = 0;  // default disabled
-  kernel_info->ifs = new std::ifstream;
-  std::ifstream *ifs = kernel_info->ifs;
-  ifs->open(kerneltraces_filepath.c_str());
 
-  if (!ifs->is_open()) {
-    std::cout << "Unable to open file: " << kerneltraces_filepath << std::endl;
+  std::string read_trace_cmd;
+  int _l = kerneltraces_filepath.length();
+  if(_l > 3 && kerneltraces_filepath.substr(_l-3, 3) == ".xz"){
+    // this is xz-compressed trace
+    read_trace_cmd = "xz -dc " + kerneltraces_filepath;
+  } else if(_l > 7 && kerneltraces_filepath.substr(_l-7, 7) == ".traceg"){
+    // this is plain text trace
+    read_trace_cmd ="cat " + kerneltraces_filepath; 
+  } else {
+    std::cerr << "Can't read trace. Only .xz and plain text are supported: " 
+              << kerneltraces_filepath <<"\n";
     exit(1);
   }
+
+  // Create an interprocess channel, and fork out a data source process. The
+  // data source process reads trace from disk, write to the channel, and the
+  // simulator process read from the channel. 
+  int *pipefd = kernel_info->pipefd;
+  if(pipe(pipefd) != 0){
+    std::cerr << "Failed to create interprocess channel\n";
+    perror("pipe");
+    exit(1);
+  }
+
+  pid_t pid = fork();
+  if(pid == 0){
+    // The child process is the data source. Redirect its
+    // stdout to the write end of the pipe.
+    close(pipefd[0]);
+    dup2(pipefd[1], STDOUT_FILENO);
+
+    // When using GDB, sending Ctrl+C to the simulator will send a SIGINT signal
+    // to the child process as well, subsequently causing it to terminate. To
+    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal. 
+    // Reference:
+    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes 
+    signal(SIGINT, SIG_IGN);
+
+    execle("/bin/sh", "sh", "-c", read_trace_cmd.c_str(), NULL, environ);
+    perror("execle"); // the child process shouldn't reach here if all is well.
+    exit(1);
+  } else {
+    // parent (simulator)
+    close(pipefd[1]);
+    dup2(pipefd[0], STDIN_FILENO);
+  }
+  
+  // Parent continues from here. 
+  kernel_info->ifs = &std::cin; 
+  std::istream *ifs = kernel_info->ifs;
 
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
 
   std::string line;
 
+  // Important to clear the istream. Otherwise, the eofbit from the last 
+  // kernel may be carried over to this kernel
+  ifs->clear();
   while (!ifs->eof()) {
     getline(*ifs, line);
 
@@ -362,15 +412,19 @@ kernel_trace_t *trace_parser::parse_kernel_info(
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   assert(trace_info);
-  assert(trace_info->ifs);
-  if (trace_info->ifs->is_open()) trace_info->ifs->close();
-  delete trace_info->ifs;
+
+  // The pipe read/write end file descriptors held by the child process would
+  // have been automatically closed when it terminated. But the parent
+  // process may read an arbitrary amount of trace files, so it has to close
+  // all file descriptors. 
+  close(trace_info->pipefd[0]);
+  close(trace_info->pipefd[1]);
   delete trace_info;
 }
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs) {
+    unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
