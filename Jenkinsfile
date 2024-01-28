@@ -33,7 +33,7 @@ pipeline {
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-${BUILD_NUMBER}
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-${BUILD_NUMBER}
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-${BUILD_NUMBER}
-                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-sass.csv -N sass-short-${BUILD_NUMBER}'''
+                ./util/job_launching/monitor_func_test.py -v -s stats-per-app-sass.csv -N sass-short-${BUILD_NUMBER}'''
                }, "ptx": {
                 sh '''#!/bin/bash -xe
                 source ./env-setup/11.2.1_env_setup.sh
@@ -46,7 +46,7 @@ pipeline {
                 ./gpu-app-collection/get_regression_data.sh
 
                 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-${BUILD_NUMBER}
-                ./util/job_launching/monitor_func_test.py -I -v -s stats-per-app-ptx.csv -N short-ptx-${BUILD_NUMBER}'''
+                ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-${BUILD_NUMBER}'''
                }
             }
         }
