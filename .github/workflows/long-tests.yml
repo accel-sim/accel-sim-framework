@@ -1,0 +1,34 @@
+# This is a basic workflow to help you get started with Actions
+
+name: CI
+
+# Controls when the workflow will run
+on:
+  # Triggers the workflow on push or pull request events but only for the mydev branch
+  push:
+  pull_request:
+
+  # Allows you to run this workflow manually from the Actions tab
+  workflow_dispatch:
+
+jobs:
+  long-tests:
+    runs-on: self-hosted
+    # container:
+    #   image: tgrogers/accel-sim_regress:Ubuntu-22.04-cuda-11.7
+      env:
+        
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v2
+      - name: setup-env
+        run: rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git &&\
+                    cd env-setup && git checkout cluster-ubuntu
+      - name: accel-sim-build
+        run: sh '''#!/bin/bash -xe
+                source ./env-setup/11.2.1_env_setup.sh
+                rm -rf ./gpu-simulator/gpgpu-sim
+                source ./gpu-simulator/setup_environment.sh
+                make clean -C gpu-simulator
+                srun -c20 make -j20 -C gpu-simulator'''
