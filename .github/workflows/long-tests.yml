@@ -13,7 +13,6 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-
   long-tests:
     runs-on: self-hosted
     env:
@@ -33,7 +32,7 @@ jobs:
         run: rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git && cd env-setup && git checkout cluster-ubuntu
 
       - name: accel-sim-build
-        needs: [setup-env]
+        # needs: [setup-env]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
@@ -42,7 +41,7 @@ jobs:
           srun -c20 make -j20 -C gpu-simulator
 
       - name: sass-simulation
-        needs: [accel-sim-build]
+        # needs: [accel-sim-build]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
@@ -52,7 +51,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-sass.csv -N sass-short-${BUILD_NUMBER}
 
       - name: ptx-simulation
-        needs: [accel-sim-build]
+        # needs: [accel-sim-build]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
@@ -67,7 +66,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-${BUILD_NUMBER}
 
       - name: archive-stats
-        needs: [sass-simulation, ptx-simulation]
+        # needs: [sass-simulation, ptx-simulation]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           rm -rf ./statistics-archive
@@ -90,7 +89,7 @@ jobs:
           git -C ./statistics-archive push -u origin ${JOB_NAME}
       
       - name: correlate-ubench
-        needs: [archive-stats]
+        # needs: [archive-stats]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           ./util/hw_stats/get_hw_data.sh
