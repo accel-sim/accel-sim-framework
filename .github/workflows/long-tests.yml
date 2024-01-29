@@ -13,23 +13,29 @@ on:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  long-tests:
+  checkout:
     runs-on: self-hosted
-
     defaults:
       run:
         shell: bash
-        
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v2
 
-      - name: setup-env
-        run: rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git && cd env-setup && git checkout cluster-ubuntu
+  setup-env:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - run: rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git && cd env-setup && git checkout cluster-ubuntu
 
-      - name: accel-sim-build
-        # needs: [setup-env]
+  accel-sim-build:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - needs: [setup-env]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
@@ -37,8 +43,13 @@ jobs:
           make clean -C gpu-simulator
           srun -c20 make -j20 -C gpu-simulator
 
-      - name: sass-simulation
-        # needs: [accel-sim-build]
+  sass-simulation:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - needs: [accel-sim-build]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
@@ -47,8 +58,13 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-${GITHUB_RUN_ATTEMPT}
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-sass.csv -N sass-short-${GITHUB_RUN_ATTEMPT}
 
-      - name: ptx-simulation
-        # needs: [accel-sim-build]
+  ptx-simulation:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - needs: [accel-sim-build]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
@@ -62,8 +78,13 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-${GITHUB_RUN_ATTEMPT}
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-${GITHUB_RUN_ATTEMPT}
 
-      - name: archive-stats
-        # needs: [sass-simulation, ptx-simulation]
+  archive-stats:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - needs: [sass-simulation, ptx-simulation]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           rm -rf ./statistics-archive
@@ -85,8 +106,13 @@ jobs:
           -m "Jenkins automated checkin ${GITHUB_REF} Build:${GITHUB_RUN_ATTEMPT}" || echo "No Changes."
           git -C ./statistics-archive push -u origin ${GITHUB_REF}
       
-      - name: correlate-ubench
-        # needs: [archive-stats]
+  correlate-ubench:
+    runs-on: self-hosted
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - needs: [archive-stats]
         run: |
           source ./env-setup/11.2.1_env_setup.sh
           ./util/hw_stats/get_hw_data.sh
