@@ -16,8 +16,8 @@ jobs:
   long-tests:
     runs-on: self-hosted
     env:
-      BUILD_NUMBER: ${GITHUB_RUN_ATTEMPT}
-      JOB_NAME: ${GITHUB_REF}
+      BUILD_NUMBER: ${{GITHUB_RUN_ATTEMPT}}
+      JOB_NAME: ${{GITHUB_REF}}
 
     defaults:
       run:
