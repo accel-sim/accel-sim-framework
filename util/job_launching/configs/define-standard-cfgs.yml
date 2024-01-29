@@ -37,10 +37,6 @@ QV100:
 QV100_64SM:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_SMs/gpgpusim.config"
 
-
-QV100_SASS:
-    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_SASS/gpgpusim.config"
-
 QV100_old:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM7_QV100_old/gpgpusim.config"
 GV100:

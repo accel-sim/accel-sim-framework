@@ -196,14 +196,13 @@ class ConfigurationSpec:
                             "a",
                         )
                         print(
-                            "%s %6s %-22s %-100s %-25s %s.%s"
+                            "%s %6s %-22s %-100s %-25s %s"
                             % (
                                 time_string,
                                 torque_out,
                                 benchmark,
                                 self.benchmark_args_subdirs[args],
                                 self.run_subdir,
-                                benchmark,
                                 build_handle,
                             ),
                             file=logfile,
@@ -309,6 +308,11 @@ class ConfigurationSpec:
             f.close()
 
         if options.trace_dir == "":
+            # If the config contains "SASS" and you have not specified the trace directory, then likely something is wrong
+            if ("SASS" in self.run_subdir):
+                print("You are trying to run a configuration with SASS in it, but have not specified a trace directory."+\
+                      " If you want to run SASS traces, please specify -T to point to the top-level trace directory")
+                exit(1)
             exec_name = (
                 options.benchmark_exec_prefix
                 + " "
