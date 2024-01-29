@@ -27,7 +27,7 @@ jobs:
       - name: setup-env
         run: rm -rf env-setup && git clone git@github.com:purdue-aalp/env-setup.git && cd env-setup && git checkout cluster-ubuntu
       - name: accel-sim-build
-        run: 
+        run: |
           source ./env-setup/11.2.1_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
