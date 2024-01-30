@@ -15,7 +15,6 @@ on:
 jobs:
   SASS-Simulation:
     runs-on: self-hosted
-    env:
     defaults:
       run:
         shell: bash
