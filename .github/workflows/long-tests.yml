@@ -107,7 +107,7 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
 
-  PTX-Simulation:
+  Tracer-Tool:
     runs-on: tgrogers-gpu01
     defaults:
       run:
