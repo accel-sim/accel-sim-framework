@@ -14,6 +14,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
   Tracer-Tool:
+    if: github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-gpu01
     defaults:
       run:
