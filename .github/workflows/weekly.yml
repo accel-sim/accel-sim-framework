@@ -18,9 +18,12 @@ jobs:
       ACCEL_SIM_COUNT: ${{ steps.Test-for-commit.outputs.ACCEL_SIM_COUNT }}
       GPGPUSIM_COUNT: ${{ steps.Test-for-commit.outputs.GPGPUSIM_COUNT }}
     steps:
+      - name: config-git
+        run: git config --global --add safe.directory "$GITHUB_WORKSPACE"
       - uses: actions/checkout@v2
         with:
           ref: dev
+          fetch-depth: 0
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -31,9 +34,12 @@ jobs:
         run: |
           source ./env-setup/11.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
+          git config --global --add safe.directory "$GITHUB_WORKSPACE"
           echo "ACCEL_SIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)" >> $GITHUB_ENV
+          pwd
           echo "TRACER_COUNT=$(git log --oneline --since 'a week ago' util/tracer_nvbit | wc -l)" >> $GITHUB_ENV
           cd gpu-simulator/gpgpu-sim
+          pwd
           echo "GPGPUSIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)" >> $GITHUB_ENV
 
   Tracer-Weekly:
