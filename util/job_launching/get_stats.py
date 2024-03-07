@@ -248,7 +248,9 @@ for idx, app_and_args in enumerate(apps_and_args):
                 file=sys.stderr)
             if not options.ignore_failures:
                 continue
-
+        
+        relaunch_g = 0
+        relaunch_c = 0
         if not options.per_kernel:
             if len(all_named_kernels[app_and_args]) == 0:
                 all_named_kernels[app_and_args].append("final_kernel")
@@ -292,6 +294,12 @@ for idx, app_and_args in enumerate(apps_and_args):
                 # If we ended simulation due to too many insn - ignore the last kernel launch, as it is no complete.
                 # Note: This only appies if we are doing kernel-by-kernel stats
                 last_kernel_break = re.match("GPGPU-Sim: \*\* break due to reaching the maximum cycles \(or instructions\) \*\*", line)
+                relaunch_g_match = re.match("relaunching graphics kernels", line)
+                if relaunch_g_match:
+                    relaunch_g += 1
+                relaunch_c_match = re.match("relaunching compute kernels", line)
+                if relaunch_c_match:
+                    relaunch_c += 1
                 if last_kernel_break:
                     print("NOTE::::: Found Max Insn reached in {0} - ignoring last kernel.".format(outfile), file=sys.stderr)
                     for stat_name in stats_to_pull.keys():
@@ -318,7 +326,6 @@ for idx, app_and_args in enumerate(apps_and_args):
                     else:
                         stat_map[current_kernel + app_and_args + config + "k-count"] = 1
                     continue
-
                 for stat_name, tup in stats_to_pull.items():
                     token, statType = tup
                     existance_test = token.search( line.rstrip() )
@@ -341,6 +348,8 @@ for idx, app_and_args in enumerate(apps_and_args):
                                 stat_last_kernel = 0.0
                             raw_last[stat_name] = float(number)
                             stat_map[current_kernel + app_and_args + config + stat_name] = ( float(number) - stat_last_kernel )
+        stat_map["all_kernels" + app_and_args + config + "relaunch_g"] = relaunch_g
+        stat_map["all_kernels" + app_and_args + config + "relaunch_c"] = relaunch_c
 # Just adding this in here since it is a special case and is not parsed like everything else, because you need
 # to read from the beginning not the end
 #if options.per_kernel and not options.kernel_instance:
@@ -355,6 +364,8 @@ for appargs in apps_and_args:
 #stat_name, all_named_kernels, apps_and_args, configs, stat_map, cfg_as_rows
 common.print_stat( "Accel-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 common.print_stat( "GPGPU-Sim-build", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
+common.print_stat( "relaunch_g", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
+common.print_stat( "relaunch_c", all_kernels, apps_and_args, configs, stat_map, options.configs_as_rows, options.do_averages )
 
 for stat_name in ( stats_yaml['collect_aggregate'] +\
                    stats_yaml['collect_abs'] +\

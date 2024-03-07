@@ -303,10 +303,20 @@ concurrent:
     extra_params: "-gpgpu_concurrent_kernel_sm 1 -gpgpu_max_concurrent_kernel 64 -gpgpu_local_mem_map 0 -gpgpu_l1_cache_write_ratio 0"
 best:
     extra_params: "-gpgpu_scheduler best"
+invalidate_l2:
+    extra_params: "-gpgpu_invalidte_l2 1"
+utility:
+    extra_params: "-gpgpu_utility 1"
 MIG:
     extra_params: '-gpgpu_concurrent_mig 1'
-finegrain:
+fg:
     extra_params: '-gpgpu_concurrent_finegrain 1'
+dynamic_sm2:
+    extra_params: '-gpgpu_dynamic_sm_count 2'
+dynamic_sm3:
+    extra_params: '-gpgpu_dynamic_sm_count 3'
+slicer:
+    extra_params: '-gpgpu_slicer 1'
 WR0:
     extra_params: '-gpgpu_l1_cache_write_ratio 0'
 2XL2:

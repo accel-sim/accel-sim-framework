@@ -3,7 +3,7 @@ import os
 
 cwd = os.getcwd() + "/"
 file = "./complete.traceg"
-# file = "/home/pan251/Vulkan-Samples/complete.traceg"
+# file = "/scratch/tgrogers-disk01/a/pan251/gtraces/materials_4k.traceg"
 folder = cwd + "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
 
 trace = open(file, 'r')
@@ -33,6 +33,8 @@ for line in lines:
     if 'block_dim' in line:
         continue
     substr = line.split(', ')
+    if len(substr) != 2:
+        print(line)
     assert(len(substr) == 2)
     warp_id = int(substr[0])
     inst = substr[1]
@@ -65,6 +67,13 @@ for line in lines:
         counter = counter + 1
         print(file)
         f = open(file, "w")
+        if 'VERTEX' in kernel_name[index_k]:
+            num_reg = 48
+        elif 'FRAGMENT' in kernel_name[index_k]:
+            num_reg = 52
+        else:
+            print("ERROR: kernel name not recognized")
+            exit(1)
 
         # write kernel info
         f.write("-kernel name = " + kernel_name[index_k] + "\n")
@@ -72,7 +81,8 @@ for line in lines:
         f.write("-grid dim = (" + str(int((warp_range[index_k+1]-warp_range[index_k])/warp_per_block)) + ",1,1)\n")
         f.write("-block dim = (" + str(block_dim) + ",1,1)\n")
         f.write("-shmem = 0\n")
-        f.write("-nregs = 16\n")
+        f.write("-nregs = " + str(num_reg) + "\n")
+        # f.write("-nregs = 16\n")
         # f.write("-nregs = /*UPDATE_ME*/\n")
         f.write("-binary version = 80\n")
         f.write("-cuda stream id = 0" + "\n")

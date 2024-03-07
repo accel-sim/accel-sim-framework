@@ -338,89 +338,135 @@ vulkan:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"
     execs:
-        # - pbrtexture_2k:
-          # - args:
-          # - args: "vpi_sample_03_harris_corners"
-          # - args: "vpi_sample_11_fisheye"
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          # - args: "klt_tracker"
-          # - args: "all"
-          # - args: "ritnet"
-        # - pbrtexture_4k:
-          # - args:
-          # - args: "vpi_sample_03_harris_corners"
-          # - args: "vpi_sample_11_fisheye"
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          # - args: "klt_tracker"
-          # - args: "all"
-          # - args: "ritnet"
-        # - render_passes_2k:
-          # - args:
-          # - args: "vpi_sample_03_harris_corners"
-          # - args: "vpi_sample_11_fisheye"
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          # - args: "klt_tracker"
-          # - args: "all"
-          # - args: "ritnet"
-        # - render_passes_4k:
-          # - args:
-          #   accel-sim-mem: 5G
-          # - args: "vpi_sample_03_harris_corners"
-          #   accel-sim-mem: 5G
-          # - args: "vpi_sample_11_fisheye"
-          #   accel-sim-mem: 5G
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          #   accel-sim-mem: 5G
-          # - args: "klt_tracker"
-          #   accel-sim-mem: 5G
-          # - args: "all"
-            # accel-sim-mem: 5G
-          # - args: "ritnet"
-            # accel-sim-mem: 5G
-        # - instancing_2k:
-          # - args:
-          # - args: "vpi_sample_03_harris_corners"
-          # - args: "vpi_sample_11_fisheye"
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          # - args: "klt_tracker"
-          # - args: "all"
-          # - args: "ritnet"
-        # - instancing_4k:
-          # - args:
-          # - args: "vpi_sample_03_harris_corners"
-          # - args: "vpi_sample_11_fisheye"
-          # - args: "vpi_sample_12_optflow_lk_refined"
-          # - args: "klt_tracker"
-          # - args: "all"
-          # - args: "ritnet"
-        # - render_passes_dev:
-        #   - args:
-        #   - args: "vpi_sample_03_harris_corners"
-        #   - args: "vpi_sample_11_fisheye"
-        #   - args: "vpi_sample_12_optflow_lk_refined"
-        #   - args: "klt_tracker"
-        #   - args: "all"
+        - pbrtexture_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - pbrtexture_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - instancing_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - instancing_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - render_passes_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - render_passes_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
         - sponza_2k:
-          - args:
-          - args: "vpi_sample_03_harris_corners"
-          - args: "vpi_sample_11_fisheye"
-          - args: "vpi_sample_12_optflow_lk_refined"
-          - args: "klt_tracker"
-          - args: "all"
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - sponza_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - materials_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - materials_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - platformer_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - platformer_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+
 compute:
     exec_dir: "$HOME/test/"
     data_dirs: "$HOME/test/"
     execs:
-        - klt_tracker:
-          - args: "cam0"
-        - vpi_sample_03_harris_corners:
-          - args: "cuda__home_pan251_cam0_img_0126_png"
-        - vpi_sample_11_fisheye:
-          - args: "_c_10_7__s_22___cam0_img_0000_png"
-        - vpi_sample_12_optflow_lk_refined:
-          - args: "cuda__home_pan251_cam0_10_img__4d_png_5_frames_png"
-        - ritnet:
-          - args: 
+        # - klt_tracker:
+        #   - args: "cam0"
+        # - vpi_sample_03_harris_corners:
+        #   - args: "cuda__home_pan251_cam0_img_0126_png"
+        # - vpi_sample_11_fisheye:
+        #   - args: "_c_10_7__s_22___cam0_img_0000_png"
+        # - vpi_sample_12_optflow_lk_refined:
+        #   - args: "cuda__home_pan251_cam0_10_img__4d_png_5_frames_png"
+        # - ritnet:
+        #   - args: 
+        # - hotlab:
+        #   - args:
+        - slam_lidar_steady:
+          - args:
+        - slam_rgbd_steady:
+          - args:
 l1d-microbench:
     exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
     data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"

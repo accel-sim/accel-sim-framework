@@ -130,10 +130,20 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
+  if (!m_kernel_trace_info->ifs) {
+    m_kernel_trace_info->ifs = new std::ifstream;
+    m_kernel_trace_info->ifs->open(m_kernel_trace_info->trace_file.c_str());
+    assert(m_kernel_trace_info->ifs->is_open());
+    for (unsigned i = 0; i < m_kernel_trace_info->read_lines; ++i) {
+      std::string line;
+      std::getline(*(m_kernel_trace_info->ifs), line);
+    }
+  }
   m_parser->get_next_threadblock_traces(threadblock_traces,
                                         m_kernel_trace_info->trace_verion,
                                         m_kernel_trace_info->enable_lineinfo,
-                                        m_kernel_trace_info->ifs);
+                                        m_kernel_trace_info->ifs,
+                                        m_kernel_trace_info->kernel_name + "_" + std::to_string(m_kernel_trace_info->kernel_id));
 }
 
 types_of_operands get_oprnd_type(op_type op, special_ops sp_op){

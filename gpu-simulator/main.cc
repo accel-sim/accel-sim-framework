@@ -10,6 +10,9 @@
 #include <time.h>
 #include <vector>
 
+#include <execinfo.h>
+#include <signal.h>
+
 #include "gpgpu_context.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
@@ -43,6 +46,19 @@
  * change the tracer
  */
 
+void handler(int sig) {
+  void *array[10];
+  size_t size;
+
+  // get void*'s for all entries on the stack
+  size = backtrace(array, 10);
+
+  // print out all the frames to stderr
+  fprintf(stderr, "Error: signal %d:\n", sig);
+  backtrace_symbols_fd(array, size, STDERR_FILENO);
+  exit(1);
+}
+
 gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
                                            gpgpu_context *m_gpgpu_context,
                                            class trace_config *m_config);
@@ -53,6 +69,7 @@ trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
 
 
 int main(int argc, const char **argv) {
+  signal(SIGSEGV, handler);   // install our handler
   std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
   gpgpu_context *m_gpgpu_context = new gpgpu_context();
   trace_config tconfig;
@@ -72,7 +89,7 @@ int main(int argc, const char **argv) {
   // while loop till the end of the end kernel execution
   // prints stats
   bool concurrent_kernel_sm =  m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm;
-  unsigned window_size = concurrent_kernel_sm ? m_gpgpu_sim->get_config().get_max_concurrent_kernel() : 1;
+  unsigned window_size = concurrent_kernel_sm ? 1024 : 1;
   assert(window_size > 0);
   std::vector<trace_command> commandlist = tracer.parse_commandlist_file();
   std::vector<trace_command> compute_commands;
@@ -153,7 +170,9 @@ int main(int argc, const char **argv) {
   }
   */
   unsigned i = 0;
-  unsigned last_launched_graphics = -1;
+  unsigned last_launched_vertex = -1;
+  unsigned last_grpahics_stream_id = -1;
+  unsigned launched_mesa = 0;
   std::vector<unsigned long> kernel_vb_addr;
   std::vector<unsigned long> kernel_vb_size;
   std::vector<unsigned long> kernel_per_CTA;
@@ -162,6 +181,7 @@ int main(int argc, const char **argv) {
   bool computes_done = false;
   bool graphics_done = false;
   m_gpgpu_sim->start_compute = true;
+  unsigned long graphics_stream_id = 0xDEADBEEF; 
   if (finished_graphics == tracer.graphics_count) {
       printf("No graphics kernel parsed\n");
       printf("STEP1 - rendering done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
@@ -177,11 +197,26 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
     }
-  m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
-  m_gpgpu_sim->concurrent_granularity = 6;
-  // m_gpgpu_sim->dynamic_sm_count = 4;
-  m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().dynamic_sm_count;
-  printf("defualt dynamic ratio %d\n", m_gpgpu_sim->dynamic_sm_count);
+
+    if (m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm) {
+      if (m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_finegrain) {
+        m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
+        m_gpgpu_sim->concurrent_granularity = 6;
+        m_gpgpu_sim->dynamic_sm_count =
+            m_gpgpu_sim->get_config().dynamic_sm_count;
+        printf("defualt dynamic ratio %d\n", m_gpgpu_sim->dynamic_sm_count);
+      } else {
+        m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
+        m_gpgpu_sim->concurrent_granularity =
+            m_gpgpu_sim->get_config().num_shader();
+        m_gpgpu_sim->dynamic_sm_count = 12;
+      }
+    }
+
+    if(m_gpgpu_sim->get_config().gpgpu_slicer) {
+      m_gpgpu_sim->concurrent_granularity = m_gpgpu_sim->get_config().num_shader();
+      m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().num_shader() / 2;
+    }
   while (i < commandlist.size() || !kernels_info.empty()) {
     //gulp up as many commands as possible - either cpu_gpu_mem_copy 
     //or kernel_launch - until the vector "kernels_info" has reached
@@ -194,27 +229,37 @@ int main(int argc, const char **argv) {
         tracer.parse_memcpy_info(commandlist[i].command_string, addre, Bcount, per_CTA);
         if (commandlist[i].command_string.find("MemcpyVulkan") ==
             std::string::npos) {
-          std::cout << "launching memcpy command : "
-                    << commandlist[i].command_string << std::endl;
+          // std::cout << "launching memcpy command : "
+          //           << commandlist[i].command_string << std::endl;
           m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount, false);
         } else {
           assert(per_CTA != -1);
-          std::cout << "Saving MemcpyVulkan for CTA launch : "
-                    << commandlist[i].command_string << std::endl;
+          // std::cout << "Saving MemcpyVulkan for CTA launch : "
+          //           << commandlist[i].command_string << std::endl;
           kernel_vb_addr.push_back(addre);
           kernel_vb_size.push_back(Bcount);
           kernel_per_CTA.push_back(per_CTA);
+          graphics_commands.push_back(commandlist[i]);
         }
         i++;
       } else if (commandlist[i].m_type == command_type::kernel_launch) {
         // Read trace header info for window_size number of kernels
         kernel_trace_t* kernel_trace_info = tracer.parse_kernel_info(commandlist[i].command_string);
         kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context, &tconfig, &tracer);
+        kernel_info->prerequisite_kernel = -1;
         if (kernel_info->is_graphic_kernel) {
           graphics_commands.push_back(commandlist[i]);
           unsigned kernel_id = kernel_info->get_uid();
-          kernel_info->prerequisite_kernel = last_launched_graphics;
-          last_launched_graphics = kernel_id;
+          if (kernel_info->get_name().find("VERTEX") != std::string::npos) {
+            // is vertex shader
+            last_launched_vertex = kernel_id;
+            kernel_trace_info->cuda_stream_id = graphics_stream_id;
+            last_grpahics_stream_id = graphics_stream_id;
+            // graphics_stream_id++;
+          } else {
+            assert(kernel_info->get_name().find("FRAG") != std::string::npos);
+            kernel_trace_info->cuda_stream_id = last_grpahics_stream_id;
+          }
 
           // for (auto vb = kernel_vb_size.begin(); vb != kernel_vb_size.end();
           //      vb++) {
@@ -232,6 +277,8 @@ int main(int argc, const char **argv) {
           kernel_vb_size.clear();
           kernel_per_CTA.clear();
         } else {
+          assert(kernel_trace_info->cuda_stream_id < 0xDEADBEEF ||
+                 kernel_trace_info->cuda_stream_id > 0XDEAFBEEF + 1024);
           kernel_info->prerequisite_kernel = -1;
           compute_commands.push_back(commandlist[i]);
         }
@@ -245,7 +292,6 @@ int main(int argc, const char **argv) {
         assert(0 && "Undefined Command");
       }
     }
-
     // Launch all kernels within window that are on a stream that isn't already running
     for (auto k : kernels_info) {
       bool stream_busy = false;
@@ -254,39 +300,23 @@ int main(int argc, const char **argv) {
           stream_busy = true;
       }
       if (!stream_busy && m_gpgpu_sim->can_start_kernel() && !k->was_launched()) {
+        if ((launched_mesa ==
+                 m_gpgpu_sim->get_config().get_max_concurrent_kernel() * 3 /
+                     4 &&
+             k->is_graphic_kernel)) {
+          // if ((launched_mesa == 63 && k->is_graphic_kernel)) {
+          continue;
+        }
         std::cout << "launching kernel name: " << k->get_name() << " uid: " << k->get_uid() << std::endl;
         std::string kernel_name = k->get_name();
         if (!k->is_graphic_kernel) {
           m_gpgpu_sim->compute_done = false;
           m_gpgpu_sim->gipc = 0;
-          // if (kernel_name.find("CalculateCornerStrength") !=
-          //     std::string::npos) {
-          //   m_gpgpu_sim->dynamic_sm_count = 3;
-          //   printf("STEP1 - CalculateCornerStrength detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
-          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          // } else if (kernel_name.find("ConvertToYUV") != std::string::npos) {
-          //   m_gpgpu_sim->dynamic_sm_count = 3;
-          //   printf("STEP1 - ConvertToYUV detected - %u\n",m_gpgpu_sim->dynamic_sm_count);
-          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          // } else if (kernel_name.find("ConvertPlane") != std::string::npos) {
-          //   m_gpgpu_sim->dynamic_sm_count = 3;
-          //   printf("STEP1 - ConvertPlane detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
-          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          // } else if (kernel_name.find("Remap") != std::string::npos) {
-          //   m_gpgpu_sim->dynamic_sm_count = 3;
-          //   printf("STEP1 - Remap detected - %u\n", m_gpgpu_sim->dynamic_sm_count);
-          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
-          // } else {
-          //   m_gpgpu_sim->dynamic_sm_count = 3;
-          //   printf("STEP1 - Default ratio - %u\n", m_gpgpu_sim->dynamic_sm_count);
-          //   // m_gpgpu_sim->dynamic_sm_count =
-          //   //     m_gpgpu_sim->get_config().static_graphics_sm();
-          //   // m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->FINEGRAIN;
-          // }
         } else {
           // graphics
           m_gpgpu_sim->cipc = 0;
           m_gpgpu_sim->graphics_done = false;
+          launched_mesa++;
         }
         
         m_gpgpu_sim->launch(k);
@@ -339,8 +369,25 @@ int main(int argc, const char **argv) {
           // delete k;
           if (k->is_graphic_kernel) {
             finished_graphics++;
+            launched_mesa--;
           } else {
             finished_computes++;
+
+            if (m_gpgpu_sim->get_config().gpgpu_slicer) {
+              m_gpgpu_sim->slicer_sampled = false;
+              for (unsigned cluster = 0;
+                   cluster <
+                   m_gpgpu_sim->getShaderCoreConfig()->n_simt_clusters;
+                   cluster++) {
+                assert(m_gpgpu_sim->getShaderCoreConfig()
+                           ->n_simt_cores_per_cluster == 1);
+                m_gpgpu_sim->getSIMTCluster(cluster)->get_core(0)->shader_inst =
+                    0;
+              }
+            } else {
+              m_gpgpu_sim->dynamic_sm_count =
+                  m_gpgpu_sim->get_config().dynamic_sm_count;
+            }
           }
           kernels_info.erase(kernels_info.begin()+j);
           if (!m_gpgpu_sim->cycle_insn_cta_max_hit())
@@ -363,6 +410,8 @@ int main(int argc, const char **argv) {
       fflush(stdout);
       break;
     }
+    /*
+    I think not needed anymore. But keep it for now
     // if (finished_graphics == tracer.graphics_count && tracer.graphics_count > 0) {
     //   printf("GPGPU-Sim: ** break due to finishing all graphics kernels **\n");
     //   fflush(stdout);
@@ -373,6 +422,7 @@ int main(int argc, const char **argv) {
     //   fflush(stdout);
     //   break;
     // }
+    */
 
     // if (m_gpgpu_sim->all_compute_done && tracer.compute_count > 0) {
     //   // break after the *next kernel after all compute done* is done
@@ -393,35 +443,43 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->compute_done = true;
       m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
+
+      break;
     }
-    // if (graphics_done && computes_done) {
-    //   printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");
-    //   break;
-    // }
+    if (graphics_done && computes_done) {
+      printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");
+      break;
+    }
 
-    // if (finished_graphics == tracer.graphics_count &&
-    //     tracer.graphics_count > 0 && tracer.compute_count > 0 && m_gpgpu_sim->concurrent_mode) {
-    //   for (auto cmd : graphics_commands) {
-    //     commandlist.push_back(cmd);
-    //   }
-    //   finished_graphics = 0;
-    //   graphics_commands.clear();
-    //   m_gpgpu_sim->graphics_done = false;
-    //   graphics_done = false;
+    if (finished_graphics == tracer.graphics_count &&
+        tracer.graphics_count > 0 && tracer.compute_count > 0 && 
+        m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm &&
+        !computes_done) {
+      for (auto cmd : graphics_commands) {
+        commandlist.push_back(cmd);
+      }
+      finished_graphics = 0;
+      graphics_commands.clear();
+      m_gpgpu_sim->graphics_done = false;
+      m_gpgpu_sim->all_graphics_done = false;
 
-    // //   m_gpgpu_sim->new_frame();
+    //   m_gpgpu_sim->new_frame();
 
-    //   printf("relaunching graphics kernels\n");
-    // }
-    // if (finished_computes == tracer.compute_count &&
-    //     tracer.graphics_count > 0 && tracer.compute_count > 0) {
-    //   for (auto cmd : compute_commands) {
-    //     commandlist.push_back(cmd);
-    //   }
-    //   finished_computes = 0;
-    //   compute_commands.clear();
-    //   printf("relaunching compute kernels\n");
-    // }
+      printf("relaunching graphics kernels\n");
+    }
+    if (finished_computes == tracer.compute_count &&
+        tracer.graphics_count > 0 && tracer.compute_count > 0 &&
+        m_gpgpu_sim->getShaderCoreConfig()->gpgpu_concurrent_kernel_sm &&
+        !graphics_done) {
+      for (auto cmd : compute_commands) {
+        commandlist.push_back(cmd);
+      }
+      finished_computes = 0;
+      compute_commands.clear();
+      m_gpgpu_sim->compute_done = false;
+      m_gpgpu_sim->all_compute_done = false;
+      printf("relaunching compute kernels\n");
+    }
   }
   unsigned long long compute_cycle = m_gpgpu_sim->gpu_compute_end_cycle - m_gpgpu_sim->gpu_compute_start_cycle;
   float compute_slowdown =

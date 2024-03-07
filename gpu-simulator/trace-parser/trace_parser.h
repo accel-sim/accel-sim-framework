@@ -96,6 +96,8 @@ struct kernel_trace_t {
   unsigned long long local_base_addr;
   // Reference to open filestream
   std::ifstream *ifs;
+  unsigned read_lines;
+  std::string trace_file;
 };
 
 class trace_parser {
@@ -111,7 +113,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs);
+      unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
+      std::string kernel_name);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
   unsigned graphics_count;
