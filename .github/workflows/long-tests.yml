@@ -29,14 +29,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun -c20 make -j20 -C gpu-simulator
       - name: Run SASS
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
@@ -44,7 +44,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-sass.csv -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Archive Stats
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           rm -rf ./statistics-archive
           git clone git@github.com:accel-sim/statistics-archive.git
           # either create a new branch or check it out if it already exists
@@ -65,12 +65,12 @@ jobs:
           git -C ./statistics-archive push -u origin git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Correlate Ubench
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           ./util/hw_stats/get_hw_data.sh > /dev/null
           rm -rf ./util/plotting/correl-html/
           ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/v100-ubench-sass.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/turing-ubench-sass.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
-          ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.7/ | tee ampere-ubench-correl.txt
+          ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.7.0/ | tee ampere-ubench-correl.txt
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/"
@@ -90,14 +90,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun -c20 make -j20 -C gpu-simulator
       - name: Run PTX
         run: |
-          source ./env-setup/11.7_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
 
           rm -rf ./gpu-app-collection
