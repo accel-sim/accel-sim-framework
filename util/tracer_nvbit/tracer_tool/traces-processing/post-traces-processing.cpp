@@ -271,6 +271,7 @@ void group_per_block(const char *filepath) {
   // Important... without clear(), cin.eof() may evaluate to true on the second
   // kernel 
   cin.clear();
+  clearerr(stdin);
   while (!cin.eof()) {
     getline(cin, line);
 
