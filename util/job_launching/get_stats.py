@@ -278,15 +278,10 @@ for idx, app_and_args in enumerate(apps_and_args):
             torque_submname = re.sub(
                 r".*\.([^\s]*-commit-.*-commit-.*)", r"\1", jobname
             )
-            outfile = os.path.join(
-                output_dir,
-                exes_and_args[idx].replace("/", "-")
-                + "."
-                + torque_submname
-                + "."
-                + "o"
-                + jobId,
-            )
+            outfile_name = exes_and_args[idx].replace("/", "-") + "." + torque_submname
+            outfile_name = outfile_name[:200]  # truncate excessively long file names
+            outfile = os.path.join(output_dir, outfile_name + "." + "o" + jobId)
+
         else:
             all_outfiles = [
                 os.path.join(output_dir, f)
