@@ -1,3 +1,4 @@
+#!/bin/bash
 export BASH_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 
 rm -rf $BASH_ROOT/nvbit_release
