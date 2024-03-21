@@ -22,7 +22,7 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-      - id: Setup Environment
+      - id: Setup-Environment
         run: |
           rm -rf env-setup
           git clone git@github.com:purdue-aalp/env-setup.git 
