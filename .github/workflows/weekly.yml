@@ -48,7 +48,7 @@ jobs:
     steps:
       - name: Setup Environment
         run: |
-        echo ${{needs.Last-Commit.outputs.TRACER_COUNT}}
+          echo ${{needs.Last-Commit.outputs.TRACER_COUNT}}
 
   # Tracer-Weekly:
   #   needs: Last-Commit
