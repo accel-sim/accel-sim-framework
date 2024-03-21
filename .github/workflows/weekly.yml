@@ -43,6 +43,7 @@ jobs:
   Tracer-Weekly:
     needs: Last-Commit
     if: |
+      always() &&
       github.repository == 'accel-sim/accel-sim-framework' &&
       needs.Last-Commit.outputs.TRACER_COUNT > 0
     runs-on: tgrogers-gpu01
