@@ -92,8 +92,7 @@ jobs:
     if: |
       github.repository == 'accel-sim/accel-sim-framework' &&
       (needs.Last-Commit.outputs.ACCEL_SIM_COUNT > 0 ||
-      needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0) &&
-      always()
+      needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0)
     runs-on: tgrogers-raid 
     defaults:
       run:
