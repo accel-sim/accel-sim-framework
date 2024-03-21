@@ -68,6 +68,7 @@ jobs:
       - name: build applications
         run: |
           source ./env-setup/11.7.0_env_setup.sh
+          export PATH=/home/tgrogers-raid/a/common/python2:$PATH
           rm -rf ./gpu-app-collection/
           git clone git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
@@ -92,7 +93,9 @@ jobs:
     if: |
       github.repository == 'accel-sim/accel-sim-framework' &&
       (needs.Last-Commit.outputs.ACCEL_SIM_COUNT > 0 ||
-      needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0)
+      needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0) &&
+      jobs.Tracer-Weekly.result != 'failure' &&
+      always()
     runs-on: tgrogers-raid 
     defaults:
       run:
@@ -118,5 +121,6 @@ jobs:
         run: |
           source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
+          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
           ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run -N weekly-$$ -M 70G
           ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$
