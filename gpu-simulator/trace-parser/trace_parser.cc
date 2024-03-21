@@ -343,6 +343,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   // Important to clear the istream. Otherwise, the eofbit from the last 
   // kernel may be carried over to this kernel
   ifs->clear();
+  clearerr(stdin);
   while (!ifs->eof()) {
     getline(*ifs, line);
 
