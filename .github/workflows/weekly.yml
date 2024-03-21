@@ -39,6 +39,11 @@ jobs:
           cd gpu-simulator/gpgpu-sim
           echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_OUTPUT
           echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
+      - name: print
+        run: |
+          echo ${{ steps.Test-for-commit.outputs.TRACER_COUNT }}
+          echo ${{ steps.Test-for-commit.outputs.ACCEL_SIM_COUNT }}
+          echo ${{ steps.Test-for-commit.outputs.GPGPUSIM_COUNT }}
   Tracer-Weekly:
     needs: Last-Commit
     runs-on: tgrogers-gpu01
