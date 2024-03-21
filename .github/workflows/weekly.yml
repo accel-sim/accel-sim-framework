@@ -32,13 +32,13 @@ jobs:
         run: |
           source ./env-setup/11.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
-          echo "ACCEL_SIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)" >> $GITHUB_ENV
-          echo "ACCEL_SIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)"
-          echo "TRACER_COUNT=$(git log --oneline --since 'a week ago' util/tracer_nvbit | wc -l)" >> $GITHUB_ENV
-          echo "TRACER_COUNT=$(git log --oneline --since 'a week ago' util/tracer_nvbit | wc -l)"
+          echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_ENV
+          echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
+          echo "TRACER_COUNT=$(git log --oneline --since '1 week ago' util/tracer_nvbit | wc -l)" >> $GITHUB_ENV
+          echo "TRACER_COUNT=$(git log --oneline --since '1 week ago' util/tracer_nvbit | wc -l)"
           cd gpu-simulator/gpgpu-sim
-          echo "GPGPUSIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)" >> $GITHUB_ENV
-          echo "GPGPUSIM_COUNT=$(git log --oneline --since 'a week ago' | wc -l)"
+          echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_ENV
+          echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
 
   Tracer-Weekly:
     needs: Last-Commit
