@@ -31,7 +31,7 @@ jobs:
       - name: Test For Commit
         id: Test-for-commit
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_OUTPUT
           echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
@@ -61,13 +61,13 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Tracer
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           ./util/tracer_nvbit/install_nvbit.sh
           make clean -C ./util/tracer_nvbit/
           make -C ./util/tracer_nvbit/
       - name: build applications
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           rm -rf ./gpu-app-collection/
           git clone git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
@@ -80,7 +80,7 @@ jobs:
           make -C -j8 ./gpu-app-collection/src cutlass
       - name: generate traces
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
           rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
@@ -110,14 +110,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           make -j -C gpu-simulator
       - name: run SASS
         run: |
-          source ./env-setup/11.0_env_setup.sh
+          source ./env-setup/11.7.0_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run -N weekly-$$ -M 70G
           ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$
