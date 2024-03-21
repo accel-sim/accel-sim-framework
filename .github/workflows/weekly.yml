@@ -94,7 +94,7 @@ jobs:
       github.repository == 'accel-sim/accel-sim-framework' &&
       (needs.Last-Commit.outputs.ACCEL_SIM_COUNT > 0 ||
       needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0) &&
-      jobs.Tracer-Weekly.result != 'failure' &&
+      needs.Tracer-Weekly.result != 'failure' &&
       always()
     runs-on: tgrogers-raid 
     defaults:
