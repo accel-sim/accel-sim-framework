@@ -11,10 +11,19 @@ project(Accel-Sim
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED True)
 
+if($ENV{ACCELSIM_CONFIG} STREQUAL "debug")
+    message("string is debug")
+    set(CMAKE_BUILD_TYPE Debug)
+else()
+    set(CMAKE_BUILD_TYPE Release)
+endif()
+
 # check envrionment variable string compare
-if($<CONFIG:Debug>)
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+    add_compile_definitions(DEBUG=1)
     add_compile_options(-Wall -O0 -g3 -fPIC)
 else()
+    add_compile_definitions(DEBUG=0)
     add_compile_options(-Wall -O3 -g3 -fPIC)
 endif()
 
@@ -70,3 +79,5 @@ target_link_libraries(accel-sim.out PUBLIC cuda ptxsim gpgpusim intersim accelwa
 target_link_libraries(accel-sim.out PUBLIC -lm -lz -lGL -pthread)
 target_link_libraries(accel-sim.out PUBLIC trace-driven trace-parser)
 # target_link_libraries(accel-sim.out PUBLIC cudart)
+
+install(TARGETS accel-sim.out DESTINATION ${CMAKE_SOURCE_DIR}/bin/$ENV{ACCELSIM_CONFIG})

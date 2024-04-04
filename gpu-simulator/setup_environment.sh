@@ -72,5 +72,7 @@ fi
 
 echo "Using GPGPU-Sim in $GPGPUSIM_ROOT"
 #echo "If that is not the intended behavior, then run: \"unset GPGPUSIM_ROOT; unset GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN\"."
+
+cmake -B $ACCELSIM_ROOT/build/$ACCELSIM_CONFIG $ACCELSIM_ROOT/
 echo "Accel-Sim setup succeeded."
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=1
