@@ -18,10 +18,10 @@
 #include "option_parser.h"
 #include "trace_driven.h"
 
-class accel_sim_framwork {
+class accel_sim_framework {
  public:
-  accel_sim_framwork(int argc, const char **argv);
-  accel_sim_framwork(std::string config_file, std::string trace_file);
+  accel_sim_framework(int argc, const char **argv);
+  accel_sim_framework(std::string config_file, std::string trace_file);
 
   void init() {
     active = false;

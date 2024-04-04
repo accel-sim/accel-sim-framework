@@ -26,7 +26,7 @@
  */
 
 int main(int argc, const char **argv) {
-  accel_sim_framwork accel_sim(argc, argv);
+  accel_sim_framework accel_sim(argc, argv);
   accel_sim.simulation_loop();
 
   // we print this message to inform the gpgpu-simulation stats_collect script

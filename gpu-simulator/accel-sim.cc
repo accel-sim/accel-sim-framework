@@ -1,7 +1,7 @@
 #include "accel-sim.h"
 #include "accelsim_version.h"
 
-accel_sim_framwork::accel_sim_framwork(std::string config_file,
+accel_sim_framework::accel_sim_framework(std::string config_file,
                                           std::string trace_file) {
   std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
   m_gpgpu_context = new gpgpu_context();
@@ -22,7 +22,7 @@ accel_sim_framwork::accel_sim_framwork(std::string config_file,
   init();
 }
 
-accel_sim_framwork::accel_sim_framwork(int argc, const char **argv) {
+accel_sim_framework::accel_sim_framework(int argc, const char **argv) {
   std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
   m_gpgpu_context = new gpgpu_context();
 
@@ -37,7 +37,7 @@ accel_sim_framwork::accel_sim_framwork(int argc, const char **argv) {
   init();
 }
 
-void accel_sim_framwork::simulation_loop() {
+void accel_sim_framework::simulation_loop() {
   // for each kernel
   // load file
   // parse and create kernel info
@@ -87,7 +87,7 @@ void accel_sim_framwork::simulation_loop() {
   }
 }
 
-void accel_sim_framwork::parse_commandlist() {
+void accel_sim_framework::parse_commandlist() {
   // gulp up as many commands as possible - either cpu_gpu_mem_copy
   // or kernel_launch - until the vector "kernels_info" has reached
   // the window_size or we have read every command from commandlist
@@ -117,7 +117,7 @@ void accel_sim_framwork::parse_commandlist() {
   }
 }
 
-void accel_sim_framwork::cleanup(unsigned finished_kernel) {
+void accel_sim_framework::cleanup(unsigned finished_kernel) {
   trace_kernel_info_t *k = NULL;
   for (unsigned j = 0; j < kernels_info.size(); j++) {
     k = kernels_info.at(j);
@@ -141,7 +141,7 @@ void accel_sim_framwork::cleanup(unsigned finished_kernel) {
   m_gpgpu_sim->print_stats();
 }
 
-unsigned accel_sim_framwork::simulate() {
+unsigned accel_sim_framework::simulate() {
   unsigned finished_kernel_uid = 0;
   do {
     if (!m_gpgpu_sim->active()) break;
@@ -165,7 +165,7 @@ unsigned accel_sim_framwork::simulate() {
   return finished_kernel_uid;
 }
 
-trace_kernel_info_t *accel_sim_framwork::create_kernel_info(kernel_trace_t *kernel_trace_info,
+trace_kernel_info_t *accel_sim_framework::create_kernel_info(kernel_trace_t *kernel_trace_info,
                                         gpgpu_context *m_gpgpu_context,
                                         trace_config *config,
                                         trace_parser *parser) {
@@ -185,7 +185,7 @@ trace_kernel_info_t *accel_sim_framwork::create_kernel_info(kernel_trace_t *kern
   return kernel_info;
 }
 
-gpgpu_sim *accel_sim_framwork::gpgpu_trace_sim_init_perf_model(
+gpgpu_sim *accel_sim_framework::gpgpu_trace_sim_init_perf_model(
     int argc, const char *argv[], gpgpu_context *m_gpgpu_context,
     trace_config *m_config) {
   srand(1);
