@@ -66,6 +66,7 @@ if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     fi
     source $ACCELSIM_ROOT/gpgpu-sim/setup_environment $ACCELSIM_CONFIG || return 1
 else
+    export CALLED_FROM_ACCELSIM_SETUP=1
     source $GPGPUSIM_ROOT/setup_environment $ACCELSIM_CONFIG || return 1
 fi
 
