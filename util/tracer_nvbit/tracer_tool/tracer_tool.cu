@@ -70,8 +70,8 @@ int dump_instrset = 0;
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
-/* identical {kernel id, pc} pair to instruction strings map */
-std::map<std::pair<int, uint32_t>, std::string> kernel_id_pc_to_inst_string_map;
+/* identical {kernel id, pc} pair */
+std::vector<std::pair<int, uint32_t>> kernel_id_pc_pair;
 
 std::string cwd = getcwd(NULL,0);
 std::string traces_location = cwd + "/traces/";
@@ -731,13 +731,15 @@ void *recv_thread_fun(void *) {
 
         fprintf(resultsFile, "\n");
 
-        /* check if {kernelid, ma->vpc} is in kernel_id_pc_to_inst_string_map.keys(), if not, add it
+        /* check if {kernelid, ma->vpc} is in kernel_id_pc_pair, if not, add it
          * to the map, and write it to instrset.csv, else, do nothing
          */
         if (dump_instrset) {
           // kernelid has been incremented by 1 before here
           std::pair<int, uint32_t> kernelid_vpc = {kernelid - 1, ma->vpc};
-          if (kernel_id_pc_to_inst_string_map.find(kernelid_vpc) == kernel_id_pc_to_inst_string_map.end()) {
+          std::vector<std::pair<int, uint32_t>>::iterator it = std::find(
+            kernel_id_pc_pair.begin(), kernel_id_pc_pair.end(), kernelid_vpc);
+          if (it == kernel_id_pc_pair.end()) {
             std::string inst_string = id_to_opcode_map[ma->opcode_id] + " "; // opcode
             if (ma->GPRDst >= 0) {
               inst_string += "1 R" + std::to_string(ma->GPRDst) + " "; // GPR Dst and count.
@@ -808,8 +810,8 @@ void *recv_thread_fun(void *) {
             // Print the immediate
             inst_string += std::to_string(ma->imm);
 
-            kernel_id_pc_to_inst_string_map[kernelid_vpc] = inst_string;
-            
+            kernel_id_pc_pair.push_back(kernelid_vpc);
+
             instrsetFile = fopen(instrset_location.c_str(), "a");
             fprintf(instrsetFile, "%d, %04x, %s\n", kernelid - 1, ma->vpc, 
                     inst_string.c_str());
