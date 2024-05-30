@@ -104,6 +104,7 @@ struct kernel_trace_t {
 
 class trace_parser {
  public:
+  trace_parser(){}
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
