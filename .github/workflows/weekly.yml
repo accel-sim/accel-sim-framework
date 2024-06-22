@@ -3,8 +3,8 @@ name: Weekly Tests
 on:
   workflow_dispatch:  # manually dispatch
   push:
-  # schedule:
-  #   - cron: '0 0 20 ? * FRI *'  # 8:00 PM every Friday
+  schedule:
+    - cron: '0 0 20 ? * FRI *'  # 8:00 PM every Friday
 
 jobs:
   Last-Commit:
