@@ -518,51 +518,59 @@ cutlass_5_trace:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
-        - cutlass_perf_test:
-            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 3G
-            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 3G
-            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 3G
-            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 3G
-            - args: --seed=2020 --dist=0  --m=2560 --n=7000 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 3G
-            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
-            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
-            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
-            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
-            - args: --seed=2020 --dist=0  --m=4096 --n=7000 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
-            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+        - cutlass_profiler:
+            #single precision gemm kernels
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
               accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
               accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
+            # - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 16G
+            # - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 16G
+            # - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 16G
+            # - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 16G
+            # - args: --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm  --iterations=5 --providers=cutlass
+            #   accel-sim-mem: 20G
+            #gemm kernels on tensor cores
+            - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=16 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
               accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=128 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=1024 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=2560 --n=2560 --k=2560 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 13G
-            - args: --seed=2020 --dist=0  --m=4096 --n=16 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 16G
-            - args: --seed=2020 --dist=0  --m=4096 --n=32 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 16G
-            - args: --seed=2020 --dist=0  --m=4096 --n=64 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 16G
-            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 16G
-            - args: --seed=2020 --dist=0  --m=4096 --n=4096 --k=4096 --kernels=sgemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 20G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=32 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=64 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=128 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=512 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=1024 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=2560 --n=2056 --k=2560 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=16 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=32 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=64 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=128 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=512 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
+            # - args: --seed=2020 --dist=0 --operation=gemm --m=4096 --n=4096 --k=4096 --op_class=tensorop --iterations=5 --provider=cutlass
+            #   accel-sim-mem: 13G
 
 ## Not sure how much memory the following apps take - just letting them go with the default
 
