@@ -24,6 +24,8 @@ collect_aggregate:
     - 'total dram reads\s*=\s*(.*)'
     - 'total dram writes\s*=\s*(.*)'
     - 'kernel_launch_uid\s*=\s*(.*)'
+    - 'gpgpu_n_shmem_bkconflict\s*=\s*(.*)'
+    - 'gpgpu_n_l1cache_bkconflict\s*=\s*(.*)'
 
 
 # These stats are reset each kernel and should not be diff'd
