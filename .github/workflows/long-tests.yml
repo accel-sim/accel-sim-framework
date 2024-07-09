@@ -6,6 +6,8 @@ name: Long Tests
 on:
   # Triggers the workflow on push or pull request events but only for the mydev branch
   push:
+    branches-ignore:
+      - "gh-readonly-queue**"
   merge_group:
 
   # Allows you to run this workflow manually from the Actions tab
