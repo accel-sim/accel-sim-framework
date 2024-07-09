@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -e
+
 if [ ! -n "$CUDA_INSTALL_PATH" ]; then
 	echo "ERROR ** Install CUDA Toolkit and set CUDA_INSTALL_PATH.";
 	exit;

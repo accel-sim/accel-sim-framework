@@ -6,7 +6,6 @@ name: Long Tests
 on:
   # Triggers the workflow on push or pull request events but only for the mydev branch
   push:
-  # pull_request:
   merge_group:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -74,7 +73,13 @@ jobs:
           ./util/plotting/plot-correlation.py -c ./statistics-archive/ubench/ampere-ubench-sass.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
-          echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/"
+          BODY="Github CI - Build $GITHUB_REF SUCCESS.
+          Branch/PR Name: $GITHUB_REF_NAME
+          Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
+          SUBJECT="Github CI - Build $GITHUB_REF SUCCESS"
+          TO="${{ secrets.GROUP_EMAIL }}"
+          echo "$BODY" | mail -s "$SUBJECT" "$TO"
+          echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
   PTX-Simulation:
     if: github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-raid
