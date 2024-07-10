@@ -76,6 +76,7 @@ jobs:
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           BODY="Github CI - Build $GITHUB_REF SUCCESS.
+          Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Branch/PR Name: $GITHUB_REF_NAME
           Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
           SUBJECT="Github CI - Build $GITHUB_REF SUCCESS"
