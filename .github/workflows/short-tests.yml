@@ -6,6 +6,8 @@ name: Short Tests
 on:
   # Triggers the workflow on push or pull request events but only for the mydev branch
   push:
+    branches-ignore:
+      - "gh-readonly-queue**"
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
@@ -27,8 +29,6 @@ jobs:
         run: /bin/bash $GITHUB_WORKSPACE/short-tests.sh
   PTX-Simulation:
     runs-on: ubuntu-latest
-    container:
-      image: tgrogers/accel-sim_regress:Ubuntu-22.04-cuda-11.7
       # env:
         
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -36,11 +36,9 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
       - name: Run Simulation
-        run: echo "skipped SASS-Simulation. Will perform in merge queue"
+        run: echo "skipped PTX-Simulation. Will perform in merge queue"
   Tracer-Tool:
     runs-on: ubuntu-latest
-    container:
-      image: tgrogers/accel-sim_regress:Ubuntu-22.04-cuda-11.7
       # env:
         
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -48,4 +46,4 @@ jobs:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
       - name: Run Simulation
-        run: echo "skipped SASS-Simulation. Will perform in merge queue"
+        run: echo "skipped Tracer-Simulation. Will perform in merge queue"
