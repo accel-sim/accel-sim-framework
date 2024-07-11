@@ -75,8 +75,8 @@ std::string stats_location = cwd + "/traces/stats.csv";
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
-    0;                                  // 0 means start from the begging kernel
-uint64_t dynamic_kernel_limit_end = 0;  // 0 means no limit
+    0;                                 // 0 means start from the begging kernel
+uint64_t dynamic_kernel_limit_end = 0; // 0 means no limit
 
 enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
 
@@ -231,7 +231,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         if (mem_oper_idx >= 0) {
           nvbit_add_call_arg_const_val32(instr, 1);
           assert(num_mref <= 2);
-          if (num_mref == 2) {  // LDGSTS
+          if (num_mref == 2) { // LDGSTS
             nvbit_add_call_arg_mref_addr64(instr, 1 - mem_oper_idx);
           } else {
             nvbit_add_call_arg_mref_addr64(instr, mem_oper_idx);
@@ -296,7 +296,8 @@ unsigned old_total_reported_insts = 0;
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                          const char *name, void *params, CUresult *pStatus) {
-  if (skip_flag) return;
+  if (skip_flag)
+    return;
 
   if (first_call == true) {
     first_call = false;
@@ -316,7 +317,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         dynamic_kernel_limit_start == 1)
       active_region = true;
     else {
-      if (active_from_start) active_region = false;
+      if (active_from_start)
+        active_region = false;
     }
 
     if (user_defined_folders == 1) {
@@ -527,7 +529,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
 bool is_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
-  while (it != s.end() && std::isdigit(*it)) ++it;
+  while (it != s.end() && std::isdigit(*it))
+    ++it;
   return !s.empty() && it == s.end();
 }
 
@@ -543,13 +546,14 @@ unsigned get_datawidth_from_opcode(const std::vector<std::string> &opcode) {
     }
   }
 
-  return 4;  // default is 4 bytes
+  return 4; // default is 4 bytes
 }
 
 bool check_opcode_contain(const std::vector<std::string> &opcode,
                           std::string param) {
   for (unsigned i = 0; i < opcode.size(); ++i)
-    if (opcode[i] == param) return true;
+    if (opcode[i] == param)
+      return true;
 
   return false;
 }
@@ -637,7 +641,7 @@ void *recv_thread_fun(void *) {
         if (lineinfo) {
           fprintf(resultsFile, "%d ", ma->line_num);
         }
-        fprintf(resultsFile, "%04x ", ma->vpc);  // Print the virtual PC
+        fprintf(resultsFile, "%04x ", ma->vpc); // Print the virtual PC
         fprintf(resultsFile, "%08x ", ma->active_mask & ma->predicate_mask);
         if (ma->GPRDst >= 0) {
           fprintf(resultsFile, "1 ");
@@ -648,12 +652,14 @@ void *recv_thread_fun(void *) {
         // Print the opcode.
         fprintf(resultsFile, "%s ", id_to_opcode_map[ma->opcode_id].c_str());
         unsigned src_count = 0;
-        for (int s = 0; s < MAX_SRC; s++)  // GPR srcs count.
-          if (ma->GPRSrcs[s] >= 0) src_count++;
+        for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
+          if (ma->GPRSrcs[s] >= 0)
+            src_count++;
         fprintf(resultsFile, "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++)  // GPR srcs.
-          if (ma->GPRSrcs[s] >= 0) fprintf(resultsFile, "R%d ", ma->GPRSrcs[s]);
+        for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
+          if (ma->GPRSrcs[s] >= 0)
+            fprintf(resultsFile, "R%d ", ma->GPRSrcs[s]);
 
         // print addresses
         std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
@@ -662,7 +668,8 @@ void *recv_thread_fun(void *) {
           std::vector<std::string> tokens;
           std::string token;
           while (std::getline(iss, token, '.')) {
-            if (!token.empty()) tokens.push_back(token);
+            if (!token.empty())
+              tokens.push_back(token);
           }
           fprintf(resultsFile, "%d ", get_datawidth_from_opcode(tokens));
 
@@ -696,7 +703,8 @@ void *recv_thread_fun(void *) {
             // list all the addresses
             fprintf(resultsFile, "%u ", address_format::list_all);
             for (int s = 0; s < 32; s++) {
-              if (mask.test(s)) fprintf(resultsFile, "0x%016lx ", ma->addrs[s]);
+              if (mask.test(s))
+                fprintf(resultsFile, "0x%016lx ", ma->addrs[s]);
             }
           }
         } else {
