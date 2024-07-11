@@ -30,6 +30,14 @@ SOURCES=$(wildcard *.cu)
 OBJECTS=$(SOURCES:.cu=.o)
 ARCH?=all
 
+ARCH_VER_REQ=11.7 # NVCC < 11.7 doesn't support -arch=all flag
+ARCH_VER_CHECK=$(shell echo "${NVCC_VER} >= $(ARCH_VER_REQ)" | bc)
+ifeq ($(ARCH_VER_CHECK),0)
+ifeq ($(ARCH), all)
+$(error ERROR: ARCH environment variable must be set to "sm_XX" for nvcc < 11.7, ex: run "export ARCH=sm_70 for compute capability 70")
+endif
+endif
+
 mkfile_path := $(abspath $(lastword $(MAKEFILE_LIST)))
 current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
