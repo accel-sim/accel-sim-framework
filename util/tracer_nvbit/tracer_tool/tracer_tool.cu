@@ -63,14 +63,21 @@ int user_defined_folders = 0;
 /* Use xz to compress the *.trace file */
 int xz_compress_trace = 0;
 
+/* Dump instruction sets (identical pc to instruction strings map) to instrset.csv */
+int dump_instrset = 0;
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
+
+/* identical {kernel id, pc} pair */
+std::vector<std::pair<int, uint32_t>> kernel_id_pc_pair;
 
 std::string cwd = getcwd(NULL,0);
 std::string traces_location = cwd + "/traces/";
 std::string kernelslist_location = cwd + "/traces/kernelslist";
 std::string stats_location = cwd + "/traces/stats.csv";
+std::string instrset_location = cwd + "/traces/instrset.csv";
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
@@ -110,6 +117,8 @@ void nvbit_at_init() {
               "folder TRACES_FOLDER path environment");
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 0, "Create xz-compressed trace"
               "file");
+  GET_VAR_INT(dump_instrset, "DUMP_INTERSET", 0, "Dump instruction sets");
+
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -284,6 +293,7 @@ __global__ void flush_channel() {
 static FILE *resultsFile = NULL;
 static FILE *kernelsFile = NULL;
 static FILE *statsFile = NULL;
+static FILE *instrsetFile = NULL;
 static int kernelid = 1;
 static bool first_call = true;
 
@@ -332,6 +342,12 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       printf("\n Traces location is %s \n", traces_location.c_str());
       printf("Kernelslist location is %s \n", kernelslist_location.c_str());
       printf("Stats location is %s \n", stats_location.c_str());
+      if (dump_instrset) {
+        std::string temp_instrset_location = usr_folder + "/instrset.csv";
+        instrset_location.resize(temp_instrset_location.size());
+        instrset_location.replace(instrset_location.begin(), instrset_location.end(),temp_instrset_location);
+        printf("Instrset location is %s \n", instrset_location.c_str());
+      }
     }
 
     kernelsFile = fopen(kernelslist_location.c_str(), "w");
@@ -341,6 +357,14 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
             "#blocks, block_dimX, block_dimY, block_dimZ, #threads, "
             "total_insts, total_reported_insts\n");
     fclose(statsFile);
+    if (dump_instrset) {
+      instrsetFile = fopen(instrset_location.c_str(), "w");
+      fprintf(instrsetFile, "# The following sequence is a list of low-level assembly instructions (SASS), "
+                            "which is actually executed by the real GPU.\n\n");
+      fprintf(instrsetFile, "kernel id, PC, instruction string (opcode dest_num [reg_dests] src_num "
+                            "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] immediate)\n\n");
+      fclose(instrsetFile);
+    }
   }
 
   if (cbid == API_CUDA_cuMemcpyHtoD_v2) {
@@ -598,6 +622,12 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   }
 }
 
+std::string FormatAsHex(unsigned base_addr) {
+  std::ostringstream formattedStream;
+  formattedStream << std::hex << base_addr;
+  return formattedStream.str();
+}
+
 void *recv_thread_fun(void *) {
   char *recv_buffer = (char *)malloc(CHANNEL_SIZE);
   while (recv_thread_started) {
@@ -700,6 +730,95 @@ void *recv_thread_fun(void *) {
         fprintf(resultsFile, "%d ", ma->imm);
 
         fprintf(resultsFile, "\n");
+
+        /* check if {kernelid, ma->vpc} is in kernel_id_pc_pair, if not, add it
+         * to the map, and write it to instrset.csv, else, do nothing
+         */
+        if (dump_instrset) {
+          // kernelid has been incremented by 1 before here
+          std::pair<int, uint32_t> kernelid_vpc = {kernelid - 1, ma->vpc};
+          std::vector<std::pair<int, uint32_t>>::iterator it = std::find(
+            kernel_id_pc_pair.begin(), kernel_id_pc_pair.end(), kernelid_vpc);
+          if (it == kernel_id_pc_pair.end()) {
+            std::string inst_string = id_to_opcode_map[ma->opcode_id] + " "; // opcode
+            if (ma->GPRDst >= 0) {
+              inst_string += "1 R" + std::to_string(ma->GPRDst) + " "; // GPR Dst and count.
+            } else
+              inst_string += "0 "; // GPR Dst count.
+
+            inst_string += std::to_string(src_count) + " "; // GPR srcs count.
+
+            for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
+              if (ma->GPRSrcs[s] >= 0)
+                inst_string += "R" + std::to_string(ma->GPRSrcs[s]) + " ";
+
+            if (ma->is_mem) {
+              std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
+              std::vector<std::string> tokens;
+              std::string token;
+              while (std::getline(iss, token, '.')) {
+                if (!token.empty())
+                  tokens.push_back(token);
+              }
+              inst_string += std::to_string(get_datawidth_from_opcode(tokens)) + " ";
+
+              bool base_stride_success = false;
+              uint64_t base_addr = 0;
+              int stride = 0;
+              std::vector<long long> deltas;
+
+              if (enable_compress) {
+                // try base+stride format
+                base_stride_success =
+                    base_stride_compress(ma->addrs, mask, base_addr, stride);
+                if (!base_stride_success) {
+                  // if base+stride fails, try base+delta format
+                  base_delta_compress(ma->addrs, mask, base_addr, deltas);
+                }
+              }
+
+              if (base_stride_success && enable_compress) {
+                // base + stride format
+                inst_string += std::to_string((unsigned)address_format::base_stride) + 
+                               " 0x" + FormatAsHex(base_addr) + " " + 
+                               std::to_string(stride) + " ";
+              } else if (!base_stride_success && enable_compress) {
+                // base + delta format
+                inst_string += std::to_string((unsigned)address_format::base_delta) + 
+                               " 0x" + FormatAsHex(base_addr) + " ";
+
+                for (int s = 0; s < deltas.size(); s++) {
+                  inst_string += std::to_string(deltas[s]) + " ";
+                }
+              } else {
+                // list all the addresses
+                inst_string += std::to_string(address_format::list_all) + " ";
+                for (int s = 0; s < 32; s++) {
+                  if (mask.test(s)) {
+                    std::ostringstream oss;
+                    oss << "0x"
+                        << std::setfill('0') << std::setw(16)
+                        << std::hex << ma->addrs[s];
+                    inst_string += oss.str() + " ";
+                  }
+                }
+              }
+            } else {
+              inst_string += "0 ";
+            }
+
+            // Print the immediate
+            inst_string += std::to_string(ma->imm);
+
+            kernel_id_pc_pair.push_back(kernelid_vpc);
+
+            instrsetFile = fopen(instrset_location.c_str(), "a");
+            fprintf(instrsetFile, "%d, %04x, %s\n", kernelid - 1, ma->vpc, 
+                    inst_string.c_str());
+            fclose(instrsetFile);
+            
+          }
+        }
 
         num_processed_bytes += sizeof(inst_trace_t);
       }
