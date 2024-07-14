@@ -136,7 +136,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"CCTLT", OpcodeChar(OP_CCTLT, ALU_OP)},
 
     {"LDGDEPBAR", OpcodeChar(OP_LDGDEPBAR, ALU_OP)},
-    {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)}, 
+    {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)},
 
     // Uniform Datapath Instruction
     // UDP unit
