@@ -209,7 +209,7 @@ int main(int argc, const char **argv) {
         m_gpgpu_sim->concurrent_mode = m_gpgpu_sim->MPS;
         m_gpgpu_sim->concurrent_granularity =
             m_gpgpu_sim->get_config().num_shader();
-        m_gpgpu_sim->dynamic_sm_count = 12;
+        m_gpgpu_sim->dynamic_sm_count = m_gpgpu_sim->get_config().mps_sm_count;
       }
     }
 
@@ -255,7 +255,7 @@ int main(int argc, const char **argv) {
             last_launched_vertex = kernel_id;
             kernel_trace_info->cuda_stream_id = graphics_stream_id;
             last_grpahics_stream_id = graphics_stream_id;
-            // graphics_stream_id++;
+            graphics_stream_id++;
           } else {
             assert(kernel_info->get_name().find("FRAG") != std::string::npos);
             kernel_trace_info->cuda_stream_id = last_grpahics_stream_id;
@@ -367,6 +367,16 @@ int main(int argc, const char **argv) {
           tracer.kernel_finalizer(k->get_trace_info());
           // delete k->entry();
           // delete k;
+          if (m_gpgpu_sim->getShaderCoreConfig()
+                    ->gpgpu_concurrent_kernel_sm) {
+              if (m_gpgpu_sim->concurrent_mode == m_gpgpu_sim->FINEGRAIN) {
+                m_gpgpu_sim->dynamic_sm_count =
+                    m_gpgpu_sim->get_config().dynamic_sm_count;
+              } else {
+                m_gpgpu_sim->dynamic_sm_count =
+                    m_gpgpu_sim->get_config().mps_sm_count;
+              }
+            }
           if (k->is_graphic_kernel) {
             finished_graphics++;
             launched_mesa--;
@@ -374,20 +384,19 @@ int main(int argc, const char **argv) {
             finished_computes++;
 
             if (m_gpgpu_sim->get_config().gpgpu_slicer) {
-              m_gpgpu_sim->slicer_sampled = false;
-              for (unsigned cluster = 0;
-                   cluster <
-                   m_gpgpu_sim->getShaderCoreConfig()->n_simt_clusters;
-                   cluster++) {
-                assert(m_gpgpu_sim->getShaderCoreConfig()
-                           ->n_simt_cores_per_cluster == 1);
-                m_gpgpu_sim->getSIMTCluster(cluster)->get_core(0)->shader_inst =
-                    0;
-              }
-            } else {
-              m_gpgpu_sim->dynamic_sm_count =
-                  m_gpgpu_sim->get_config().dynamic_sm_count;
+            m_gpgpu_sim->slicer_sampled = false;
+            for (unsigned cluster = 0;
+                 cluster < m_gpgpu_sim->getShaderCoreConfig()->n_simt_clusters;
+                 cluster++) {
+              assert(m_gpgpu_sim->getShaderCoreConfig()
+                         ->n_simt_cores_per_cluster == 1);
+              m_gpgpu_sim->getSIMTCluster(cluster)->get_core(0)->shader_inst =
+                  0;
             }
+            m_gpgpu_sim->dynamic_sm_count =
+                    m_gpgpu_sim->get_config().dynamic_sm_count;
+          } else {
+          }
           }
           kernels_info.erase(kernels_info.begin()+j);
           if (!m_gpgpu_sim->cycle_insn_cta_max_hit())
@@ -443,8 +452,6 @@ int main(int argc, const char **argv) {
       m_gpgpu_sim->compute_done = true;
       m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
-
-      break;
     }
     if (graphics_done && computes_done) {
       printf("GPGPU-Sim: ** break due to finishing all kernels one iteration **\n");

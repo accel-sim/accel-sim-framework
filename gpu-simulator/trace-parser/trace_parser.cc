@@ -128,7 +128,8 @@ void inst_memadd_info_t::base_delta_decompress(
 
 bool inst_trace_t::parse_from_string(std::string trace,
                                      unsigned trace_version,
-                                     unsigned enable_lineinfo) {
+                                     unsigned enable_lineinfo,
+                                     std::set<uint64_t> &memaddrs) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -187,8 +188,11 @@ bool inst_trace_t::parse_from_string(std::string trace,
     if (address_mode == address_format::list_all) {
       // read addresses one by one from the file
       for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s))
+        if (mask_bits.test(s)) {
           ss >> std::hex >> memadd_info->addrs[s];
+          // align to 32 bytes
+          memaddrs.insert(memadd_info->addrs[s] & ~(uint64_t)(0x1F));
+        }
         else
           memadd_info->addrs[s] = 0;
       }
@@ -402,7 +406,7 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
     unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
-    std::string kernel_name) {
+    std::string kernel_name, std::set<uint64_t> &memaddrs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -455,7 +459,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo);
+            .parse_from_string(line, trace_version, enable_lineinfo, memaddrs);
         inst_count++;
       }
     }

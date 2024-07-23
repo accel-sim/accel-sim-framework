@@ -5,10 +5,12 @@ import os
 cwd = os.path.dirname(os.path.realpath(__file__)) + "/"
 trace_dir = cwd + "../../hw_run/traces/vulkan/"
 
-gs = ["pbrtexture_2k","pbrtexture_4k", "render_passes_2k", "render_passes_4k", "instancing_2k","instancing_4k","render_passes_dev", "sponza_2k", "sponza_4k", "materials_2k", "materials_4k", "platformer_2k", "platformer_4k"]
+gs = ["pbrtexture_2k","pbrtexture_4k", "render_passes_2k", "render_passes_4k", "instancing_2k","instancing_4k", "sponza_2k", "sponza_4k", "materials_2k", "materials_4k", "platformer_2k", "platformer_4k", "demo_2k", "demo_4k"]
 cs = ["vpi_sample_03_harris_corners", "klt_tracker", "vpi_sample_11_fisheye", "vpi_sample_12_optflow_lk_refined"]
-css = ["ritnet", "hotlab", "slam_lidar_steady", "slam_rgbd_steady"]
-vio = 3
+css = ["ritnet", "hotlab", 
+    # "slam_lidar_steady", "slam_rgbd_steady"
+]
+vio = 1
 # if vio != 1:
 all_name = "all" + str(vio)
 # else:

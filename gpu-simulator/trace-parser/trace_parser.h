@@ -61,7 +61,7 @@ struct inst_trace_t {
   inst_memadd_info_t *memadd_info;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo);
+                         unsigned enable_lineinfo, std::set<uint64_t> &memaddrs);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
@@ -114,7 +114,7 @@ class trace_parser {
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
       unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
-      std::string kernel_name);
+      std::string kernel_name, std::set<uint64_t> &memaddrs);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
   unsigned graphics_count;

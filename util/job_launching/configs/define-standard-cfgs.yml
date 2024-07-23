@@ -315,6 +315,8 @@ dynamic_sm2:
     extra_params: '-gpgpu_dynamic_sm_count 2'
 dynamic_sm3:
     extra_params: '-gpgpu_dynamic_sm_count 3'
+mps_sm8:
+    extra_params: '-gpgpu_mps_sm_count 8'
 slicer:
     extra_params: '-gpgpu_slicer 1'
 WR0:

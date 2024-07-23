@@ -446,6 +446,82 @@ vulkan:
             accel-sim-mem: 6G
           - args: 'hotlab'
             accel-sim-mem: 6G
+        - demo_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+        - demo_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+          - args: 'all1'
+            accel-sim-mem: 6G
+          - args: 'ritnet'
+            accel-sim-mem: 6G
+          - args: 'hotlab'
+            accel-sim-mem: 6G
+vulkan-correlation:
+    exec_dir: "$HOME/test/"
+    data_dirs: "$HOME/test/"
+    execs:
+        - pbrtexture_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - instancing_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - render_passes_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - sponza_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - materials_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - platformer_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - demo_2k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - pbrtexture_2k_lod0:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - instancing_2k_lod0:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - render_passes_2k_lod0:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - pbrtexture_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - instancing_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - render_passes_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - sponza_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - materials_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - platformer_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+        - demo_4k:
+          - args: 'NO_ARGS'
+            accel-sim-mem: 6G
+
+
+
 
 compute:
     exec_dir: "$HOME/test/"
@@ -459,14 +535,15 @@ compute:
         #   - args: "_c_10_7__s_22___cam0_img_0000_png"
         # - vpi_sample_12_optflow_lk_refined:
         #   - args: "cuda__home_pan251_cam0_10_img__4d_png_5_frames_png"
-        # - ritnet:
-        #   - args: 
+        - ritnet:
+          - args: 
+            accel-sim-mem: 12G
         # - hotlab:
         #   - args:
-        - slam_lidar_steady:
-          - args:
-        - slam_rgbd_steady:
-          - args:
+        # - slam_lidar_steady:
+        #   - args:
+        # - slam_rgbd_steady:
+        #   - args:
 l1d-microbench:
     exec_dir: "/home/tgrogers-raid/a/pan251/mybench/"
     data_dirs: "/home/tgrogers-raid/a/pan251/accel-sim-framework/gpu-app-collection/data_dirs/l1d/"

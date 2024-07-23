@@ -1,10 +1,14 @@
 #! /usr/bin/python3
 import os
 
+app = 'instancing_4k'
+
 cwd = os.getcwd() + "/"
-file = "./complete.traceg"
+file = "./{0}.traceg".format(app)
 # file = "/scratch/tgrogers-disk01/a/pan251/gtraces/materials_4k.traceg"
-folder = cwd + "../../hw_run/traces/vulkan/RENAME_ME/NO_ARGS/traces/"
+folder = cwd + "../../hw_run/traces/vulkan-has-write/{0}/NO_ARGS/traces/".format(app)
+
+assert(not os.path.exists("../../hw_run/traces/vulkan-has-write/{0}".format(app)))
 
 trace = open(file, 'r')
 lines = trace.readlines()
@@ -14,8 +18,6 @@ total = []
 kernel_name = []
 big_str=[]
 counter = 0
-
-assert(not os.path.exists("../../hw_run/traces/vulkan/RENAME_ME"))
 
 file = folder + "kernelslist.g"
 os.system("mkdir -p " + folder)
@@ -74,7 +76,6 @@ for line in lines:
         else:
             print("ERROR: kernel name not recognized")
             exit(1)
-
         # write kernel info
         f.write("-kernel name = " + kernel_name[index_k] + "\n")
         f.write("-kernel id = " + str(index_k) + "\n")
