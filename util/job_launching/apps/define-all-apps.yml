@@ -92,6 +92,13 @@ GPU_Microbenchmark:
         - shared_lat:
             - args:
               accel-sim-mem: 1G
+        - shared_bank_conflicts:
+        ## argument 1 kernel has conflicts
+            - args: 1
+              accel-sim-mem: 1G
+        ## argument 2 kernel doesn't have conflicts
+            - args: 2
+              accel-sim-mem: 1G
         - MaxFlops:
             - args:
               accel-sim-mem: 1G

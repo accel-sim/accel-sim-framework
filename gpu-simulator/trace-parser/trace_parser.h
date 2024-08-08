@@ -99,12 +99,12 @@ struct kernel_trace_t {
   std::istream *ifs;
   // Anonymous pipe through which the trace is transmitted from a trace reader
   // process to the simulator process
-  int pipefd[2]={};
+  int pipefd[2] = {};
 };
 
 class trace_parser {
  public:
-  trace_parser(){}
+  trace_parser() {}
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
