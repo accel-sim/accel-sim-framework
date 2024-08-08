@@ -1,19 +1,20 @@
 /* Author1: Mahmoud Khairy, abdallm@purdue.com - 2019 */
 /* Author2: Jason Shen, shen203@purdue.edu - 2019 */
 
-#include <algorithm>
 #include <assert.h>
-#include <bitset>
 #include <inttypes.h>
+#include <stdint.h>
+#include <stdio.h>
+#include <sys/stat.h>
+#include <unistd.h>
+
+#include <algorithm>
+#include <bitset>
 #include <iostream>
 #include <iterator>
 #include <map>
 #include <sstream>
-#include <stdint.h>
-#include <stdio.h>
 #include <string>
-#include <sys/stat.h>
-#include <unistd.h>
 #include <unordered_set>
 #include <vector>
 /* every tool needs to include this once */
@@ -28,7 +29,7 @@
 /* contains definition of the inst_trace_t structure */
 #include "common.h"
 
-#define TRACER_VERSION "4"
+#define TRACER_VERSION "5"
 
 /* Channel used to communicate from GPU to CPU receiving thread */
 #define CHANNEL_SIZE (1l << 20)
@@ -129,7 +130,6 @@ std::unordered_set<CUfunction> already_instrumented;
 /* instrument each memory instruction adding a call to the above instrumentation
  * function */
 void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
-
   std::vector<CUfunction> related_functions =
       nvbit_get_related_functions(ctx, func);
 
@@ -300,7 +300,6 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     return;
 
   if (first_call == true) {
-
     first_call = false;
 
     if (mkdir("traces", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
@@ -435,10 +434,11 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         fprintf(resultsFile, "-enable lineinfo = %d\n", lineinfo);
         fprintf(resultsFile, "\n");
 
-        fprintf(resultsFile, "#traces format = [line_num] PC mask dest_num "
-                             "[reg_dests] opcode src_num "
-                             "[reg_srcs] mem_width [adrrescompress?] "
-                             "[mem_addresses] immediate\n");
+        fprintf(resultsFile,
+                "#traces format = [line_num] PC mask dest_num [reg_dests] "
+                "opcode src_num "
+                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
+                "immediate\n");
         fprintf(resultsFile, "\n");
       }
 
@@ -560,7 +560,6 @@ bool check_opcode_contain(const std::vector<std::string> &opcode,
 
 bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
                           uint64_t &base_addr, int &stride) {
-
   // calulcate the difference between addresses
   // write cosnsctive addresses with constant stride in a more
   // compressed way (i.e. start adress and stride)
@@ -599,7 +598,6 @@ bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
 
 void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
                          uint64_t &base_addr, std::vector<long long> &deltas) {
-
   // save the delta from the previous address
   bool first_bit1_found = false;
   uint64_t last_address = 0;
@@ -726,7 +724,7 @@ void *recv_thread_fun(void *) {
   return NULL;
 }
 
-void nvbit_at_ctx_init(CUcontext ctx) {
+void nvbit_tool_init(CUcontext ctx) {
   recv_thread_started = true;
   channel_host.init(0, CHANNEL_SIZE, &channel_dev, NULL);
   pthread_create(&recv_thread, NULL, recv_thread_fun, NULL);

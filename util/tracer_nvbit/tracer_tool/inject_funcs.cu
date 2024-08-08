@@ -1,9 +1,10 @@
 /* Author1: Mahmoud Khairy, abdallm@purdue.com - 2019 */
 /* Author2: Jason Shen, shen203@purdue.edu - 2019 */
 
-#include <cstdarg>
 #include <stdint.h>
 #include <stdio.h>
+
+#include <cstdarg>
 
 #include "utils/utils.h"
 
@@ -25,7 +26,6 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
                 uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
                 uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
                 uint32_t line_num) {
-
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
   const int laneid = get_laneid();
