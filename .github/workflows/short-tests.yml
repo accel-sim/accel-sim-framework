@@ -14,7 +14,7 @@ on:
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
+jobs:  
   SASS-Simulation:
     runs-on: ubuntu-latest
     container:
@@ -47,3 +47,30 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run Simulation
         run: echo "skipped Tracer-Simulation. Will perform in merge queue"
+  format-code:
+    runs-on: ubuntu-latest
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+
+    permissions:
+      # Give the default GITHUB_TOKEN write permission to commit and push the
+      # added or changed files to the repository.
+      contents: write
+
+    steps:
+      - uses: actions/checkout@v4
+      # Other steps that change files in the repository go here
+      # …
+      - name: Run clang-format
+        run: |
+          sudo apt-get install -y clang-format
+          ./gpu-simulator/format-code.sh
+          ./util/tracer_nvbit/tracer_tool/format-code.sh
+
+      - uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          # Optional. Commit message for the created commit.
+          # Defaults to "Apply automatic changes"
+          commit_message: Automated clang-format
+          # Optional. Option used by `git-status` to determine if the repository is 
+          # dirty. See https://git-scm.com/docs/git-status#_options
+          status_options: '--untracked-files=no'
