@@ -52,13 +52,13 @@ if [ -d ${power_dir} ] ; then
 fi
 mkdir ${power_dir}
 for bench in `ls ${runs_dir}`
-do	
+do
 	if [ ! ${bench} == "gpgpu-sim-builds" ]; then
 		for inp in `ls ${runs_dir}/${bench}/`
 		do
 			bench_dir=${runs_dir}/${bench}/${inp}/*
 			if [ -f ${bench_dir}/${power_file} ] ; then
-				cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log 
+				cp ${bench_dir}/${power_file} ${power_dir}/${bench}.log
 			else
 				echo "Warning: No Accelwattch power report in ${bench_dir}."
 			fi

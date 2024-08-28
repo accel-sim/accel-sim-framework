@@ -87,6 +87,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
 
     // Conversion Instructions
     {"F2F", OpcodeChar(OP_F2F, ALU_OP)},
+    {"F2FP", OpcodeChar(OP_F2FP, ALU_OP)},
     {"F2I", OpcodeChar(OP_F2I, ALU_OP)},
     {"I2F", OpcodeChar(OP_I2F, ALU_OP)},
     {"I2I", OpcodeChar(OP_I2I, ALU_OP)},
@@ -135,7 +136,7 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"CCTLT", OpcodeChar(OP_CCTLT, ALU_OP)},
 
     {"LDGDEPBAR", OpcodeChar(OP_LDGDEPBAR, ALU_OP)},
-    {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)},
+    {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)}, 
 
     // Uniform Datapath Instruction
     // UDP unit

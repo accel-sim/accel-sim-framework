@@ -15,7 +15,7 @@
 #define WARP_SCHEDS_PER_SM 4
 
 // no tensor cores in pascal
-#define SASS_hmma_per_PTX_wmma 0 
+#define SASS_hmma_per_PTX_wmma 0
 
 // These vars are almost constant between HW generations
 #define L2_BANKS_PER_MEM_CHANNEL 2

@@ -21,7 +21,7 @@ TURING_DEVICE=1
 #rm -rf ../../hw_run/traces/rodinia-3.1
 
 echo "Starting parboil"
-time ./run_hw_trace.py -B parboil -D $TURING_DEVICE 2>&1 | tee parboil.out 
+time ./run_hw_trace.py -B parboil -D $TURING_DEVICE 2>&1 | tee parboil.out
 mv ../../hw_run/traces/device-$TURING_DEVICE/ ../../hw_run/traces/parboil
 ssh tgrogers-raid.ecn.purdue.edu mkdir -p /scratch/tgrogers-disk01/a/$USER/tmp-turing-traces
 echo "Copying parboil"
@@ -46,10 +46,9 @@ rsync --progress -avhe ssh ../../hw_run/traces/cutlass_5_trace tgrogers-raid.ecn
 rm -rf ../../hw_run/traces/cutlass_5_trace
 
 echo "Starting Deepbench_nvidia_tencore,Deepbench_nvidia_normal"
-time ./run_hw_trace.py -B Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D $TURING_DEVICE 2>&1 | tee deepbench.out 
+time ./run_hw_trace.py -B Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D $TURING_DEVICE 2>&1 | tee deepbench.out
 mv ../../hw_run/traces/device-$TURING_DEVICE/ ../../hw_run/traces/Deepbench_nvidia
 ssh tgrogers-raid.ecn.purdue.edu mkdir -p /scratch/tgrogers-disk01/a/$USER/tmp-turing-traces
 echo "Copying Deepbench_nvidia"
 rsync --progress -avhe ssh ../../hw_run/traces/Deepbench_nvidia tgrogers-raid.ecn.purdue.edu:/scratch/tgrogers-disk01/a/$USER/tmp-turing-traces
 rm -rf ../../hw_run/traces/Deepbench_nvidia
-

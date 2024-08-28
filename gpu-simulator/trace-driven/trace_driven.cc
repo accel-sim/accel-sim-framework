@@ -1,11 +1,14 @@
-// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor M. Aamodt, Nikos Hardavellas
-// Northwestern University, Purdue University, The University of British Columbia
+// Copyright (c) 2018-2021, Mahmoud Khairy, Vijay Kandiah, Timothy Rogers, Tor
+// M. Aamodt, Nikos Hardavellas
+// Northwestern University, Purdue University, The University of British
+// Columbia
 // All rights reserved.
 //
 // Redistribution and use in source and binary forms, with or without
 // modification, are permitted provided that the following conditions are met:
 //
-// 1. Redistributions of source code must retain the above copyright notice, this
+// 1. Redistributions of source code must retain the above copyright notice,
+// this
 //    list of conditions and the following disclaimer;
 // 2. Redistributions in binary form must reproduce the above copyright notice,
 //    this list of conditions and the following disclaimer in the documentation
@@ -37,13 +40,13 @@
 #include <string>
 #include <vector>
 
+#include "../ISA_Def/accelwattch_component_mapping.h"
 #include "../ISA_Def/ampere_opcode.h"
 #include "../ISA_Def/kepler_opcode.h"
 #include "../ISA_Def/pascal_opcode.h"
 #include "../ISA_Def/trace_opcode.h"
 #include "../ISA_Def/turing_opcode.h"
 #include "../ISA_Def/volta_opcode.h"
-#include "../ISA_Def/accelwattch_component_mapping.h"
 #include "abstract_hardware_model.h"
 #include "cuda-sim/cuda-sim.h"
 #include "cuda-sim/ptx_ir.h"
@@ -120,13 +123,12 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
-  m_parser->get_next_threadblock_traces(threadblock_traces,
-                                        m_kernel_trace_info->trace_verion,
-                                        m_kernel_trace_info->enable_lineinfo,
-                                        m_kernel_trace_info->ifs);
+  m_parser->get_next_threadblock_traces(
+      threadblock_traces, m_kernel_trace_info->trace_verion,
+      m_kernel_trace_info->enable_lineinfo, m_kernel_trace_info->ifs);
 }
 
-types_of_operands get_oprnd_type(op_type op, special_ops sp_op){
+types_of_operands get_oprnd_type(op_type op, special_ops sp_op) {
   switch (op) {
     case SP_OP:
     case SFU_OP:
@@ -144,7 +146,7 @@ types_of_operands get_oprnd_type(op_type op, special_ops sp_op){
         return FP_OP;
       else if (sp_op == INT__OP)
         return INT_OP;
-    default: 
+    default:
       return UN_OP;
   }
 }
@@ -175,6 +177,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   is_vectorin = 0;
   is_vectorout = 0;
+  pred = 0;
   ar1 = 0;
   ar2 = 0;
   memory_op = no_memory_op;
@@ -196,32 +199,28 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     op = (op_type)(it->second.opcode_category);
     const std::unordered_map<unsigned, unsigned> *OpcPowerMap = &OpcodePowerMap;
     std::unordered_map<unsigned, unsigned>::const_iterator it2 =
-      OpcPowerMap->find(m_opcode);
-    if(it2 != OpcPowerMap->end())
-      sp_op = (special_ops) (it2->second);
-      oprnd_type = get_oprnd_type(op, sp_op);
+        OpcPowerMap->find(m_opcode);
+    if (it2 != OpcPowerMap->end()) sp_op = (special_ops)(it2->second);
+    oprnd_type = get_oprnd_type(op, sp_op);
   } else {
     std::cout << "ERROR:  undefined instruction : " << trace.opcode
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
   std::string opcode = trace.opcode;
-  if(opcode1 == "MUFU"){ // Differentiate between different MUFU operations for power model
-    if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS"))
-      sp_op = FP_SIN_OP;
-    if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP"))
-      sp_op = FP_EXP_OP;
-    if (opcode == "MUFU.RSQ") 
-      sp_op = FP_SQRT_OP;
-    if (opcode == "MUFU.LG2") 
-      sp_op = FP_LG_OP;
+  if (opcode1 == "MUFU") {  // Differentiate between different MUFU operations
+                            // for power model
+    if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS")) sp_op = FP_SIN_OP;
+    if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP")) sp_op = FP_EXP_OP;
+    if (opcode == "MUFU.RSQ") sp_op = FP_SQRT_OP;
+    if (opcode == "MUFU.LG2") sp_op = FP_LG_OP;
   }
 
-  if(opcode1 == "IMAD"){ // Differentiate between different IMAD operations for power model
-    if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD"))
-      sp_op = INT__OP;
+  if (opcode1 == "IMAD") {  // Differentiate between different IMAD operations
+                            // for power model
+    if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD")) sp_op = INT__OP;
   }
-  
+
   // fill regs information
   num_regs = trace.reg_srcs_num + trace.reg_dsts_num;
   num_operands = num_regs;
@@ -250,10 +249,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       set_addr(i, trace.memadd_info->addrs[i]);
   }
 
-
   // handle special cases and fill memory space
   switch (m_opcode) {
-    case OP_LDC: //handle Load from Constant
+    case OP_LDC:  // handle Load from Constant
       data_size = 4;
       memory_op = memory_load;
       const_cache_operand = 1;
@@ -261,6 +259,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_ALL;
       break;
     case OP_LDG:
+    // LDGSTS is loading the values needed directly from the global memory to shared memory.
+    // Before this feature, the values need to be loaded to registers first, then store to 
+    // the shared memory.
+    case OP_LDGSTS: // Add for memcpy_async
     case OP_LDL:
       assert(data_size > 0);
       memory_op = memory_load;
@@ -269,6 +271,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         space.set_type(local_space);
       else
         space.set_type(global_space);
+      // Add for LDGSTS instruction
+      if (m_opcode == OP_LDGSTS)
+        m_is_ldgsts = true;
       // check the cache scope, if its strong GPU, then bypass L1
       if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
           trace.check_opcode_contain(opcode_tokens, "GPU")) {
@@ -364,6 +369,23 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // barrier_type bar_type;
       // reduction_type red_type;
       break;
+    // LDGDEPBAR is to form a group containing the previous LDGSTS instructions that 
+    // have not been grouped yet. 
+    // In the implementation, a group number will be assigned once the instruction is 
+    // met.
+    case OP_LDGDEPBAR:
+      m_is_ldgdepbar = true;
+      break;
+    // DEPBAR is served as a warp-wise barrier that is only effective for LDGSTS 
+    // instructions. It is associated with a immediate value. The immediate value 
+    // indicates the last N LDGDEPBAR groups to not wait once the instruction is met.
+    // For example, if the immediate value is 1, then the last group is able to proceed
+    // even with DEPBAR present; if the immediate value is 0, then all of the groups 
+    // need to finish before proceed. 
+    case OP_DEPBAR:
+      m_is_depbar = true;
+      m_depbar_group_no = trace.imm;
+      break;
     case OP_HADD2:
     case OP_HADD2_32I:
     case OP_HFMA2:
@@ -373,6 +395,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_HSETP2:
       initiation_interval =
           initiation_interval / 2;  // FP16 has 2X throughput than FP32
+      if (initiation_interval <
+          1)  // Make sure initiaion interval never goes below 1
+        initiation_interval = 1;
       break;
     default:
       break;

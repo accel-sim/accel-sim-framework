@@ -60,6 +60,9 @@ bool active_region = true;
 int terminate_after_limit_number_of_kernels_reached = 0;
 int user_defined_folders = 0;
 
+/* Use xz to compress the *.trace file */
+int xz_compress_trace = 0;
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
@@ -101,10 +104,12 @@ void nvbit_at_init() {
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
-  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0, 
+  GET_VAR_INT(terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT", 0,
               "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
   GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0, "Uses the user defined "
               "folder TRACES_FOLDER path environment");
+  GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 0, "Create xz-compressed trace"
+              "file");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -166,13 +171,14 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       int opcode_id = opcode_to_id_map[instr->getOpcode()];
 
-      /* check all operands. For now, we ignore constant, TEX, predicates and 
+      /* check all operands. For now, we ignore constant, TEX, predicates and
        * unified registers. We only report vector regisers */
       int src_oprd[MAX_SRC];
       int srcNum = 0;
       int dst_oprd = -1;
       int mem_oper_idx = -1;
       int num_mref = 0;
+      uint64_t imm_value = 0;
 
       for(int i = 0; i < instr->getNumOperands(); ++i){
         const InstrType::operand_t *op = instr->getOperand(i);
@@ -197,6 +203,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           }
+        }
+        // Add immediate value for DEPBAR instruction
+        else if (op->type == InstrType::OperandType::IMM_UINT64) {
+          imm_value = instr->getOperand(i)->u.imm_uint64.value;
         }
       }
 
@@ -238,6 +248,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, -1);
         }
         nvbit_add_call_arg_const_val32(instr, srcNum);
+
+        /* immediate info */
+        nvbit_add_call_arg_const_val64(instr, imm_value);
+       
         /* add pointer to channel_dev and other counters*/
         nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
         nvbit_add_call_arg_const_val64(instr,
@@ -302,7 +316,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       if (active_from_start)
         active_region = false;
     }
-    
+
     if(user_defined_folders == 1)
     {
       std::string usr_folder = std::getenv("TRACES_FOLDER");
@@ -379,9 +393,15 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       sprintf(buffer, std::string(traces_location+"/kernel-%d.trace").c_str(), kernelid);
 
       if (!stop_report) {
-        resultsFile = fopen(buffer, "w");
-
-        printf("Writing results to %s\n", buffer);
+        if(!xz_compress_trace){
+          resultsFile = fopen(buffer, "w");
+          printf("Writing results to %s\n", buffer);
+        } else {
+          char cmd_buffer[1039];
+          sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
+          resultsFile = popen(cmd_buffer, "w");
+          printf("Writing results to %s.xz\n", buffer);
+        }
 
         fprintf(resultsFile, "-kernel name = %s\n",
                 nvbit_get_func_name(ctx, p->f, true));
@@ -406,13 +426,13 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
         fprintf(resultsFile,
                 "#traces format = [line_num] PC mask dest_num [reg_dests] opcode src_num "
-                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses]\n");
+                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] immediate\n");
         fprintf(resultsFile, "\n");
       }
 
       kernelsFile = fopen(kernelslist_location.c_str(), "a");
       // This will be a relative path to the traces file
-      sprintf(buffer,"kernel-%d.trace", kernelid);
+      sprintf(buffer,"kernel-%d.trace%s", kernelid, xz_compress_trace?".xz":"");
       if (!stop_report) {
         fprintf(kernelsFile, buffer);
         fprintf(kernelsFile, "\n");
@@ -471,8 +491,10 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       fprintf(statsFile, "\n");
       fclose(statsFile);
 
-      if (!stop_report)
-        fclose(resultsFile);
+      if (!stop_report){
+        if(!xz_compress_trace){fclose(resultsFile);} 
+        else{pclose(resultsFile);}
+      }
 
       if (active_from_start && dynamic_kernel_limit_end && kernelid > dynamic_kernel_limit_end)
         active_region = false;
@@ -673,6 +695,9 @@ void *recv_thread_fun(void *) {
         } else {
           fprintf(resultsFile, "0 ");
         }
+
+        // Print the immediate
+        fprintf(resultsFile, "%d ", ma->imm);
 
         fprintf(resultsFile, "\n");
 

@@ -44,7 +44,7 @@ There are 3 core scripts in here:
 This file handles everything that needs to be done to launch jobs.
 It is configured by two yaml scripts, one for benchmarks and one for configs.
 The file for defining all the apps is here: `./util/job_launching/apps/define-all-apps.yml`,
-and all the default configs is here: `./util/job_launching/configs.define-standard-cfgs.yml`
+and all the default configs is here: `./util/job_launching/configs/define-standard-cfgs.yml`
 run\_simulatons.py will parse any define-\*.yml file in both directories when it is launched to determine what valid benchmarks and configs are.
 You can to add your own configs or apps, just follow the same format as the other apps/configs defined in the yaml file and any app in any
 location can be run using this collection of scripts. If you want to avoid interfering with the "default" files, just make your own `./util/job_launching/apps/define-myapps.yml` that contains only your applications. Same for configs.
@@ -90,7 +90,7 @@ squeue.id       Node                            App                     AppArgs 
 Some useful ways to use `get_stats.py` are as follows:
 
 ```bash
-# Just get me all the per-app stats for the set of 
+# Just get me all the per-app stats for the set of
 ./get_stats.py -N rodinia-sass-test | tee per-app-fromlaunch.csv
 
 # Ignoring how the tests were run, get me the latest results for a particular set of configs/apps
