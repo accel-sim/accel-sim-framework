@@ -259,10 +259,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_ALL;
       break;
     case OP_LDG:
-    // LDGSTS is loading the values needed directly from the global memory to shared memory.
-    // Before this feature, the values need to be loaded to registers first, then store to 
-    // the shared memory.
-    case OP_LDGSTS: // Add for memcpy_async
+    // LDGSTS is loading the values needed directly from the global memory to
+    // shared memory. Before this feature, the values need to be loaded to
+    // registers first, then store to the shared memory.
+    case OP_LDGSTS:  // Add for memcpy_async
     case OP_LDL:
       assert(data_size > 0);
       memory_op = memory_load;
@@ -272,8 +272,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       else
         space.set_type(global_space);
       // Add for LDGSTS instruction
-      if (m_opcode == OP_LDGSTS)
-        m_is_ldgsts = true;
+      if (m_opcode == OP_LDGSTS) m_is_ldgsts = true;
       // check the cache scope, if its strong GPU, then bypass L1
       if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
           trace.check_opcode_contain(opcode_tokens, "GPU")) {
@@ -369,19 +368,18 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // barrier_type bar_type;
       // reduction_type red_type;
       break;
-    // LDGDEPBAR is to form a group containing the previous LDGSTS instructions that 
-    // have not been grouped yet. 
-    // In the implementation, a group number will be assigned once the instruction is 
-    // met.
+    // LDGDEPBAR is to form a group containing the previous LDGSTS instructions
+    // that have not been grouped yet. In the implementation, a group number
+    // will be assigned once the instruction is met.
     case OP_LDGDEPBAR:
       m_is_ldgdepbar = true;
       break;
-    // DEPBAR is served as a warp-wise barrier that is only effective for LDGSTS 
-    // instructions. It is associated with a immediate value. The immediate value 
-    // indicates the last N LDGDEPBAR groups to not wait once the instruction is met.
-    // For example, if the immediate value is 1, then the last group is able to proceed
-    // even with DEPBAR present; if the immediate value is 0, then all of the groups 
-    // need to finish before proceed. 
+    // DEPBAR is served as a warp-wise barrier that is only effective for LDGSTS
+    // instructions. It is associated with a immediate value. The immediate
+    // value indicates the last N LDGDEPBAR groups to not wait once the
+    // instruction is met. For example, if the immediate value is 1, then the
+    // last group is able to proceed even with DEPBAR present; if the immediate
+    // value is 0, then all of the groups need to finish before proceed.
     case OP_DEPBAR:
       m_is_depbar = true;
       m_depbar_group_no = trace.imm;
