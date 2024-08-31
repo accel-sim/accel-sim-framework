@@ -64,5 +64,6 @@ jobs:
           git config user.email "purdue-jenkins@users.noreply.github.com"
           git remote set-url origin git@github.com:${{github.event.pull_request.head.repo.full_name}}
           git remote -v
-          /bin/bash ./format-code.sh
+          /bin/bash ./gpu-simulator/format-code.sh
+          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
           if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi
