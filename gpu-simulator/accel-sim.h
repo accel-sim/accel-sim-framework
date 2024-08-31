@@ -67,7 +67,7 @@ class accel_sim_framework {
   unsigned window_size;
   unsigned commandlist_index;
 
-  std::vector<unsigned long> busy_streams;
+  std::vector<unsigned long long> busy_streams;
   std::vector<trace_kernel_info_t *> kernels_info;
   std::vector<trace_command> commandlist;
 

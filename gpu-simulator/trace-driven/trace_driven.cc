@@ -94,7 +94,8 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
                                          trace_parser *parser,
                                          class trace_config *config,
                                          kernel_trace_t *kernel_trace_info)
-    : kernel_info_t(gridDim, blockDim, m_function_info) {
+    : kernel_info_t(gridDim, blockDim, m_function_info,
+                    kernel_trace_info->cuda_stream_id) {
   m_parser = parser;
   m_tconfig = config;
   m_kernel_trace_info = kernel_trace_info;

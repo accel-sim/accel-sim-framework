@@ -48,29 +48,22 @@ jobs:
       - name: Run Simulation
         run: echo "skipped Tracer-Simulation. Will perform in merge queue"
   format-code:
-    runs-on: ubuntu-latest
+    if: github.event_name == 'pull_request'
+    runs-on: tgrogers-raid
     needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
-
-    permissions:
-      # Give the default GITHUB_TOKEN write permission to commit and push the
-      # added or changed files to the repository.
-      contents: write
-
     steps:
       - uses: actions/checkout@v4
-      # Other steps that change files in the repository go here
-      # …
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+          ssh-key: ''
+
       - name: Run clang-format
         run: |
-          sudo apt-get install -y clang-format
-          ./gpu-simulator/format-code.sh
-          ./util/tracer_nvbit/tracer_tool/format-code.sh
-
-      - uses: stefanzweifel/git-auto-commit-action@v5
-        with:
-          # Optional. Commit message for the created commit.
-          # Defaults to "Apply automatic changes"
-          commit_message: Automated clang-format
-          # Optional. Option used by `git-status` to determine if the repository is 
-          # dirty. See https://git-scm.com/docs/git-status#_options
-          status_options: '--untracked-files=no'
+          git config user.name "purdue-jenkins"
+          git config user.email "purdue-jenkins@users.noreply.github.com"
+          git remote set-url origin git@github.com:${{github.event.pull_request.head.repo.full_name}}
+          git remote -v
+          /bin/bash ./gpu-simulator/format-code.sh
+          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
+          if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi

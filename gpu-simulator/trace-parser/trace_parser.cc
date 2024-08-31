@@ -379,7 +379,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       } else if (string1 == "nregs") {
         sscanf(line.c_str(), "-nregs = %d", &kernel_info->nregs);
       } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %lu",
+        sscanf(line.c_str(), "-cuda stream id = %llu",
                &kernel_info->cuda_stream_id);
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",

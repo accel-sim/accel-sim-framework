@@ -88,7 +88,7 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned long cuda_stream_id;
+  unsigned long long cuda_stream_id;
   unsigned binary_verion;
   unsigned enable_lineinfo;
   unsigned trace_verion;

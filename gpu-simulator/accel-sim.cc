@@ -58,7 +58,9 @@ void accel_sim_framework::simulation_loop() {
       if (!stream_busy && m_gpgpu_sim->can_start_kernel() &&
           !k->was_launched()) {
         std::cout << "launching kernel name: " << k->get_name()
-                  << " uid: " << k->get_uid() << std::endl;
+                  << " uid: " << k->get_uid()
+                  << " cuda_stream_id: " << k->get_cuda_stream_id()
+                  << std::endl;
         m_gpgpu_sim->launch(k);
         k->set_launched();
         busy_streams.push_back(k->get_cuda_stream_id());
@@ -119,12 +121,14 @@ void accel_sim_framework::parse_commandlist() {
 
 void accel_sim_framework::cleanup(unsigned finished_kernel) {
   trace_kernel_info_t *k = NULL;
+  unsigned long long finished_kernel_cuda_stream_id = -1;
   for (unsigned j = 0; j < kernels_info.size(); j++) {
     k = kernels_info.at(j);
     if (k->get_uid() == finished_kernel ||
         m_gpgpu_sim->cycle_insn_cta_max_hit() || !m_gpgpu_sim->active()) {
       for (unsigned int l = 0; l < busy_streams.size(); l++) {
         if (busy_streams.at(l) == k->get_cuda_stream_id()) {
+          finished_kernel_cuda_stream_id = k->get_cuda_stream_id();
           busy_streams.erase(busy_streams.begin() + l);
           break;
         }
@@ -138,7 +142,7 @@ void accel_sim_framework::cleanup(unsigned finished_kernel) {
     }
   }
   assert(k);
-  m_gpgpu_sim->print_stats();
+  m_gpgpu_sim->print_stats(finished_kernel_cuda_stream_id);
 }
 
 unsigned accel_sim_framework::simulate() {
