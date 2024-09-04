@@ -6,14 +6,16 @@ name: Short Tests
 on:
   # Triggers the workflow on push or pull request events but only for the mydev branch
   push:
+    branches-ignore:
+      - "gh-readonly-queue**"
   pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
-jobs:
-  short-tests:
+jobs:  
+  SASS-Simulation:
     runs-on: ubuntu-latest
     container:
       image: tgrogers/accel-sim_regress:Ubuntu-22.04-cuda-11.7
@@ -22,6 +24,46 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4
       - name: Run Simulation
         run: /bin/bash $GITHUB_WORKSPACE/short-tests.sh
+  PTX-Simulation:
+    runs-on: ubuntu-latest
+      # env:
+        
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+      - name: Run Simulation
+        run: echo "skipped PTX-Simulation. Will perform in merge queue"
+  Tracer-Tool:
+    runs-on: ubuntu-latest
+      # env:
+        
+    # Steps represent a sequence of tasks that will be executed as part of the job
+    steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
+      - uses: actions/checkout@v4
+      - name: Run Simulation
+        run: echo "skipped Tracer-Simulation. Will perform in merge queue"
+  format-code:
+    if: github.event_name == 'pull_request'
+    runs-on: tgrogers-raid
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{github.event.pull_request.head.ref}}
+          repository: ${{github.event.pull_request.head.repo.full_name}}
+          ssh-key: ''
+
+      - name: Run clang-format
+        run: |
+          git config user.name "purdue-jenkins"
+          git config user.email "purdue-jenkins@users.noreply.github.com"
+          git remote set-url origin git@github.com:${{github.event.pull_request.head.repo.full_name}}
+          git remote -v
+          /bin/bash ./gpu-simulator/format-code.sh
+          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
+          if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi

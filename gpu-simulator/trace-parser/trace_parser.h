@@ -88,7 +88,7 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned long cuda_stream_id;
+  unsigned long long cuda_stream_id;
   unsigned binary_verion;
   unsigned enable_lineinfo;
   unsigned trace_verion;
@@ -99,11 +99,12 @@ struct kernel_trace_t {
   std::istream *ifs;
   // Anonymous pipe through which the trace is transmitted from a trace reader
   // process to the simulator process
-  int pipefd[2]={};
+  int pipefd[2] = {};
 };
 
 class trace_parser {
  public:
+  trace_parser() {}
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();

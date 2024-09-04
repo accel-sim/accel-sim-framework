@@ -353,24 +353,23 @@ class ConfigurationSpec:
             queue_name = os.getenv("TORQUE_QUEUE_NAME")
 
         # do the text replacement for the .sim file
-        replacement_dict = {
-            "NAME": benchmark
-            + "-"
-            + self.benchmark_args_subdirs[command_line_args]
-            + "."
-            + gpgpusim_build_handle,
-            "NODES": "1",
-            "GPGPUSIM_ROOT": os.getenv("GPGPUSIM_ROOT"),
-            "LIBPATH": libpath,
-            "SUBDIR": this_run_dir,
-            "OPENCL_REMOTE_GPU_HOST": os.getenv("OPENCL_REMOTE_GPU_HOST"),
-            "BENCHMARK_SPECIFIC_COMMAND": benchmark_command_line,
-            "PATH": os.getenv("PATH"),
-            "EXEC_NAME": exec_name,
-            "QUEUE_NAME": queue_name,
-            "COMMAND_LINE": txt_args,
-            "MEM_USAGE": mem_usage,
-        }
+        sim_name = benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
+                                gpgpusim_build_handle
+        # Truncate long simulation file names
+        sim_name = sim_name[:200]
+        replacement_dict = {"NAME":sim_name,
+                            "NODES":"1", 
+                            "GPGPUSIM_ROOT":os.getenv("GPGPUSIM_ROOT"),
+                            "LIBPATH": libpath,
+                            "SUBDIR":this_run_dir,
+                            "OPENCL_REMOTE_GPU_HOST":os.getenv("OPENCL_REMOTE_GPU_HOST"),
+                            "BENCHMARK_SPECIFIC_COMMAND":benchmark_command_line,
+                            "PATH":os.getenv("PATH"),
+                            "EXEC_NAME":exec_name,
+                            "QUEUE_NAME":queue_name,
+                            "COMMAND_LINE":txt_args,
+                            "MEM_USAGE": mem_usage
+                            }
         torque_text = open(this_directory + job_template).read().strip()
         for entry in replacement_dict:
             torque_text = re.sub(
