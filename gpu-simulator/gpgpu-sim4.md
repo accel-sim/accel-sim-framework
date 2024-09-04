@@ -52,7 +52,7 @@ Also, in trace-driven mode, we provide the flexibility and ability to add new ex
 Our GPU cache model supports sectored, banked L1 cache design. Our sector size is constant=32B, so for 128B cache line configuration, each cache line has 4 sectors. Example to define L1 sector cache with four banks:
 ```
 # Add the 'S' character at the header as shown below; for non-sector cache design use 'N'
-# cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:**<fifo_entry>
+# cache configuration string: <sector?>:<nsets>:<bsize>:<assoc>,<rep>:<wr>:<alloc>:<wr_alloc>:<set_index_fn>,<mshr>:<N>:<merge>,<mq>:<fifo_entry>,<data_port_width>
 -gpgpu_cache:dl1  S:4:128:64,L:L:m:N:L,A:512:8,16:0,32
 
 # 4 cache banks, we interleave 32B sector on each bank
