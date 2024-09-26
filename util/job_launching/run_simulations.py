@@ -349,6 +349,7 @@ class ConfigurationSpec:
 
         if os.getenv("TORQUE_QUEUE_NAME") == None:
             queue_name = "batch"
+            # queue_name = "littleram"
         else:
             queue_name = os.getenv("TORQUE_QUEUE_NAME")
 

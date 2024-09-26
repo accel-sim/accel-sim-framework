@@ -17,6 +17,7 @@ enum command_type {
   kernel_launch = 1,
   cpu_gpu_mem_copy,
   gpu_cpu_mem_copy,
+  tex_mem_cpy,
 };
 
 enum address_space { GLOBAL_MEM = 1, SHARED_MEM, LOCAL_MEM, TEX_MEM };
@@ -62,7 +63,7 @@ struct inst_trace_t {
   inst_memadd_info_t *memadd_info;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo);
+                         unsigned enable_lineinfo, std::set<uint64_t> &memaddrs);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
@@ -100,6 +101,9 @@ struct kernel_trace_t {
   // Anonymous pipe through which the trace is transmitted from a trace reader
   // process to the simulator process
   int pipefd[2] = {};
+  std::ifstream *ifs;
+  unsigned read_lines;
+  std::string trace_file;
 };
 
 class trace_parser {
@@ -112,13 +116,16 @@ class trace_parser {
   kernel_trace_t *parse_kernel_info(const std::string &kerneltraces_filepath);
 
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
-                         size_t &count);
+                         size_t &count, size_t &per_CTA);
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs);
+      unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
+      std::string kernel_name, std::set<uint64_t> &memaddrs);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
+  unsigned graphics_count;
+  unsigned compute_count;
 
  private:
   std::string kernellist_filename;

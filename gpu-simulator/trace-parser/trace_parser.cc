@@ -88,6 +88,8 @@ kernel_trace_t::kernel_trace_t() {
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
+  read_lines = 0;
+  ifs = NULL;
 }
 
 void inst_memadd_info_t::base_stride_decompress(
@@ -131,8 +133,10 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
-bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
-                                     unsigned enable_lineinfo) {
+bool inst_trace_t::parse_from_string(std::string trace,
+                                     unsigned trace_version,
+                                     unsigned enable_lineinfo,
+                                     std::set<uint64_t> &memaddrs) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -191,8 +195,11 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     if (address_mode == address_format::list_all) {
       // read addresses one by one from the file
       for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s))
+        if (mask_bits.test(s)) {
           ss >> std::hex >> memadd_info->addrs[s];
+          // align to 32 bytes
+          memaddrs.insert(memadd_info->addrs[s] & ~(uint64_t)(0x1F));
+        }
         else
           memadd_info->addrs[s] = 0;
       }
@@ -228,6 +235,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
 trace_parser::trace_parser(const char *kernellist_filepath) {
   kernellist_filename = kernellist_filepath;
+  compute_count = 0;
+  graphics_count = 0;
 }
 
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
@@ -256,12 +265,28 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
       command.command_string = line;
       command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
-    } else if (line.substr(0, 6) == "kernel") {
+    } else if (line.find("kernel") != std::string::npos) {
+    // } else if (line.substr(0, 6) == "kernel") {
       trace_command command;
       command.m_type = command_type::kernel_launch;
       filepath = directory + "/" + line;
       command.command_string = filepath;
       commandlist.push_back(command);
+      if (line.find("MESA") != std::string::npos) {
+        graphics_count++;
+      } else {
+        compute_count++;
+      }
+    } else if (line.substr(0, 12) == "MemcpyVulkan") {
+      trace_command command;
+      command.command_string = line;
+      command.m_type = command_type::cpu_gpu_mem_copy;
+      commandlist.push_back(command);
+    // } else if (line.substr(0, 12) == "dumpTextures") {
+    //   trace_command command;
+    //   command.command_string = line;
+    //   command.m_type = command_type::tex_mem_cpy;
+    //   commandlist.push_back(command);
     }
     // ignore gpu_to_cpu_memory_cpy
   }
@@ -271,16 +296,21 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 }
 
 void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
-                                     size_t &address, size_t &count) {
+                                     size_t &address, size_t &count, size_t &per_CTA) {
   std::vector<std::string> params;
   split(memcpy_command, params, ',');
-  assert(params.size() == 3);
+  // assert(params.size() == 3);
   std::stringstream ss;
   ss.str(params[1]);
   ss >> std::hex >> address;
   ss.clear();
   ss.str(params[2]);
   ss >> std::dec >> count;
+  if (params.size() == 4) {
+    ss.clear();
+    ss.str(params[3]);
+    ss >> std::dec >> per_CTA;
+  }
 }
 
 kernel_trace_t *trace_parser::parse_kernel_info(
@@ -299,6 +329,18 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   } else {
     std::cerr << "Can't read trace. Only .xz and plain text are supported: "
               << kerneltraces_filepath << "\n";
+  kernel_info->enable_lineinfo = 0; // default disabled
+  // kernel_info->ifs = new std::ifstream;
+  std::ifstream *ifs = new std::ifstream;
+  kernel_info->trace_file = kerneltraces_filepath;
+  ifs->open(kerneltraces_filepath.c_str());
+
+  if (!ifs->is_open()) {
+    const std::system_error& e = std::system_error(errno, std::system_category());
+    std::cerr << e.code().message() << std::endl;
+    std::cout << "Unable to open file: "
+              << " " << e.code().message() << " " << kerneltraces_filepath
+              << std::endl;
     exit(1);
   }
 
@@ -349,6 +391,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   clearerr(stdin);
   while (!ifs->eof()) {
     getline(*ifs, line);
+    kernel_info->read_lines++;
 
     if (line.length() == 0) {
       continue;
@@ -411,8 +454,11 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   }
 
   // do not close the file ifs, the kernel_finalizer will close it
+  ifs->close();
+  delete ifs;
   return kernel_info;
 }
+    }
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   assert(trace_info);
@@ -428,7 +474,8 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs) {
+    unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
+    std::string kernel_name, std::set<uint64_t> &memaddrs) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -466,7 +513,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
                &block_id_y, &block_id_z);
-        std::cout << line << std::endl;
+        std::cout << kernel_name << " " << line << std::endl;
       } else if (string1 == "warp") {
         // the start of new warp stream
         assert(start_of_tb_stream_found);
@@ -481,7 +528,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo);
+            .parse_from_string(line, trace_version, enable_lineinfo, memaddrs);
         inst_count++;
       }
     }
