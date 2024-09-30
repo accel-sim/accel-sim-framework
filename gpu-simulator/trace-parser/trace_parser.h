@@ -63,7 +63,7 @@ struct inst_trace_t {
   inst_memadd_info_t *memadd_info;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo, std::set<uint64_t> &memaddrs);
+                         unsigned enable_lineinfo);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
@@ -101,7 +101,6 @@ struct kernel_trace_t {
   // Anonymous pipe through which the trace is transmitted from a trace reader
   // process to the simulator process
   int pipefd[2] = {};
-  std::ifstream *ifs;
   unsigned read_lines;
   std::string trace_file;
 };
@@ -120,8 +119,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
-      std::string kernel_name, std::set<uint64_t> &memaddrs);
+      unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs,
+      std::string kernel_name);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
   unsigned graphics_count;

@@ -135,8 +135,7 @@ void inst_memadd_info_t::base_delta_decompress(
 
 bool inst_trace_t::parse_from_string(std::string trace,
                                      unsigned trace_version,
-                                     unsigned enable_lineinfo,
-                                     std::set<uint64_t> &memaddrs) {
+                                     unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -197,8 +196,6 @@ bool inst_trace_t::parse_from_string(std::string trace,
       for (int s = 0; s < WARP_SIZE; s++) {
         if (mask_bits.test(s)) {
           ss >> std::hex >> memadd_info->addrs[s];
-          // align to 32 bytes
-          memaddrs.insert(memadd_info->addrs[s] & ~(uint64_t)(0x1F));
         }
         else
           memadd_info->addrs[s] = 0;
@@ -329,18 +326,6 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   } else {
     std::cerr << "Can't read trace. Only .xz and plain text are supported: "
               << kerneltraces_filepath << "\n";
-  kernel_info->enable_lineinfo = 0; // default disabled
-  // kernel_info->ifs = new std::ifstream;
-  std::ifstream *ifs = new std::ifstream;
-  kernel_info->trace_file = kerneltraces_filepath;
-  ifs->open(kerneltraces_filepath.c_str());
-
-  if (!ifs->is_open()) {
-    const std::system_error& e = std::system_error(errno, std::system_category());
-    std::cerr << e.code().message() << std::endl;
-    std::cout << "Unable to open file: "
-              << " " << e.code().message() << " " << kerneltraces_filepath
-              << std::endl;
     exit(1);
   }
 
@@ -453,12 +438,8 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     }
   }
 
-  // do not close the file ifs, the kernel_finalizer will close it
-  ifs->close();
-  delete ifs;
   return kernel_info;
 }
-    }
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   assert(trace_info);
@@ -474,8 +455,8 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, std::ifstream *ifs,
-    std::string kernel_name, std::set<uint64_t> &memaddrs) {
+    unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs,
+    std::string kernel_name) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -528,7 +509,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo, memaddrs);
+            .parse_from_string(line, trace_version, enable_lineinfo);
         inst_count++;
       }
     }
