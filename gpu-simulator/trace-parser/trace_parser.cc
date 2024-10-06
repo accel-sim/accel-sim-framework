@@ -88,6 +88,7 @@ kernel_trace_t::kernel_trace_t() {
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
+  pipeReader = PipeReader();
 }
 
 void inst_memadd_info_t::base_stride_decompress(
@@ -372,7 +373,7 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, class PipeReader pipeReader) {
+    unsigned trace_version, unsigned enable_lineinfo, class PipeReader &pipeReader) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -447,6 +448,7 @@ void PipeReader::OpenFile(const std::string &filePath) {
 }
 
 bool PipeReader::readLine(std::string &line) {
+  std::array<char, 512> buffer;  // Buffer to store the read data
   if (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
     line = buffer.data();
     assert(line.back() == '\n');
