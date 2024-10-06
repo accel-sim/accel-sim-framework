@@ -34,7 +34,7 @@ ACCELSIM_VERSION=$(shell cat $(ACCELSIM_ROOT)/version | awk '/Version/ {print $$
 GIT_COMMIT := $(shell git log --abbrev-commit -n 1 | head -1 | sed -re 's/commit (.*)/\1/')
 GIT_FILES_CHANGED_A:=$(shell git diff --numstat | wc | sed -re 's/^\s+([0-9]+).*/\1./')
 GIT_FILES_CHANGED:= $(GIT_FILES_CHANGED_A)$(shell git diff --numstat --cached | wc | sed -re 's/^\s+([0-9]+).*/\1/')
-TIME:=$(shell date +"%y-%m-%d-%k-%M-%S")
+TIME:=$(shell date +"%y-%m-%d-%H-%M-%S")
 ACCELSIM_BUILD := accelsim-commit-$(GIT_COMMIT)_modified_$(GIT_FILES_CHANGED)_$(TIME)
 endif
 
