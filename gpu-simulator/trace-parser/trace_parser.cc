@@ -373,7 +373,8 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, class PipeReader &pipeReader) {
+    unsigned trace_version, unsigned enable_lineinfo,
+    class PipeReader &pipeReader) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }

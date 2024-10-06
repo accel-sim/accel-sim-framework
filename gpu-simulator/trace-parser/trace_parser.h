@@ -91,8 +91,8 @@ class PipeReader {
   bool readLine(std::string &line);
 
  private:
-  FILE *pipe = NULL;  // Store the pipe
-  std::string command;   // Store the shell command to be executed
+  FILE *pipe = NULL;    // Store the pipe
+  std::string command;  // Store the shell command to be executed
 
   // Helper function to check if a string ends with a specific suffix (file
   // extension)
@@ -136,7 +136,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, class PipeReader &pipeReader);
+      unsigned trace_version, unsigned enable_lineinfo,
+      class PipeReader &pipeReader);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
 
