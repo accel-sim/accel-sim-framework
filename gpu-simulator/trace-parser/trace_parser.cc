@@ -448,14 +448,20 @@ void PipeReader::OpenFile(const std::string &filePath) {
 }
 
 bool PipeReader::readLine(std::string &line) {
-  std::array<char, 512> buffer;  // Buffer to store the read data
-  if (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-    line = buffer.data();
+  char *buffer = nullptr;
+  size_t len = 0;
+  ssize_t nread;
+
+  // Use getline() to read from the pipe
+  if ((nread = getline(&buffer, &len, pipe)) != -1) {
+    line.assign(buffer, nread);  // Assign the read line to the std::string
     assert(line.back() == '\n');
-    // Remove the newline character
-    line.pop_back();
+    line.pop_back();  // Remove the newline character
+    free(buffer);     // Free the buffer allocated by getline
     return true;
   }
+
+  free(buffer);  // Free the buffer if getline failed or reached EOF
   return false;  // End of pipe or error
 }
 
