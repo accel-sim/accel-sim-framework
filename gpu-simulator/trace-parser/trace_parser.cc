@@ -290,7 +290,6 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   kernel_info->enable_lineinfo = 0;  // default disabled
 
   std::string read_trace_cmd;
-  int _l = kerneltraces_filepath.length();
   kernel_info->pipeReader.OpenFile(kerneltraces_filepath);
 
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
