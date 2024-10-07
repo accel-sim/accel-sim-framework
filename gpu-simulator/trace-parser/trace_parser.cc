@@ -133,8 +133,7 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
-bool inst_trace_t::parse_from_string(std::string trace,
-                                     unsigned trace_version,
+bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
                                      unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
@@ -196,8 +195,7 @@ bool inst_trace_t::parse_from_string(std::string trace,
       for (int s = 0; s < WARP_SIZE; s++) {
         if (mask_bits.test(s)) {
           ss >> std::hex >> memadd_info->addrs[s];
-        }
-        else
+        } else
           memadd_info->addrs[s] = 0;
       }
     } else if (address_mode == address_format::base_stride) {
@@ -257,13 +255,13 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
     getline(fs, line);
     if (line.empty())
       continue;
-    else if (line.substr(0, 10) == "MemcpyHtoD") {
+    else if (line.find("MemcpyHtoD") != std::string::npos) {
       trace_command command;
       command.command_string = line;
       command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
     } else if (line.find("kernel") != std::string::npos) {
-    // } else if (line.substr(0, 6) == "kernel") {
+      // } else if (line.substr(0, 6) == "kernel") {
       trace_command command;
       command.m_type = command_type::kernel_launch;
       filepath = directory + "/" + line;
@@ -274,16 +272,11 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
       } else {
         compute_count++;
       }
-    } else if (line.substr(0, 12) == "MemcpyVulkan") {
+    } else if (line.find("MemcpyVulkan") != std::string::npos) {
       trace_command command;
       command.command_string = line;
       command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
-    // } else if (line.substr(0, 12) == "dumpTextures") {
-    //   trace_command command;
-    //   command.command_string = line;
-    //   command.m_type = command_type::tex_mem_cpy;
-    //   commandlist.push_back(command);
     }
     // ignore gpu_to_cpu_memory_cpy
   }
@@ -293,7 +286,8 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 }
 
 void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
-                                     size_t &address, size_t &count, size_t &per_CTA) {
+                                     size_t &address, size_t &count,
+                                     size_t &per_CTA) {
   std::vector<std::string> params;
   split(memcpy_command, params, ',');
   // assert(params.size() == 3);
@@ -329,9 +323,25 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     exit(1);
   }
 
+  std::array<char, 128> buffer;
+  std::string result;
+  // Open a pipe to the cat command
+  FILE *pipe = popen(read_trace_cmd.c_str(), "r");
+  if (!pipe) {
+    throw std::runtime_error("popen() failed!");
+  }
+
+  // Read from the pipe, line by line
+  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
+    std::string line(buffer.data());
+    std::cout << line;  // You can process each line as needed
+  }
+
   // Create an interprocess channel, and fork out a data source process. The
   // data source process reads trace from disk, write to the channel, and the
   // simulator process read from the channel.
+
+  /*
   int *pipefd = kernel_info->pipefd;
   if (pipe(pipefd) != 0) {
     std::cerr << "Failed to create interprocess channel\n";
@@ -350,7 +360,8 @@ kernel_trace_t *trace_parser::parse_kernel_info(
     // to the child process as well, subsequently causing it to terminate. To
     // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal.
     // Reference:
-    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes
+    //
+  https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes
     signal(SIGINT, SIG_IGN);
 
     execle("/bin/sh", "sh", "-c", read_trace_cmd.c_str(), NULL, environ);
@@ -376,7 +387,6 @@ kernel_trace_t *trace_parser::parse_kernel_info(
   clearerr(stdin);
   while (!ifs->eof()) {
     getline(*ifs, line);
-    kernel_info->read_lines++;
 
     if (line.length() == 0) {
       continue;
@@ -437,7 +447,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       continue;
     }
   }
-
+  */
   return kernel_info;
 }
 

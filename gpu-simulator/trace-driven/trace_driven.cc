@@ -638,14 +638,8 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
   }
   trace_kernel_info_t &trace_kernel =
       static_cast<trace_kernel_info_t &>(kernel);
-  std::set<uint64_t> memaddrs;
   trace_kernel.get_next_threadblock_traces(threadblock_traces);
   // reduce memaddrs
-  if (trace_kernel.get_name().find("VERTEX") != std::string::npos) {
-    for (auto mem : memaddrs) {
-      m_gpu->perf_memcpy_to_gpu(mem, 32, true);
-    }
-  }
 
   // set the pc from the traces and ignore the functional model
   for (unsigned i = start_warp; i < end_warp; ++i) {

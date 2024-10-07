@@ -2,7 +2,7 @@
 #include "accelsim_version.h"
 
 accel_sim_framework::accel_sim_framework(std::string config_file,
-                                          std::string trace_file) {
+                                         std::string trace_file) {
   std::cout << "Accel-Sim [build " << g_accelsim_version << "]";
   m_gpgpu_context = new gpgpu_context();
 
@@ -188,9 +188,11 @@ void accel_sim_framework::parse_commandlist() {
   // gulp up as many commands as possible - either cpu_gpu_mem_copy
   // or kernel_launch - until the vector "kernels_info" has reached
   // the window_size or we have read every command from commandlist
-  while (kernels_info.size() < window_size && commandlist_index < commandlist.size()) {
+  while (kernels_info.size() < window_size &&
+         commandlist_index < commandlist.size()) {
     trace_kernel_info_t *kernel_info = NULL;
-    if (commandlist[commandlist_index].m_type == command_type::cpu_gpu_mem_copy) {
+    if (commandlist[commandlist_index].m_type ==
+        command_type::cpu_gpu_mem_copy) {
       size_t addre, Bcount;
       size_t per_CTA = -1;
       tracer.parse_memcpy_info(commandlist[commandlist_index].command_string,
@@ -201,17 +203,18 @@ void accel_sim_framework::parse_commandlist() {
                   << commandlist[commandlist_index].command_string << std::endl;
         m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount, false);
       } else {
-        assert(per_CTA != (unsigned) -1);
+        assert(per_CTA != (unsigned)-1);
         kernel_vb_addr.push_back(addre);
         kernel_vb_size.push_back(Bcount);
         kernel_per_CTA.push_back(per_CTA);
         graphics_commands.push_back(commandlist[commandlist_index]);
       }
       commandlist_index++;
-    } else if (commandlist[commandlist_index].m_type == command_type::kernel_launch) {
+    } else if (commandlist[commandlist_index].m_type ==
+               command_type::kernel_launch) {
       // Read trace header info for window_size number of kernels
-      kernel_trace_t *kernel_trace_info =
-          tracer.parse_kernel_info(commandlist[commandlist_index].command_string);
+      kernel_trace_t *kernel_trace_info = tracer.parse_kernel_info(
+          commandlist[commandlist_index].command_string);
       kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context,
                                        &tconfig, &tracer);
 
@@ -334,10 +337,9 @@ unsigned accel_sim_framework::simulate() {
   return finished_kernel_uid;
 }
 
-trace_kernel_info_t *accel_sim_framework::create_kernel_info(kernel_trace_t *kernel_trace_info,
-                                        gpgpu_context *m_gpgpu_context,
-                                        trace_config *config,
-                                        trace_parser *parser) {
+trace_kernel_info_t *accel_sim_framework::create_kernel_info(
+    kernel_trace_t *kernel_trace_info, gpgpu_context *m_gpgpu_context,
+    trace_config *config, trace_parser *parser) {
   gpgpu_ptx_sim_info info;
   info.smem = kernel_trace_info->shmem;
   info.regs = kernel_trace_info->nregs;
