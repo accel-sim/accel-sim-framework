@@ -426,9 +426,7 @@ void trace_parser::get_next_threadblock_traces(
   }
 }
 
-PipeReader::PipeReader(const std::string &filePath) { 
-  OpenFile(filePath); 
-}
+PipeReader::PipeReader(const std::string &filePath) { OpenFile(filePath); }
 
 void PipeReader::OpenFile(const std::string &filePath) {
   if (hasEnding(filePath, ".xz")) {
