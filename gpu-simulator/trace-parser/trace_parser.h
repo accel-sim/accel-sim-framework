@@ -77,7 +77,7 @@ struct inst_trace_t {
 
 class PipeReader {
  public:
-  PipeReader() {}
+  PipeReader(const std::string &filePath);
   void OpenFile(const std::string &filePath);
 
   // Destructor to close the pipe
@@ -100,7 +100,7 @@ class PipeReader {
 };
 
 struct kernel_trace_t {
-  kernel_trace_t();
+  kernel_trace_t(const std::string &filePath);
 
   std::string kernel_name;
   unsigned kernel_id;

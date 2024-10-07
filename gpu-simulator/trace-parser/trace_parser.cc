@@ -82,13 +82,13 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
   return 4;  // default is 4 bytes
 }
 
-kernel_trace_t::kernel_trace_t() {
-  kernel_name = "Empty";
+kernel_trace_t::kernel_trace_t(const std::string &filePath)
+    : pipeReader(filePath) {
+  kernel_name = filePath;
   shmem_base_addr = 0;
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
-  pipeReader = PipeReader();
 }
 
 void inst_memadd_info_t::base_stride_decompress(
@@ -286,13 +286,9 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
-  kernel_trace_t *kernel_info = new kernel_trace_t;
-  kernel_info->enable_lineinfo = 0;  // default disabled
-
-  std::string read_trace_cmd;
-  kernel_info->pipeReader.OpenFile(kerneltraces_filepath);
-
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
+  kernel_trace_t *kernel_info = new kernel_trace_t(kerneltraces_filepath);
+  kernel_info->enable_lineinfo = 0;  // default disabled
 
   std::string line;
   while (kernel_info->pipeReader.readLine(line)) {
@@ -429,6 +425,11 @@ void trace_parser::get_next_threadblock_traces(
     }
   }
 }
+
+PipeReader::PipeReader(const std::string &filePath) { 
+  OpenFile(filePath); 
+}
+
 void PipeReader::OpenFile(const std::string &filePath) {
   if (hasEnding(filePath, ".xz")) {
     // Use xz command to decompress .xz files
