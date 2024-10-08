@@ -78,6 +78,16 @@ struct inst_trace_t {
 class PipeReader {
  public:
   PipeReader(const std::string &filePath);
+
+  // It does not make sense to implement copy semantics for PipeReader,
+  // because each instance should hold a unique Linux pipe handle
+  PipeReader(const PipeReader&) = delete;
+  PipeReader& operator=(const PipeReader&) = delete;
+
+  // Move semantics can be supported
+  PipeReader(PipeReader &&) noexcept;
+  PipeReader& operator=(PipeReader&&) noexcept;
+
   void OpenFile(const std::string &filePath);
 
   // Destructor to close the pipe
