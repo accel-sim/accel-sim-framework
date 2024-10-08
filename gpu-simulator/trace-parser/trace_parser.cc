@@ -474,3 +474,20 @@ bool PipeReader::hasEnding(const std::string &fullString,
   }
   return false;
 }
+
+PipeReader::PipeReader(PipeReader &&other) noexcept
+    : pipe(other.pipe), command(other.command) {
+  other.pipe = NULL;
+  other.command = {};
+}
+
+PipeReader &PipeReader::operator=(PipeReader &&other) noexcept {
+  if (this != &other) {
+    pipe = other.pipe;
+    command = other.command;
+
+    other.pipe = NULL;
+    other.command = {};
+  }
+  return *this;
+}
