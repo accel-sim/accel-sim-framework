@@ -42,10 +42,6 @@ else
 	CXXFLAGS = -Wall -O3 -g3 -fPIC -std=c++17
 endif
 
-CXXFLAGS+=-I./trace-driven -I./trace-parser -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -I$(BUILD_DIR)
-
-LIBS+=-L$(GPGPUSIM_ROOT)/lib/$(GPGPUSIM_CONFIG)/ -lcudart -lm -lz -lGL -pthread $(BUILD_DIR)/*.o 
-
 all: $(BIN_DIR)/accel-sim.out
 
 $(BUILD_DIR)/main.makedepend: depend makedirs
@@ -63,8 +59,11 @@ checkenv: makedirs
 		exit 1; \
 	fi
 
-$(BIN_DIR)/accel-sim.out: trace-driven trace-parser gpgpu-sim makedirs version
-	$(CXX) $(CXXFLAGS) $(LIBS) -o $(BIN_DIR)/accel-sim.out accel-sim.cc main.cc 
+$(BIN_DIR)/accel-sim.out: trace-driven trace-parser gpgpu-sim makedirs $(BUILD_DIR)/main.o version
+	$(CXX) -std=c++0x -o $(BIN_DIR)/accel-sim.out  -L$(GPGPUSIM_ROOT)/lib/$(GPGPUSIM_CONFIG)/ -lcudart -lm -lz -lGL -pthread $(BUILD_DIR)/*.o
+
+$(BUILD_DIR)/main.o: main.cc version
+	$(CXX) $(CXXFLAGS)  -I$(BUILD_DIR) -I./trace-driven -I./trace-parser -I$(GPGPUSIM_ROOT)/libcuda -I$(GPGPUSIM_ROOT)/src -I$(CUDA_INSTALL_PATH)/include -c main.cc -o $(BUILD_DIR)/main.o
 
 version:
 	echo "const char *g_accelsim_version=\"$(ACCELSIM_BUILD)\";" > $(BUILD_DIR)/accelsim_version.h
