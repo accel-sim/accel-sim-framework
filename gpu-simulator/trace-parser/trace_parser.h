@@ -79,6 +79,13 @@ class PipeReader {
  public:
   PipeReader(const std::string &filePath);
 
+  // Destructor to close the pipe
+  ~PipeReader() {
+    if (pipe) {
+      pclose(pipe);  // Close the pipe when done
+    }
+  }
+
   // It does not make sense to implement copy semantics for PipeReader,
   // because each instance should hold a unique Linux pipe handle
   PipeReader(const PipeReader&) = delete;
@@ -87,15 +94,6 @@ class PipeReader {
   // Move semantics can be supported
   PipeReader(PipeReader &&) noexcept;
   PipeReader& operator=(PipeReader&&) noexcept;
-
-  void OpenFile(const std::string &filePath);
-
-  // Destructor to close the pipe
-  ~PipeReader() {
-    if (pipe) {
-      pclose(pipe);  // Close the pipe when done
-    }
-  }
 
   // Read one line
   bool readLine(std::string &line);
@@ -107,6 +105,8 @@ class PipeReader {
   // Helper function to check if a string ends with a specific suffix (file
   // extension)
   bool hasEnding(const std::string &fullString, const std::string &ending);
+
+  void OpenFile(const std::string &filePath);
 };
 
 struct kernel_trace_t {
