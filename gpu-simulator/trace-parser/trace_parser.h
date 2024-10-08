@@ -88,12 +88,12 @@ class PipeReader {
 
   // It does not make sense to implement copy semantics for PipeReader,
   // because each instance should hold a unique Linux pipe handle
-  PipeReader(const PipeReader&) = delete;
-  PipeReader& operator=(const PipeReader&) = delete;
+  PipeReader(const PipeReader &) = delete;
+  PipeReader &operator=(const PipeReader &) = delete;
 
   // Move semantics can be supported
   PipeReader(PipeReader &&) noexcept;
-  PipeReader& operator=(PipeReader&&) noexcept;
+  PipeReader &operator=(PipeReader &&) noexcept;
 
   // Read one line
   bool readLine(std::string &line);
