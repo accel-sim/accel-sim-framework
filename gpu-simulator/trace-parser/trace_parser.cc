@@ -208,15 +208,22 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       unsigned long long base_address = 0;
       std::vector<long long> deltas;
       // read addresses as base address and deltas
+      // remember that the first active processor doesn't have a delta - it
+      // corresponds to the base address
+      bool first_bit1_found = false;
       ss >> std::hex >> base_address;
       for (int s = 0; s < WARP_SIZE; s++) {
         if (mask_bits.test(s)) {
-          long long delta = 0;
-          ss >> std::dec >> delta;
-          deltas.push_back(delta);
+          if(!first_bit1_found) {
+            first_bit1_found = true;
+            continue;
+          } else {
+            long long delta = 0;
+            ss >> std::dec >> delta;
+            deltas.push_back(delta);
+          }
         }
       }
-      memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
   }
 
