@@ -82,8 +82,9 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
   return 4;  // default is 4 bytes
 }
 
-kernel_trace_t::kernel_trace_t() {
-  kernel_name = "Empty";
+kernel_trace_t::kernel_trace_t(const std::string &filePath)
+    : pipeReader(filePath) {
+  kernel_name = filePath;
   shmem_base_addr = 0;
   local_base_addr = 0;
   binary_verion = 0;
@@ -306,88 +307,12 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
-  kernel_trace_t *kernel_info = new kernel_trace_t;
+  std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
+  kernel_trace_t *kernel_info = new kernel_trace_t(kerneltraces_filepath);
   kernel_info->enable_lineinfo = 0;  // default disabled
 
-  std::string read_trace_cmd;
-  int _l = kerneltraces_filepath.length();
-  if (_l > 3 && kerneltraces_filepath.substr(_l - 3, 3) == ".xz") {
-    // this is xz-compressed trace
-    read_trace_cmd = "xz -dc " + kerneltraces_filepath;
-  } else if (_l > 7 && kerneltraces_filepath.substr(_l - 7, 7) == ".traceg") {
-    // this is plain text trace
-    read_trace_cmd = "cat " + kerneltraces_filepath;
-  } else {
-    std::cerr << "Can't read trace. Only .xz and plain text are supported: "
-              << kerneltraces_filepath << "\n";
-    exit(1);
-  }
-
-  std::array<char, 128> buffer;
-  std::string result;
-  // Open a pipe to the cat command
-  FILE *pipe = popen(read_trace_cmd.c_str(), "r");
-  if (!pipe) {
-    throw std::runtime_error("popen() failed!");
-  }
-
-  // Read from the pipe, line by line
-  while (fgets(buffer.data(), buffer.size(), pipe) != nullptr) {
-    std::string line(buffer.data());
-    std::cout << line;  // You can process each line as needed
-  }
-
-  // Create an interprocess channel, and fork out a data source process. The
-  // data source process reads trace from disk, write to the channel, and the
-  // simulator process read from the channel.
-
-  /*
-  int *pipefd = kernel_info->pipefd;
-  if (pipe(pipefd) != 0) {
-    std::cerr << "Failed to create interprocess channel\n";
-    perror("pipe");
-    exit(1);
-  }
-
-  pid_t pid = fork();
-  if (pid == 0) {
-    // The child process is the data source. Redirect its
-    // stdout to the write end of the pipe.
-    close(pipefd[0]);
-    dup2(pipefd[1], STDOUT_FILENO);
-
-    // When using GDB, sending Ctrl+C to the simulator will send a SIGINT signal
-    // to the child process as well, subsequently causing it to terminate. To
-    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal.
-    // Reference:
-    //
-  https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes
-    signal(SIGINT, SIG_IGN);
-
-    execle("/bin/sh", "sh", "-c", read_trace_cmd.c_str(), NULL, environ);
-    perror("execle");  // the child process shouldn't reach here if all is well.
-    exit(1);
-  } else {
-    // parent (simulator)
-    close(pipefd[1]);
-    dup2(pipefd[0], STDIN_FILENO);
-  }
-
-  // Parent continues from here.
-  kernel_info->ifs = &std::cin;
-  std::istream *ifs = kernel_info->ifs;
-
-  std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
-
   std::string line;
-
-  // Important to clear the istream. Otherwise, the eofbit from the last
-  // kernel may be carried over to this kernel
-  ifs->clear();
-  clearerr(stdin);
-  while (!ifs->eof()) {
-    getline(*ifs, line);
-
+  while (kernel_info->pipeReader.readLine(line)) {
     if (line.length() == 0) {
       continue;
     } else if (line[0] == '#') {
@@ -447,8 +372,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       continue;
     }
   }
-  */
-  return kernel_info;
+  * / return kernel_info;
 }
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
@@ -458,15 +382,13 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   // have been automatically closed when it terminated. But the parent
   // process may read an arbitrary amount of trace files, so it has to close
   // all file descriptors.
-  close(trace_info->pipefd[0]);
-  close(trace_info->pipefd[1]);
   delete trace_info;
 }
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs,
-    std::string kernel_name) {
+    unsigned trace_version, unsigned enable_lineinfo,
+    class PipeReader &pipeReader, std::string kernel_name) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -477,13 +399,10 @@ void trace_parser::get_next_threadblock_traces(
   unsigned warp_id = 0;
   unsigned insts_num = 0;
   unsigned inst_count = 0;
-
-  while (!ifs->eof()) {
-    std::string line;
+  std::string line;
+  while (pipeReader.readLine(line)) {
     std::stringstream ss;
     std::string string1, string2;
-
-    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
@@ -524,4 +443,53 @@ void trace_parser::get_next_threadblock_traces(
       }
     }
   }
+}
+
+PipeReader::PipeReader(const std::string &filePath) { OpenFile(filePath); }
+
+void PipeReader::OpenFile(const std::string &filePath) {
+  if (hasEnding(filePath, ".xz")) {
+    // Use xz command to decompress .xz files
+    command = "xz -dc " + filePath;
+  } else if (hasEnding(filePath, ".traceg")) {
+    // Use cat command for regular trace files
+    command = "cat " + filePath;
+  } else {
+    throw std::runtime_error("Unsupported file type!");
+  }
+
+  // Open the pipe
+  pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+    throw std::runtime_error("Failed to open pipe!");
+  }
+}
+
+bool PipeReader::readLine(std::string &line) {
+  char *buffer = nullptr;
+  size_t len = 0;
+  ssize_t nread;
+
+  // Use getline() to read from the pipe
+  if ((nread = getline(&buffer, &len, pipe)) != -1) {
+    line.assign(buffer, nread);  // Assign the read line to the std::string
+    assert(line.back() == '\n');
+    line.pop_back();  // Remove the newline character
+    free(buffer);     // Free the buffer allocated by getline
+    return true;
+  }
+
+  free(buffer);  // Free the buffer if getline failed or reached EOF
+  return false;  // End of pipe or error
+}
+
+// Helper function to check if a string ends with a specific suffix (file
+// extension)
+bool PipeReader::hasEnding(const std::string &fullString,
+                           const std::string &ending) {
+  if (fullString.length() >= ending.length()) {
+    return (0 == fullString.compare(fullString.length() - ending.length(),
+                                    ending.length(), ending));
+  }
+  return false;
 }

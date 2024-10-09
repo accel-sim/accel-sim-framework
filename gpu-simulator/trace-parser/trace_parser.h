@@ -76,8 +76,32 @@ struct inst_trace_t {
   ~inst_trace_t();
 };
 
+class PipeReader {
+ public:
+  PipeReader(const std::string &filePath);
+  void OpenFile(const std::string &filePath);
+
+  // Destructor to close the pipe
+  ~PipeReader() {
+    if (pipe) {
+      pclose(pipe);  // Close the pipe when done
+    }
+  }
+
+  // Read one line
+  bool readLine(std::string &line);
+
+ private:
+  FILE *pipe = NULL;    // Store the pipe
+  std::string command;  // Store the shell command to be executed
+
+  // Helper function to check if a string ends with a specific suffix (file
+  // extension)
+  bool hasEnding(const std::string &fullString, const std::string &ending);
+};
+
 struct kernel_trace_t {
-  kernel_trace_t();
+  kernel_trace_t(const std::string &filePath);
 
   std::string kernel_name;
   unsigned kernel_id;
@@ -96,13 +120,7 @@ struct kernel_trace_t {
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
-  // Reference to open filestream
-  std::istream *ifs;
-  // Anonymous pipe through which the trace is transmitted from a trace reader
-  // process to the simulator process
-  int pipefd[2] = {};
-  unsigned read_lines;
-  std::string trace_file;
+  PipeReader pipeReader;
 };
 
 class trace_parser {
@@ -119,8 +137,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs,
-      std::string kernel_name);
+      unsigned trace_version, unsigned enable_lineinfo,
+      class PipeReader &pipeReader, std::string kernel_name);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
   unsigned graphics_count;

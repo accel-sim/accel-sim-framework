@@ -49,11 +49,11 @@ execute_process(
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
 execute_process(
-    COMMAND date --iso-8601=minutes
+    COMMAND date +"%y-%m-%d-%H-%M-%S"
     OUTPUT_VARIABLE TIME
     OUTPUT_STRIP_TRAILING_WHITESPACE
     )
-
+string(REPLACE "\"" "" TIME ${TIME})
 set(ACCELSIM_BUILD accelsim-commit-${GIT_COMMIT}_modified_${GIT_FILES_CHANGED_A}${GIT_FILES_CHANGED}_${TIME})
 
 file(WRITE ${CMAKE_BINARY_DIR}/accelsim_version.h "const char *g_accelsim_version=\"${ACCELSIM_BUILD}\";")
