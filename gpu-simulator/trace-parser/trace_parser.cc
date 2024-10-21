@@ -89,8 +89,6 @@ kernel_trace_t::kernel_trace_t(const std::string &filePath)
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
-  read_lines = 0;
-  ifs = NULL;
 }
 
 void inst_memadd_info_t::base_stride_decompress(
@@ -372,7 +370,7 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       continue;
     }
   }
-  * / return kernel_info;
+  return kernel_info;
 }
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {

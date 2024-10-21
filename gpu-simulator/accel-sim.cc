@@ -48,14 +48,12 @@ void accel_sim_framework::simulation_loop() {
   if (finished_graphics == tracer.graphics_count) {
     printf("No graphics kernel parsed\n");
     printf("STEP1 - rendering done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
-    m_gpgpu_sim->all_graphics_done = true;
     graphics_done = true;
   }
   if (finished_computes == tracer.compute_count) {
     printf("No compute kernel parsed\n");
     printf("STEP1 - computes done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
     m_gpgpu_sim->gpu_compute_end_cycle = m_gpgpu_sim->gpu_tot_sim_cycle;
-    m_gpgpu_sim->all_compute_done = true;
     computes_done = true;
   }
 
@@ -139,14 +137,12 @@ void accel_sim_framework::simulation_loop() {
       printf("All graphics kernels finished one iteration\n");
       printf("STEP1 - rendering done at %llu\n",
              m_gpgpu_sim->gpu_tot_sim_cycle);
-      m_gpgpu_sim->all_graphics_done = true;
       graphics_done = true;
     }
     if (finished_computes == tracer.compute_count && !computes_done) {
       printf("All compute kernels finished one iteration\n");
       printf("STEP1 - computes done at %llu\n", m_gpgpu_sim->gpu_tot_sim_cycle);
       m_gpgpu_sim->gpu_compute_end_cycle = m_gpgpu_sim->gpu_tot_sim_cycle;
-      m_gpgpu_sim->all_compute_done = true;
       computes_done = true;
     }
     if (graphics_done && computes_done) {
@@ -165,7 +161,6 @@ void accel_sim_framework::simulation_loop() {
       }
       finished_graphics = 0;
       graphics_commands.clear();
-      m_gpgpu_sim->all_graphics_done = false;
 
       printf("relaunching graphics kernels\n");
     }
@@ -178,7 +173,6 @@ void accel_sim_framework::simulation_loop() {
       }
       finished_computes = 0;
       compute_commands.clear();
-      m_gpgpu_sim->all_compute_done = false;
       printf("relaunching compute kernels\n");
     }
   }
@@ -215,22 +209,21 @@ void accel_sim_framework::parse_commandlist() {
       // Read trace header info for window_size number of kernels
       kernel_trace_t *kernel_trace_info = tracer.parse_kernel_info(
           commandlist[commandlist_index].command_string);
+      if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos) {
+        kernel_trace_info->cuda_stream_id = graphics_stream_id;
+        last_grpahics_stream_id = graphics_stream_id;
+        graphics_stream_id++;
+      } else if (kernel_trace_info->kernel_name.find("FRAG") !=
+                 std::string::npos) {
+        kernel_trace_info->cuda_stream_id = last_grpahics_stream_id;
+      }
       kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context,
                                        &tconfig, &tracer);
 
       if (kernel_info->is_graphic_kernel) {
         graphics_commands.push_back(commandlist[commandlist_index]);
         unsigned kernel_id = kernel_info->get_uid();
-        if (kernel_info->get_name().find("VERTEX") != std::string::npos) {
-          // is vertex shader
-          last_launched_vertex = kernel_id;
-          kernel_trace_info->cuda_stream_id = graphics_stream_id;
-          last_grpahics_stream_id = graphics_stream_id;
-          graphics_stream_id++;
-        } else {
-          assert(kernel_info->get_name().find("FRAG") != std::string::npos);
-          kernel_trace_info->cuda_stream_id = last_grpahics_stream_id;
-        }
+
         // save kernel info
         m_gpgpu_sim->vb_addr[kernel_id] = kernel_vb_addr;
         m_gpgpu_sim->vb_size[kernel_id] = kernel_vb_size;
@@ -259,6 +252,7 @@ void accel_sim_framework::parse_commandlist() {
 void accel_sim_framework::cleanup(unsigned finished_kernel) {
   trace_kernel_info_t *k = NULL;
   unsigned long long finished_kernel_cuda_stream_id = -1;
+  unsigned finishd_kernel_uid = 0;
   for (unsigned j = 0; j < kernels_info.size(); j++) {
     k = kernels_info.at(j);
     if (k->get_uid() == finished_kernel ||
@@ -266,6 +260,7 @@ void accel_sim_framework::cleanup(unsigned finished_kernel) {
       for (unsigned int l = 0; l < busy_streams.size(); l++) {
         if (busy_streams.at(l) == k->get_cuda_stream_id()) {
           finished_kernel_cuda_stream_id = k->get_cuda_stream_id();
+          finishd_kernel_uid = k->get_uid();
           busy_streams.erase(busy_streams.begin() + l);
           break;
         }
@@ -310,7 +305,7 @@ void accel_sim_framework::cleanup(unsigned finished_kernel) {
     }
   }
   assert(k);
-  m_gpgpu_sim->print_stats(finished_kernel_cuda_stream_id);
+  m_gpgpu_sim->print_stats(finished_kernel_cuda_stream_id, finishd_kernel_uid);
 }
 
 unsigned accel_sim_framework::simulate() {
@@ -352,6 +347,10 @@ trace_kernel_info_t *accel_sim_framework::create_kernel_info(
   function_info->set_name(kernel_trace_info->kernel_name.c_str());
   trace_kernel_info_t *kernel_info = new trace_kernel_info_t(
       gridDim, blockDim, function_info, parser, config, kernel_trace_info);
+  if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos ||
+      kernel_trace_info->kernel_name.find("FRAG") != std::string::npos) {
+    kernel_info->is_graphic_kernel = true;
+  }
 
   return kernel_info;
 }

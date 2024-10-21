@@ -42,7 +42,6 @@ class accel_sim_framework {
 
     kernels_info.reserve(window_size);
     graphics_stream_id = 0xDEADBEEF;
-    last_launched_vertex = -1;
     last_grpahics_stream_id = -1;
     launched_mesa = 0;
     computes_done = false;
@@ -59,9 +58,8 @@ class accel_sim_framework {
                                           trace_config *config,
                                           trace_parser *parser);
   gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
-                                  gpgpu_context *m_gpgpu_context,
-                                  trace_config *m_config);
-
+                                             gpgpu_context *m_gpgpu_context,
+                                             trace_config *m_config);
 
  private:
   gpgpu_context *m_gpgpu_context;
@@ -74,8 +72,7 @@ class accel_sim_framework {
   bool sim_cycles;
   unsigned window_size;
   unsigned commandlist_index;
-  unsigned long graphics_stream_id; 
-  unsigned last_launched_vertex;
+  unsigned long graphics_stream_id;
   unsigned last_grpahics_stream_id;
   unsigned launched_mesa;
   unsigned finished_computes;
