@@ -41,6 +41,13 @@ class accel_sim_framework {
     commandlist = tracer.parse_commandlist_file();
 
     kernels_info.reserve(window_size);
+    graphics_stream_id = 0xDEADBEEF;
+    last_grpahics_stream_id = -1;
+    launched_mesa = 0;
+    computes_done = false;
+    graphics_done = false;
+    finished_computes = 0;
+    finished_graphics = 0;
   }
   void simulation_loop();
   void parse_commandlist();
@@ -51,9 +58,8 @@ class accel_sim_framework {
                                           trace_config *config,
                                           trace_parser *parser);
   gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
-                                  gpgpu_context *m_gpgpu_context,
-                                  trace_config *m_config);
-
+                                             gpgpu_context *m_gpgpu_context,
+                                             trace_config *m_config);
 
  private:
   gpgpu_context *m_gpgpu_context;
@@ -66,9 +72,22 @@ class accel_sim_framework {
   bool sim_cycles;
   unsigned window_size;
   unsigned commandlist_index;
+  unsigned long graphics_stream_id;
+  unsigned last_grpahics_stream_id;
+  unsigned launched_mesa;
+  unsigned finished_computes;
+  unsigned finished_graphics;
+  bool computes_done;
+  bool graphics_done;
 
   std::vector<unsigned long long> busy_streams;
   std::vector<trace_kernel_info_t *> kernels_info;
   std::vector<trace_command> commandlist;
 
+  std::vector<trace_command> compute_commands;
+  std::vector<trace_command> graphics_commands;
+
+  std::vector<unsigned long> kernel_vb_addr;
+  std::vector<unsigned long> kernel_vb_size;
+  std::vector<unsigned long> kernel_per_CTA;
 };

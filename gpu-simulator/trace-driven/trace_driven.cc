@@ -61,10 +61,20 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
   if (trace_pc < warp_traces.size()) {
     trace_warp_inst_t *new_inst =
         new trace_warp_inst_t(get_shader()->get_config());
-    new_inst->parse_from_trace_struct(
+    bool success = new_inst->parse_from_trace_struct(
         warp_traces[trace_pc], m_kernel_info->OpcodeMap,
-        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
+        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info,
+        m_kernel_info->get_uid());
     trace_pc++;
+    while (!success) {
+      // skip texture instructions that has 0 data size
+      assert(new_inst->mem_op == TEX);
+      success = new_inst->parse_from_trace_struct(
+          warp_traces[trace_pc], m_kernel_info->OpcodeMap,
+          m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info,
+          m_kernel_info->get_uid());
+      trace_pc++;
+    }
     return new_inst;
   } else
     return NULL;
@@ -126,7 +136,9 @@ void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
   m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion,
-      m_kernel_trace_info->enable_lineinfo, m_kernel_trace_info->pipeReader);
+      m_kernel_trace_info->enable_lineinfo, m_kernel_trace_info->pipeReader,
+      m_kernel_trace_info->kernel_name + "_" +
+          std::to_string(m_kernel_trace_info->kernel_id));
 }
 
 types_of_operands get_oprnd_type(op_type op, special_ops sp_op) {
@@ -156,7 +168,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     const inst_trace_t &trace,
     const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
     const class trace_config *tconfig,
-    const class kernel_trace_t *kernel_trace_info) {
+    const class kernel_trace_t *kernel_trace_info, unsigned kernel_id) {
   // fill the inst_t and warp_inst_t params
 
   // fill active mask
@@ -166,6 +178,14 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   // fill and initialize common params
   m_decoded = true;
   pc = (address_type)trace.m_pc;
+  m_kernel_uid = kernel_id;
+
+  if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos) {
+    m_is_vertex = true;
+  } else if (kernel_trace_info->kernel_name.find("FRAGMENT") !=
+             std::string::npos) {
+    m_is_fragment = true;
+  }
 
   isize =
       16;  // starting from MAXWELL isize=16 bytes (including the control bytes)
@@ -398,6 +418,24 @@ bool trace_warp_inst_t::parse_from_trace_struct(
           1)  // Make sure initiaion interval never goes below 1
         initiation_interval = 1;
       break;
+    case OP_TLD4:
+    case OP_TEX:
+    case OP_TLD:
+    case OP_TMML:
+    case OP_TXD:
+    case OP_TXQ:
+      // memory_op = memory_load;
+      // mem_op = TEX;
+      // cache_op = CACHE_ALL;
+      // space.set_type(tex_space);
+      memory_op = memory_load;
+      cache_op = CACHE_ALL;
+      mem_op = TEX;
+      space.set_type(global_space);
+      if (data_size == 0) {
+        return false;
+      }
+      break;
     default:
       break;
   }
@@ -601,6 +639,7 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
   trace_kernel_info_t &trace_kernel =
       static_cast<trace_kernel_info_t &>(kernel);
   trace_kernel.get_next_threadblock_traces(threadblock_traces);
+  // reduce memaddrs
 
   // set the pc from the traces and ignore the functional model
   for (unsigned i = start_warp; i < end_warp; ++i) {

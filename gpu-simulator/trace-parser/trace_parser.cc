@@ -192,9 +192,9 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     if (address_mode == address_format::list_all) {
       // read addresses one by one from the file
       for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s))
+        if (mask_bits.test(s)) {
           ss >> std::hex >> memadd_info->addrs[s];
-        else
+        } else
           memadd_info->addrs[s] = 0;
       }
     } else if (address_mode == address_format::base_stride) {
@@ -229,6 +229,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
 trace_parser::trace_parser(const char *kernellist_filepath) {
   kernellist_filename = kernellist_filepath;
+  compute_count = 0;
+  graphics_count = 0;
 }
 
 std::vector<trace_command> trace_parser::parse_commandlist_file() {
@@ -252,16 +254,27 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
     getline(fs, line);
     if (line.empty())
       continue;
-    else if (line.substr(0, 10) == "MemcpyHtoD") {
+    else if (line.find("MemcpyHtoD") != std::string::npos) {
       trace_command command;
       command.command_string = line;
       command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
-    } else if (line.substr(0, 6) == "kernel") {
+    } else if (line.find("kernel") != std::string::npos) {
+      // } else if (line.substr(0, 6) == "kernel") {
       trace_command command;
       command.m_type = command_type::kernel_launch;
       filepath = directory + "/" + line;
       command.command_string = filepath;
+      commandlist.push_back(command);
+      if (line.find("MESA") != std::string::npos) {
+        graphics_count++;
+      } else {
+        compute_count++;
+      }
+    } else if (line.find("MemcpyVulkan") != std::string::npos) {
+      trace_command command;
+      command.command_string = line;
+      command.m_type = command_type::cpu_gpu_mem_copy;
       commandlist.push_back(command);
     }
     // ignore gpu_to_cpu_memory_cpy
@@ -272,16 +285,22 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
 }
 
 void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
-                                     size_t &address, size_t &count) {
+                                     size_t &address, size_t &count,
+                                     size_t &per_CTA) {
   std::vector<std::string> params;
   split(memcpy_command, params, ',');
-  assert(params.size() == 3);
+  // assert(params.size() == 3);
   std::stringstream ss;
   ss.str(params[1]);
   ss >> std::hex >> address;
   ss.clear();
   ss.str(params[2]);
   ss >> std::dec >> count;
+  if (params.size() == 4) {
+    ss.clear();
+    ss.str(params[3]);
+    ss >> std::dec >> per_CTA;
+  }
 }
 
 kernel_trace_t *trace_parser::parse_kernel_info(
@@ -351,8 +370,6 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       continue;
     }
   }
-
-  // do not close the file ifs, the kernel_finalizer will close it
   return kernel_info;
 }
 
@@ -369,7 +386,7 @@ void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
     unsigned trace_version, unsigned enable_lineinfo,
-    class PipeReader &pipeReader) {
+    class PipeReader &pipeReader, std::string kernel_name) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -404,7 +421,7 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
                &block_id_y, &block_id_z);
-        std::cout << line << std::endl;
+        std::cout << kernel_name << " " << line << std::endl;
       } else if (string1 == "warp") {
         // the start of new warp stream
         assert(start_of_tb_stream_found);

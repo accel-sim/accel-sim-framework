@@ -77,7 +77,7 @@ class trace_warp_inst_t : public warp_inst_t {
       const inst_trace_t &trace,
       const std::unordered_map<std::string, OpcodeChar> *OpcodeMap,
       const class trace_config *tconfig,
-      const class kernel_trace_t *kernel_trace_info);
+      const class kernel_trace_t *kernel_trace_info, unsigned kernel_id);
 
  private:
   unsigned m_opcode;
@@ -102,6 +102,7 @@ class trace_kernel_info_t : public kernel_info_t {
   bool was_launched() { return m_was_launched; }
 
   void set_launched() { m_was_launched = true; }
+  void unset_launched() { m_was_launched = false; }
 
  private:
   trace_config *m_tconfig;
