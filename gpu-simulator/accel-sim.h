@@ -80,7 +80,7 @@ class accel_sim_framework {
   bool computes_done;
   bool graphics_done;
 
-  std::vector<unsigned long long> busy_streams;
+  std::vector<uint64_t> busy_streams;
   std::vector<trace_kernel_info_t *> kernels_info;
   std::vector<trace_command> commandlist;
 

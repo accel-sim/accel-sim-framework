@@ -342,6 +342,15 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       } else if (string1 == "cuda" && string2 == "stream") {
         sscanf(line.c_str(), "-cuda stream id = %llu",
                &kernel_info->cuda_stream_id);
+        assert(kernel_info->cuda_stream_id != (uint64_t)-1);
+        if (kernel_info->cuda_stream_id == (uint64_t)-1) {
+          // in the code -1 is being used as initial value. Assumption is that
+          // is -1 is not valid. If a stream indeed have id -1, this need to be
+          // fixed
+          std::cerr << "Error: cuda stream id is -1, this is not valid"
+                    << std::endl;
+          abort();
+        }
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",
                &kernel_info->binary_verion);

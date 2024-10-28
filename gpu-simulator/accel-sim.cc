@@ -84,28 +84,29 @@ void accel_sim_framework::simulation_loop() {
     // Launch all kernels within window that are on a stream that isn't already
     // running
     for (auto k : kernels_info) {
+      bool is_graphics = m_gpgpu_sim->is_graphics(k->get_streamID());
       bool stream_busy = false;
       for (auto s : busy_streams) {
         if (s == k->get_cuda_stream_id()) stream_busy = true;
       }
       if (!stream_busy && m_gpgpu_sim->can_start_kernel() &&
           !k->was_launched()) {
-        if ((launched_mesa ==
-                 m_gpgpu_sim->get_config().get_max_concurrent_kernel() * 3 /
-                     4 &&
-             k->is_graphic_kernel)) {
+        if (launched_mesa ==
+                (m_gpgpu_sim->get_config().get_max_concurrent_kernel() * 3 /
+                 4) &&
+            is_graphics) {
           continue;
         }
         std::cout << "launching kernel name: " << k->get_name()
                   << " uid: " << k->get_uid()
                   << " cuda_stream_id: " << k->get_cuda_stream_id()
                   << std::endl;
-        if (!k->is_graphic_kernel) {
-          m_gpgpu_sim->gipc = 0;
-        } else {
+        if (is_graphics) {
           // graphics
           m_gpgpu_sim->cipc = 0;
           launched_mesa++;
+        } else {
+          m_gpgpu_sim->gipc = 0;
         }
         m_gpgpu_sim->launch(k);
         k->set_launched();
@@ -193,9 +194,11 @@ void accel_sim_framework::parse_commandlist() {
                                addre, Bcount, per_CTA);
       if (commandlist[commandlist_index].command_string.find("MemcpyVulkan") ==
           std::string::npos) {
+        // normal memcpy
         std::cout << "launching memcpy command : "
                   << commandlist[commandlist_index].command_string << std::endl;
-        m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount, false);
+        m_gpgpu_sim->perf_memcpy_to_gpu(addre, Bcount, (uint64_t)-1);
+        // -1: does not belong to any stream
       } else {
         assert(per_CTA != (unsigned)-1);
         kernel_vb_addr.push_back(addre);
@@ -210,6 +213,7 @@ void accel_sim_framework::parse_commandlist() {
       kernel_trace_t *kernel_trace_info = tracer.parse_kernel_info(
           commandlist[commandlist_index].command_string);
       if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos) {
+        m_gpgpu_sim->set_graphics(graphics_stream_id);
         kernel_trace_info->cuda_stream_id = graphics_stream_id;
         last_grpahics_stream_id = graphics_stream_id;
         graphics_stream_id++;
@@ -220,7 +224,7 @@ void accel_sim_framework::parse_commandlist() {
       kernel_info = create_kernel_info(kernel_trace_info, m_gpgpu_context,
                                        &tconfig, &tracer);
 
-      if (kernel_info->is_graphic_kernel) {
+      if (m_gpgpu_sim->is_graphics(kernel_info->get_streamID())) {
         graphics_commands.push_back(commandlist[commandlist_index]);
         unsigned kernel_id = kernel_info->get_uid();
 
@@ -251,7 +255,7 @@ void accel_sim_framework::parse_commandlist() {
 
 void accel_sim_framework::cleanup(unsigned finished_kernel) {
   trace_kernel_info_t *k = NULL;
-  unsigned long long finished_kernel_cuda_stream_id = -1;
+  uint64_t finished_kernel_cuda_stream_id = -1;
   unsigned finishd_kernel_uid = 0;
   for (unsigned j = 0; j < kernels_info.size(); j++) {
     k = kernels_info.at(j);
@@ -277,7 +281,7 @@ void accel_sim_framework::cleanup(unsigned finished_kernel) {
               m_gpgpu_sim->get_config().mps_sm_count;
         }
       }
-      if (k->is_graphic_kernel) {
+      if (m_gpgpu_sim->is_graphics(k->get_streamID())) {
         finished_graphics++;
         launched_mesa--;
       } else {
@@ -347,10 +351,6 @@ trace_kernel_info_t *accel_sim_framework::create_kernel_info(
   function_info->set_name(kernel_trace_info->kernel_name.c_str());
   trace_kernel_info_t *kernel_info = new trace_kernel_info_t(
       gridDim, blockDim, function_info, parser, config, kernel_trace_info);
-  if (kernel_trace_info->kernel_name.find("VERTEX") != std::string::npos ||
-      kernel_trace_info->kernel_name.find("FRAG") != std::string::npos) {
-    kernel_info->is_graphic_kernel = true;
-  }
 
   return kernel_info;
 }
