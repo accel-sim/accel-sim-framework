@@ -113,7 +113,7 @@ void nvbit_at_init() {
   GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0,
               "Uses the user defined "
               "folder TRACES_FOLDER path environment");
-  GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 0,
+  GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
   std::string pad(100, '-');
