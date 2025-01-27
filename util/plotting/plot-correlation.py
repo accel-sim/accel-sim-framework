@@ -631,11 +631,12 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
         for row in reader:
             # Begin by searching for the text line that indicates the beginning of the profile dump
             if state == "start" and len(row) > 0:
-                if "Profiling result" in row[0] or "==PROF== Disconnected" in row[0]:
+                if "ID" in row[0]:
                     state = "header_proc"
-                continue
+                else:
+                    continue
 
-            # The frist line is a header line what indicates the place of each stat on the next line
+            # The first line is a header line what indicates the place of each stat on the next line
             if state == "header_proc":
                 if "Event result" in row[0]:
                     continue
