@@ -8,7 +8,7 @@ on:
   push:
     branches-ignore:
       - "gh-readonly-queue**"
-  merge_group:
+  pull_request:
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
