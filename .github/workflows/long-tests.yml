@@ -76,7 +76,7 @@ jobs:
       - name: Correlate Ubench
         run: |
           source ./env-setup/11.7.0_env_setup.sh
-          ./util/hw_stats/get_hw_data.sh > /dev/null
+          ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
           rm -rf ./util/plotting/correl-html/
           ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H ./hw_run/QUADRO-V100/device-0/10.2/ | tee v100-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./turing-ubench-sass-latest2.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
