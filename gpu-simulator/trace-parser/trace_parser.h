@@ -75,8 +75,42 @@ struct inst_trace_t {
   ~inst_trace_t();
 };
 
+class PipeReader {
+ public:
+  PipeReader(const std::string &filePath);
+
+  // Destructor to close the pipe
+  ~PipeReader() {
+    if (pipe) {
+      pclose(pipe);  // Close the pipe when done
+    }
+  }
+
+  // It does not make sense to implement copy semantics for PipeReader,
+  // because each instance should hold a unique Linux pipe handle
+  PipeReader(const PipeReader &) = delete;
+  PipeReader &operator=(const PipeReader &) = delete;
+
+  // Move semantics can be supported
+  PipeReader(PipeReader &&) noexcept;
+  PipeReader &operator=(PipeReader &&) noexcept;
+
+  // Read one line
+  bool readLine(std::string &line);
+
+ private:
+  FILE *pipe = NULL;    // Store the pipe
+  std::string command;  // Store the shell command to be executed
+
+  // Helper function to check if a string ends with a specific suffix (file
+  // extension)
+  bool hasEnding(const std::string &fullString, const std::string &ending);
+
+  void OpenFile(const std::string &filePath);
+};
+
 struct kernel_trace_t {
-  kernel_trace_t();
+  kernel_trace_t(const std::string &filePath);
 
   std::string kernel_name;
   unsigned kernel_id;
@@ -88,23 +122,19 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned long cuda_stream_id;
+  unsigned long long cuda_stream_id;
   unsigned binary_verion;
   unsigned enable_lineinfo;
   unsigned trace_verion;
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
-  // Reference to open filestream
-  std::istream *ifs;
-  // Anonymous pipe through which the trace is transmitted from a trace reader
-  // process to the simulator process
-  int pipefd[2]={};
+  PipeReader pipeReader;
 };
 
 class trace_parser {
  public:
-  trace_parser(){}
+  trace_parser() {}
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
@@ -116,7 +146,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, unsigned enable_lineinfo, std::istream *ifs);
+      unsigned trace_version, unsigned enable_lineinfo,
+      class PipeReader &pipeReader);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
 

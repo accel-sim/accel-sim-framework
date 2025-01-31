@@ -206,13 +206,13 @@ cutlass_5_trace_validation:
     data_dirs: "$ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/"
     execs:
         - cutlass_perf_test_k1:
-            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --operation=gemm --op_class=tensorop  --iterations=5 --providers=cutlass
               accel-sim-mem: 5G
         - cutlass_perf_test_k2:
-            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
-              accel-sim-mem: 5G
+            - args: --seed=2020 --dist=0  --m=4096 --n=128 --k=4096 --operation=gemm --op_class=tensorop --iterations=5 --providers=cutlass
+              accel-sim-mem: 5G           
         - cutlass_perf_test_k3:
-            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --kernels=wmma_gemm_nn  --iterations=5 --providers=cutlass
+            - args: --seed=2020 --dist=0  --m=2560 --n=512 --k=2560 --operation=gemm --op_class=tensorop --iterations=5 --providers=cutlass
               accel-sim-mem: 5G
 
 Deepbench_validation:

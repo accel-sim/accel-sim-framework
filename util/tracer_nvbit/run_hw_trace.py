@@ -44,14 +44,14 @@ parser.add_option(
     "--limit_kernel_number",
     dest="kernel_number",
     default=-99,
-    help="Sets a hard limit to the " + "number of traced limits",
+    help="Sets a hard limit to the number of traced kernels",
 )
 parser.add_option(
     "-t",
     "--terminate_upon_limit",
     dest="terminate_upon_limit",
     action="store_true",
-    help="Once the kernel limit is " + "reached, terminate the tracing process",
+    help="Once the kernel limit is reached, terminate the tracing process",
 )
 
 (options, args) = parser.parse_args()
@@ -131,8 +131,6 @@ for bench in benchmarks:
         else:
             if options.kernel_number > 0:
                 os.environ["DYNAMIC_KERNEL_LIMIT_END"] = str(options.kernel_number)
-            else:
-                os.environ["DYNAMIC_KERNEL_LIMIT_END"] = "0"
 
         # first we generate the traces (.trace and kernelslist files)
         # then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)

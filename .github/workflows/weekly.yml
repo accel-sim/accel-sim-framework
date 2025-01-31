@@ -1,0 +1,128 @@
+name: Weekly Tests
+
+on:
+  workflow_dispatch:  # manually dispatch
+  # push:
+  schedule:
+    - cron: '0 20 * * FRI'  # 8:00 PM every Friday
+
+jobs:
+  Last-Commit:
+    if: github.repository == 'accel-sim/accel-sim-framework'
+    runs-on: tgrogers-raid
+    defaults:
+      run:
+        shell: bash
+    outputs:
+      TRACER_COUNT: ${{ steps.Test-for-commit.outputs.TRACER_COUNT }}
+      ACCEL_SIM_COUNT: ${{ steps.Test-for-commit.outputs.ACCEL_SIM_COUNT }}
+      GPGPUSIM_COUNT: ${{ steps.Test-for-commit.outputs.GPGPUSIM_COUNT }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+      - name: Setup Environment
+        run: |
+          rm -rf env-setup
+          git clone git@github.com:purdue-aalp/env-setup.git 
+          cd env-setup 
+          git checkout cluster-ubuntu
+      - name: Test For Commit
+        id: Test-for-commit
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          source ./gpu-simulator/setup_environment.sh
+          echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_OUTPUT
+          echo "ACCEL_SIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
+          echo "TRACER_COUNT=$(git log --oneline --since '1 week ago' util/tracer_nvbit | wc -l)" >> $GITHUB_OUTPUT
+          echo "TRACER_COUNT=$(git log --oneline --since '1 week ago' util/tracer_nvbit | wc -l)"
+          cd gpu-simulator/gpgpu-sim
+          echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)" >> $GITHUB_OUTPUT
+          echo "GPGPUSIM_COUNT=$(git log --oneline --since '1 week ago' | wc -l)"
+  Tracer-Weekly:
+    needs: Last-Commit
+    if: |
+      github.repository == 'accel-sim/accel-sim-framework' &&
+      needs.Last-Commit.outputs.TRACER_COUNT > 0
+    runs-on: tgrogers-gpu01
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Setup Environment
+        run: |
+          rm -rf env-setup
+          git clone git@github.com:purdue-aalp/env-setup.git 
+          cd env-setup 
+          git checkout cluster-ubuntu
+      - name: Build Tracer
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          ./util/tracer_nvbit/install_nvbit.sh
+          make clean -C ./util/tracer_nvbit/
+          make -C ./util/tracer_nvbit/
+      - name: build applications
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          export PATH=/home/tgrogers-raid/a/common/python2:$PATH
+          rm -rf ./gpu-app-collection/
+          git clone git@github.com:accel-sim/gpu-app-collection.git
+          source ./gpu-app-collection/src/setup_environment
+          ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
+          make -j8 -C ./gpu-app-collection/src rodinia-3.1
+          make -j8 -C ./gpu-app-collection/src GPU_Microbenchmark
+          # make -j8 -C ./gpu-app-collection/src Deepbench_nvidia
+          # make -j8 -C ./gpu-app-collection/src parboil
+          # make -j8 -C ./gpu-app-collection/src polybench
+          # make -j8 -C ./gpu-app-collection/src cutlass
+      - name: generate traces
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          source ./gpu-app-collection/src/setup_environment
+          rm -rf ./hw_run/
+          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
+          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
+          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
+          ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark -D 7
+          # ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
+  SASS-Weekly:
+    needs: [Last-Commit, Tracer-Weekly]
+    if: |
+      github.repository == 'accel-sim/accel-sim-framework' &&
+      (needs.Last-Commit.outputs.ACCEL_SIM_COUNT > 0 ||
+      needs.Last-Commit.outputs.GPGPUSIM_COUNT > 0) &&
+      needs.Tracer-Weekly.result != 'failure' &&
+      always()
+    runs-on: tgrogers-raid 
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: dev
+      - name: Setup Environment
+        run: |
+          rm -rf env-setup
+          git clone git@github.com:purdue-aalp/env-setup.git 
+          cd env-setup 
+          git checkout cluster-ubuntu
+      - name: Build Accel-Sim
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          rm -rf ./gpu-simulator/gpgpu-sim
+          source ./gpu-simulator/setup_environment.sh
+          make clean -C gpu-simulator
+          make -j -C gpu-simulator
+      - name: run SASS
+        run: |
+          source ./env-setup/11.7.0_env_setup.sh
+          source ./gpu-simulator/setup_environment.sh
+          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
+          # ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/11.7 -N weekly-$$ -M 70G
+          ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/11.7 -N weekly-$$ -M 70G
+          ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$

@@ -444,28 +444,10 @@ for logfile in parsed_logfiles:
             torquefile_base = re.sub(
                 r".*\.([^\s]*-commit-.*-commit-.*)", r"\1", jobname
             )
-            errfile = os.path.join(
-                output_dir,
-                os.path.basename(app)
-                + "-"
-                + args
-                + "."
-                + torquefile_base
-                + "."
-                + "e"
-                + jobId,
-            )
-            outfile = os.path.join(
-                output_dir,
-                os.path.basename(app)
-                + "-"
-                + args
-                + "."
-                + torquefile_base
-                + "."
-                + "o"
-                + jobId,
-            )
+            common_name = os.path.basename(app) + "-" + args + "." + torquefile_base
+            common_name = common_name[:200]  # truncate excessively long names
+            errfile = os.path.join(output_dir, common_name + "." + "e" + jobId)
+            outfile = os.path.join(output_dir, common_name + "." + "o" + jobId)
 
             status_string = ""
             additional_stats = ""

@@ -34,7 +34,7 @@ ACCELSIM_VERSION=$(shell cat $(ACCELSIM_ROOT)/version | awk '/Version/ {print $$
 GIT_COMMIT := $(shell git log --abbrev-commit -n 1 | head -1 | sed -re 's/commit (.*)/\1/')
 GIT_FILES_CHANGED_A:=$(shell git diff --numstat | wc | sed -re 's/^\s+([0-9]+).*/\1./')
 GIT_FILES_CHANGED:= $(GIT_FILES_CHANGED_A)$(shell git diff --numstat --cached | wc | sed -re 's/^\s+([0-9]+).*/\1/')
-TIME:=$(shell date +"%y-%m-%d-%k-%M-%S")
+TIME:=$(shell date +"%y-%m-%d-%H-%M-%S")
 ACCELSIM_BUILD := accelsim-commit-$(GIT_COMMIT)_modified_$(GIT_FILES_CHANGED)_$(TIME)
 endif
 
@@ -43,7 +43,7 @@ CUDA_VERSION_STRING:=$(shell $(CUDA_INSTALL_PATH)/bin/nvcc --version | awk '/rel
 CUDART_VERSION:=$(shell echo $(CUDA_VERSION_STRING) | sed 's/\./ /' | awk '{printf("%02u%02u", 10*int($$1), 10*$$2);}')
 
 # Detect GCC Version
-CC_VERSION := $(shell gcc --version | head -1 | awk '{for(i=1;i<=NF;i++){ if(match($$i,/^[0-9]\.[0-9]\.[0-9]$$/))  {print $$i; exit 0 }}}')
+CC_VERSION := $(shell gcc --version | head -1 | awk '{for(i=1;i<=NF;i++){ if(match($$i,/^[0-9]+\.[0-9]+\.[0-9]+$$/)) {print $$i; exit 0 }}}')
 
 # Detect Support for C++11 (C++0x) from GCC Version
-GNUC_CPP0X := $(shell gcc --version | perl -ne 'if (/gcc\s+\(.*\)\s+([0-9.]+)/){ if($$1 >= 4.3) {$$n=1} else {$$n=0;} } END { print $$n; }')
+GNUC_CPP0X := 1

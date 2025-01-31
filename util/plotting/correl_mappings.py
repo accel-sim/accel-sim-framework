@@ -12,6 +12,7 @@ config_maps = {
     "GV100": set("Quadro GV100"),
     "RTX2060": set("GeForce RTX 2060"),
     "RTX3070": set("GeForce RTX 3070"),
+    "H100" : set("NVIDIA H100 80GB HBM3"),
 }
 
 
@@ -512,8 +513,18 @@ correl_list = [
         plottype="log",
         stattype="counter",
     ),
-    CorrelStat(
-        chart_name="DRAM Reads",
+    CorrelStat(chart_name="Shared Memory Bank Conflicts",
+        plotfile="shmem-bank-conflict",
+        hw_eval="np.average(hw[\"l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_ld.sum\"])\
+        + np.average(hw[\"l1tex__data_bank_conflicts_pipe_lsu_mem_shared_op_st.sum\"])",
+        hw_error=None,
+        sim_eval="float(sim[\"gpgpu_n_shmem_bkconflict\s*=\s*(.*)\"])",
+        hw_name="all",
+        drophwnumbelow=0,
+        plottype="log",
+        stattype="counter"
+    ),
+	CorrelStat(chart_name="DRAM Reads",
         plotfile="dram-read-transactions",
         hw_eval='np.average(hw["dram__sectors_read.sum"])',
         hw_error=None,
