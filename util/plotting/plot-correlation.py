@@ -631,7 +631,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
         for row in reader:
             # Begin by searching for the text line that indicates the beginning of the profile dump
             if state == "start" and len(row) > 0:
-                if "ID" in row[0]:
+                if "ID" in row[0] or "Device" in row[0]:
                     state = "header_proc"
                 else:
                     continue
