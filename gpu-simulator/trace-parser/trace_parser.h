@@ -5,7 +5,7 @@
 #include <stdlib.h>
 #include <string>
 #include <vector>
-
+#include <stdint.h>
 #ifndef TRACE_PARSER_H
 #define TRACE_PARSER_H
 
@@ -49,6 +49,7 @@ struct inst_trace_t {
   inst_trace_t();
   inst_trace_t(const inst_trace_t &b);
 
+  unsigned line_num;
   unsigned m_pc;
   unsigned mask;
   unsigned reg_dsts_num;
@@ -56,9 +57,12 @@ struct inst_trace_t {
   std::string opcode;
   unsigned reg_srcs_num;
   unsigned reg_src[MAX_SRC];
+  uint64_t imm;
+
   inst_memadd_info_t *memadd_info;
 
-  bool parse_from_string(std::string trace, unsigned tracer_version);
+  bool parse_from_string(std::string trace, unsigned tracer_version,
+                         unsigned enable_lineinfo);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
@@ -71,8 +75,42 @@ struct inst_trace_t {
   ~inst_trace_t();
 };
 
+class PipeReader {
+ public:
+  PipeReader(const std::string &filePath);
+
+  // Destructor to close the pipe
+  ~PipeReader() {
+    if (pipe) {
+      pclose(pipe);  // Close the pipe when done
+    }
+  }
+
+  // It does not make sense to implement copy semantics for PipeReader,
+  // because each instance should hold a unique Linux pipe handle
+  PipeReader(const PipeReader &) = delete;
+  PipeReader &operator=(const PipeReader &) = delete;
+
+  // Move semantics can be supported
+  PipeReader(PipeReader &&) noexcept;
+  PipeReader &operator=(PipeReader &&) noexcept;
+
+  // Read one line
+  bool readLine(std::string &line);
+
+ private:
+  FILE *pipe = NULL;    // Store the pipe
+  std::string command;  // Store the shell command to be executed
+
+  // Helper function to check if a string ends with a specific suffix (file
+  // extension)
+  bool hasEnding(const std::string &fullString, const std::string &ending);
+
+  void OpenFile(const std::string &filePath);
+};
+
 struct kernel_trace_t {
-  kernel_trace_t();
+  kernel_trace_t(const std::string &filePath);
 
   std::string kernel_name;
   unsigned kernel_id;
@@ -84,18 +122,19 @@ struct kernel_trace_t {
   unsigned tb_dim_z;
   unsigned shmem;
   unsigned nregs;
-  unsigned long cuda_stream_id;
+  unsigned long long cuda_stream_id;
   unsigned binary_verion;
+  unsigned enable_lineinfo;
   unsigned trace_verion;
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
-  // Reference to open filestream
-  std::ifstream *ifs;
+  PipeReader pipeReader;
 };
 
 class trace_parser {
  public:
+  trace_parser() {}
   trace_parser(const char *kernellist_filepath);
 
   std::vector<trace_command> parse_commandlist_file();
@@ -107,7 +146,8 @@ class trace_parser {
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-      unsigned trace_version, std::ifstream *ifs);
+      unsigned trace_version, unsigned enable_lineinfo,
+      class PipeReader &pipeReader);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
 

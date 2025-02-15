@@ -193,7 +193,7 @@ void nvbit_at_function_first_load(CUcontext ctx, CUfunction func) {
  * */
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                          const char *name, void *params, CUresult *pStatus) {
-  
+
   // Add entry for memory on and allocate
   if(cbid == API_CUDA_cuMemAlloc_v2){
     callback_tracker++;
@@ -205,7 +205,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       printf("%p, %zu\n", *p->dptr, p->bytesize);
     }
   }
-  
+
   // Delete entry for memory on a free
   if(cbid == API_CUDA_cuMemFree_v2){
     callback_tracker++;
@@ -220,7 +220,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         printf("Address: %p, Number: %d, Size: %zu\n", pair.first, std::get<0>(pair.second), std::get<1>(pair.second));
       }
     }
- 
+
   }
 
   // Why do I even care about HtoD?
@@ -237,7 +237,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         /* cast params to cuLaunch_params since if we are here we know these are
          * the right parameters type */
         cuLaunch_params *p = (cuLaunch_params *)params;
-        
+
         if (!is_exit) {
             /* if we are entering in a kernel launch:
              * 1. Lock the mutex to prevent multiple kernels to run concurrently
@@ -255,7 +255,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
              * 3. Print the thread instruction counters
              * 4. Release the lock*/
             CUDA_SAFECALL(cudaDeviceSynchronize());
-           
+
             // Only snapshot selected kernels
             if(1){
             // Dump a snapshot of the valid GPU memory state after each kernel
@@ -264,7 +264,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                 size_t bytes = std::get<1>(pair.second);
                 int alloc_number = std::get<0>(pair.second);
                 void *tmp = pair.first;
-              
+
                 // Open a new file for this snapshot
                 std::string name = std::to_string(kernel_id) + "_" + std::to_string(alloc_number) + ".txt";
                 FILE *f = fopen(name.c_str(), "w");
@@ -282,7 +282,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
             }
             // Update the kernel ID
             kernel_id++;
-            
+
             // Allow the next call to proceed
             pthread_mutex_unlock(&mutex);
         }

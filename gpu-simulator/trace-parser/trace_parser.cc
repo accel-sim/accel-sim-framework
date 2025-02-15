@@ -11,6 +11,10 @@
 #include <string>
 #include <vector>
 
+#include <errno.h>
+#include <signal.h>
+#include <unistd.h>
+
 #include "trace_parser.h"
 
 bool is_number(const std::string &s) {
@@ -28,7 +32,10 @@ void split(const std::string &str, std::vector<std::string> &cont,
   }
 }
 
-inst_trace_t::inst_trace_t() { memadd_info = NULL; }
+inst_trace_t::inst_trace_t() {
+  memadd_info = NULL;
+  imm = 0;
+}
 
 inst_trace_t::~inst_trace_t() {
   if (memadd_info != NULL) delete memadd_info;
@@ -75,8 +82,9 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
   return 4;  // default is 4 bytes
 }
 
-kernel_trace_t::kernel_trace_t() {
-  kernel_name = "Empty";
+kernel_trace_t::kernel_trace_t(const std::string &filePath)
+    : pipeReader(filePath) {
+  kernel_name = filePath;
   shmem_base_addr = 0;
   local_base_addr = 0;
   binary_verion = 0;
@@ -124,8 +132,8 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
-bool inst_trace_t::parse_from_string(std::string trace,
-                                     unsigned trace_version) {
+bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
+                                     unsigned enable_lineinfo) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -140,6 +148,9 @@ bool inst_trace_t::parse_from_string(std::string trace,
 
     ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z >>
         warpid_tb;
+  }
+  if (enable_lineinfo) {
+    ss >> std::dec >> line_num;
   }
 
   ss >> std::hex >> m_pc;
@@ -208,6 +219,9 @@ bool inst_trace_t::parse_from_string(std::string trace,
       memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
   }
+
+  ss >> imm;
+
   // Finish Parsing
 
   return true;
@@ -272,23 +286,12 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
 
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
-  kernel_trace_t *kernel_info = new kernel_trace_t;
-  kernel_info->ifs = new std::ifstream;
-  std::ifstream *ifs = kernel_info->ifs;
-  ifs->open(kerneltraces_filepath.c_str());
-
-  if (!ifs->is_open()) {
-    std::cout << "Unable to open file: " << kerneltraces_filepath << std::endl;
-    exit(1);
-  }
-
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
+  kernel_trace_t *kernel_info = new kernel_trace_t(kerneltraces_filepath);
+  kernel_info->enable_lineinfo = 0;  // default disabled
 
   std::string line;
-
-  while (!ifs->eof()) {
-    getline(*ifs, line);
-
+  while (kernel_info->pipeReader.readLine(line)) {
     if (line.length() == 0) {
       continue;
     } else if (line[0] == '#') {
@@ -318,11 +321,14 @@ kernel_trace_t *trace_parser::parse_kernel_info(
       } else if (string1 == "nregs") {
         sscanf(line.c_str(), "-nregs = %d", &kernel_info->nregs);
       } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %lu",
+        sscanf(line.c_str(), "-cuda stream id = %llu",
                &kernel_info->cuda_stream_id);
       } else if (string1 == "binary" && string2 == "version") {
         sscanf(line.c_str(), "-binary version = %d",
                &kernel_info->binary_verion);
+      } else if (string1 == "enable" && string2 == "lineinfo") {
+        sscanf(line.c_str(), "-enable lineinfo = %d",
+               &kernel_info->enable_lineinfo);
       } else if (string1 == "nvbit" && string2 == "version") {
         const size_t equal_idx = line.find('=');
         kernel_info->nvbit_verion = line.substr(equal_idx + 1);
@@ -352,15 +358,18 @@ kernel_trace_t *trace_parser::parse_kernel_info(
 
 void trace_parser::kernel_finalizer(kernel_trace_t *trace_info) {
   assert(trace_info);
-  assert(trace_info->ifs);
-  if (trace_info->ifs->is_open()) trace_info->ifs->close();
-  delete trace_info->ifs;
+
+  // The pipe read/write end file descriptors held by the child process would
+  // have been automatically closed when it terminated. But the parent
+  // process may read an arbitrary amount of trace files, so it has to close
+  // all file descriptors.
   delete trace_info;
 }
 
 void trace_parser::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces,
-    unsigned trace_version, std::ifstream *ifs) {
+    unsigned trace_version, unsigned enable_lineinfo,
+    class PipeReader &pipeReader) {
   for (unsigned i = 0; i < threadblock_traces.size(); ++i) {
     threadblock_traces[i]->clear();
   }
@@ -371,13 +380,10 @@ void trace_parser::get_next_threadblock_traces(
   unsigned warp_id = 0;
   unsigned insts_num = 0;
   unsigned inst_count = 0;
-
-  while (!ifs->eof()) {
-    std::string line;
+  std::string line;
+  while (pipeReader.readLine(line)) {
     std::stringstream ss;
     std::string string1, string2;
-
-    getline(*ifs, line);
 
     if (line.length() == 0) {
       continue;
@@ -413,9 +419,75 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version);
+            .parse_from_string(line, trace_version, enable_lineinfo);
         inst_count++;
       }
     }
   }
+}
+
+PipeReader::PipeReader(const std::string &filePath) { OpenFile(filePath); }
+
+void PipeReader::OpenFile(const std::string &filePath) {
+  if (hasEnding(filePath, ".xz")) {
+    // Use xz command to decompress .xz files
+    command = "xz -dc " + filePath;
+  } else if (hasEnding(filePath, ".traceg")) {
+    // Use cat command for regular trace files
+    command = "cat " + filePath;
+  } else {
+    throw std::runtime_error("Unsupported file type!");
+  }
+
+  // Open the pipe
+  pipe = popen(command.c_str(), "r");
+  if (!pipe) {
+    throw std::runtime_error("Failed to open pipe!");
+  }
+}
+
+bool PipeReader::readLine(std::string &line) {
+  char *buffer = nullptr;
+  size_t len = 0;
+  ssize_t nread;
+
+  // Use getline() to read from the pipe
+  if ((nread = getline(&buffer, &len, pipe)) != -1) {
+    line.assign(buffer, nread);  // Assign the read line to the std::string
+    assert(line.back() == '\n');
+    line.pop_back();  // Remove the newline character
+    free(buffer);     // Free the buffer allocated by getline
+    return true;
+  }
+
+  free(buffer);  // Free the buffer if getline failed or reached EOF
+  return false;  // End of pipe or error
+}
+
+// Helper function to check if a string ends with a specific suffix (file
+// extension)
+bool PipeReader::hasEnding(const std::string &fullString,
+                           const std::string &ending) {
+  if (fullString.length() >= ending.length()) {
+    return (0 == fullString.compare(fullString.length() - ending.length(),
+                                    ending.length(), ending));
+  }
+  return false;
+}
+
+PipeReader::PipeReader(PipeReader &&other) noexcept
+    : pipe(other.pipe), command(other.command) {
+  other.pipe = NULL;
+  other.command = {};
+}
+
+PipeReader &PipeReader::operator=(PipeReader &&other) noexcept {
+  if (this != &other) {
+    pipe = other.pipe;
+    command = other.command;
+
+    other.pipe = NULL;
+    other.command = {};
+  }
+  return *this;
 }
