@@ -116,13 +116,13 @@ cp $ACCELSIM_ROOT/../util/accelwattch/accelwattch_benchmarks/data_dirs/dct8x8/da
 for run in {1..5}
 do
     while IFS= read -r bm
-    do  
+    do
         bm_name="${bm}_r"
         echo "Starting profiling of ${bm} "
         mkdir -p $SCRIPT_DIR/validation_power_reports/$bm
         ${!bm_name} >> $SCRIPT_DIR/validation_profile_output/$bm_output.txt &
         $PROFILER -t $temp -r $rate -n $samples -d $DEVID -o $SCRIPT_DIR/validation_power_reports/$bm/run_$run.rpt >> $SCRIPT_DIR/validation_profile_output/$bm.txt
-        
+
         if [ $bm == "cutlass_k1" ] || [ $bm == "cutlass_k2" ] || [ $bm == "cutlass_k3" ]; then
             pid=`nvidia-smi | grep "cutlass_perf_test" | awk '{ print $5 }'`
         else
@@ -130,7 +130,7 @@ do
         fi
         echo "Profiling concluded. Killing $bm with pid: $pid"
         kill -9 $pid
-        
+
         if cat $SCRIPT_DIR/validation_profile_output/$bm.txt | grep -q "WARNING: TEMPERATURE CUTTOFF NOT REACHED"; then
             echo "Heating up the GPU to >65C and rerunning kernel..."
             $BINDIR/backprop_k1 65536 &
@@ -147,7 +147,7 @@ do
             echo "Profiling concluded. Killing $bm with pid: $pid"
             kill -9 $pid
         fi
-        
+
         echo "Sleeping..."
         sleep $sleep_time
     done < $BENCH_FILE

@@ -13,7 +13,8 @@ import re
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 import sys
-sys.path.insert(0,os.path.join(this_directory,"..","job_launching"))
+
+sys.path.insert(0, os.path.join(this_directory, "..", "job_launching"))
 import common
 
 import numpy as np  # (*) numpy for math functions and arrays
@@ -25,10 +26,10 @@ def get_csv_data(filepath):
     apps = []
     data = {}
     any_data = False
-    with open(filepath, 'r') as data_file:
-        reader = csv.reader(data_file)        # define reader object
+    with open(filepath, "r") as data_file:
+        reader = csv.reader(data_file)  # define reader object
         state = "start"
-        for row in reader:                    # loop through rows in csv file
+        for row in reader:  # loop through rows in csv file
             if len(row) != 0 and row[0].startswith("----"):
                 state = "find-stat"
                 continue
@@ -43,7 +44,7 @@ def get_csv_data(filepath):
             if state == "process-cfgs":
                 if len(row) == 0:
                     if any_data:
-                        all_stats[current_stat] = apps,data
+                        all_stats[current_stat] = apps, data
                     apps = []
                     data = {}
                     state = "start"
@@ -60,43 +61,68 @@ def get_csv_data(filepath):
 
     return all_stats
 
+
 parser = OptionParser()
 parser = OptionParser()
-parser.add_option("-n", "--basename", dest="basename",
-                  help="Basename for plot generation",
-                  default="gpgpu-sim")
-parser.add_option("-c", "--csv_file", dest="csv_file",
-                  help="File to parse",
-                  default="")
-parser.add_option("-p", "--publish_path", dest="publish_path",
-                  help="After the htmls are generated - they will get published here."+\
-                  " Assumes you can scp to this directory.",
-                  default="")
-parser.add_option("-w", "--publish_web", dest="publish_web",
-                  help="After the htmls are generated - they will get published here."+\
-                  " Assumes you can scp to this directory.",
-                  default="")
-parser.add_option("-P", "--plotname", dest="plotname",
-                  help="String appended to the filenames",
-                  default="")
+parser.add_option(
+    "-n",
+    "--basename",
+    dest="basename",
+    help="Basename for plot generation",
+    default="gpgpu-sim",
+)
+parser.add_option("-c", "--csv_file", dest="csv_file", help="File to parse", default="")
+parser.add_option(
+    "-p",
+    "--publish_path",
+    dest="publish_path",
+    help="After the htmls are generated - they will get published here."
+    + " Assumes you can scp to this directory.",
+    default="",
+)
+parser.add_option(
+    "-w",
+    "--publish_web",
+    dest="publish_web",
+    help="After the htmls are generated - they will get published here."
+    + " Assumes you can scp to this directory.",
+    default="",
+)
+parser.add_option(
+    "-P",
+    "--plotname",
+    dest="plotname",
+    help="String appended to the filenames",
+    default="",
+)
 (options, args) = parser.parse_args()
-options.csv_file = common.file_option_test( options.csv_file, "", this_directory )
+options.csv_file = common.file_option_test(options.csv_file, "", this_directory)
 
 all_stats = get_csv_data(options.csv_file)
 
-colors= ['#0F8C79','#BD2D28','#E3BA22','#E6842A','#137B80','#8E6C8A','#9A3E25', '#E6842A']
+colors = [
+    "#0F8C79",
+    "#BD2D28",
+    "#E3BA22",
+    "#E6842A",
+    "#137B80",
+    "#8E6C8A",
+    "#9A3E25",
+    "#E6842A",
+]
 stat_count = 0
-for stat,value in all_stats.items():
+for stat, value in all_stats.items():
     traces = []
     cfg_count = 0
     apps, data = value
-    for k,v in data.items():
-        traces.append(Bar(
-            x= apps,
-            y= v,
-            name=k,
-            marker=Marker(color=colors[cfg_count % len(colors)]),
-            xaxis='x1',
+    for k, v in data.items():
+        traces.append(
+            Bar(
+                x=apps,
+                y=v,
+                name=k,
+                marker=Marker(color=colors[cfg_count % len(colors)]),
+                xaxis="x1",
             )
         )
         cfg_count += 1
@@ -104,21 +130,23 @@ for stat,value in all_stats.items():
     data = Data(traces)
     layout = Layout(
         title=stat,
-        barmode='group',
+        barmode="group",
         bargroupgap=0,
         bargap=0.25,
         showlegend=True,
         yaxis=YAxis(
             title=stat,
-        )
+        ),
     )
     fig = Figure(data=data, layout=layout)
-    figure_name = re.sub('[^0-9a-zA-Z]+','_',stat) + "_" + options.plotname
+    figure_name = re.sub("[^0-9a-zA-Z]+", "_", stat) + "_" + options.plotname
     print("plotting: " + figure_name)
-    outdir = (os.path.join(this_directory,"htmls"))
-    if not os.path.exists( outdir ):
+    outdir = os.path.join(this_directory, "htmls")
+    if not os.path.exists(outdir):
         os.makedirs(outdir)
-    plotly.offline.plot(fig, filename=os.path.join(outdir,figure_name + ".html"),auto_open=False)
+    plotly.offline.plot(
+        fig, filename=os.path.join(outdir, figure_name + ".html"), auto_open=False
+    )
     stat_count += 1
 
 

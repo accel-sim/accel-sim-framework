@@ -3,6 +3,6 @@ SRC = deviceQuery.cpp
 
 EXE = deviceQuery
 
-NVCC_FLGAS = 
+NVCC_FLGAS =
 
 include ../../../common/common.mk
