@@ -569,8 +569,8 @@ def main():
         with open(exec_file, "w+") as f:
             f.write(contents)
 
-        job.outF = re.sub("\%j", str(job.id), job.outF)
-        job.errF = re.sub("\%j", str(job.id), job.errF)
+        job.outF = re.sub(r"\%j", str(job.id), job.outF)
+        job.errF = re.sub(r"\%j", str(job.id), job.errF)
         procMan.saveState()
         print(job.id)
     else:
