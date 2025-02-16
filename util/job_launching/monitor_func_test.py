@@ -27,7 +27,7 @@ def kill_all_running_jobs(jobstatus_out_filename):
         if jobStatusCol == None:
             jobStatusCol = getColId("(.*)JobStatus.*", line)
             torqueJobCol = getColId("(.*)TorqueJob.*", line)
-            appCol = getColId("(.*)App\s+.*", line)
+            appCol = getColId(r"(.*)App\s+.*", line)
             appArgsCol = getColId("(.*)AppArgs.*", line)
             nodeCol = getColId("(.*)Node.*", line)
         else:

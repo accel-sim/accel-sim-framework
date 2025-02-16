@@ -72,19 +72,19 @@ def get_qstat_status(jobId):
         # Parse the torque output for just the numeric ID
         trace_out_file.seek(0)
         trace_out = re.sub("\n", " ", trace_out_file.read().strip())
-        state_match = re.search("job_state\s=\s([^\s]*)", trace_out)
+        state_match = re.search(r"job_state\s=\s([^\s]*)", trace_out)
         if state_match != None:
             if state_match.group(1) == "R" or state_match.group(1) == "E":
                 job_status["state"] = "RUNNING"
             elif state_match.group(1) == "C":
                 job_status["state"] = "COMPLETE_NO_OTHER_INFO"
-            host_match = re.search("exec_host\s=\s([^\s]*)", trace_out)
+            host_match = re.search(r"exec_host\s=\s([^\s]*)", trace_out)
             if host_match != None:
                 job_status["exec_host"] = host_match.group(1)
-            mem_used = re.search("resources_used.mem\s=\s([^\s]*)kb", trace_out)
+            mem_used = re.search(r"resources_used.mem\s=\s([^\s]*)kb", trace_out)
             if mem_used != None:
                 job_status["mem_used"] = float(mem_used.group(1)) * 1024
-            time_match = re.search("resources_used.walltime\s=\s([^\s]*)", trace_out)
+            time_match = re.search(r"resources_used.walltime\s=\s([^\s]*)", trace_out)
             if time_match != None:
                 job_status["running_time"] = time_match.group(1)
         trace_out_file.close()
@@ -370,11 +370,11 @@ status_strings = {
 
 # Also searches the output files for these stats and prints them in the log
 stats_to_pull = {
-    "SIM_TIME": "gpgpu_simulation_time\s*=[^1-9]*(.*)",
-    "TOT_INSN": "gpu_tot_sim_insn\s*=\s*(.*)",
-    "TOT_IPC": "gpu_tot_ipc\s*=\s*(.*)",
-    "TOT_CYCLE": "gpu_tot_sim_cycle\s*=\s*(.*)",
-    "SIMRATE_IPS": "gpgpu_simulation_rate\s*=\s*(.*)\s*\(inst/sec\)",
+    "SIM_TIME": r"gpgpu_simulation_time\s*=[^1-9]*(.*)",
+    "TOT_INSN": r"gpu_tot_sim_insn\s*=\s*(.*)",
+    "TOT_IPC": r"gpu_tot_ipc\s*=\s*(.*)",
+    "TOT_CYCLE": r"gpu_tot_sim_cycle\s*=\s*(.*)",
+    "SIMRATE_IPS": r"gpgpu_simulation_rate\s*=\s*(.*)\s*\(inst/sec\)",
 }
 
 ROW_STRING = (
