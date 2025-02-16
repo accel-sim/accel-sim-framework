@@ -1,11 +1,11 @@
 // developed by Mahmoud Khairy, Purdue Univ
 
 #include <assert.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#include <stdint.h>
 #ifndef TRACE_PARSER_H
 #define TRACE_PARSER_H
 
