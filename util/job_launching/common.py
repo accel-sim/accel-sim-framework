@@ -239,7 +239,7 @@ def parse_run_simulations_options():
         dest="configs_list",
         help="a comma seperated list of configs to run. See configs/define-*.yml for "
         + "the config names.",
-        default="GTX480",
+        default="QV100",
     )
     parser.add_option(
         "-p",
