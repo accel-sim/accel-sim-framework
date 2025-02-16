@@ -31,8 +31,8 @@ export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 #   Different branches of Accel-Sim should have different values here
 #   For development, we use our internal repo and the dev branch
 #       Ideally, when we release, it should be based off a GPGPU-Sim release.
-export GPGPUSIM_REPO="${GPGPUSIM_REPO:=https://github.com/gpgpu-sim/gpgpu-sim_distribution.git}"
-export GPGPUSIM_BRANCH="${GPGPUSIM_BRANCH:=v4.2.1}"
+export GPGPUSIM_REPO="${GPGPUSIM_REPO:=https://github.com/accel-sim/gpgpu-sim_distribution.git}"
+export GPGPUSIM_BRANCH="${GPGPUSIM_BRANCH:=dev}"
 
 if [ $# = '1' ] ;
 then
