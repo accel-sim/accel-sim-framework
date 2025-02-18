@@ -147,7 +147,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
     if (verbose) {
       printf("Inspecting function %s at address 0x%lx\n",
-             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(f), true);
+             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx,f), true);
     }
 
     uint32_t cnt = 0;
