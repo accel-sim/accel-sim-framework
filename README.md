@@ -23,7 +23,7 @@ in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here](https://hub.docker.com/r/tgrogers/accel-sim_regress).
+A docker image that works with this repo can be found [here](https://github.com/accel-sim/Dockerfile.git).
 There is nothing special here, just Ubuntu 18.04 with the following commands
 run:
 
