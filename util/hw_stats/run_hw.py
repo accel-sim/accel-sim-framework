@@ -81,6 +81,7 @@ parser.add_option(
     "--nsight_profiler",
     dest="nsight_profiler",
     action="store_true",
+    default=True,
     help="use the new nsight cli profiler",
 )
 parser.add_option(
@@ -88,6 +89,7 @@ parser.add_option(
     "--disable_nvprof",
     dest="disable_nvprof",
     action="store_true",
+    default=True,
     help="do not use nvprof (decrecated in Turing+)",
 )
 parser.add_option(
