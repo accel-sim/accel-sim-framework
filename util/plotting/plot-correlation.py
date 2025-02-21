@@ -572,7 +572,7 @@ def get_sim_csv_data(filepath, logger):
 def parse_hw_csv_2(csv_file, hw_data, appargs, kdata, logger):
     cfg = None
 
-    with open(csv_file, "rU") as data_file:
+    with open(csv_file, "r") as data_file:
         logger.log("Parsing HW csv file {0}".format(csv_file))
         reader = csv.reader(data_file)  # define reader object
         state = "start"
@@ -622,7 +622,7 @@ def parse_hw_csv(csv_file, hw_data, appargs, kdata, logger):
     cfg = ""
     cfg_col = None
 
-    with open(csv_file, "rU") as data_file:
+    with open(csv_file, "r") as data_file:
         logger.log("Parsing HW csv file {0}".format(csv_file))
         reader = csv.reader(data_file)  # define reader object
         state = "start"
