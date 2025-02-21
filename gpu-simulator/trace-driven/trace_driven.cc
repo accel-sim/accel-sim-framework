@@ -534,8 +534,10 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
                                                     unsigned *pc,
                                                     unsigned *rpc) {
   // In trace-driven mode, we assume no control hazard
+ // if(pI){
   *pc = pI->pc;
   *rpc = pI->pc;
+  //}
 }
 
 const active_mask_t &trace_shader_core_ctx::get_active_mask(
@@ -625,9 +627,9 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
     inst.set_addr(t, (new_addr_type *)localaddrs, num_addrs);
   }
 
-  if (inst.op == EXIT_OPS) {
-    m_warp[inst.warp_id()]->set_completed(t);
-  }
+  //if (inst.op == EXIT_OPS) {
+  //  m_warp[inst.warp_id()]->set_completed(t);
+  //}
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
@@ -639,6 +641,7 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       // virtual function
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
+
   }
 
   // here, we generate memory acessess and set the status if thread (done?)
@@ -648,7 +651,11 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
 
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
-  if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
+  if (m_trace_warp->trace_done()) {
+     for(unsigned t = 0; t < m_warp_size; t++) 
+     {
+	 m_warp[inst.warp_id()]->set_completed(t);
+     }
     m_trace_warp->ibuffer_flush();
     m_barriers.warp_exit(inst.warp_id());
   }
