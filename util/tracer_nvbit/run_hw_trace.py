@@ -141,7 +141,7 @@ for bench in benchmarks:
             + '"; export CUDA_VISIBLE_DEVICES="'
             + options.device_num
             + '" ; '
-            + "export TRACES_FOLDER="
+            + "export USER_DEFINED_FOLDERS=1 ;export TRACES_FOLDER="
             + this_trace_folder
             + "; CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_tracer_path, "tracer_tool.so")

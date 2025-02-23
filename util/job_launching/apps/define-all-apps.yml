@@ -745,6 +745,14 @@ lonestargpu-2.0:
             - args: ./data/USA-road-d.FLA.sym.gr
             - args: ./data/2d-2e20.sym.gr
 
+mlperf_inf:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/mlperf_inference/"
+    data_dirs: ""
+    execs:
+        - inference_mlperf_bert_test.sh:
+            - args:
+              accel-sim-mem: 60G
+
 mlperf_inference:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: ""
