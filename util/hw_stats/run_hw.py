@@ -81,6 +81,7 @@ parser.add_option(
     "--nsight_profiler",
     dest="nsight_profiler",
     action="store_true",
+    default=True,
     help="use the new nsight cli profiler",
 )
 parser.add_option(
@@ -88,6 +89,7 @@ parser.add_option(
     "--disable_nvprof",
     dest="disable_nvprof",
     action="store_true",
+    default=True,
     help="do not use nvprof (decrecated in Turing+)",
 )
 parser.add_option(
@@ -123,18 +125,18 @@ if not options.disable_nvprof:
         ]
     ):
         exit(
-            "ERROR - Cannot find nv-nsight-cu-cli PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?"
+            "ERROR - Cannot find ncu PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?"
         )
 
 if options.nsight_profiler:
     if not any(
         [
-            os.path.isfile(os.path.join(p, "nv-nsight-cu-cli"))
+            os.path.isfile(os.path.join(p, "ncu"))
             for p in os.getenv("PATH").split(os.pathsep)
         ]
     ):
         exit(
-            "ERROR - Cannot find nv-nsight-cu-cli PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?"
+            "ERROR - Cannot find ncu PATH... Is CUDA_INSTALL_PATH/bin in the system PATH?"
         )
 
 common.load_defined_yamls()
@@ -218,7 +220,7 @@ for bench in benchmarks:
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 30m nv-nsight-cu-cli --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,'
+                    + '" ; timeout 30m ncu --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,'
                     + "sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum,"
                     + "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum,lts__t_sectors_srcunit_tex_op_read.sum,"
                     + "lts__t_sectors_srcunit_tex_op_write.sum,lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum,lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum,"
@@ -291,7 +293,7 @@ for bench in benchmarks:
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 5m nv-nsight-cu-cli --target-processes all --metrics gpc__cycles_elapsed.avg --csv '
+                    + '" ; timeout 5m ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv '
                     + exec_path
                     + " "
                     + str(args)

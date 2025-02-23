@@ -10,7 +10,7 @@ Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
 in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
 ```
 
-This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. The [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) introduces AccelWattch. Please look at our [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md) for detailed information on various AccelWattch components. For information on just running AccelWattch, please look at the [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/README.md#accelwattch-overview) section in this read-me.
+This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. The [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) introduces AccelWattch. Please look at our [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md) for detailed information on various AccelWattch components. For information on just running AccelWattch, please look at the [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/blob/release/README.md#accelwattch-overview) section in this read-me.
 If you use any component of AccelWattch, please cite:
 
 ```
@@ -23,14 +23,14 @@ in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here](https://hub.docker.com/repository/docker/accelsim/ubuntu-18.04_cuda-11).
+A docker image that works with this repo can be found [here](ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8).
 There is nothing special here, just Ubuntu 18.04 with the following commands
 run:
 
 ```bash
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
-      libxml2-dev vim python-setuptools python-dev build-essential python-pip
+      libxml2-dev vim python-setuptools build-essential python3-pip
 
 pip3 install pyyaml plotly psutil
 wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
@@ -55,7 +55,7 @@ the apps in from this collection as well as just on your own, with your own apps
 
 [GPU App Collection](https://github.com/accel-sim/gpu-app-collection)
 
-AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also included. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md).
+AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also included. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md).
 
 ## Accel-Sim Components
 
@@ -249,7 +249,7 @@ apt-get install gdb
 ```
 
 Don't want to install docker?
-Just use a linux ditro with the packages detailed in dependencies, set
+Just use a linux distro with the packages detailed in dependencies, set
 CUDA\_INSTALL\_PATH, the run ./travis.sh.
 
 
@@ -275,7 +275,7 @@ Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardw
 ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_PTX_SIM -N myTest
 ```
 
-4. **Hardware Power and Performance Profiler**: The AccelWattch hardware profiler scripts are located at `./util/accelwattch/accelwattch_hw_profiler/` in this repository. For more information on how to use them, please look at [this](https://github.com/accel-sim/accel-sim-framework/blob/release-accelwattch/AccelWattch.md#hardware-profiling-for-accelwattch-validation) section in our MICRO'21 Artifact Manual.
+4. **Hardware Power and Performance Profiler**: The AccelWattch hardware profiler scripts are located at `./util/accelwattch/accelwattch_hw_profiler/` in this repository. For more information on how to use them, please look at [this](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md#hardware-profiling-for-accelwattch-validation) section in our MICRO'21 Artifact Manual.
 
 5. **Microbenchmarks and Quadratic Optimization Solver**: The source code for the microbenchmarks used for AccelWattch dynamic power modeling are located [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch/src/cuda/accelwattch-ubench) and can be compiled by following the README [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch). The Quadratic Optimization Solver MATLAB script is located at `./util/accelwattch/quadprog_solver.m`.
 
