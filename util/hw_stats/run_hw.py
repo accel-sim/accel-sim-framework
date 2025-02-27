@@ -281,7 +281,7 @@ for bench in benchmarks:
                     + " "
                     + str(args)
                     + "; nsys stats -f csv --report gputrace "
-                    + os.path.join(this_run_dir, "out.qdrep")
+                    + os.path.join(this_run_dir, "out.nsys-rep")
                     + " | tee cycles.csv; python "
                     + os.path.join(this_directory, "postprocess-nsys-csv.py")
                     + " --path "
