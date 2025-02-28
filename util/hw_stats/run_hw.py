@@ -280,7 +280,7 @@ for bench in benchmarks:
                     + exec_path
                     + " "
                     + str(args)
-                    + "; nsys stats -f csv --report gputrace "
+                    + "; nsys stats -f csv --report cuda_gpu_trace "
                     + os.path.join(this_run_dir, "out.nsys-rep")
                     + " | tee cycles.csv; python "
                     + os.path.join(this_directory, "postprocess-nsys-csv.py")
