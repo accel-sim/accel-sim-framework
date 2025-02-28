@@ -178,8 +178,9 @@ class trace_simt_core_cluster : public simt_core_cluster {
                           const shader_core_config *config,
                           const memory_config *mem_config,
                           class shader_core_stats *stats,
-                          class memory_stats_t *mstats)
-      : simt_core_cluster(gpu, cluster_id, config, mem_config, stats, mstats) {
+                          class memory_stats_t *mstats,
+                          class gpgpu_new_stats *new_stats)
+      : simt_core_cluster(gpu, cluster_id, config, mem_config, stats, mstats, new_stats) {
     create_shader_core_ctx();
   }
 
@@ -192,9 +193,10 @@ class trace_shader_core_ctx : public shader_core_ctx {
                         unsigned shader_id, unsigned tpc_id,
                         const shader_core_config *config,
                         const memory_config *mem_config,
-                        shader_core_stats *stats)
+                        shader_core_stats *stats,
+                        class gpgpu_new_stats *new_stats)
       : shader_core_ctx(gpu, cluster, shader_id, tpc_id, config, mem_config,
-                        stats) {
+                        stats, new_stats) {
     create_front_pipeline();
     create_shd_warp();
     create_schedulers();
