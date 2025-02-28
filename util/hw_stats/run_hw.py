@@ -111,7 +111,7 @@ parser.add_option(
     "-C",
     "--collect",
     dest="collect",
-    default="cycles",
+    default="other_stats",
     help='Pass what you want from the hardware. Options are: "cycles,other_stats"',
 )
 
