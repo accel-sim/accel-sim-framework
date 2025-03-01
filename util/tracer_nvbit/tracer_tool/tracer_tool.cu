@@ -330,7 +330,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
     if (multi_process){
       std::string command = "ls -d " + trace_folder + "/run*/ 2>/dev/null | wc -l";
-
+      printf(command);
       FILE* pipe = popen(command.c_str(), "r");
       if (!pipe) {
           std::cerr << "Error: Failed to execute command.\n";
