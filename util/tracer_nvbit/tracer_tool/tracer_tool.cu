@@ -309,7 +309,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       trace_folder = std::getenv("TRACES_FOLDER");
     }
     
-    if (mkdir(traces_location, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
@@ -343,7 +343,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       trace_folder = trace_folder+"run"+dir_count;
     
     
-    if (mkdir(trace_folder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    if (mkdir(trace_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
