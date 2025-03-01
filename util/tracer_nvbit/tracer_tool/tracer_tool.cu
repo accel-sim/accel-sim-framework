@@ -54,8 +54,10 @@ int print_core_id = 0;
 int exclude_pred_off = 1;
 int active_from_start = 1;
 int lineinfo = 0;
+int multi_process = 0;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
+
 
 /* Should we terminate the program once we are done tracing? */
 int terminate_after_limit_number_of_kernels_reached = 0;
@@ -68,10 +70,10 @@ int xz_compress_trace = 0;
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
-std::string cwd = getcwd(NULL, 0);
-std::string traces_location = cwd + "/traces/";
-std::string kernelslist_location = cwd + "/traces/kernelslist";
-std::string stats_location = cwd + "/traces/stats.csv";
+std::string trace_folder = getcwd(NULL, 0);
+std::string traces_location = trace_folder + "/traces/";
+std::string kernelslist_location = trace_folder + "/traces/kernelslist";
+std::string stats_location = trace_folder + "/traces/stats.csv";
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
@@ -116,6 +118,8 @@ void nvbit_at_init() {
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
+  GET_VAR_INT(multi_process, "TRACE_MULTI_PROCESS", 0,
+              "write trace of each process in seperate dir");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -301,8 +305,11 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
   if (first_call == true) {
     first_call = false;
-
-    if (mkdir("traces", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    if (user_defined_folders == 1) {
+      trace_folder = std::getenv("TRACES_FOLDER");
+    }
+    
+    if (mkdir(traces_location, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
@@ -321,11 +328,38 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    if (user_defined_folders == 1) {
-      std::string usr_folder = std::getenv("TRACES_FOLDER");
-      std::string temp_traces_location = usr_folder;
-      std::string temp_kernelslist_location = usr_folder + "/kernelslist";
-      std::string temp_stats_location = usr_folder + "/stats.csv";
+    if (multi_process){
+      std::string command = "ls -d " + trace_folder + "/run*/ 2>/dev/null | wc -l";
+
+      FILE* pipe = popen(command.c_str(), "r");
+      if (!pipe) {
+          std::cerr << "Error: Failed to execute command.\n";
+          return 1;
+      }
+  
+      int dir_count = 0;
+      fscanf(pipe, "%d", &dir_count); // Read the count
+      pclose(pipe);
+      trace_folder = trace_folder+"run"+dir_count;
+    
+    
+    if (mkdir(trace_folder, S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+      if (errno == EEXIST) {
+        // alredy exists
+      } else {
+        // something else
+        std::cout << "cannot create folder error:" << strerror(errno)
+                  << std::endl;
+        return;
+      }
+    }
+
+    }
+
+
+      std::string temp_traces_location = trace_folder;
+      std::string temp_kernelslist_location = trace_folder + "/kernelslist";
+      std::string temp_stats_location = trace_folder + "/stats.csv";
       traces_location.resize(temp_traces_location.size());
       kernelslist_location.resize(temp_kernelslist_location.size());
       stats_location.resize(temp_stats_location.size());
@@ -339,7 +373,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       printf("\n Traces location is %s \n", traces_location.c_str());
       printf("Kernelslist location is %s \n", kernelslist_location.c_str());
       printf("Stats location is %s \n", stats_location.c_str());
-    }
+    
 
     kernelsFile = fopen(kernelslist_location.c_str(), "w");
     statsFile = fopen(stats_location.c_str(), "w");
