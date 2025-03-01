@@ -334,13 +334,13 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       FILE* pipe = popen(command.c_str(), "r");
       if (!pipe) {
           std::cerr << "Error: Failed to execute command.\n";
-          return 1;
+          return ;
       }
   
       int dir_count = 0;
       fscanf(pipe, "%d", &dir_count); // Read the count
       pclose(pipe);
-      trace_folder = trace_folder+"run"+dir_count;
+      trace_folder = trace_folder+string("run")+string(dir_count);
     
     
     if (mkdir(trace_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
