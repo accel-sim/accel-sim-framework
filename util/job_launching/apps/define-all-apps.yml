@@ -514,6 +514,39 @@ polybench:
             - args:
               accel-sim-mem: 8G
 
+cutlass_volta:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_07_volta_tensorop_gemm:
+            - args:
+              accel-sim-mem: 13G
+
+cutlass_ampere:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_14_ampere_tf32_tensorop_gemm:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_15_ampere_sparse_tensorop_gemm:
+            - args:
+              accel-sim-mem: 13G
+
+cutlass_hopper:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_50_hopper_gemm_with_epilogue_swizzle:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_48_hopper_warp_specialized_gemm:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_54_hopper_fp8_warp_specialized_gemm:
+            - args:
+              accel-sim-mem: 13G
+
 cutlass:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
@@ -522,6 +555,19 @@ cutlass:
             #single precision gemm kernels
             - args: --seed=2020 --dist=0  --m=2560 --n=16 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
               accel-sim-mem: 13G
+        - cutlass_05_batched_gemm:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_41_fused_multi_head_attention_backward:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_41_fused_multi_head_attention_fixed_seqlen:
+            - args:
+              accel-sim-mem: 13G
+        - cutlass_41_fused_multi_head_attention_variable_seqlen:
+            - args:
+              accel-sim-mem: 13G
+
             # - args: --seed=2020 --dist=0  --m=2560 --n=32 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
             #   accel-sim-mem: 13G
             # - args: --seed=2020 --dist=0  --m=2560 --n=64 --k=2560 --kernels=sgemm  --iterations=5 --providers=cutlass
@@ -745,6 +791,14 @@ lonestargpu-2.0:
             - args: ./data/USA-road-d.FLA.sym.gr
             - args: ./data/2d-2e20.sym.gr
 
+mlperf_inf:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/mlperf_inference/"
+    data_dirs: ""
+    execs:
+        - inference_mlperf_bert_test.sh:
+            - args:
+              accel-sim-mem: 60G
+
 mlperf_inference:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: ""
@@ -790,3 +844,14 @@ mlperf_inference_no_external_datasets:
         - inference_mlperf_ssd:
             - args:
               accel-sim-mem: 60G
+
+pytorch_examples:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - inference_mnist:
+            - args:
+              accel-sim-mem: 60G
+      # - inference_vae:
+      #     - args:
+      #       accel-sim-mem: 10G

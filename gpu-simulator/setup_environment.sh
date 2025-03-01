@@ -1,5 +1,5 @@
 #!/bin/bash
-# Copyright (c) 2020 Timothy Rogers, Purdue University
+# Copyright (c) 2025 Timothy Rogers, Purdue University
 # All rights reserved.
 #
 # Redistribution and use in source and binary forms, with or without
@@ -33,6 +33,18 @@ export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
 #       Ideally, when we release, it should be based off a GPGPU-Sim release.
 export GPGPUSIM_REPO="${GPGPUSIM_REPO:=https://github.com/accel-sim/gpgpu-sim_distribution.git}"
 export GPGPUSIM_BRANCH="${GPGPUSIM_BRANCH:=dev}"
+
+# Help the user out by setting the default CUDA_INSTALL_PATH, if it is not already set
+if [ -z "$CUDA_INSTALL_PATH" ]; then
+    DEFAULT_CUDA_PATH="/usr/local/cuda"
+    if [ ! -d "$DEFAULT_CUDA_PATH" ]; then
+        echo "Error: Default CUDA installation directory ($DEFAULT_CUDA_PATH) does not exist."
+        echo "Please set CUDA_INSTALL_PATH to your CUDA installation directory."
+        return 1
+    fi
+    echo "CUDA_INSTALL_PATH is not set, setting it to $DEFAULT_CUDA_PATH"
+    export CUDA_INSTALL_PATH=$DEFAULT_CUDA_PATH
+fi
 
 if [ $# = '1' ] ;
 then
