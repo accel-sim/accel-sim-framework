@@ -322,16 +322,16 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     png_layout.title = None
     #    for anno in png_layout.annotations:
     #        anno.font= Font(size=22,color='black')
-    png_layout.xaxis.titlefont.size = TEXT_SIZE
-    png_layout.xaxis.titlefont.color = "black"
+    png_layout.xaxis.title.font.size = TEXT_SIZE
+    png_layout.xaxis.title.font.color = "black"
     png_layout.xaxis.tickfont.size = 15
     png_layout.xaxis.tickfont.color = "black"
     png_layout.xaxis.type = correlmap.plottype
     png_layout.xaxis.autorange = True
 
-    png_layout.yaxis.titlefont.size = TEXT_SIZE
+    png_layout.yaxis.title.font.size = TEXT_SIZE
     png_layout.yaxis.tickfont.size = 15
-    png_layout.yaxis.titlefont.color = "black"
+    png_layout.yaxis.title.font.color = "black"
     png_layout.yaxis.tickfont.color = "black"
     png_layout.yaxis.type = correlmap.plottype
     png_layout.yaxis.autorange = True
@@ -401,16 +401,16 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
     )
 
     app_layout.title = None
-    app_layout.xaxis.titlefont.size = TEXT_SIZE
-    app_layout.xaxis.titlefont.color = "black"
+    app_layout.xaxis.title.font.size = TEXT_SIZE
+    app_layout.xaxis.title.font.color = "black"
     app_layout.xaxis.tickfont.size = 15
     app_layout.xaxis.tickfont.color = "black"
     app_layout.xaxis.type = correlmap.plottype
     #    app_layout.xaxis.autorange=True
 
-    app_layout.yaxis.titlefont.size = TEXT_SIZE
+    app_layout.yaxis.title.font.size = TEXT_SIZE
     app_layout.yaxis.tickfont.size = 15
-    app_layout.yaxis.titlefont.color = "black"
+    app_layout.yaxis.title.font.color = "black"
     app_layout.yaxis.tickfont.color = "black"
     app_layout.yaxis.type = correlmap.plottype
     #    app_layout.yaxis.autorange=True
