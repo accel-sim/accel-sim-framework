@@ -350,8 +350,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
     }
 
-    std::string kernelslist_location = traces_location + "/kernelslist";
-    std::string kernelslist_location = traces_location + "/stats.csv";
+    kernelslist_location = traces_location + "/kernelslist";
+    stats_location = traces_location + "/stats.csv";
     printf("\nTraces location is %s \n", traces_location.c_str());
     printf("Kernelslist location is %s \n", kernelslist_location.c_str());
     printf("Stats location is %s \n", stats_location.c_str());
