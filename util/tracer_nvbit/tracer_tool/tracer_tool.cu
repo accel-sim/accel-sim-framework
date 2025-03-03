@@ -112,14 +112,9 @@ void nvbit_at_init() {
   GET_VAR_INT(
       terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT",
       0, "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
-  GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0,
-              "Uses the user defined "
-              "folder TRACES_FOLDER path environment");
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
-  GET_VAR_INT(multi_process, "TRACE_MULTI_PROCESS", 0,
-              "write trace of each process in seperate dir");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -305,9 +300,9 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
   if (first_call == true) {
     first_call = false;
-    if (user_defined_folders == 1) {
-      trace_folder = std::getenv("TRACES_FOLDER");
-    }
+    if(std::getenv("TRACES_FOLDER") != NULL)
+      traces_location = std::getenv("TRACES_FOLDER");
+    
     
     if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
@@ -328,47 +323,35 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    if (multi_process){
-        std::string command = "ls -d " + trace_folder + "/run*/ 2>/dev/null | wc -l";
-        FILE* pipe = popen(command.c_str(), "r");
-        if (!pipe) {
-            std::cerr << "Error: Failed to execute command.\n";
-            return ;
-        }
     
-        int dir_count = 0;
-        fscanf(pipe, "%d", &dir_count); // Read the count
-        pclose(pipe);
-        trace_folder += "/run" + std::to_string(dir_count);
-      
-      
-      if (mkdir(trace_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
-        if (errno == EEXIST) {
-          // alredy exists
-        } else {
-          // something else
-          std::cout << "cannot create folder error:" << strerror(errno)
-                    << std::endl;
-          return;
-        }
+      std::string command = "ls -d " + traces_location + "/run*/ 2>/dev/null | wc -l";
+      FILE* pipe = popen(command.c_str(), "r");
+      if (!pipe) {
+          std::cerr << "Error: Failed to execute command.\n";
+          return ;
       }
+  
+      int dir_count = 0;
+      fscanf(pipe, "%d", &dir_count); // Read the count
+      pclose(pipe);
+      traces_location += "/run" + std::to_string(dir_count);
+    
+    
+    if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+      if (errno == EEXIST) {
+        // alredy exists
+      } else {
+        // something else
+        std::cout << "cannot create folder error:" << strerror(errno)
+                  << std::endl;
+        return;
+      }
+      
 
     }
 
-
-    std::string temp_traces_location = trace_folder;
-    std::string temp_kernelslist_location = trace_folder + "/kernelslist";
-    std::string temp_stats_location = trace_folder + "/stats.csv";
-    traces_location.resize(temp_traces_location.size());
-    kernelslist_location.resize(temp_kernelslist_location.size());
-    stats_location.resize(temp_stats_location.size());
-    traces_location.replace(traces_location.begin(), traces_location.end(),
-                            temp_traces_location);
-    kernelslist_location.replace(kernelslist_location.begin(),
-                                  kernelslist_location.end(),
-                                  temp_kernelslist_location);
-    stats_location.replace(stats_location.begin(), stats_location.end(),
-                            temp_stats_location);
+    std::string kernelslist_location = traces_location + "/kernelslist";
+    std::string kernelslist_location = traces_location + "/stats.csv";
     printf("\nTraces location is %s \n", traces_location.c_str());
     printf("Kernelslist location is %s \n", kernelslist_location.c_str());
     printf("Stats location is %s \n", stats_location.c_str());
