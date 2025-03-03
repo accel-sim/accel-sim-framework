@@ -54,7 +54,6 @@ int print_core_id = 0;
 int exclude_pred_off = 1;
 int active_from_start = 1;
 int lineinfo = 0;
-int multi_process = 0;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
