@@ -60,7 +60,7 @@ bool active_region = true;
 
 /* Should we terminate the program once we are done tracing? */
 int terminate_after_limit_number_of_kernels_reached = 0;
-int user_defined_folders = 0;
+std::string user_defined_folders = "";
 
 /* Use xz to compress the *.trace file */
 int xz_compress_trace = 0;
@@ -114,6 +114,9 @@ void nvbit_at_init() {
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
+  GET_VAR_STR(user_defined_folders, "TRACES_FOLDER",  
+  "Stores traces in TRACES_FOLDER; defaults to cwd if unset.")  
+            
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -299,8 +302,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
   if (first_call == true) {
     first_call = false;
-    if(std::getenv("TRACES_FOLDER") != NULL)
-      traces_location = std::getenv("TRACES_FOLDER");
+    if(!user_defined_folders.empty())
+      traces_location = user_defined_folders;
     
     
     if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
