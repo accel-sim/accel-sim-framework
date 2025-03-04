@@ -57,9 +57,10 @@ int lineinfo = 0;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
+
 /* Should we terminate the program once we are done tracing? */
 int terminate_after_limit_number_of_kernels_reached = 0;
-int user_defined_folders = 0;
+std::string user_defined_folders = "";
 
 /* Use xz to compress the *.trace file */
 int xz_compress_trace = 0;
@@ -68,10 +69,10 @@ int xz_compress_trace = 0;
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
-std::string cwd = getcwd(NULL, 0);
-std::string traces_location = cwd + "/traces/";
-std::string kernelslist_location = cwd + "/traces/kernelslist";
-std::string stats_location = cwd + "/traces/stats.csv";
+std::string trace_folder = getcwd(NULL, 0);
+std::string traces_location = trace_folder + "/traces/";
+std::string kernelslist_location = trace_folder + "/traces/kernelslist";
+std::string stats_location = trace_folder + "/traces/stats.csv";
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
@@ -110,12 +111,12 @@ void nvbit_at_init() {
   GET_VAR_INT(
       terminate_after_limit_number_of_kernels_reached, "TERMINATE_UPON_LIMIT",
       0, "Stop the process once the current kernel > DYNAMIC_KERNEL_LIMIT_END");
-  GET_VAR_INT(user_defined_folders, "USER_DEFINED_FOLDERS", 0,
-              "Uses the user defined "
-              "folder TRACES_FOLDER path environment");
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
+  GET_VAR_STR(user_defined_folders, "TRACES_FOLDER",  
+  "Stores traces in TRACES_FOLDER; defaults to cwd if unset.")  
+            
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -301,8 +302,11 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
   if (first_call == true) {
     first_call = false;
-
-    if (mkdir("traces", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    if(!user_defined_folders.empty())
+      traces_location = user_defined_folders;
+    
+    
+    if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
@@ -321,25 +325,40 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    if (user_defined_folders == 1) {
-      std::string usr_folder = std::getenv("TRACES_FOLDER");
-      std::string temp_traces_location = usr_folder;
-      std::string temp_kernelslist_location = usr_folder + "/kernelslist";
-      std::string temp_stats_location = usr_folder + "/stats.csv";
-      traces_location.resize(temp_traces_location.size());
-      kernelslist_location.resize(temp_kernelslist_location.size());
-      stats_location.resize(temp_stats_location.size());
-      traces_location.replace(traces_location.begin(), traces_location.end(),
-                              temp_traces_location);
-      kernelslist_location.replace(kernelslist_location.begin(),
-                                   kernelslist_location.end(),
-                                   temp_kernelslist_location);
-      stats_location.replace(stats_location.begin(), stats_location.end(),
-                             temp_stats_location);
-      printf("\n Traces location is %s \n", traces_location.c_str());
-      printf("Kernelslist location is %s \n", kernelslist_location.c_str());
-      printf("Stats location is %s \n", stats_location.c_str());
+      // This command will find the number of sub-dirs, we then create a new sub-dir by adding 1 to the
+      // existing number of sub dirs. i.e. "run-n"
+      std::string command = "ls -d " + traces_location + "/run*/ 2>/dev/null | wc -l";
+      FILE* pipe = popen(command.c_str(), "r");
+      if (!pipe) {
+          std::cerr << "Error: Failed to execute command.\n";
+          return ;
+      }
+  
+      int dir_count = 0;
+      fscanf(pipe, "%d", &dir_count); // Read the count
+      pclose(pipe);
+      traces_location += "/run-" + std::to_string(dir_count);
+    
+    
+    if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+      if (errno == EEXIST) {
+        // alredy exists
+      } else {
+        // something else
+        std::cout << "cannot create folder error:" << strerror(errno)
+                  << std::endl;
+        return;
+      }
+      
+
     }
+
+    kernelslist_location = traces_location + "/kernelslist";
+    stats_location = traces_location + "/stats.csv";
+    printf("\nTraces location is %s \n", traces_location.c_str());
+    printf("Kernelslist location is %s \n", kernelslist_location.c_str());
+    printf("Stats location is %s \n", stats_location.c_str());
+    
 
     kernelsFile = fopen(kernelslist_location.c_str(), "w");
     statsFile = fopen(stats_location.c_str(), "w");
