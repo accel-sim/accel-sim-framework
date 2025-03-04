@@ -325,7 +325,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    //this command to find the number of sub-dir and create a new sub-dir based on that
+      // This command will find the number of sub-dirs, we then create a new sub-dir by adding 1 to the
+      // existing number of sub dirs. i.e. "run-n"
       std::string command = "ls -d " + traces_location + "/run*/ 2>/dev/null | wc -l";
       FILE* pipe = popen(command.c_str(), "r");
       if (!pipe) {
