@@ -322,7 +322,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    
+    //this command to find the number of sub-dir and create a new sub-dir based on that
       std::string command = "ls -d " + traces_location + "/run*/ 2>/dev/null | wc -l";
       FILE* pipe = popen(command.c_str(), "r");
       if (!pipe) {
@@ -333,7 +333,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       int dir_count = 0;
       fscanf(pipe, "%d", &dir_count); // Read the count
       pclose(pipe);
-      traces_location += "/run" + std::to_string(dir_count);
+      traces_location += "/run-" + std::to_string(dir_count);
     
     
     if (mkdir(traces_location.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
