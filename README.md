@@ -41,23 +41,21 @@ in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here](ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8).
-There is nothing special here, just Ubuntu 18.04 with the following commands
-run:
+A docker image that works with this repo can be found [here](https://github.com/accel-sim/Dockerfile/pkgs/container/accel-sim-framework).
+The dockerfile used to build this image can be found [here](https://github.com/accel-sim/Dockerfile), which built on top of `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04`.
 
+To build on local machine, install the following packages with CUDA toolkit:
 ```bash
+# Assuming running on Ubuntu 24.04 and installing CUDA 12.8
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools build-essential python3-pip
 
 pip3 install pyyaml plotly psutil
-wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
-sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
-rm cuda_11.0.1_450.36.06_linux.run
+wget https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda_12.8.1_570.124.06_linux.run
+sh cuda_12.8.1_570.124.06_linux.run --silent --toolkit
+rm cuda_12.8.1_570.124.06_linux.run
 ```
-
-Note, that all the python scripts have more detailed options explanations when run with "--help"
-
 
 ## Overview
 
@@ -78,6 +76,8 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
 ## Accel-Sim Components
 
 ![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
+
+> Note, that all the python scripts in the following sections have more detailed options explanations when run with `--help`
 
 ### Accel-Sim Tracer
 
