@@ -133,7 +133,7 @@ make -j -C ./gpu-simulator/
 
 # Build with CMake
 cmake -S ./gpu-simulator/ -B ./gpu-simulator/build
-cmake --build ./gpu-simulator/build
+cmake --build ./gpu-simulator/build -j8
 cmake --install ./gpu-simulator/build
 ```
 
