@@ -361,19 +361,19 @@ rodinia-3.1:
         # Only works with newer versions of CUDA
 #        - huffman-rodinia-3.1:
 #            - args:  ./data/huffman/test1024_H2.206587175259.in
-        - hybridsort-rodinia-3.1:
-            - args:  r
-              accel-sim-mem: 5G
-            - args:  ./data/500000.txt
-              accel-sim-mem: 1G
+#        - hybridsort-rodinia-3.1:
+#            - args:  r
+#              accel-sim-mem: 5G
+#            - args:  ./data/500000.txt
+#              accel-sim-mem: 1G
         # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
-        - kmeans-rodinia-3.1:
-            - args:  -o -i ./data/28k_4x_features.txt
-              accel-sim-mem: 1G
-            - args:  -o -i ./data/kdd_cup
-              accel-sim-mem: 2G
-            - args:  -o -i ./data/819200.txt
-              accel-sim-mem: 2G
+#        - kmeans-rodinia-3.1:
+#            - args:  -o -i ./data/28k_4x_features.txt
+#              accel-sim-mem: 1G
+#            - args:  -o -i ./data/kdd_cup
+#              accel-sim-mem: 2G
+#            - args:  -o -i ./data/819200.txt
+#              accel-sim-mem: 2G
         - lavaMD-rodinia-3.1:
             - args:  -boxes1d 10
               accel-sim-mem: 32G
