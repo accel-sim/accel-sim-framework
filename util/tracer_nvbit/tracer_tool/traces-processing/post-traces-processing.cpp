@@ -93,7 +93,7 @@ int main(int argc, char **argv) {
   bool is_per_core;
   if (argc == 1) {
     cerr << "File path is missing\n";
-    return 0;
+    return 1;
   } else if (argc == 2) {
     kernellist_filepath = argv[1];
     is_per_core = true;
@@ -103,7 +103,7 @@ int main(int argc, char **argv) {
     is_per_core = bool(argv[2]);
   } else {
     cerr << "Too Many Arguemnts!\n";
-    return 0;
+    return 1;
   }
 
   ifstream ifs;
@@ -114,7 +114,7 @@ int main(int argc, char **argv) {
 
   if (!ifs.is_open()) {
     cerr << "Unable to open file: " << kernellist_filepath << endl;
-    return 0;
+    return 1;
   }
 
   string directory(kernellist_filepath);
@@ -143,7 +143,7 @@ int main(int argc, char **argv) {
       }
     } else {
       cerr << "Undefined command: " << line << endl;
-      return 0;
+      return 1;
     }
   }
 
