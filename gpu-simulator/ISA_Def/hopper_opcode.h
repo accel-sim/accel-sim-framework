@@ -13,7 +13,7 @@
 
 // TO DO: moving this to a yml or def files
 
-/// Ampere ISA
+/// Hopper ISA
 // see:https://docs.nvidia.com/cuda/cuda-binary-utilities/index.html#ampere
 static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     // Floating Point 32 Instructions
@@ -136,6 +136,13 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
     {"LDGDEPBAR", OpcodeChar(OP_LDGDEPBAR, ALU_OP)},
     {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)},
+
+    //Hopper specific instructions
+    {"VIADD", OpcodeChar(OP_IADD, INTP_OP)},
+    {"VIADDMNMX", OpcodeChar(OP_IADD, INTP_OP)},
+    {"VIMNMX", OpcodeChar(OP_IMNMX, SP_OP)},
+    {"VIMNMX3", OpcodeChar(OP_IMNMX, SP_OP)},
+    {"CGAERRBAR", OpcodeChar(OP_ERRBAR, ALU_OP)},
 
     // Uniform Datapath Instruction
     // UDP unit
