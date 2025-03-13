@@ -143,7 +143,7 @@ for bench in benchmarks:
             + '" ; '
             + "\nexport DYNAMIC_KERNEL_LIMIT_START=0; export DYNAMIC_KERNEL_LIMIT_END=0;\n"
             + "\nexport TRACES_FOLDER="
-            + this_trace_folder
+            + this_run_dir
             + "; CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_tracer_path, "tracer_tool.so")
             + " "
@@ -158,7 +158,7 @@ for bench in benchmarks:
                 nvbit_tracer_path, "traces-processing", "post-traces-processing"
             )
             + " "
-            + os.path.join(this_trace_folder, "kernelslist")
+            + this_trace_folder
             + " ; rm -f "
             + this_trace_folder
             + "/*.trace ; rm -f "
