@@ -119,7 +119,8 @@ int main(int argc, char **argv) {
   {
     for (const auto & entry : std::filesystem::directory_iterator(p))
     {
-      if (entry.path().filename().find("kernelslist") != std::string::npos)
+      std::string filename = entry.path().filename();
+      if (filename.find("kernelslist") != std::string::npos)
       {
         kernelslist_list.push_back(entry.path().string());
       }
@@ -136,20 +137,24 @@ int main(int argc, char **argv) {
   }
 
   for (auto kernellist_filepath : kernelslist_list){
-    ifs.open(kernellist_filepath.c_str());
-    ofs.open((string(kernellist_filepath) + ".g").c_str());
+    string directory(kernellist_filepath);
+    const size_t last_slash_idx = directory.rfind('/');
+    if (std::string::npos != last_slash_idx) {
+      directory = directory.substr(0, last_slash_idx);
+    }
 
+    ifs.open(kernellist_filepath.c_str());
+    // If we have only one context, name it kernelslist.g by default
+    if(kernelslist_list.size() == 1 || kernelslist_list[0] == kernellist_filepath)
+      ofs.open((string(directory)+"/kernelslist.g").c_str());
+    else
+      ofs.open((string(kernellist_filepath) + ".g").c_str());
 
     if (!ifs.is_open()) {
       cerr << "Unable to open file: " << kernellist_filepath << endl;
       return 1;
     }
 
-    string directory(kernellist_filepath);
-    const size_t last_slash_idx = directory.rfind('/');
-    if (std::string::npos != last_slash_idx) {
-      directory = directory.substr(0, last_slash_idx);
-    }
 
     string line;
     string filepath;
