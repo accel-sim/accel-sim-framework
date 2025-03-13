@@ -154,6 +154,13 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
       uint32_t line_num = 0;
+      // Temporary workaround for a bug in NVBit 1.7.4, which does not correctly handle `call.rel`.  
+      // Instrumenting this instruction leads to illegal memory access.  
+      // Refer to: https://github.com/NVlabs/NVBit/issues/142#issue-2911561744  
+      if(!strcmp(instr->getOpcode(), "CALL.REL.NOINC")){
+        printf("Warning: Ignoring CALL.REL.NOINC (NVBit 1.7.4 bug)\n");
+        continue;
+      } 
 
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
         cnt++;
