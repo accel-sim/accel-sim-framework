@@ -13,6 +13,8 @@
 #include <signal.h>
 #include <unistd.h>
 
+#include <filesystem>
+
 using namespace std;
 
 struct threadblock_info {
@@ -87,19 +89,21 @@ void group_per_core(const char *filepath);
 int preserved_stdin_fileno;
 int preserved_stdout_fileno;
 
+std::vector<std::string> kernelslist_list;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
   string kernellist_filepath;
+  string filepath;
   bool is_per_core;
   if (argc == 1) {
     cerr << "File path is missing\n";
     return 1;
   } else if (argc == 2) {
-    kernellist_filepath = argv[1];
+    filepath = argv[1];
     is_per_core = true;
 
   } else if (argc == 3) {
-    kernellist_filepath = argv[1];
+    filepath = argv[1];
     is_per_core = bool(argv[2]);
   } else {
     cerr << "Too Many Arguemnts!\n";
@@ -109,46 +113,71 @@ int main(int argc, char **argv) {
   ifstream ifs;
   ofstream ofs;
 
-  ifs.open(kernellist_filepath.c_str());
-  ofs.open((string(kernellist_filepath) + ".g").c_str());
-
-  if (!ifs.is_open()) {
-    cerr << "Unable to open file: " << kernellist_filepath << endl;
+  // We can now pass a directory or a file as the input argument 
+  std::filesystem::path p(filepath);
+  if (std::filesystem::is_directory(p))
+  {
+    for (const auto & entry : std::filesystem::directory_iterator(p))
+    {
+      if (entry.path().filename().find("kernelslist") != std::string::npos)
+      {
+        kernelslist_list.push_back(entry.path().string());
+      }
+    }
+  }
+  else if (std::filesystem::is_regular_file(p))
+  {
+    kernelslist_list.push_back(kernellist_filepath);
+  }
+  else
+  {
+    cerr << "Invalid file path\n";
     return 1;
   }
 
-  string directory(kernellist_filepath);
-  const size_t last_slash_idx = directory.rfind('/');
-  if (std::string::npos != last_slash_idx) {
-    directory = directory.substr(0, last_slash_idx);
-  }
+  for (auto kernellist_filepath : kernelslist_list){
+    ifs.open(kernellist_filepath.c_str());
+    ofs.open((string(kernellist_filepath) + ".g").c_str());
 
-  string line;
-  string filepath;
-  while (!ifs.eof()) {
-    getline(ifs, line);
-    if (line.empty())
-      continue;
-    else if (line.substr(0, 6) == "Memcpy") {
-      ofs << line << endl;
-    } else if (line.substr(0, 6) == "kernel") {
-      filepath = directory + "/" + line;
-      group_per_block(filepath.c_str());
 
-      int _l = line.length();
-      if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
-        ofs << line.substr(0, _l - 3) << "g.xz" << endl;
-      } else {
-        ofs << line + "g" << endl;
-      }
-    } else {
-      cerr << "Undefined command: " << line << endl;
+    if (!ifs.is_open()) {
+      cerr << "Unable to open file: " << kernellist_filepath << endl;
       return 1;
     }
-  }
 
-  ifs.close();
-  ofs.close();
+    string directory(kernellist_filepath);
+    const size_t last_slash_idx = directory.rfind('/');
+    if (std::string::npos != last_slash_idx) {
+      directory = directory.substr(0, last_slash_idx);
+    }
+
+    string line;
+    string filepath;
+    while (!ifs.eof()) {
+      getline(ifs, line);
+      if (line.empty())
+        continue;
+      else if (line.substr(0, 6) == "Memcpy") {
+        ofs << line << endl;
+      } else if (line.substr(0, 6) == "kernel") {
+        filepath = directory + "/" + line;
+        group_per_block(filepath.c_str());
+
+        int _l = line.length();
+        if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
+          ofs << line.substr(0, _l - 3) << "g.xz" << endl;
+        } else {
+          ofs << line + "g" << endl;
+        }
+      } else {
+        cerr << "Undefined command: " << line << endl;
+        return 1;
+      }
+    }
+
+    ifs.close();
+    ofs.close();
+  }
   return 0;
 }
 

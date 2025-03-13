@@ -68,10 +68,15 @@ int xz_compress_trace = 0;
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
+std::string user_folder = getcwd(NULL, 0);
 std::string cwd = getcwd(NULL, 0);
 std::string traces_location = cwd + "/traces/";
 std::string kernelslist_location = cwd + "/traces/kernelslist";
 std::string stats_location = cwd + "/traces/stats.csv";
+
+std::unordered_set<CUcontext, std::string> ctx_kernelslist;
+std::unordered_set<CUcontext, std::string> ctx_stats_location;
+std::unordered_set<CUcontext, int> ctx_kernelid;
 
 /* kernel instruction counter, updated by the GPU */
 uint64_t dynamic_kernel_limit_start =
@@ -122,6 +127,11 @@ void nvbit_at_init() {
   if (active_from_start == 0) {
     active_region = false;
   }
+  
+  std::string usr_defined_folder = std::getenv("TRACES_FOLDER");
+  if (usr_defined_folder != NULL)
+    user_folder = usr_defined_folder;
+
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
@@ -301,8 +311,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
   if (first_call == true) {
     first_call = false;
-
-    if (mkdir("traces", S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    std::string traces_folder = user_folder + "/traces";
+    if (mkdir(traces_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
@@ -321,28 +331,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         active_region = false;
     }
 
-    if (user_defined_folders == 1) {
-      std::string usr_folder = std::getenv("TRACES_FOLDER");
-      std::string temp_traces_location = usr_folder;
-      std::string temp_kernelslist_location = usr_folder + "/kernelslist";
-      std::string temp_stats_location = usr_folder + "/stats.csv";
-      traces_location.resize(temp_traces_location.size());
-      kernelslist_location.resize(temp_kernelslist_location.size());
-      stats_location.resize(temp_stats_location.size());
-      traces_location.replace(traces_location.begin(), traces_location.end(),
-                              temp_traces_location);
-      kernelslist_location.replace(kernelslist_location.begin(),
-                                   kernelslist_location.end(),
-                                   temp_kernelslist_location);
-      stats_location.replace(stats_location.begin(), stats_location.end(),
-                             temp_stats_location);
-      printf("\n Traces location is %s \n", traces_location.c_str());
-      printf("Kernelslist location is %s \n", kernelslist_location.c_str());
-      printf("Stats location is %s \n", stats_location.c_str());
-    }
-
-    kernelsFile = fopen(kernelslist_location.c_str(), "w");
-    statsFile = fopen(stats_location.c_str(), "w");
+    kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "w");
+    statsFile = fopen(ctx_stats_location[ctx].c_str(), "w");
     fprintf(statsFile,
             "kernel id, kernel mangled name, grid_dimX, grid_dimY, grid_dimZ, "
             "#blocks, block_dimX, block_dimY, block_dimZ, #threads, "
@@ -354,7 +344,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     if (!is_exit) {
       cuMemcpyHtoD_v2_params *p = (cuMemcpyHtoD_v2_params *)params;
       char buffer[1024];
-      kernelsFile = fopen(kernelslist_location.c_str(), "a");
+      kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
       sprintf(buffer, "MemcpyHtoD,0x%016lx,%lld", p->dstDevice, p->ByteCount);
       fprintf(kernelsFile, buffer);
       fprintf(kernelsFile, "\n");
@@ -367,12 +357,12 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
     if (!is_exit) {
       if (active_from_start && dynamic_kernel_limit_start &&
-          kernelid == dynamic_kernel_limit_start)
+          ctx_kernelid[ctx] == dynamic_kernel_limit_start)
         active_region = true;
 
       if (terminate_after_limit_number_of_kernels_reached &&
           dynamic_kernel_limit_end != 0 &&
-          kernelid > dynamic_kernel_limit_end) {
+          ctx_kernelid[ctx] > dynamic_kernel_limit_end) {
         exit(0);
       }
 
@@ -400,7 +390,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
       char buffer[1024];
       sprintf(buffer, std::string(traces_location + "/kernel-%d.trace").c_str(),
-              kernelid);
+              ctx_kernelid[ctx]);
 
       if (!stop_report) {
         if (!xz_compress_trace) {
@@ -415,7 +405,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
         fprintf(resultsFile, "-kernel name = %s\n",
                 nvbit_get_func_name(ctx, p->f, true));
-        fprintf(resultsFile, "-kernel id = %d\n", kernelid);
+        fprintf(resultsFile, "-kernel id = %d\n", ctx_kernelid[ctx]);
         fprintf(resultsFile, "-grid dim = (%d,%d,%d)\n", p->gridDimX,
                 p->gridDimY, p->gridDimZ);
         fprintf(resultsFile, "-block dim = (%d,%d,%d)\n", p->blockDimX,
@@ -442,9 +432,9 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         fprintf(resultsFile, "\n");
       }
 
-      kernelsFile = fopen(kernelslist_location.c_str(), "a");
+      kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
       // This will be a relative path to the traces file
-      sprintf(buffer, "kernel-%d.trace%s", kernelid,
+      sprintf(buffer, "kernel-%d.trace%s", ctx_kernelid[ctx],
               xz_compress_trace ? ".xz" : "");
       if (!stop_report) {
         fprintf(kernelsFile, buffer);
@@ -452,7 +442,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       }
       fclose(kernelsFile);
 
-      statsFile = fopen(stats_location.c_str(), "a");
+      statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
       unsigned blocks = p->gridDimX * p->gridDimY * p->gridDimZ;
       unsigned threads = p->blockDimX * p->blockDimY * p->blockDimZ;
 
@@ -463,7 +453,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
 
       fclose(statsFile);
 
-      kernelid++;
+      ctx_kernelid[ctx]++;
       recv_thread_receiving = true;
 
     } else {
@@ -498,7 +488,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
           reported_dynamic_instr_counter - old_total_reported_insts;
       old_total_reported_insts = reported_dynamic_instr_counter;
 
-      statsFile = fopen(stats_location.c_str(), "a");
+      statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
       fprintf(statsFile, "%d,%d", total_insts_per_kernel,
               reported_insts_per_kernel);
       fprintf(statsFile, "\n");
@@ -513,7 +503,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       }
 
       if (active_from_start && dynamic_kernel_limit_end &&
-          kernelid > dynamic_kernel_limit_end)
+          kernelid[ctx] > dynamic_kernel_limit_end)
         active_region = false;
     }
   } else if (cbid == API_CUDA_cuProfilerStart && is_exit) {
@@ -735,4 +725,14 @@ void nvbit_at_ctx_term(CUcontext ctx) {
     recv_thread_started = false;
     pthread_join(recv_thread, NULL);
   }
+}
+
+void nvbit_at_ctx_init(CUcontext ctx)
+{
+  // Everytime we init a context, add the foldername and kernelid to the set
+  std::string tmp_kernelslist = user_folder + "/kernelslist_ctx_" + std::to_string((uint64_t)ctx);
+  ctx_foldername[ctx] = tmp_kernelslist;
+  std::string tmp_stats = user_folder + "/stats_ctx_" + std::to_string((uint64_t)ctx);
+  ctx_stats_location[ctx] = tmp_stats;
+  ctx_kernelid[ctx] = 1;
 }
