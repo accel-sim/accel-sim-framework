@@ -53,6 +53,8 @@ else
     export ACCELSIM_CONFIG=release
 fi
 
+ln -sf $ACCELSIM_ROOT/build/$ACCELSIM_CONFIG/compile_commands.json $ACCELSIM_ROOT/../
+
 # If we can't find an already set version of GPGPU-Sim, then pull one locally using the repos specificed above
 if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     echo "No \$GPGPUSIM_ROOT, testing for local folder in: \"$ACCELSIM_ROOT/gpgpu-sim\""

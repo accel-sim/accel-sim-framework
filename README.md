@@ -1,4 +1,22 @@
 # Welcome to the top-level repo of Accel-Sim and AccelWattch
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/accel-sim/accel-sim-framework)  
+[![Long Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/long-tests.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/long-tests.yml)
+[![Short Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/short-tests.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/short-tests.yml)
+[![Tracer Tool](https://github.com/accel-sim/accel-sim-framework/actions/workflows/tracer-tool.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/tracer-tool.yml)
+[![Weekly Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml)
+- [Welcome to the top-level repo of Accel-Sim and AccelWattch](#welcome-to-the-top-level-repo-of-accel-sim-and-accelwattch)
+  - [Dependencies](#dependencies)
+  - [Overview](#overview)
+  - [Accel-Sim Components](#accel-sim-components)
+    - [Accel-Sim Tracer](#accel-sim-tracer)
+      - [A simple example](#a-simple-example)
+      - [Pre-traced applications](#pre-traced-applications)
+    - [Accel-Sim SASS Frontend and Simulation Engine](#accel-sim-sass-frontend-and-simulation-engine)
+    - [Accel-Sim Correlator](#accel-sim-correlator)
+    - [Accel-Sim Tuner](#accel-sim-tuner)
+    - [How do I quickly just run what GitHub action runs?](#how-do-i-quickly-just-run-what-github-action-runs)
+  - [AccelWattch Overview](#accelwattch-overview)
+
 
 The [ISCA 2020 paper](https://conferences.computer.org/isca/pdfs/ISCA2020-4QlDegUf3fKiwUXfV0KdCm/466100a473/466100a473.pdf)
 describes the goals of Accel-Sim and introduces the tool. This readme is meant to provide tutorial-like details on how to use the Accel-Sim
@@ -23,23 +41,21 @@ in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
 ## Dependencies
 
 This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here](ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8).
-There is nothing special here, just Ubuntu 18.04 with the following commands
-run:
+A docker image that works with this repo can be found [here](https://github.com/accel-sim/Dockerfile/pkgs/container/accel-sim-framework).
+The dockerfile used to build this image can be found [here](https://github.com/accel-sim/Dockerfile), which built on top of `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04`.
 
+To build on local machine, install the following packages with CUDA toolkit:
 ```bash
+# Assuming running on Ubuntu 24.04 and installing CUDA 12.8
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
       libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
       libxml2-dev vim python-setuptools build-essential python3-pip
 
 pip3 install pyyaml plotly psutil
-wget http://developer.download.nvidia.com/compute/cuda/11.0.1/local_installers/cuda_11.0.1_450.36.06_linux.run
-sh cuda_11.0.1_450.36.06_linux.run --silent --toolkit
-rm cuda_11.0.1_450.36.06_linux.run
+wget https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda_12.8.1_570.124.06_linux.run
+sh cuda_12.8.1_570.124.06_linux.run --silent --toolkit
+rm cuda_12.8.1_570.124.06_linux.run
 ```
-
-Note, that all the python scripts have more detailed options explanations when run with "--help"
-
 
 ## Overview
 
@@ -61,102 +77,120 @@ AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also i
 
 ![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
 
-1. **Accel-Sim Tracer**: An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in ./util/tracer\_nvbit/. To make the tool:
+> Note, that all the python scripts in the following sections have more detailed options explanations when run with `--help`
 
-    ```bash
-    export CUDA_INSTALL_PATH=<your_cuda>
-    export PATH=$CUDA_INSTALL_PATH/bin:$PATH
-    ./util/tracer_nvbit/install_nvbit.sh
-    make -C ./util/tracer_nvbit/
-    ```
-    ---
-    *A simple example*
+### Accel-Sim Tracer
 
-    The following example demonstrates how to trace the simple rodinia functional tests
-    that get run in our travis regressions:
+An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in `./util/tracer_nvbit/`. To make the tool:
 
-    ```bash
-    # Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc
+```bash
+export CUDA_INSTALL_PATH=<your_cuda>
+export PATH=$CUDA_INSTALL_PATH/bin:$PATH
+./util/tracer_nvbit/install_nvbit.sh
+make -C ./util/tracer_nvbit/
+```
+#### A simple example
 
-    # Get the applications, their data files and build them:
-    git clone https://github.com/accel-sim/gpu-app-collection
-    source ./gpu-app-collection/src/setup_environment
-    make -j -C ./gpu-app-collection/src rodinia_2.0-ft
-    make -C ./gpu-app-collection/src data
+The following example demonstrates how to trace the simple rodinia functional tests
+that get run in our travis regressions:
 
-    # Run the applications with the tracer (remember you need a real GPU for this):
-    ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on>
-    ```
+```bash
+# Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc
+# Get the applications, their data files and build them:
+git clone https://github.com/accel-sim/gpu-app-collection
+source ./gpu-app-collection/src/setup_environment
+make -j -C ./gpu-app-collection/src rodinia_2.0-ft
+make -C ./gpu-app-collection/src data
 
-    That's it. The traces for the short-running rodinia tests will be generated in:
-    ```bash
-    ./hw_run/traces/
-    ```
+# Run the applications with the tracer (remember you need a real GPU for this):
+./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on>
+```
 
-    To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).
+That's it. The traces for the short-running rodinia tests will be generated in:
+```bash
+./hw_run/traces/
+```
 
-    ---
-    For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:
-    ```bash
-    ./get-accel-sim-traces.py
-    ```
-    and follow the instructions.
+To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).
 
-2. **Accel-Sim SASS Frontend and Simulation Engine**: A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md), which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
-    ```bash
-    pip3 install -r requirements.txt
-    source ./gpu-simulator/setup_environment.sh
-    make -j -C ./gpu-simulator/
-    ```
-    This will produce an executable in:
-    ```bash
-    ./gpu-simulator/bin/release/accel-sim.out
-    ```
+#### Pre-traced applications
+For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:
+```bash
+./get-accel-sim-traces.py
+```
+and follow the instructions.
 
-    *Running the simple example from bullet 1*
-    ```bash
-    ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
-    ```
-    The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
-    ```txt
-    PTX mode usage: ./util/job_launching/run_simulations.py -B <benchmark> -C <gpu_config> -N <run_identifier>
-    Optional:
-    [-B benchmark]              (From the gpu-app-collection compiled in Step 1)
-    [-C gpu_config]             (List of supported configs: accel-sim-framework/util/job_launching/configs/define-standard-cfgs.yml)
-    ```
-    Eg:
-    ```bash
-    ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
-    ```
+### Accel-Sim SASS Frontend and Simulation Engine
+
+A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md), which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
+
+```bash
+pip3 install -r requirements.txt
+source ./gpu-simulator/setup_environment.sh
+
+# Build with make
+make -j -C ./gpu-simulator/
+
+# Build with CMake
+cmake -S ./gpu-simulator/ -B ./gpu-simulator/build
+cmake --build ./gpu-simulator/build -j8
+cmake --install ./gpu-simulator/build
+```
+
+This will produce an executable in:
+```bash
+./gpu-simulator/bin/release/accel-sim.out
+```
+
+Running the [simple example](#a-simple-example) in the [tracer section](#accel-sim-tracer):
+
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+```
+
+The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
+
+```txt
+PTX mode usage: ./util/job_launching/run_simulations.py -B <benchmark> -C <gpu_config> -N <run_identifier>
+Optional:
+[-B benchmark]              (From the gpu-app-collection compiled in Step 1)
+[-C gpu_config]             (List of supported configs: accel-sim-framework/util/job_launching/configs/define-standard-cfgs.yml)
+```
+Eg:
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
+```
 
 
-    You can monitor the tests using:
-    ```bash
-    ./util/job_launching/monitor_func_test.py -v -N myTest
-    ```
-    After the jobs finish - you can collect all the stats using:
-    ```bash
-    ./util/job_launching/get_stats.py -N myTest | tee stats.csv
-    ```
+You can monitor the tests using:
+```bash
+./util/job_launching/monitor_func_test.py -v -N myTest
+```
+After the jobs finish - you can collect all the stats using:
+```bash
+./util/job_launching/get_stats.py -N myTest | tee stats.csv
+```
 
-    If you want to run the accel-sim.out executable command itself for specific workload, you can use:
-    ```bash
-    /gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
-    ```
-    However, we encourage you to use our workload launch manager 'run_simulations' script as shown above, which will greatly simplify the simulation process and increase productivity.
+If you want to run the accel-sim.out executable command itself for specific workload, you can use:
+```bash
+/gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
+```
+However, we encourage you to use our workload launch manager 'run_simulations' script as shown above, which will greatly simplify the simulation process and increase productivity.
 
-    To understand what is going on and how to just run the simulator in isolation without the framework, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/job_launching/README.md).
+To understand what is going on and how to just run the simulator in isolation without the framework, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/job_launching/README.md).
 
-    To better undersatnd the Accel-Sim front-end and the interface with GPGPU-Sim, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/README.md).
+To better undersatnd the Accel-Sim front-end and the interface with GPGPU-Sim, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/README.md).
 
-3. **Accel-Sim Correlator**: A tool that matches, plots and correlates statistics from the performance model with real hardware statistics generated by profiling tools. To use the correlator, you must first generate hardware output and simulation statistics. To generate output from the GPU, use the scripts in [./util/hw_stats](./util/hw_stats).
+### Accel-Sim Correlator
+A tool that matches, plots and correlates statistics from the performance model with real hardware statistics generated by profiling tools. To use the correlator, you must first generate hardware output and simulation statistics. To generate output from the GPU, use the scripts in [./util/hw_stats](./util/hw_stats).
 For example, to generate the profiler numbers for the short-running apps in our running example, do the following:
-Note that this step assumes you have already built the apps using the instructions from (1).
+
+> Note: this step assumes you have already built the apps using the instructions from [simple example](#a-simple-example) in the [tracer section](#accel-sim-tracer).
 ```bash
 ./util/hw_stats/run_hw.py -B rodinia_2.0-ft
 ```
 
-Note: Different cards support different profilers. By default - this script will use nvprof. However, you can use nsight-cli instead using:
+> Note: Different cards support different profilers. By default - this script will use nvprof. However, you can use nsight-cli instead using:
 ```bash
 ./util/hw_stats/run_hw.py -B rodinia_2.0-ft --nsight_profiler --disable_nvprof
 ```
@@ -166,7 +200,8 @@ All the stats will be output in:
 ./hw_run/...
 ```
 
-Note - that in order to correlate our running example with your local machine - you need to have a QV100 card.
+> Note: that in order to correlate our running example with your local machine - you need to have a QV100 card.
+
 However - we also provide a comprehensive suite of hardware profiling results, which can be obtained by running:
 ```bash
 ./util/hw_stats/get_hw_data.sh
@@ -203,54 +238,57 @@ For a true validation, you should attempt correlating the fully-scaled set of ap
 ./util/plotting/plot-correlation.py -c all-apps.csv -H ./hw_run/QUADRO-V100/device-0/9.1/
 ```
 
+### Accel-Sim Tuner
 
-4. **Accel-Sim Tuner**: An automated tuner that automates configuration file generation from a detailed microbenchmark suite. You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). Then, compile and run the microbenchmarks and the tuner:
+An automated tuner that automates configuration file generation from a detailed microbenchmark suite. You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). Then, compile and run the microbenchmarks and the tuner:
 
-  ```bash
-  # Make sure PATH includes nvcc
-  # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
-  # Compile microbenchmarks
-  make -C ./util/tuner/GPU_Microbenchmark/
-  # Set the device id that you want to tune to
-  # If you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
-  export CUDA_VISIBLE_DEVICES=0
-  # Run the ubench and save output in stats.txt
-  ./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
-  # Run the tuner with the stats.txt from the previous step
-  ./util/tuner/tuner.py -s stats.txt
-  ```
+```bash
+# Make sure PATH includes nvcc
+# If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
+# Compile microbenchmarks
+make -C ./util/tuner/GPU_Microbenchmark/
 
-  The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "RTX_3060"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suite, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
+# Set the device id that you want to tune to
+# If you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
+export CUDA_VISIBLE_DEVICES=0
+
+# Run the ubench and save output in stats.txt
+./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
+# Run the tuner with the stats.txt from the previous step
+./util/tuner/tuner.py -s stats.txt
+```
+
+The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "RTX_3060"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suite, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
 
 
-### How do I quickly just run what Travis runs?
+### How do I quickly just run what GitHub action runs?
 
 Install docker, then simply run:
 
-```
-docker run --env CUDA_INSTALL_PATH=/usr/local/cuda-11.0 -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash travis.sh
+```bash
+docker run -v `pwd`:/accel-sim:rw ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8 /bin/bash short-tests.sh
 ```
 
 If something is dying and you want to debug it - you can always run it in interactive mode:
 
-```
-docker run -it --env CUDA_INSTALL_PATH=/usr/local/cuda-11.0 -v `pwd`:/accel-sim:rw accelsim/ubuntu-18.04_cuda-11:latest /bin/bash
+```bash
+docker run -it -v `pwd`:/accel-sim:rw ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8 /bin/bash
 ```
 
 Then from within the docker run:
-```
-./travis.sh
+```bash
+./short-tests.sh
 ```
 
 You can also play around and do stuff inside the image (even debug the
 simulator) - if you want to do this, installing gdb will help:
-```
+```bash
 apt-get install gdb
 ```
 
 Don't want to install docker?
 Just use a linux distro with the packages detailed in dependencies, set
-CUDA\_INSTALL\_PATH, the run ./travis.sh.
+`CUDA_INSTALL_PATH`./short-tests.sh, the run `./short-tests.sh`.
 
 
 ## AccelWattch Overview

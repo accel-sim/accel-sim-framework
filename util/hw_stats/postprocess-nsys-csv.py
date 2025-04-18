@@ -14,7 +14,7 @@ if __name__ == "__main__":
     cycles_location = os.path.join(args.path, "cycles.csv")
     cycles_post_location = os.path.join(args.path, "cycles_processed.csv")
 
-    with open(cycles_location, "rw") as f:
+    with open(cycles_location, "r") as f:
         for line in f:
             if "memcpy" in line:
                 continue

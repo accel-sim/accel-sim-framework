@@ -12,3 +12,5 @@ gpu-simulator/gpgpu-sim
 .vscode/*
 extern
 gpu-simulator/accel_sim.pyi
+compile_commands.json
+.cache
