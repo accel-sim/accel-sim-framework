@@ -639,10 +639,6 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
         inst.data_size, (new_addr_type *)localaddrs);
     inst.set_addr(t, (new_addr_type *)localaddrs, num_addrs);
   }
-
-  if (inst.op == EXIT_OPS) {
-    m_warp[inst.warp_id()]->set_completed(t);
-  }
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
