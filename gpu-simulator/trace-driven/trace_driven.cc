@@ -534,10 +534,10 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
                                                     unsigned *pc,
                                                     unsigned *rpc) {
   // In trace-driven mode, we assume no control hazard
-  if(pI){
-    *pc = pI->pc;
-    *rpc = pI->pc;
-  }
+  assert(pI != NULL);
+  *pc = pI->pc;
+  *rpc = pI->pc;
+  
 }
 
 const active_mask_t &trace_shader_core_ctx::get_active_mask(
