@@ -121,7 +121,7 @@ for bench in benchmarks:
 
         if "mlperf" in exec_path:
             # For mlperf by default we turn this flag on
-            sh_contents += "export TERMINATE_UPON_LIMIT=1; "
+            sh_contents += "export TERMINATE_UPON_LIMIT=0; "
             exec_path = ". " + exec_path
 
             if options.kernel_number > 0:
