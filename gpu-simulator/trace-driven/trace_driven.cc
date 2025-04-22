@@ -534,7 +534,7 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
                                                     unsigned *pc,
                                                     unsigned *rpc) {
   // In trace-driven mode, we assume no control hazard
-  assert(pI != NULL);
+  assert(pI != NULL && "Unexpexted behaviour , inst should not be null");
   *pc = pI->pc;
   *rpc = pI->pc;
   
