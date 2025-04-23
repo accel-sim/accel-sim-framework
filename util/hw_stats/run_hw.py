@@ -242,13 +242,13 @@ for bench in benchmarks:
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 30m '
+                    + '" ;\ntimeout 30m '
                     + profile_command
                     + " "
                     + exec_path
                     + " "
                     + str(args)
-                    + " ; "
+                    + " ;\n"
                     + extract_command
                     + " | tee "
                     + os.path.join(this_run_dir, logfile + ".nsight")
@@ -321,13 +321,13 @@ for bench in benchmarks:
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 5m '
+                    + '" ;\ntimeout 5m '
                     + profile_command
                     + " "
                     + exec_path
                     + " "
                     + str(args)
-                    + "; "
+                    + ";\n"
                     +extract_command
                     + " | tee "
                     + os.path.join(
