@@ -215,6 +215,13 @@ for bench in benchmarks:
                     + " "
                 )
             if options.nsight_profiler:
+                ncu_report_file = os.path.join(this_run_dir, "ncu_stats.ncu-rep")
+                # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
+
+                extract_command = (
+                    "ncu --import " + ncu_report_file +
+                    " --csv --page raw --target-processes all  " 
+                )
                 profile_command = (
                     "ncu --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,"
                     "sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum,"
@@ -241,10 +248,10 @@ for bench in benchmarks:
                     + exec_path
                     + " "
                     + str(args)
-                    +" ;"
-                    # + os.path.join(this_run_dir,"ncu_stats")
-                    # + " | tee "
-                    # + os.path.join(this_run_dir, logfile + ".nsight")
+                    + " ; "
+                    + extract_command
+                    + " | tee "
+                    + os.path.join(this_run_dir, logfile + ".nsight")
                 )
 
         for i in range(int(options.repeat_cycle)):
@@ -296,15 +303,32 @@ for bench in benchmarks:
                     + this_run_dir
                 )
             elif options.nsight_profiler:
+                profile_command = (
+                    "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv "
+                    + kernel_number
+                    + " -o "
+                    + os.path.join(this_run_dir, "ncu_cycles.{0}".format(i))
+                )
+                ncu_report_file = os.path.join(this_run_dir, "ncu_cycles.{0}.ncu-rep".format(i))
+                # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
+
+                extract_command = (
+                    "ncu --import " + ncu_report_file +
+                    " --csv --page raw --target-processes all  " 
+                )
                 sh_contents += (
                     '\nexport CUDA_VERSION="'
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 5m ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv '
+                    + '" ; timeout 5m '
+                    + profile_command
+                    + " "
                     + exec_path
                     + " "
                     + str(args)
+                    + "; "
+                    +extract_command
                     + " | tee "
                     + os.path.join(
                         this_run_dir, logfile + ".gpc__cycles_elapsed.{0}".format(i)
