@@ -220,7 +220,7 @@ for bench in benchmarks:
 
                 extract_command = (
                     "ncu --import " + ncu_report_file +
-                    " --csv --page raw   " 
+                    " --csv   " 
                 )
                 profile_command = (
                     "ncu --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,"
@@ -314,7 +314,7 @@ for bench in benchmarks:
 
                 extract_command = (
                     "ncu --import " + ncu_report_file +
-                    " --csv --page raw  " 
+                    " --csv  " 
                 )
                 sh_contents += (
                     '\nexport CUDA_VERSION="'
