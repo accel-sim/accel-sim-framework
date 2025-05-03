@@ -85,6 +85,64 @@ uint64_t dynamic_kernel_limit_start =
     0;                                 // 0 means start from the begging kernel
 uint64_t dynamic_kernel_limit_end = 0; // 0 means no limit
 
+std::string kernel_ranges = "";
+
+struct KernelRange {
+  uint64_t start;
+  uint64_t end; // UINT64_MAX means open-ended
+};
+std::vector<KernelRange> g_kernel_ranges;
+uint64_t g_max_kernel_id = 0;
+void parse_kernel_ranges_from_env() {
+  g_kernel_ranges.clear();
+  g_max_kernel_id = 0;
+
+  const char* env_var = std::getenv("KERNEL_RANGES");
+  if (!env_var || std::string(env_var).empty()) {
+      g_kernel_ranges.push_back({0, 0});  // 0 end = trace all
+      printf("-------------------\nhere");
+      return;
+  }
+
+  std::istringstream iss(env_var);
+  std::string token;
+  while (iss >> token) {
+      size_t dash_pos = token.find('-');
+      if (dash_pos != std::string::npos) {
+          std::string start_str = token.substr(0, dash_pos);
+          std::string end_str = token.substr(dash_pos + 1);
+
+          uint64_t start = std::stoull(start_str);
+          uint64_t end = 0;
+          if (!end_str.empty()) {
+              end = std::stoull(end_str);
+          }
+
+          g_kernel_ranges.push_back({start, end});
+          if (end != 0 && end > g_max_kernel_id)
+              g_max_kernel_id = end;
+      } else {
+          uint64_t single = std::stoull(token);
+          g_kernel_ranges.push_back({single, single});
+          if (single > g_max_kernel_id)
+              g_max_kernel_id = single;
+      }
+  }
+}
+
+bool should_trace_kernel(uint64_t kernel_id) {
+  for (const auto& range : g_kernel_ranges) {
+      if (range.end == 0) {
+          if (kernel_id >= range.start)
+              return true;
+      } else if (kernel_id >= range.start && kernel_id <= range.end) {
+          return true;
+      }
+  }
+  return false;
+}
+
+
 enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
 
 void nvbit_at_init() {
@@ -100,15 +158,18 @@ void nvbit_at_init() {
               "Include source code line info at the start of each traced line. "
               "The target binary must be compiled with -lineinfo or "
               "--generate-line-info");
-  GET_VAR_INT(dynamic_kernel_limit_end, "DYNAMIC_KERNEL_LIMIT_END", 0,
-              "Limit of the number kernel to be printed, 0 means no limit");
-  GET_VAR_INT(dynamic_kernel_limit_start, "DYNAMIC_KERNEL_LIMIT_START", 0,
-              "start to report kernel from this kernel id, 0 means starts from "
-              "the beginning, i.e. first kernel");
+  GET_VAR_STR(kernel_ranges, "DYNAMIC_KERNEL_RANGE",
+      "Specify kernel IDs or ranges to trace.\n"
+      "Format: space-separated list of IDs or ranges.\n"
+      "  - Single ID: e.g., \"2\" traces only kernel 2.\n"
+      "  - Range: e.g., \"5-8\" traces kernels 5 through 8 inclusive.\n"
+      "  - Open-ended range: e.g., \"10-\" traces from kernel 10 onward.\n"
+      "  - Multiple ranges: e.g., \"2 5-8 10-\".\n"
+      "If unset or empty, all kernels are traced from the beginning.");
   GET_VAR_INT(
       active_from_start, "ACTIVE_FROM_START", 1,
       "Start instruction tracing from start or wait for cuProfilerStart "
-      "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_LIMIT options have no "
+      "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_RANGE options have no "
       "effect");
   GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
@@ -132,6 +193,8 @@ void nvbit_at_init() {
   char * usr_defined_folder = std::getenv("TRACES_FOLDER");
   if (usr_defined_folder != NULL)
     user_folder = usr_defined_folder;
+  parse_kernel_ranges_from_env();
+  printf("090909090909090----------==============\n");
 
 }
 
@@ -331,13 +394,6 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       }
     }
 
-    if (active_from_start && !dynamic_kernel_limit_start ||
-        dynamic_kernel_limit_start == 1)
-      active_region = true;
-    else {
-      if (active_from_start)
-        active_region = false;
-    }
 
     kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "w");
     statsFile = fopen(ctx_stats_location[ctx].c_str(), "w");
@@ -362,15 +418,14 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
   } else if (cbid == API_CUDA_cuLaunchKernel_ptsz ||
              cbid == API_CUDA_cuLaunchKernel) {
     cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
-
+              printf("API_CUDA_cuLaunchKernel************\n");
     if (!is_exit) {
-      if (active_from_start && dynamic_kernel_limit_start &&
-          ctx_kernelid[ctx] == dynamic_kernel_limit_start)
+      if (active_from_start && should_trace_kernel(ctx_kernelid[ctx]))
         active_region = true;
 
       if (terminate_after_limit_number_of_kernels_reached &&
-          dynamic_kernel_limit_end != 0 &&
-          ctx_kernelid[ctx] > dynamic_kernel_limit_end) {
+          g_max_kernel_id != 0 &&
+          ctx_kernelid[ctx] > g_max_kernel_id) {
         exit(0);
       }
 
@@ -512,8 +567,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         }
       }
 
-      if (active_from_start && dynamic_kernel_limit_end &&
-          ctx_kernelid[ctx] > dynamic_kernel_limit_end)
+      if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx]))
         active_region = false;
     }
   } else if (cbid == API_CUDA_cuProfilerStart && is_exit) {
