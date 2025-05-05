@@ -97,10 +97,9 @@ void parse_kernel_ranges_from_env() {
   g_kernel_ranges.clear();
   g_max_kernel_id = 0;
 
-  const char* env_var = std::getenv("KERNEL_RANGES");
+  const char* env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
   if (!env_var || std::string(env_var).empty()) {
       g_kernel_ranges.push_back({0, 0});  // 0 end = trace all
-      printf("-------------------\nhere");
       return;
   }
 
@@ -187,14 +186,12 @@ void nvbit_at_init() {
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
-  if (active_from_start == 0) {
-    active_region = false;
-  }
+  
+  active_region = false;
   char * usr_defined_folder = std::getenv("TRACES_FOLDER");
   if (usr_defined_folder != NULL)
     user_folder = usr_defined_folder;
   parse_kernel_ranges_from_env();
-  printf("090909090909090----------==============\n");
 
 }
 
@@ -393,8 +390,6 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         return;
       }
     }
-
-
     kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "w");
     statsFile = fopen(ctx_stats_location[ctx].c_str(), "w");
     fprintf(statsFile,
@@ -418,7 +413,6 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
   } else if (cbid == API_CUDA_cuLaunchKernel_ptsz ||
              cbid == API_CUDA_cuLaunchKernel) {
     cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
-              printf("API_CUDA_cuLaunchKernel************\n");
     if (!is_exit) {
       if (active_from_start && should_trace_kernel(ctx_kernelid[ctx]))
         active_region = true;
