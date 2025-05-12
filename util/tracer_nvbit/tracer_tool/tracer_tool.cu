@@ -18,6 +18,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <vector>
+#include <regex>
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
@@ -90,6 +91,7 @@ std::string kernel_ranges = "";
 struct KernelRange {
   uint64_t start;
   uint64_t end; // UINT64_MAX means open-ended
+  std::vector<std::regex> kernel_name_regexes;  // Vector of regexes for multiple patterns
 };
 std::vector<KernelRange> g_kernel_ranges;
 uint64_t g_max_kernel_id = 0;
@@ -102,41 +104,86 @@ void parse_kernel_ranges_from_env() {
       g_kernel_ranges.push_back({0, 0});  // 0 end = trace all
       return;
   }
-
   std::istringstream iss(env_var);
-  std::string token;
-  while (iss >> token) {
-      size_t dash_pos = token.find('-');
-      if (dash_pos != std::string::npos) {
-          std::string start_str = token.substr(0, dash_pos);
-          std::string end_str = token.substr(dash_pos + 1);
+    std::string token;
+    while (iss >> token) {
+        size_t dash_pos = token.find('-');
+        size_t regex_pos = token.find('@');  // kernel name indicated by @
+        uint64_t start = 0;
+        uint64_t end = 0;
 
-          uint64_t start = std::stoull(start_str);
-          uint64_t end = 0;
-          if (!end_str.empty()) {
-              end = std::stoull(end_str);
-          }
+        if (regex_pos != std::string::npos) {
+            // Kernel name range with regex
+            std::string range_part = token.substr(0, regex_pos);
+            std::string regex_str = token.substr(regex_pos + 1);
 
-          g_kernel_ranges.push_back({start, end});
-          if (end != 0 && end > g_max_kernel_id)
-              g_max_kernel_id = end;
-      } else {
-          uint64_t single = std::stoull(token);
-          g_kernel_ranges.push_back({single, single});
-          if (single > g_max_kernel_id)
-              g_max_kernel_id = single;
-      }
-  }
+          
+
+            // Parse the range part for start and end
+            size_t dash_pos_range = range_part.find('-');
+            if (dash_pos_range != std::string::npos) {
+                start = std::stoull(range_part.substr(0, dash_pos_range));
+                end = std::stoull(range_part.substr(dash_pos_range + 1));
+            } else {
+                start = std::stoull(range_part);
+                end = start;
+            }
+
+            // Split multiple regexes by commas
+            std::vector<std::string> regex_strings;
+            std::istringstream regex_stream(regex_str);
+            std::string regex_token;
+            while (std::getline(regex_stream, regex_token, ',')) {
+                try {
+                    g_kernel_ranges.push_back({start, end, {std::regex(regex_token)}});
+                } catch (const std::regex_error& e) {
+                    std::cerr << "Invalid regex: " << regex_token << std::endl;
+                }
+            }
+        } else {
+            // Normal range without kernel name regex
+            size_t dash_pos_range = token.find('-');
+
+            if (dash_pos_range != std::string::npos) {
+                start = std::stoull(token.substr(0, dash_pos_range));
+                end = std::stoull(token.substr(dash_pos_range + 1));
+            } else {
+                start = std::stoull(token);
+                end = start;
+            }
+
+            g_kernel_ranges.push_back({start, end, {}});
+        }
+
+        // Update max kernel ID if needed
+        if (end > g_max_kernel_id) {
+            g_max_kernel_id = end;
+        }
+    }
+
+
 }
 
-bool should_trace_kernel(uint64_t kernel_id) {
+bool should_trace_kernel(uint64_t kernel_id, const std::string& kernel_name) {
   for (const auto& range : g_kernel_ranges) {
-      if (range.end == 0) {
-          if (kernel_id >= range.start)
-              return true;
-      } else if (kernel_id >= range.start && kernel_id <= range.end) {
-          return true;
-      }
+    // Check range for kernel ID
+    if (range.end == 0) {
+        if (kernel_id >= range.start) {
+            // Match any of the regexes for this range
+            for (const auto& regex : range.kernel_name_regexes) {
+                if (std::regex_match(kernel_name, regex)) {
+                    return true;
+                }
+            }
+        }
+    } else if (kernel_id >= range.start && kernel_id <= range.end) {
+        // Match any of the regexes for this range
+        for (const auto& regex : range.kernel_name_regexes) {
+            if (std::regex_match(kernel_name, regex)) {
+                return true;
+            }
+        }
+    }
   }
   return false;
 }
@@ -218,7 +265,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
     if (verbose) {
       printf("Inspecting function %s at address 0x%lx\n",
-             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx,f), true);
+             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx,f));
     }
 
     uint32_t cnt = 0;
@@ -317,8 +364,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, (int)instr->getSize());
         } else {
           nvbit_add_call_arg_const_val32(instr, 0);
-          nvbit_add_call_arg_const_val64(instr, -1);
-          nvbit_add_call_arg_const_val32(instr, -1);
+          nvbit_add_call_arg_const_val64(instr, static_cast<uint64_t>(-1));
+          nvbit_add_call_arg_const_val32(instr, static_cast<uint32_t>(-1));
         }
 
         /* reg info */
@@ -327,7 +374,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, src_oprd[i]);
         }
         for (int i = srcNum; i < MAX_SRC; i++) {
-          nvbit_add_call_arg_const_val32(instr, -1);
+          nvbit_add_call_arg_const_val32(instr, static_cast<uint32_t>(-1));
         }
         nvbit_add_call_arg_const_val32(instr, srcNum);
 
@@ -363,10 +410,10 @@ __global__ void flush_channel() {
   channel_dev.flush();
 }
 
-static FILE *resultsFile = NULL;
+// static FILE *resultsFile = NULL;
 static FILE *kernelsFile = NULL;
 static FILE *statsFile = NULL;
-static int kernelid = 1;
+// static int kernelid = 1;
 static bool first_call = true;
 
 unsigned old_total_insts = 0;
@@ -404,7 +451,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       cuMemcpyHtoD_v2_params *p = (cuMemcpyHtoD_v2_params *)params;
       char buffer[1024];
       kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
-      sprintf(buffer, "MemcpyHtoD,0x%016lx,%lld", p->dstDevice, p->ByteCount);
+      sprintf(buffer, "MemcpyHtoD,0x%016llx,%llu", p->dstDevice, p->ByteCount);
       fprintf(kernelsFile, buffer);
       fprintf(kernelsFile, "\n");
       fclose(kernelsFile);
@@ -413,8 +460,10 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
   } else if (cbid == API_CUDA_cuLaunchKernel_ptsz ||
              cbid == API_CUDA_cuLaunchKernel) {
     cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
+    std::string fun_name = std::string (nvbit_get_func_name(ctx, p->f, true));
     if (!is_exit) {
-      if (active_from_start && should_trace_kernel(ctx_kernelid[ctx]))
+      
+      if (active_from_start && should_trace_kernel(ctx_kernelid[ctx],fun_name))
         active_region = true;
 
       if (terminate_after_limit_number_of_kernels_reached &&
@@ -561,7 +610,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
         }
       }
 
-      if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx]))
+      if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx],fun_name))
         active_region = false;
     }
   } else if (cbid == API_CUDA_cuProfilerStart && is_exit) {
