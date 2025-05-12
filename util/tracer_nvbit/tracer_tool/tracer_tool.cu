@@ -205,14 +205,14 @@ void nvbit_at_init() {
               "The target binary must be compiled with -lineinfo or "
               "--generate-line-info");
   GET_VAR_STR(kernel_ranges, "DYNAMIC_KERNEL_RANGE",
-      "Specify kernel IDs or ranges to trace.\n"
-      "Format: space-separated list of IDs or ranges.\n"
-      "  - Single ID: e.g., \"2\" traces only kernel 2.\n"
-      "  - Range: e.g., \"5-8\" traces kernels 5 through 8 inclusive.\n"
-      "  - Open-ended range: e.g., \"10-\" traces from kernel 10 onward.\n"
-      "  - Multiple ranges: e.g., \"2 5-8 10-\".\n"
-      "If unset or empty, all kernels are traced from the beginning.");
-  GET_VAR_INT(
+  "Specify kernel IDs or ranges to trace. Format:\n"
+  "  - Single ID:       \"2\" traces only kernel 2.\n"
+  "  - Range:           \"5-8\" traces kernels 5 through 8 (inclusive).\n"
+  "  - Open-ended:      \"10-\" traces from kernel 10 onward.\n"
+  "  - Multiple ranges: \"2 5-8 10-\" (space-separated).\n"
+  "  - With regex:      \"5-8@kernel_a.*,kernel_b.*\" traces kernels 5–8 with matching names.\n"
+  "If unset or empty, all kernels will be traced from the beginning.");
+GET_VAR_INT(
       active_from_start, "ACTIVE_FROM_START", 1,
       "Start instruction tracing from start or wait for cuProfilerStart "
       "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_RANGE options have no "
