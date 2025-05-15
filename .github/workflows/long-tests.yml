@@ -69,7 +69,7 @@ jobs:
           | tee turing-ubench-sass-latest2.csv && mv turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/turing-ubench-sass-latest.csv
           ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass-latest.csv,ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
           | tee ampere-ubench-sass-latest2.csv && mv ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/ampere-ubench-sass-latest.csv
-          if [[ ${{ github.event_name }} == 'push' ]]; then
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             git -C ./statistics-archive add --all
             git -C ./statistics-archive commit \
             -m "Jenkins automated checkin git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT Build:$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT" || echo "No Changes."
