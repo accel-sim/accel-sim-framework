@@ -96,7 +96,7 @@ void parse_kernel_ranges_from_env() {
 
   const char* env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
   if (!env_var || std::string(env_var).empty()) {
-      g_kernel_ranges.push_back({0, 0});  // 0 end = trace all
+      g_kernel_ranges.push_back({0, 0, {std::regex(".*")}});  // 0 end = trace all
       return;
   }
   std::istringstream iss(env_var);
