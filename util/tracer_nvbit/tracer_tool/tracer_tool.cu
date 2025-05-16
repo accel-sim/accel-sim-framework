@@ -427,7 +427,8 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   }
 
   // Mark if the kernel should be traced
-  if (active_from_start && should_trace_kernel(ctx_kernelid[ctx],fun_name))
+  std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
+  if (active_from_start && should_trace_kernel(ctx_kernelid[ctx], func_name))
     active_region = true;
 
   // Terminate tracing if the limit number of kernels is reached
@@ -562,7 +563,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   recv_thread_receiving = true;
 }
 
-static void leave_kernel_launch(CUcontext ctx) {
+static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
   /* make sure current kernel is completed */
   cudaDeviceSynchronize();
   assert(cudaGetLastError() == cudaSuccess);
@@ -608,7 +609,8 @@ static void leave_kernel_launch(CUcontext ctx) {
     }
   }
 
-  if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx],fun_name))
+  std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
+  if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx], func_name))
     active_region = false;
 }
 
@@ -651,7 +653,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     if (!is_exit) {
       enter_kernel_launch(ctx, func, cbid, params, false, false);
     } else {
-      leave_kernel_launch(ctx);
+      leave_kernel_launch(ctx, func);
     }
   } break;
   // To support kernel launched by cuda graph (in addition to existing kernel
@@ -726,7 +728,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
           printf("kernel %s not captured by cuda graph\n",
                  nvbit_get_func_name(ctx, func));
         }
-        leave_kernel_launch(ctx);
+        leave_kernel_launch(ctx, func);
       } else {
         if (verbose >= 1) {
           printf("kernel %s captured by cuda graph\n",
