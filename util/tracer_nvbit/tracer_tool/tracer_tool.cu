@@ -147,7 +147,7 @@ void parse_kernel_ranges_from_env() {
                 end = start;
             }
 
-            g_kernel_ranges.push_back({start, end, {}});
+            g_kernel_ranges.push_back({start, end, {std::regex(".*")}});
         }
 
         // Update max kernel ID if needed
