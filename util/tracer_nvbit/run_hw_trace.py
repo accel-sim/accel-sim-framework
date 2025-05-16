@@ -125,12 +125,14 @@ for bench in benchmarks:
             exec_path = ". " + exec_path
 
             if options.kernel_number > 0:
-                os.environ["DYNAMIC_KERNEL_LIMIT_END"] = str(options.kernel_number)
+                sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(options.kernel_number)+'"\n')
             else:
-                os.environ["DYNAMIC_KERNEL_LIMIT_END"] = "50"
+                sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(50)+'"\n')
         else:
             if options.kernel_number > 0:
-                os.environ["DYNAMIC_KERNEL_LIMIT_END"] = str(options.kernel_number)
+                sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(options.kernel_number)+'"\n')
+            else:
+                sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE=""\n')
 
         # first we generate the traces (.trace and kernelslist files)
         # then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
@@ -141,7 +143,7 @@ for bench in benchmarks:
             + '"; export CUDA_VISIBLE_DEVICES="'
             + options.device_num
             + '" ; '
-            + "\nexport DYNAMIC_KERNEL_LIMIT_START=0; export DYNAMIC_KERNEL_LIMIT_END=0;\n"
+            + "\nrm -f traces/*"
             + "\nexport TRACES_FOLDER="
             + this_run_dir
             + "; CUDA_INJECTION64_PATH="
