@@ -266,7 +266,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     }
 
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
-    if (verbose) {
+    if (verbose >= 1) {
       printf("Inspecting function %s at address 0x%lx\n",
              nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx,f));
     }
@@ -289,7 +289,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         continue;
       }
 
-      if (verbose) {
+      if (verbose >= 2) {
         instr->printDecoded();
       }
 
@@ -566,7 +566,11 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
 static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
   /* make sure current kernel is completed */
   cudaDeviceSynchronize();
-  assert(cudaGetLastError() == cudaSuccess);
+  cudaError_t err = cudaGetLastError();
+  if (err != cudaSuccess) {
+    printf("cuda error: %s\n", cudaGetErrorName(err));
+  }
+  assert(err == cudaSuccess);
 
   /* make sure we prevent re-entry on the nvbit_callback when issuing
    * the flush_channel kernel */
