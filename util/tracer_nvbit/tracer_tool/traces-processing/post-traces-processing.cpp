@@ -128,7 +128,7 @@ int main(int argc, char **argv) {
   }
   else if (std::filesystem::is_regular_file(p))
   {
-    kernelslist_list.push_back(kernellist_filepath);
+    kernelslist_list.push_back(p);
   }
   else
   {
