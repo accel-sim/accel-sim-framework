@@ -15,8 +15,8 @@
 #include <map>
 #include <sstream>
 #include <string>
-#include <unordered_set>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 #include <regex>
 /* every tool needs to include this once */
@@ -79,12 +79,7 @@ std::string stats_location = cwd + "/traces/stats.csv";
 std::unordered_map<CUcontext, std::string> ctx_kernelslist;
 std::unordered_map<CUcontext, std::string> ctx_stats_location;
 std::unordered_map<CUcontext, int> ctx_kernelid;
-std::unordered_map<CUcontext, FILE*> ctx_resultsFile;
-
-/* kernel instruction counter, updated by the GPU */
-uint64_t dynamic_kernel_limit_start =
-    0;                                 // 0 means start from the begging kernel
-uint64_t dynamic_kernel_limit_end = 0; // 0 means no limit
+std::unordered_map<CUcontext, FILE *> ctx_resultsFile;
 
 std::string kernel_ranges = "";
 
@@ -101,7 +96,7 @@ void parse_kernel_ranges_from_env() {
 
   const char* env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
   if (!env_var || std::string(env_var).empty()) {
-      g_kernel_ranges.push_back({0, 0});  // 0 end = trace all
+      g_kernel_ranges.push_back({0, 0, {std::regex(".*")}});  // 0 end = trace all
       return;
   }
   std::istringstream iss(env_var);
@@ -152,7 +147,7 @@ void parse_kernel_ranges_from_env() {
                 end = start;
             }
 
-            g_kernel_ranges.push_back({start, end, {}});
+            g_kernel_ranges.push_back({start, end, {std::regex(".*")}});
         }
 
         // Update max kernel ID if needed
@@ -190,6 +185,14 @@ bool should_trace_kernel(uint64_t kernel_id, const std::string& kernel_name) {
 
 
 enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
+
+/* File pointers for the kernels, and stats files */
+static FILE *kernelsFile = NULL;
+static FILE *statsFile = NULL;
+static bool first_call = true;
+
+unsigned old_total_insts = 0;
+unsigned old_total_reported_insts = 0;
 
 void nvbit_at_init() {
   setenv("CUDA_MANAGED_FORCE_DEVICE_ALLOC", "1", 1);
@@ -272,13 +275,14 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
       uint32_t line_num = 0;
-      // Temporary workaround for a bug in NVBit 1.7.4, which does not correctly handle `call.rel`.  
-      // Instrumenting this instruction leads to illegal memory access.  
-      // Refer to: https://github.com/NVlabs/NVBit/issues/142#issue-2911561744  
-      if(!strcmp(instr->getOpcode(), "CALL.REL.NOINC")){
+      // Temporary workaround for a bug in NVBit 1.7.4, which does not correctly
+      // handle `call.rel`. Instrumenting this instruction leads to illegal
+      // memory access. Refer to:
+      // https://github.com/NVlabs/NVBit/issues/142#issue-2911561744
+      if (!strcmp(instr->getOpcode(), "CALL.REL.NOINC")) {
         printf("Warning: Ignoring CALL.REL.NOINC (NVBit 1.7.4 bug)\n");
         continue;
-      } 
+      }
 
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
         cnt++;
@@ -410,14 +414,205 @@ __global__ void flush_channel() {
   channel_dev.flush();
 }
 
-// static FILE *resultsFile = NULL;
-static FILE *kernelsFile = NULL;
-static FILE *statsFile = NULL;
-// static int kernelid = 1;
-static bool first_call = true;
+static void enter_kernel_launch(CUcontext ctx, CUfunction func,
+                                nvbit_api_cuda_t cbid, void *params,
+                                bool stream_capture = false,
+                                bool build_graph = false) {
+  // no need to sync during stream capture or manual graph build, since no
+  // kernel is actually launched.
+  if (!stream_capture && !build_graph) {
+    /* Make sure GPU is idle */
+    cudaDeviceSynchronize();
+    assert(cudaGetLastError() == cudaSuccess);
+  }
 
-unsigned old_total_insts = 0;
-unsigned old_total_reported_insts = 0;
+  // Mark if the kernel should be traced
+  std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
+  if (active_from_start && should_trace_kernel(ctx_kernelid[ctx], func_name))
+    active_region = true;
+
+  // Terminate tracing if the limit number of kernels is reached
+  if (terminate_after_limit_number_of_kernels_reached &&
+    g_max_kernel_id != 0 &&
+      ctx_kernelid[ctx] > g_max_kernel_id) {
+    exit(0);
+  }
+
+  // Get launch config for this kernel
+  unsigned int gridDimX, gridDimY, gridDimZ;
+  unsigned int blockDimX, blockDimY, blockDimZ;
+  unsigned int sharedMemBytes;
+  CUstream hStream;
+  if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
+      cbid == API_CUDA_cuLaunchKernelEx) {
+    cuLaunchKernelEx_params *p = (cuLaunchKernelEx_params *)params;
+    gridDimX = p->config->gridDimX;
+    gridDimY = p->config->gridDimY;
+    gridDimZ = p->config->gridDimZ;
+    blockDimX = p->config->blockDimX;
+    blockDimY = p->config->blockDimY;
+    blockDimZ = p->config->blockDimZ;
+    sharedMemBytes = p->config->sharedMemBytes;
+    hStream = p->config->hStream;
+  } else {
+    cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
+    gridDimX = p->gridDimX;
+    gridDimY = p->gridDimY;
+    gridDimZ = p->gridDimZ;
+    blockDimX = p->blockDimX;
+    blockDimY = p->blockDimY;
+    blockDimZ = p->blockDimZ;
+    sharedMemBytes = p->sharedMemBytes;
+    hStream = p->hStream;
+  }
+
+  // Get the number of registers and shared memory size for the kernel
+  int nregs;
+  CUDA_SAFECALL(cuFuncGetAttribute(&nregs, CU_FUNC_ATTRIBUTE_NUM_REGS, func));
+
+  int shmem_static_nbytes;
+  CUDA_SAFECALL(cuFuncGetAttribute(&shmem_static_nbytes,
+                                   CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, func));
+
+  int binary_version;
+  CUDA_SAFECALL(cuFuncGetAttribute(&binary_version,
+                                   CU_FUNC_ATTRIBUTE_BINARY_VERSION, func));
+
+  // Instrument the kernel if needed
+  instrument_function_if_needed(ctx, func);
+
+  // Enable or disable tracing based on the active region
+  if (active_region) {
+    nvbit_enable_instrumented(ctx, func, true);
+    stop_report = false;
+  } else {
+    nvbit_enable_instrumented(ctx, func, false);
+    stop_report = true;
+  }
+
+  // Create the trace file per kernel
+  char buffer[2048];
+  std::string trace_filename = user_folder + "/traces/";
+  sprintf(buffer, "%s/kernel-%d-ctx_0x%lx.trace", trace_filename.c_str(),
+          ctx_kernelid[ctx], ctx);
+
+  if (!stop_report) {
+    if (!xz_compress_trace) {
+      ctx_resultsFile[ctx] = fopen(buffer, "w");
+      printf("Writing results to %s\n", buffer);
+    } else {
+      char cmd_buffer[1039];
+      sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
+      ctx_resultsFile[ctx] = popen(cmd_buffer, "w");
+      printf("Writing results to %s.xz\n", buffer);
+    }
+
+    // Writing header information
+    fprintf(ctx_resultsFile[ctx], "-kernel name = %s\n",
+            nvbit_get_func_name(ctx, func, true));
+    fprintf(ctx_resultsFile[ctx], "-kernel id = %d\n", ctx_kernelid[ctx]);
+    fprintf(ctx_resultsFile[ctx], "-grid dim = (%d,%d,%d)\n", gridDimX,
+            gridDimY, gridDimZ);
+    fprintf(ctx_resultsFile[ctx], "-block dim = (%d,%d,%d)\n", blockDimX,
+            blockDimY, blockDimZ);
+    fprintf(ctx_resultsFile[ctx], "-shmem = %d\n",
+            shmem_static_nbytes + sharedMemBytes);
+    fprintf(ctx_resultsFile[ctx], "-nregs = %d\n", nregs);
+    fprintf(ctx_resultsFile[ctx], "-binary version = %d\n", binary_version);
+    fprintf(ctx_resultsFile[ctx], "-cuda stream id = %lu\n", (uint64_t)hStream);
+    fprintf(ctx_resultsFile[ctx], "-shmem base_addr = 0x%016lx\n",
+            (uint64_t)nvbit_get_shmem_base_addr(ctx));
+    fprintf(ctx_resultsFile[ctx], "-local mem base_addr = 0x%016lx\n",
+            (uint64_t)nvbit_get_local_mem_base_addr(ctx));
+    fprintf(ctx_resultsFile[ctx], "-nvbit version = %s\n", NVBIT_VERSION);
+    fprintf(ctx_resultsFile[ctx], "-accelsim tracer version = %s\n",
+            TRACER_VERSION);
+    fprintf(ctx_resultsFile[ctx], "-enable lineinfo = %d\n", lineinfo);
+    fprintf(ctx_resultsFile[ctx], "\n");
+
+    fprintf(ctx_resultsFile[ctx],
+            "#traces format = [line_num] PC mask dest_num [reg_dests] "
+            "opcode src_num "
+            "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
+            "immediate\n");
+    fprintf(ctx_resultsFile[ctx], "\n");
+  }
+
+  kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
+  // This will be a relative path to the traces file
+
+  sprintf(buffer, "kernel-%d-ctx_0x%lx.trace%s", ctx_kernelid[ctx], ctx,
+          xz_compress_trace ? ".xz" : "");
+  if (!stop_report) {
+    fprintf(kernelsFile, buffer);
+    fprintf(kernelsFile, "\n");
+  }
+  fclose(kernelsFile);
+
+  statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
+  unsigned blocks = gridDimX * gridDimY * gridDimZ;
+  unsigned threads = blockDimX * blockDimY * blockDimZ;
+
+  fprintf(statsFile, "%s, %s, %d, %d, %d, %d, %d, %d, %d, %d, ", buffer,
+          nvbit_get_func_name(ctx, func, true), gridDimX, gridDimY, gridDimZ,
+          blocks, blockDimX, blockDimY, blockDimZ, threads);
+
+  fclose(statsFile);
+
+  ctx_kernelid[ctx]++;
+  recv_thread_receiving = true;
+}
+
+static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
+  /* make sure current kernel is completed */
+  cudaDeviceSynchronize();
+  assert(cudaGetLastError() == cudaSuccess);
+
+  /* make sure we prevent re-entry on the nvbit_callback when issuing
+   * the flush_channel kernel */
+  skip_flag = true;
+
+  /* issue flush of channel so we are sure all the memory accesses
+   * have been pushed */
+  flush_channel<<<1, 1>>>();
+  cudaDeviceSynchronize();
+  assert(cudaGetLastError() == cudaSuccess);
+
+  /* unset the skip flag */
+  skip_flag = false;
+
+  /* wait here until the receiving thread has not finished with the
+   * current kernel */
+  while (recv_thread_receiving) {
+    pthread_yield();
+  }
+
+  unsigned total_insts_per_kernel =
+      total_dynamic_instr_counter - old_total_insts;
+  old_total_insts = total_dynamic_instr_counter;
+
+  unsigned reported_insts_per_kernel =
+      reported_dynamic_instr_counter - old_total_reported_insts;
+  old_total_reported_insts = reported_dynamic_instr_counter;
+
+  statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
+  fprintf(statsFile, "%d,%d", total_insts_per_kernel,
+          reported_insts_per_kernel);
+  fprintf(statsFile, "\n");
+  fclose(statsFile);
+
+  if (!stop_report) {
+    if (!xz_compress_trace) {
+      fclose(ctx_resultsFile[ctx]);
+    } else {
+      pclose(ctx_resultsFile[ctx]);
+    }
+  }
+
+  std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
+  if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx], func_name))
+    active_region = false;
+}
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                          const char *name, void *params, CUresult *pStatus) {
@@ -427,7 +622,8 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
   if (first_call == true) {
     first_call = false;
     std::string traces_folder = user_folder + "/traces";
-    if (mkdir(traces_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) == -1) {
+    if (mkdir(traces_folder.c_str(), S_IRWXU | S_IRWXG | S_IROTH | S_IXOTH) ==
+        -1) {
       if (errno == EEXIST) {
         // alredy exists
       } else {
@@ -446,7 +642,129 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
     fclose(statsFile);
   }
 
-  if (cbid == API_CUDA_cuMemcpyHtoD_v2) {
+  switch (cbid) {
+  // We start with recording kernel launch events
+  // Identify all the possible CUDA launch events without stream
+  // parameters, they will not get involved with cuda graph
+  case API_CUDA_cuLaunch:
+  case API_CUDA_cuLaunchGrid: {
+    cuLaunch_params *p = (cuLaunch_params *)params;
+    CUfunction func = p->f;
+    if (!is_exit) {
+      enter_kernel_launch(ctx, func, cbid, params, false, false);
+    } else {
+      leave_kernel_launch(ctx, func);
+    }
+  } break;
+  // To support kernel launched by cuda graph (in addition to existing kernel
+  // launche method), we need to do:
+  //
+  // 1. instrument kernels at cudaGraphAddKernelNode event. This is for cases
+  // that kernels are manually added to a cuda graph.
+  // 2. distinguish captured kernels when kernels are recorded to a graph
+  // using stream capture. cudaStreamIsCapturing() tells us whether a stream
+  // is capturiong.
+  // 3. per-kernel instruction counters, since cuda graph can launch multiple
+  // kernels at the same time.
+  //
+  // Three cases:
+  //
+  // 1. original kernel launch:
+  //     1a. for any kernel launch without using a stream, we instrument it
+  //     before it is launched, call cudaDeviceSynchronize after it is
+  //     launched and read the instruction counter of the kernel.
+  //     1b. for any kernel launch using a stream, but the stream is not
+  //     capturing, we do the same thing as 1a.
+  //
+  //  2. cuda graph using stream capturing: if a kernel is launched in a
+  //  stream and the stream is capturing. We instrument the kernel before it
+  //  is launched and do nothing after it is launched, because the kernel is
+  //  not running until cudaGraphLaunch. Instead, we issue a
+  //  cudaStreamSynchronize after cudaGraphLaunch is done and reset the
+  //  instruction counters, since a cloned graph might be launched afterwards.
+  //
+  //  3. cuda graph manual: we instrument the kernel added by
+  //  cudaGraphAddKernelNode and do the same thing for cudaGraphLaunch as 2.
+  //
+  // The above method should handle most of cuda graph launch cases.
+  // kernel launches with stream parameter, they can be used for cuda graph
+  case API_CUDA_cuLaunchKernel_ptsz:
+  case API_CUDA_cuLaunchKernel:
+  case API_CUDA_cuLaunchCooperativeKernel:
+  case API_CUDA_cuLaunchCooperativeKernel_ptsz:
+  case API_CUDA_cuLaunchKernelEx:
+  case API_CUDA_cuLaunchKernelEx_ptsz:
+  case API_CUDA_cuLaunchGridAsync: {
+    CUfunction func;
+    CUstream hStream;
+
+    if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
+        cbid == API_CUDA_cuLaunchKernelEx) {
+      cuLaunchKernelEx_params *p = (cuLaunchKernelEx_params *)params;
+      func = p->f;
+      hStream = p->config->hStream;
+    } else if (cbid == API_CUDA_cuLaunchKernel_ptsz ||
+               cbid == API_CUDA_cuLaunchKernel ||
+               cbid == API_CUDA_cuLaunchCooperativeKernel_ptsz ||
+               cbid == API_CUDA_cuLaunchCooperativeKernel) {
+      cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
+      func = p->f;
+      hStream = p->hStream;
+    } else {
+      cuLaunchGridAsync_params *p = (cuLaunchGridAsync_params *)params;
+      func = p->f;
+      hStream = p->hStream;
+    }
+
+    cudaStreamCaptureStatus streamStatus;
+    /* check if the stream is capturing, if yes, do not sync */
+    CUDA_SAFECALL(cudaStreamIsCapturing(hStream, &streamStatus));
+    if (!is_exit) {
+      bool stream_capture = (streamStatus == cudaStreamCaptureStatusActive);
+      enter_kernel_launch(ctx, func, cbid, params, stream_capture);
+    } else {
+      if (streamStatus != cudaStreamCaptureStatusActive) {
+        if (verbose >= 1) {
+          printf("kernel %s not captured by cuda graph\n",
+                 nvbit_get_func_name(ctx, func));
+        }
+        leave_kernel_launch(ctx, func);
+      } else {
+        if (verbose >= 1) {
+          printf("kernel %s captured by cuda graph\n",
+                 nvbit_get_func_name(ctx, func));
+        }
+      }
+    }
+  } break;
+  case API_CUDA_cuGraphAddKernelNode: {
+    cuGraphAddKernelNode_params *p = (cuGraphAddKernelNode_params *)params;
+    CUfunction func = p->nodeParams->func;
+
+    if (!is_exit) {
+      // cuGraphAddKernelNode_params->nodeParams is the same as
+      // cuLaunchKernel_params up to sharedMemBytes
+      enter_kernel_launch(ctx, func, cbid, (void *)p->nodeParams, false, true);
+    }
+  } break;
+  case API_CUDA_cuGraphLaunch: {
+    // if we are exiting a cuda graph launch:
+    // Wait until the graph is completed using
+    // cudaStreamSynchronize()
+    if (is_exit) {
+      cuGraphLaunch_params *p = (cuGraphLaunch_params *)params;
+
+      CUDA_SAFECALL(cudaStreamSynchronize(p->hStream));
+      assert(cudaGetLastError() == cudaSuccess);
+      /* push a flush channel kernel */
+      flush_channel<<<1, 1, 0, p->hStream>>>();
+      CUDA_SAFECALL(cudaStreamSynchronize(p->hStream));
+      assert(cudaGetLastError() == cudaSuccess);
+    }
+
+  } break;
+  // Now we need to record cuda memcpy events
+  case API_CUDA_cuMemcpyHtoD_v2: {
     if (!is_exit) {
       cuMemcpyHtoD_v2_params *p = (cuMemcpyHtoD_v2_params *)params;
       char buffer[1024];
@@ -456,171 +774,20 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       fprintf(kernelsFile, "\n");
       fclose(kernelsFile);
     }
-
-  } else if (cbid == API_CUDA_cuLaunchKernel_ptsz ||
-             cbid == API_CUDA_cuLaunchKernel) {
-    cuLaunchKernel_params *p = (cuLaunchKernel_params *)params;
-    std::string fun_name = std::string (nvbit_get_func_name(ctx, p->f, true));
-    if (!is_exit) {
-      
-      if (active_from_start && should_trace_kernel(ctx_kernelid[ctx],fun_name))
-        active_region = true;
-
-      if (terminate_after_limit_number_of_kernels_reached &&
-          g_max_kernel_id != 0 &&
-          ctx_kernelid[ctx] > g_max_kernel_id) {
-        exit(0);
-      }
-
-      int nregs;
-      CUDA_SAFECALL(
-          cuFuncGetAttribute(&nregs, CU_FUNC_ATTRIBUTE_NUM_REGS, p->f));
-
-      int shmem_static_nbytes;
-      CUDA_SAFECALL(cuFuncGetAttribute(
-          &shmem_static_nbytes, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES, p->f));
-
-      int binary_version;
-      CUDA_SAFECALL(cuFuncGetAttribute(&binary_version,
-                                       CU_FUNC_ATTRIBUTE_BINARY_VERSION, p->f));
-
-      instrument_function_if_needed(ctx, p->f);
-
-      if (active_region) {
-        nvbit_enable_instrumented(ctx, p->f, true);
-        stop_report = false;
-      } else {
-        nvbit_enable_instrumented(ctx, p->f, false);
-        stop_report = true;
-      }
-
-      char buffer[2048];
-      std::string trace_filename = user_folder + "/traces/"; 
-      sprintf(buffer, "%s/kernel-%d-ctx_0x%lx.trace", trace_filename.c_str(),
-              ctx_kernelid[ctx], ctx);
-
-      if (!stop_report) {
-        if (!xz_compress_trace) {
-          ctx_resultsFile[ctx] = fopen(buffer, "w");
-          printf("Writing results to %s\n", buffer);
-        } else {
-          char cmd_buffer[1039];
-          sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
-          ctx_resultsFile[ctx] = popen(cmd_buffer, "w");
-          printf("Writing results to %s.xz\n", buffer);
-        }
-
-        fprintf(ctx_resultsFile[ctx], "-kernel name = %s\n",
-                nvbit_get_func_name(ctx, p->f, true));
-        fprintf(ctx_resultsFile[ctx], "-kernel id = %d\n", ctx_kernelid[ctx]);
-        fprintf(ctx_resultsFile[ctx], "-grid dim = (%d,%d,%d)\n", p->gridDimX,
-                p->gridDimY, p->gridDimZ);
-        fprintf(ctx_resultsFile[ctx], "-block dim = (%d,%d,%d)\n", p->blockDimX,
-                p->blockDimY, p->blockDimZ);
-        fprintf(ctx_resultsFile[ctx], "-shmem = %d\n",
-                shmem_static_nbytes + p->sharedMemBytes);
-        fprintf(ctx_resultsFile[ctx], "-nregs = %d\n", nregs);
-        fprintf(ctx_resultsFile[ctx], "-binary version = %d\n", binary_version);
-        fprintf(ctx_resultsFile[ctx], "-cuda stream id = %lu\n", (uint64_t)p->hStream);
-        fprintf(ctx_resultsFile[ctx], "-shmem base_addr = 0x%016lx\n",
-                (uint64_t)nvbit_get_shmem_base_addr(ctx));
-        fprintf(ctx_resultsFile[ctx], "-local mem base_addr = 0x%016lx\n",
-                (uint64_t)nvbit_get_local_mem_base_addr(ctx));
-        fprintf(ctx_resultsFile[ctx], "-nvbit version = %s\n", NVBIT_VERSION);
-        fprintf(ctx_resultsFile[ctx], "-accelsim tracer version = %s\n", TRACER_VERSION);
-        fprintf(ctx_resultsFile[ctx], "-enable lineinfo = %d\n", lineinfo);
-        fprintf(ctx_resultsFile[ctx], "\n");
-
-        fprintf(ctx_resultsFile[ctx],
-                "#traces format = [line_num] PC mask dest_num [reg_dests] "
-                "opcode src_num "
-                "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
-                "immediate\n");
-        fprintf(ctx_resultsFile[ctx], "\n");
-      }
-
-      kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
-      // This will be a relative path to the traces file
-      
-      sprintf(buffer, "kernel-%d-ctx_0x%lx.trace%s", ctx_kernelid[ctx], ctx,
-              xz_compress_trace ? ".xz" : "");
-      if (!stop_report) {
-        fprintf(kernelsFile, buffer);
-        fprintf(kernelsFile, "\n");
-      }
-      fclose(kernelsFile);
-
-      statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
-      unsigned blocks = p->gridDimX * p->gridDimY * p->gridDimZ;
-      unsigned threads = p->blockDimX * p->blockDimY * p->blockDimZ;
-
-      fprintf(statsFile, "%s, %s, %d, %d, %d, %d, %d, %d, %d, %d, ", buffer,
-              nvbit_get_func_name(ctx, p->f, true), p->gridDimX, p->gridDimY,
-              p->gridDimZ, blocks, p->blockDimX, p->blockDimY, p->blockDimZ,
-              threads);
-
-      fclose(statsFile);
-
-      ctx_kernelid[ctx]++;
-      recv_thread_receiving = true;
-
-    } else {
-      /* make sure current kernel is completed */
-      cudaDeviceSynchronize();
-      assert(cudaGetLastError() == cudaSuccess);
-
-      /* make sure we prevent re-entry on the nvbit_callback when issuing
-       * the flush_channel kernel */
-      skip_flag = true;
-
-      /* issue flush of channel so we are sure all the memory accesses
-       * have been pushed */
-      flush_channel<<<1, 1>>>();
-      cudaDeviceSynchronize();
-      assert(cudaGetLastError() == cudaSuccess);
-
-      /* unset the skip flag */
-      skip_flag = false;
-
-      /* wait here until the receiving thread has not finished with the
-       * current kernel */
-      while (recv_thread_receiving) {
-        pthread_yield();
-      }
-
-      unsigned total_insts_per_kernel =
-          total_dynamic_instr_counter - old_total_insts;
-      old_total_insts = total_dynamic_instr_counter;
-
-      unsigned reported_insts_per_kernel =
-          reported_dynamic_instr_counter - old_total_reported_insts;
-      old_total_reported_insts = reported_dynamic_instr_counter;
-
-      statsFile = fopen(ctx_stats_location[ctx].c_str(), "a");
-      fprintf(statsFile, "%d,%d", total_insts_per_kernel,
-              reported_insts_per_kernel);
-      fprintf(statsFile, "\n");
-      fclose(statsFile);
-
-      if (!stop_report) {
-        if (!xz_compress_trace) {
-          fclose(ctx_resultsFile[ctx]);
-        } else {
-          pclose(ctx_resultsFile[ctx]);
-        }
-      }
-
-      if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx],fun_name))
-        active_region = false;
-    }
-  } else if (cbid == API_CUDA_cuProfilerStart && is_exit) {
-    if (!active_from_start) {
+  } break;
+  // For cuProfiler, we need to set the active region accordingly
+  case API_CUDA_cuProfilerStart: {
+    if (is_exit && !active_from_start) {
       active_region = true;
     }
-  } else if (cbid == API_CUDA_cuProfilerStop && is_exit) {
-    if (!active_from_start) {
+  } break;
+  case API_CUDA_cuProfilerStop: {
+    if (is_exit && !active_from_start) {
       active_region = false;
     }
+  } break;
+  default:
+    break;
   }
 }
 
@@ -740,7 +907,8 @@ void *recv_thread_fun(void *args) {
           fprintf(ctx_resultsFile[ctx], "%d ", ma->line_num);
         }
         fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the virtual PC
-        fprintf(ctx_resultsFile[ctx], "%08x ", ma->active_mask & ma->predicate_mask);
+        fprintf(ctx_resultsFile[ctx], "%08x ",
+                ma->active_mask & ma->predicate_mask);
         if (ma->GPRDst >= 0) {
           fprintf(ctx_resultsFile[ctx], "1 ");
           fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRDst);
@@ -748,7 +916,8 @@ void *recv_thread_fun(void *args) {
           fprintf(ctx_resultsFile[ctx], "0 ");
 
         // Print the opcode.
-        fprintf(ctx_resultsFile[ctx], "%s ", id_to_opcode_map[ma->opcode_id].c_str());
+        fprintf(ctx_resultsFile[ctx], "%s ",
+                id_to_opcode_map[ma->opcode_id].c_str());
         unsigned src_count = 0;
         for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
           if (ma->GPRSrcs[s] >= 0)
@@ -769,7 +938,8 @@ void *recv_thread_fun(void *args) {
             if (!token.empty())
               tokens.push_back(token);
           }
-          fprintf(ctx_resultsFile[ctx], "%d ", get_datawidth_from_opcode(tokens));
+          fprintf(ctx_resultsFile[ctx], "%d ",
+                  get_datawidth_from_opcode(tokens));
 
           bool base_stride_success = false;
           uint64_t base_addr = 0;
@@ -788,12 +958,12 @@ void *recv_thread_fun(void *args) {
 
           if (base_stride_success && enable_compress) {
             // base + stride format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx %d ", address_format::base_stride,
-                    base_addr, stride);
+            fprintf(ctx_resultsFile[ctx], "%u 0x%llx %d ",
+                    address_format::base_stride, base_addr, stride);
           } else if (!base_stride_success && enable_compress) {
             // base + delta format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx ", address_format::base_delta,
-                    base_addr);
+            fprintf(ctx_resultsFile[ctx], "%u 0x%llx ",
+                    address_format::base_delta, base_addr);
             for (int s = 0; s < deltas.size(); s++) {
               fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
             }
@@ -835,8 +1005,7 @@ void nvbit_at_ctx_term(CUcontext ctx) {
   }
 }
 
-void nvbit_at_ctx_init(CUcontext ctx)
-{
+void nvbit_at_ctx_init(CUcontext ctx) {
   // Everytime we init a context, add the foldername and kernelid to the set
   char buffer[2048];
   sprintf(buffer, "kernelslist_ctx_0x%lx", ctx);
