@@ -19,8 +19,8 @@ jobs:
     strategy:
       matrix:
         image:
-          - ubuntu24.04_cuda12.8: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
-          - ubuntu22.04_cuda11.7.1: ghcr.io/accel-sim/accel-sim-framework:ubuntu-22.04-cuda-11.7.1-minimal
+          - ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
+          - ghcr.io/accel-sim/accel-sim-framework:ubuntu-22.04-cuda-11.7.1-minimal
     runs-on: ubuntu-latest
     container:
       image: ${{ matrix.image }}
