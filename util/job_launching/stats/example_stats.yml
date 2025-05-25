@@ -33,7 +33,7 @@ collect_aggregate:
 collect_abs:
     - 'gpu_ipc\s*=\s*(.*)'
     - 'gpu_occupancy\s*=\s*(.*)%'
-    - 'L2_BW\s*=\s*(.*)+GB\/Sec'
+    - 'L2_BW\s*=\s*(.*)\s*GB\/Sec'
 
 # These stats are rates that aggregate - but cannot be diff'd
 # Only valid as a snapshot and most useful for the final kernel launch
