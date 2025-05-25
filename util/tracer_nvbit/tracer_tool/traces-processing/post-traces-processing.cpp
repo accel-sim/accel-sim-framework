@@ -113,30 +113,23 @@ int main(int argc, char **argv) {
   ifstream ifs;
   ofstream ofs;
 
-  // We can now pass a directory or a file as the input argument 
+  // We can now pass a directory or a file as the input argument
   std::filesystem::path p(filepath);
-  if (std::filesystem::is_directory(p))
-  {
-    for (const auto & entry : std::filesystem::directory_iterator(p))
-    {
+  if (std::filesystem::is_directory(p)) {
+    for (const auto &entry : std::filesystem::directory_iterator(p)) {
       std::string filename = entry.path().filename();
-      if (filename.find("kernelslist") != std::string::npos)
-      {
+      if (filename.find("kernelslist") != std::string::npos) {
         kernelslist_list.push_back(entry.path().string());
       }
     }
-  }
-  else if (std::filesystem::is_regular_file(p))
-  {
+  } else if (std::filesystem::is_regular_file(p)) {
     kernelslist_list.push_back(kernellist_filepath);
-  }
-  else
-  {
+  } else {
     cerr << "Invalid file path\n";
     return 1;
   }
 
-  for (auto kernellist_filepath : kernelslist_list){
+  for (auto kernellist_filepath : kernelslist_list) {
     string directory(kernellist_filepath);
     const size_t last_slash_idx = directory.rfind('/');
     if (std::string::npos != last_slash_idx) {
@@ -145,8 +138,9 @@ int main(int argc, char **argv) {
 
     ifs.open(kernellist_filepath.c_str());
     // If we have only one context, name it kernelslist.g by default
-    if(kernelslist_list.size() == 1 || kernelslist_list[0] == kernellist_filepath)
-      ofs.open((string(directory)+"/kernelslist.g").c_str());
+    if (kernelslist_list.size() == 1 ||
+        kernelslist_list[0] == kernellist_filepath)
+      ofs.open((string(directory) + "/kernelslist.g").c_str());
     else
       ofs.open((string(kernellist_filepath) + ".g").c_str());
 
@@ -154,7 +148,6 @@ int main(int argc, char **argv) {
       cerr << "Unable to open file: " << kernellist_filepath << endl;
       return 1;
     }
-
 
     string line;
     string filepath;
