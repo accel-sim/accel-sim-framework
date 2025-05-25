@@ -16,9 +16,14 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:  
   SASS-Simulation:
+    strategy:
+      matrix:
+        image:
+          - ubuntu24.04_cuda12.8: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
+          - ubuntu22.04_cuda11.7.1: ghcr.io/accel-sim/accel-sim-framework:ubuntu-22.04-cuda-11.7.1-minimal
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8
+      image: ${{ matrix.image }}
       # env:
         
     # Steps represent a sequence of tasks that will be executed as part of the job
