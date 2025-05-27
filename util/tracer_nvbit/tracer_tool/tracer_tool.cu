@@ -99,7 +99,7 @@ void parse_kernel_ranges_from_env() {
       g_kernel_ranges.push_back({0, 0, {std::regex(".*")}});  // 0 end = trace all
       return;
   }
-  std::string input(env);
+  std::string input(env_var);
   std::istringstream stream(input);
   std::string token;
 
