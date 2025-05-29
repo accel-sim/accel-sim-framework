@@ -99,63 +99,69 @@ void parse_kernel_ranges_from_env() {
       g_kernel_ranges.push_back({0, 0, {std::regex(".*")}});  // 0 end = trace all
       return;
   }
-  std::istringstream iss(env_var);
-    std::string token;
-    while (iss >> token) {
-        size_t dash_pos = token.find('-');
-        size_t regex_pos = token.find('@');  // kernel name indicated by @
-        uint64_t start = 0;
-        uint64_t end = 0;
+  std::string input(env_var);
+  std::istringstream stream(input);
+  std::string token;
 
-        if (regex_pos != std::string::npos) {
-            // Kernel name range with regex
-            std::string range_part = token.substr(0, regex_pos);
-            std::string regex_str = token.substr(regex_pos + 1);
+    while (stream >> token) {
+        if (token.empty()) continue;
 
-          
+        uint64_t start = 0, end = 0;
+        std::vector<std::regex> regexes;
 
-            // Parse the range part for start and end
-            size_t dash_pos_range = range_part.find('-');
-            if (dash_pos_range != std::string::npos) {
-                start = std::stoull(range_part.substr(0, dash_pos_range));
-                end = std::stoull(range_part.substr(dash_pos_range + 1));
+        size_t at_pos = token.find('@');
+        std::string range_part, regex_part;
+
+        if (at_pos != std::string::npos) {
+            range_part = token.substr(0, at_pos);
+            regex_part = token.substr(at_pos + 1);
+        } else {
+            range_part = token;
+        }
+
+        // Parse the range
+        if (!range_part.empty()) {
+            size_t dash_pos = range_part.find('-');
+            if (dash_pos != std::string::npos) {
+                std::string start_str = range_part.substr(0, dash_pos);
+                std::string end_str = range_part.substr(dash_pos + 1);
+
+                start = std::stoull(start_str);
+                if (!end_str.empty()) {
+                    end = std::stoull(end_str);
+                } else {
+                    end = 0;  // open-ended
+                }
             } else {
                 start = std::stoull(range_part);
                 end = start;
             }
+        } else {
+            // No range → match all IDs
+            start = 0;
+            end = 0;
+        }
 
-            // Split multiple regexes by commas
-            std::vector<std::string> regex_strings;
-            std::istringstream regex_stream(regex_str);
+        // Parse the regexes
+        if (!regex_part.empty()) {
+            std::istringstream regex_stream(regex_part);
             std::string regex_token;
             while (std::getline(regex_stream, regex_token, ',')) {
                 try {
-                    g_kernel_ranges.push_back({start, end, {std::regex(regex_token)}});
+                    regexes.emplace_back(regex_token);
                 } catch (const std::regex_error& e) {
                     std::cerr << "Invalid regex: " << regex_token << std::endl;
                 }
             }
         } else {
-            // Normal range without kernel name regex
-            size_t dash_pos_range = token.find('-');
-
-            if (dash_pos_range != std::string::npos) {
-                start = std::stoull(token.substr(0, dash_pos_range));
-                end = std::stoull(token.substr(dash_pos_range + 1));
-            } else {
-                start = std::stoull(token);
-                end = start;
-            }
-
-            g_kernel_ranges.push_back({start, end, {std::regex(".*")}});
+            regexes.emplace_back(".*");  // match all kernel names
         }
 
-        // Update max kernel ID if needed
+        g_kernel_ranges.push_back({start, end, regexes});
         if (end > g_max_kernel_id) {
             g_max_kernel_id = end;
         }
     }
-
 
 }
 
@@ -761,8 +767,10 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
       CUDA_SAFECALL(cudaStreamSynchronize(p->hStream));
       assert(cudaGetLastError() == cudaSuccess);
       /* push a flush channel kernel */
+      skip_flag = true;
       flush_channel<<<1, 1, 0, p->hStream>>>();
       CUDA_SAFECALL(cudaStreamSynchronize(p->hStream));
+      skip_flag = false;
       assert(cudaGetLastError() == cudaSuccess);
     }
 
