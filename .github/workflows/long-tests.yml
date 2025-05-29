@@ -207,10 +207,3 @@ jobs:
           /bin/bash ./gpu-simulator/format-code.sh
           /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
           if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi
-  CI-Ready:
-    runs-on: ubuntu-latest
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, format-code]
-    steps:
-      - uses: actions/checkout@v4
-      - name: Run Simulation
-        run: echo "All tests passed"
