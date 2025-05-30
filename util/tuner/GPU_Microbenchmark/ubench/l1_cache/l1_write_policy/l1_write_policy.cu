@@ -11,6 +11,7 @@ paper: https://arxiv.org/pdf/1810.07269.pdf
 #include <assert.h>
 #include <cstdio>
 #include <iostream>
+#include <stdint.h>
 using namespace std;
 
 #include "../../../hw_def/hw_def.h"

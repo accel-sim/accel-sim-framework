@@ -10,6 +10,8 @@ run the program with nsight
 
 #include <cstdio>
 #include <iostream>
+#include <stdint.h>
+
 
 using namespace std;
 
