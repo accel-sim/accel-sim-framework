@@ -13,12 +13,12 @@
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <regex>
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
@@ -86,7 +86,8 @@ std::string kernel_ranges = "";
 struct KernelRange {
   uint64_t start;
   uint64_t end; // UINT64_MAX means open-ended
-  std::vector<std::regex> kernel_name_regexes;  // Vector of regexes for multiple patterns
+  std::vector<std::regex>
+      kernel_name_regexes; // Vector of regexes for multiple patterns
 };
 std::vector<KernelRange> g_kernel_ranges;
 uint64_t g_max_kernel_id = 0;
@@ -94,101 +95,100 @@ void parse_kernel_ranges_from_env() {
   g_kernel_ranges.clear();
   g_max_kernel_id = 0;
 
-  const char* env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
+  const char *env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
   if (!env_var || std::string(env_var).empty()) {
-      g_kernel_ranges.push_back({0, 0, {std::regex(".*")}});  // 0 end = trace all
-      return;
+    g_kernel_ranges.push_back({0, 0, {std::regex(".*")}}); // 0 end = trace all
+    return;
   }
   std::string input(env_var);
   std::istringstream stream(input);
   std::string token;
 
-    while (stream >> token) {
-        if (token.empty()) continue;
+  while (stream >> token) {
+    if (token.empty())
+      continue;
 
-        uint64_t start = 0, end = 0;
-        std::vector<std::regex> regexes;
+    uint64_t start = 0, end = 0;
+    std::vector<std::regex> regexes;
 
-        size_t at_pos = token.find('@');
-        std::string range_part, regex_part;
+    size_t at_pos = token.find('@');
+    std::string range_part, regex_part;
 
-        if (at_pos != std::string::npos) {
-            range_part = token.substr(0, at_pos);
-            regex_part = token.substr(at_pos + 1);
-        } else {
-            range_part = token;
-        }
-
-        // Parse the range
-        if (!range_part.empty()) {
-            size_t dash_pos = range_part.find('-');
-            if (dash_pos != std::string::npos) {
-                std::string start_str = range_part.substr(0, dash_pos);
-                std::string end_str = range_part.substr(dash_pos + 1);
-
-                start = std::stoull(start_str);
-                if (!end_str.empty()) {
-                    end = std::stoull(end_str);
-                } else {
-                    end = 0;  // open-ended
-                }
-            } else {
-                start = std::stoull(range_part);
-                end = start;
-            }
-        } else {
-            // No range → match all IDs
-            start = 0;
-            end = 0;
-        }
-
-        // Parse the regexes
-        if (!regex_part.empty()) {
-            std::istringstream regex_stream(regex_part);
-            std::string regex_token;
-            while (std::getline(regex_stream, regex_token, ',')) {
-                try {
-                    regexes.emplace_back(regex_token);
-                } catch (const std::regex_error& e) {
-                    std::cerr << "Invalid regex: " << regex_token << std::endl;
-                }
-            }
-        } else {
-            regexes.emplace_back(".*");  // match all kernel names
-        }
-
-        g_kernel_ranges.push_back({start, end, regexes});
-        if (end > g_max_kernel_id) {
-            g_max_kernel_id = end;
-        }
+    if (at_pos != std::string::npos) {
+      range_part = token.substr(0, at_pos);
+      regex_part = token.substr(at_pos + 1);
+    } else {
+      range_part = token;
     }
 
+    // Parse the range
+    if (!range_part.empty()) {
+      size_t dash_pos = range_part.find('-');
+      if (dash_pos != std::string::npos) {
+        std::string start_str = range_part.substr(0, dash_pos);
+        std::string end_str = range_part.substr(dash_pos + 1);
+
+        start = std::stoull(start_str);
+        if (!end_str.empty()) {
+          end = std::stoull(end_str);
+        } else {
+          end = 0; // open-ended
+        }
+      } else {
+        start = std::stoull(range_part);
+        end = start;
+      }
+    } else {
+      // No range → match all IDs
+      start = 0;
+      end = 0;
+    }
+
+    // Parse the regexes
+    if (!regex_part.empty()) {
+      std::istringstream regex_stream(regex_part);
+      std::string regex_token;
+      while (std::getline(regex_stream, regex_token, ',')) {
+        try {
+          regexes.emplace_back(regex_token);
+        } catch (const std::regex_error &e) {
+          std::cerr << "Invalid regex: " << regex_token << std::endl;
+        }
+      }
+    } else {
+      regexes.emplace_back(".*"); // match all kernel names
+    }
+
+    g_kernel_ranges.push_back({start, end, regexes});
+    if (end > g_max_kernel_id) {
+      g_max_kernel_id = end;
+    }
+  }
 }
 
-bool should_trace_kernel(uint64_t kernel_id, const std::string& kernel_name) {
-  for (const auto& range : g_kernel_ranges) {
+bool should_trace_kernel(uint64_t kernel_id, const std::string &kernel_name) {
+  for (const auto &range : g_kernel_ranges) {
     // Check range for kernel ID
     if (range.end == 0) {
-        if (kernel_id >= range.start) {
-            // Match any of the regexes for this range
-            for (const auto& regex : range.kernel_name_regexes) {
-                if (std::regex_match(kernel_name, regex)) {
-                    return true;
-                }
-            }
-        }
-    } else if (kernel_id >= range.start && kernel_id <= range.end) {
+      if (kernel_id >= range.start) {
         // Match any of the regexes for this range
-        for (const auto& regex : range.kernel_name_regexes) {
-            if (std::regex_match(kernel_name, regex)) {
-                return true;
-            }
+        for (const auto &regex : range.kernel_name_regexes) {
+          if (std::regex_match(kernel_name, regex)) {
+            return true;
+          }
         }
+      }
+    } else if (kernel_id >= range.start && kernel_id <= range.end) {
+      // Match any of the regexes for this range
+      for (const auto &regex : range.kernel_name_regexes) {
+        if (std::regex_match(kernel_name, regex)) {
+          return true;
+        }
+      }
     }
   }
   return false;
 }
-
 
 enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
 
@@ -213,15 +213,17 @@ void nvbit_at_init() {
               "Include source code line info at the start of each traced line. "
               "The target binary must be compiled with -lineinfo or "
               "--generate-line-info");
-  GET_VAR_STR(kernel_ranges, "DYNAMIC_KERNEL_RANGE",
-  "Specify kernel IDs or ranges to trace. Format:\n"
-  "  - Single ID:       \"2\" traces only kernel 2.\n"
-  "  - Range:           \"5-8\" traces kernels 5 through 8 (inclusive).\n"
-  "  - Open-ended:      \"10-\" traces from kernel 10 onward.\n"
-  "  - Multiple ranges: \"2 5-8 10-\" (space-separated).\n"
-  "  - With regex:      \"5-8@kernel_a.*,kernel_b.*\" traces kernels 5–8 with matching names.\n"
-  "If unset or empty, all kernels will be traced from the beginning.");
-GET_VAR_INT(
+  GET_VAR_STR(
+      kernel_ranges, "DYNAMIC_KERNEL_RANGE",
+      "Specify kernel IDs or ranges to trace. Format:\n"
+      "  - Single ID:       \"2\" traces only kernel 2.\n"
+      "  - Range:           \"5-8\" traces kernels 5 through 8 (inclusive).\n"
+      "  - Open-ended:      \"10-\" traces from kernel 10 onward.\n"
+      "  - Multiple ranges: \"2 5-8 10-\" (space-separated).\n"
+      "  - With regex:      \"5-8@kernel_a.*,kernel_b.*\" traces kernels 5–8 "
+      "with matching names.\n"
+      "If unset or empty, all kernels will be traced from the beginning.");
+  GET_VAR_INT(
       active_from_start, "ACTIVE_FROM_START", 1,
       "Start instruction tracing from start or wait for cuProfilerStart "
       "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_RANGE options have no "
@@ -242,13 +244,11 @@ GET_VAR_INT(
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
-  
   active_region = false;
-  char * usr_defined_folder = std::getenv("TRACES_FOLDER");
+  char *usr_defined_folder = std::getenv("TRACES_FOLDER");
   if (usr_defined_folder != NULL)
     user_folder = usr_defined_folder;
   parse_kernel_ranges_from_env();
-
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
@@ -274,7 +274,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     const std::vector<Instr *> &instrs = nvbit_get_instrs(ctx, f);
     if (verbose) {
       printf("Inspecting function %s at address 0x%lx\n",
-             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx,f));
+             nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx, f));
     }
 
     uint32_t cnt = 0;
@@ -438,8 +438,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
     active_region = true;
 
   // Terminate tracing if the limit number of kernels is reached
-  if (terminate_after_limit_number_of_kernels_reached &&
-    g_max_kernel_id != 0 &&
+  if (terminate_after_limit_number_of_kernels_reached && g_max_kernel_id != 0 &&
       ctx_kernelid[ctx] > g_max_kernel_id) {
     exit(0);
   }
