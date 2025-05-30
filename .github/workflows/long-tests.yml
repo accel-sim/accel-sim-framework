@@ -50,7 +50,7 @@ jobs:
           rm -rf ./statistics-archive
           git clone git@github.com:accel-sim/statistics-archive.git
           # either create a new branch or check it out if it already exists
-          git -C ./statistics-archive checkout git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT 2>/dev/null || git -C ./statistics-archive checkout -b git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          git -C ./statistics-archive checkout ${GITHUB_REF} 2>/dev/null || git -C ./statistics-archive checkout -b ${GITHUB_REF}
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
@@ -72,7 +72,7 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             git -C ./statistics-archive add --all
             git -C ./statistics-archive commit \
-            -m "Jenkins automated checkin git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT Build:$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT" || echo "No Changes."
+            -m "Jenkins automated checkin ${GITHUB_REF} Build:$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT" || echo "No Changes."
             git -C ./statistics-archive push -u origin ${GITHUB_REF}
           fi
       - name: Correlate Ubench
