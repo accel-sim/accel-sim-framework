@@ -88,13 +88,15 @@ jobs:
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             rm -rf /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
+            mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
           fi
           BODY="Github CI - Build $GITHUB_REF SUCCESS.
           Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Branch/PR Name: $GITHUB_REF_NAME
-          Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
-          SUBJECT="Github CI - Build $GITHUB_REF SUCCESS"
+          Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/.
+          Directory: /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess"
+          SUBJECT="✅ Github CI - Build $GITHUB_REF SUCCESS"
           TO="${{ secrets.GROUP_EMAIL }}"
           echo "$BODY" | mail -s "$SUBJECT" "$TO"
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
@@ -214,3 +216,19 @@ jobs:
           /bin/bash ./gpu-simulator/format-code.sh
           /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
           if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi
+  failures:
+    if: failure()
+    runs-on: tgrogers-raid
+    steps:
+      - name: Notify Failure
+        run: |
+          BODY="Github CI - Build $GITHUB_REF FAILED.
+          Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          Branch/PR Name: $GITHUB_REF_NAME"
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+            SUBJECT="❗Github CI FAILED - Build $GITHUB_REF"
+          else
+            SUBJECT="⚠️ Github CI FAILED - PR $GITHUB_REF"
+          fi
+          TO="${{ secrets.GROUP_EMAIL }}"
+          echo "$BODY" | mail -s "$SUBJECT" "$TO"
