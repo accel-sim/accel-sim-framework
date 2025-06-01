@@ -11,6 +11,10 @@ TITANXX:
 TITANK:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM3_KEPLER_TITAN/gpgpusim.config"
 
+#Jetson Orin Developer Kit (Ampere)
+ORIN:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM87_ORIN/gpgpusim.config"
+
 #Ampere RTX 3070
 RTX3070:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM86_RTX3070/gpgpusim.config"
@@ -60,9 +64,46 @@ PTX:
 # Extra configs - these are composable.
 # The names here will be appended to the basefile name with hyphens
 #   For example TITANX-L1ON-PTXPLUS
+# -gpgpu_cache:dl1 S:4:128:384,L:T:m:L:L,A:384:48,16:0,32
+no_L1L2_wr:
+    extra_params: "-gpgpu_cache:dl1 S:4:128:384,L:L:m:N:L,A:384:48,16:0,32\n
+                    -gpgpu_cache:dl2 S:128:128:16,L:B:m:N:X,A:192:4,32:0,32"
+no_L1_wr:
+    extra_params: "-gpgpu_cache:dl1 S:4:128:384,L:L:m:N:L,A:384:48,16:0,32"
+no_L2_wr:
+    extra_params: "-gpgpu_cache:dl2 S:128:128:16,L:B:m:N:X,A:192:4,32:0,32"
+bypassl1:
+    extra_params: "-gpgpu_gmem_skip_L1D 1"
+test:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:1024:8,16:0,32"
+lazyfetch:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32"
+lazyfetchWT:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:T:m:L:L,A:1024:8,16:0,32"
+lazyfetchonfill:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:s:L:L,A:256:8,16:0,32"
+fow:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:F:L,A:1024:8,16:0,32"
+testing:
+    extra_params: "#for testing"
+rw0:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,0"
+rw25:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,25"
+rw50:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,50"
+rw75:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:B:m:L:L,A:1024:8,16:0,32,75"
+test:
+    extra_params: "#functionality test"
+ONMISS:
+    extra_params: "-gpgpu_cache:dl1 S:1:128:256,L:L:m:N:L,A:512:8,16:0,32"
 MULTI_KERNEL:
     extra_params: "-gpgpu_concurrent_kernel_sm 1"
-
+multiport:
+    extra_params: "-gpgpu_mem_unit_ports 4"
+singlebank:
+    extra_params: "-gpgpu_l1_banks 1"
 64SM:
     extra_params: "-gpgpu_n_clusters 64"
 
@@ -183,3 +224,136 @@ Accelwattch_PTX_SIM:
     extra_params: "-power_simulation_enabled 1
     \n-power_simulation_mode 0
     \n-accelwattch_xml_file accelwattch_ptx_sim.xml"
+DRAM:
+    extra_params: "-gpgpu_dram_buswidth 2 -gpgpu_dram_burst_length 32"
+DRAMTIMING:
+    extra_params: "-gpgpu_dram_timing_opt nbk=16:CCD=1:RRD=6:RCD=19:RAS=43:RP=19:RC=62:CL=19:WL=3:CDLR=4:WR=16:nbkgrp=4:CCDL=3:RTPL=6 -dram_dual_bus_interface 1"
+DUALBUS:
+    extra_params: "-dram_dual_bus_interface 1"
+SIMPLEDRAM:
+    extra_params: "-gpgpu_simple_dram_model 1"
+latency:
+    extra_params: "-gpgpu_kernel_launch_latency 5000"
+BUS4:
+    extra_params: "-gpgpu_dram_buswidth 4"
+TEST:
+    extra_params: "#TEST"
+reg4:
+    extra_params: "-gpgpu_reg_file_port_throughput 4"
+regbank16:
+    extra_params: "-gpgpu_num_reg_banks 16"
+regbank32:
+    extra_params: "-gpgpu_num_reg_banks 32"
+l1bank8:
+    extra_params: "-gpgpu_l1_banks 8"
+l1bank16:
+    extra_params: "-gpgpu_l1_banks 16"
+mem2600:
+    extra_params: "-gpgpu_clock_domains 1300:1300:1300:2600"
+mem16:
+    extra_params: "-gpgpu_n_mem 16"
+DRAMTIMING:
+    extra_params: "-gpgpu_dram_timing_opt nbk=16:CCD=16:RRD=5:RCD=22:RAS=21:RP=22:RC=29:CL=22:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
+memport4:
+    extra_params: "-gpgpu_mem_unit_ports 4"
+l2:
+    extra_params: "-gpgpu_cache:dl2 S:16:128:128,L:B:m:L:X,A:192:4,32:0,32"
+# compare these with mem16 (default one for now)
+sub1:
+    extra_params: "-gpgpu_n_sub_partition_per_mchannel 1"
+mem8:
+    extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4"
+mem8b8:
+    extra_params: "-gpgpu_n_mem 8 -gpgpu_dram_buswidth 4 -gpgpu_dram_timing_opt nbk=8:CCD=16:RRD=5:RCD=9:RAS=21:RP=9:RC=29:CL=9:WL=3:CDLR=4:WR=9:nbkgrp=4:CCDL=3:RTPL=2"
+14SM:
+    extra_params: "-gpgpu_n_clusters 14"
+1GR:
+    extra_params: '-gpgpu_graphics_sm_count 1'
+2GR:
+    extra_params: '-gpgpu_graphics_sm_count 2'
+3GR:
+    extra_params: '-gpgpu_graphics_sm_count 3'
+4GR:
+    extra_params: '-gpgpu_graphics_sm_count 4'
+5GR:
+    extra_params: '-gpgpu_graphics_sm_count 5'
+6GR:
+    extra_params: '-gpgpu_graphics_sm_count 6'
+7GR:
+    extra_params: '-gpgpu_graphics_sm_count 7'
+8GR:
+    extra_params: '-gpgpu_graphics_sm_count 8'
+9GR:
+    extra_params: '-gpgpu_graphics_sm_count 9'
+10GR:
+    extra_params: '-gpgpu_graphics_sm_count 10'
+11GR:
+    extra_params: '-gpgpu_graphics_sm_count 11'
+12GR:
+    extra_params: '-gpgpu_graphics_sm_count 12'
+13GR:
+    extra_params: '-gpgpu_graphics_sm_count 13'
+14GR:
+    extra_params: '-gpgpu_graphics_sm_count 14'
+15GR:
+    extra_params: '-gpgpu_graphics_sm_count 15'
+concurrent:
+    extra_params: "-gpgpu_concurrent_kernel_sm 1 -gpgpu_max_concurrent_kernel 64 -gpgpu_local_mem_map 0 -gpgpu_l1_cache_write_ratio 0"
+best:
+    extra_params: "-gpgpu_scheduler best"
+invalidate_l2:
+    extra_params: "-gpgpu_invalidte_l2 1"
+utility:
+    extra_params: "-gpgpu_utility 1"
+MIG:
+    extra_params: '-gpgpu_concurrent_mig 1'
+fg:
+    extra_params: '-gpgpu_concurrent_finegrain 1'
+dynamic_sm2:
+    extra_params: '-gpgpu_dynamic_sm_count 2'
+dynamic_sm3:
+    extra_params: '-gpgpu_dynamic_sm_count 3'
+mps_sm8:
+    extra_params: '-gpgpu_mps_sm_count 8'
+slicer:
+    extra_params: '-gpgpu_slicer 1'
+WR0:
+    extra_params: '-gpgpu_l1_cache_write_ratio 0'
+2XL2:
+    extra_params: '-gpgpu_cache:dl2 S:128:128:16,L:B:m:L:X,A:192:4,32:0,32'
+256KB_L1:
+    extra_params: '-gpgpu_cache:dl1 S:4:128:512,L:T:m:L:L,A:512:48,16:0,32 -gpgpu_unified_l1d_size 256'
+512KB_L1:
+    extra_params: '-gpgpu_cache:dl1 S:8:128:512,L:T:m:L:L,A:512:48,16:0,32 -gpgpu_unified_l1d_size 512'
+SUB_PART_4:
+    extra_params: '-gpgpu_n_sub_partition_per_mchannel 4'
+perf_l2:
+    extra_params: '-gpgpu_perfect_l2 1'
+perf_l1:
+    extra_params: '-gpgpu_perfect_l1 1'
+ASTC:
+    extra_params: '# '
+SRGB:
+    extra_params: '# '
+dumb12:
+    extra_params: '# '
+dumb8:
+    extra_params: '# '
+50l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 50'
+60l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 60'
+70l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 70'
+80l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 80'
+90l2:
+    extra_params: '-gpgpu_l2_graphics_ratio 90'
+2sm:
+    extra_params: '-gpgpu_dynamic_sm_count 2'
+3sm:
+    extra_params: '-gpgpu_dynamic_sm_count 3'
+4sm:
+    extra_params: '-gpgpu_dynamic_sm_count 4'
+5sm:
+    extra_params: '-gpgpu_dynamic_sm_count 5'

@@ -17,6 +17,7 @@ enum command_type {
   kernel_launch = 1,
   cpu_gpu_mem_copy,
   gpu_cpu_mem_copy,
+  tex_mem_cpy,
 };
 
 enum address_space { GLOBAL_MEM = 1, SHARED_MEM, LOCAL_MEM, TEX_MEM };
@@ -142,14 +143,16 @@ class trace_parser {
   kernel_trace_t *parse_kernel_info(const std::string &kerneltraces_filepath);
 
   void parse_memcpy_info(const std::string &memcpy_command, size_t &add,
-                         size_t &count);
+                         size_t &count, size_t &per_CTA);
 
   void get_next_threadblock_traces(
       std::vector<std::vector<inst_trace_t> *> threadblock_traces,
       unsigned trace_version, unsigned enable_lineinfo,
-      class PipeReader &pipeReader);
+      class PipeReader &pipeReader, std::string kernel_name);
 
   void kernel_finalizer(kernel_trace_t *trace_info);
+  unsigned graphics_count;
+  unsigned compute_count;
 
  private:
   std::string kernellist_filename;

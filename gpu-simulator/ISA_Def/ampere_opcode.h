@@ -173,13 +173,12 @@ static const std::unordered_map<std::string, OpcodeChar> Ampere_OpcodeMap = {
     {"VOTEU", OpcodeChar(OP_VOTEU, SPECIALIZED_UNIT_4_OP)},
 
     // Texture Instructions
-    // For now, we ignore texture loads, consider it as ALU_OP
-    {"TEX", OpcodeChar(OP_TEX, SPECIALIZED_UNIT_2_OP)},
-    {"TLD", OpcodeChar(OP_TLD, SPECIALIZED_UNIT_2_OP)},
-    {"TLD4", OpcodeChar(OP_TLD4, SPECIALIZED_UNIT_2_OP)},
-    {"TMML", OpcodeChar(OP_TMML, SPECIALIZED_UNIT_2_OP)},
-    {"TXD", OpcodeChar(OP_TXD, SPECIALIZED_UNIT_2_OP)},
-    {"TXQ", OpcodeChar(OP_TXQ, SPECIALIZED_UNIT_2_OP)},
+    {"TEX", OpcodeChar(OP_TEX, LOAD_OP)},
+    {"TLD", OpcodeChar(OP_TLD, LOAD_OP)},
+    {"TLD4", OpcodeChar(OP_TLD4, LOAD_OP)},
+    {"TMML", OpcodeChar(OP_TMML, LOAD_OP)},
+    {"TXD", OpcodeChar(OP_TXD, LOAD_OP)},
+    {"TXQ", OpcodeChar(OP_TXQ, LOAD_OP)},
 
     // Surface Instructions //
     {"SUATOM", OpcodeChar(OP_SUATOM, ALU_OP)},

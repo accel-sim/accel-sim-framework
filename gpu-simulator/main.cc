@@ -37,3 +37,11 @@ int main(int argc, const char **argv) {
 
   return 0;
 }
+
+gpgpu_sim *gpgpu_trace_sim_init_perf_model(int argc, const char *argv[],
+                                           gpgpu_context *m_gpgpu_context,
+                                           class trace_config *m_config);
+
+trace_kernel_info_t *create_kernel_info( kernel_trace_t* kernel_trace_info,
+		                      gpgpu_context *m_gpgpu_context, class trace_config *config,
+							  trace_parser *parser);
