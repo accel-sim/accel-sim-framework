@@ -86,11 +86,11 @@ jobs:
           ./util/plotting/plot-correlation.py -c ./ampere-ubench-sass-latest2.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
-          # if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
+          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             rm -rf /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
-          # fi
+          fi
           BODY="Github CI - Build $GITHUB_REF SUCCESS.
           Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           Branch/PR Name: $GITHUB_REF_NAME
@@ -219,6 +219,7 @@ jobs:
   failures:
     if: failure()
     runs-on: tgrogers-raid
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
     steps:
       - name: Notify Failure
         run: |
