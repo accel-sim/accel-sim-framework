@@ -19,10 +19,11 @@
  *    To prevent "dead"-code elimination by the compiler.
  */
 extern "C" __device__ __noinline__ void
-instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
-                uint64_t addr, int32_t width, int32_t desReg, int32_t srcReg1,
-                int32_t srcReg2, int32_t srcReg3, int32_t srcReg4,
-                int32_t srcReg5, int32_t srcNum, uint64_t immediate,
+instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma, 
+                uint64_t tma_param_handle, uint32_t tma_param_handle_size, 
+                bool is_mem, uint64_t addr, int32_t width, 
+                int32_t desReg, int32_t srcReg1, int32_t srcReg2, int32_t srcReg3, 
+                int32_t srcReg4, int32_t srcReg5, int32_t srcNum, uint64_t immediate,
                 uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
                 uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
                 uint32_t line_num, uint32_t instr_idx) {
@@ -38,48 +39,67 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
     }
   }
 
-  inst_trace_t ma;
+  inst_trace_t trace;
 
-  if (is_mem) {
-    /* collect memory address information */
-    for (int i = 0; i < 32; i++) {
-      ma.addrs[i] = __shfl_sync(active_mask, addr, i);
-    }
-    ma.width = width;
-    ma.is_mem = true;
-  } else {
-    ma.is_mem = false;
-  }
-
+  // Set the trace header
   int4 cta = get_ctaid();
+  #if __CUDA_ARCH__ >= 900
+  int4 cluster_cta = get_cluster_ctaid();
+  #else
+  int4 cluster_cta = {0, 0, 0, 0}; // Dummy values for pre-SM90
+  #endif
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
-  ma.line_num = line_num;
-  ma.instr_idx = instr_idx;
-  ma.warpid_tb = uniqe_threadId / 32;
+  trace.instr_idx = instr_idx;
+  trace.active_mask = active_mask;
+  trace.predicate_mask = predicate_mask;
+  trace.cta_id_x = cta.x;
+  trace.cta_id_y = cta.y;
+  trace.cta_id_z = cta.z;
+  trace.cluster_cta_id_x = cluster_cta.x;
+  trace.cluster_cta_id_y = cluster_cta.y;
+  trace.cluster_cta_id_z = cluster_cta.z;
+  trace.warpid_tb = uniqe_threadId / 32;
+  trace.warpid_sm = get_warpid();
+  trace.sm_id = get_smid();
+  trace.opcode_id = opcode_id;
+  trace.vpc = vpc;
+  trace.line_num = line_num;
 
-  ma.cta_id_x = cta.x;
-  ma.cta_id_y = cta.y;
-  ma.cta_id_z = cta.z;
-  ma.warpid_sm = get_warpid();
-  ma.opcode_id = opcode_id;
-  ma.vpc = vpc;
-  ma.GPRDst = desReg;
-  ma.GPRSrcs[0] = srcReg1;
-  ma.GPRSrcs[1] = srcReg2;
-  ma.GPRSrcs[2] = srcReg3;
-  ma.GPRSrcs[3] = srcReg4;
-  ma.GPRSrcs[4] = srcReg5;
-  ma.numSrcs = srcNum;
-  ma.imm = immediate;
-  ma.active_mask = active_mask;
-  ma.predicate_mask = predicate_mask;
-  ma.sm_id = get_smid();
+  if (!is_tma) {
+    // For regular instructions
+    trace.inst_type = TracerInstrType::INST_REGULAR;
+    if (is_mem) {
+      /* collect memory address information */
+      for (int i = 0; i < 32; i++) {
+        trace.inst.regular.addrs[i] = __shfl_sync(active_mask, addr, i);
+      }
+      trace.inst.regular.width = width;
+      trace.inst.regular.is_mem = true;
+    } else {
+      trace.inst.regular.is_mem = false;
+    }
+    trace.inst.regular.GPRDst = desReg;
+    trace.inst.regular.GPRSrcs[0] = srcReg1;
+    trace.inst.regular.GPRSrcs[1] = srcReg2;
+    trace.inst.regular.GPRSrcs[2] = srcReg3;
+    trace.inst.regular.GPRSrcs[3] = srcReg4;
+    trace.inst.regular.GPRSrcs[4] = srcReg5;
+    trace.inst.regular.numSrcs = srcNum;
+    trace.inst.regular.imm = immediate;
+  } else {
+    // For TMA instructions
+    trace.inst_type = TracerInstrType::INST_TMA;
+    memset(trace.inst.tma.tma_param_handle, 0, sizeof(trace.inst.tma.tma_param_handle));
+    memcpy(trace.inst.tma.tma_param_handle, (uint8_t *) tma_param_handle, tma_param_handle_size);
+    trace.inst.tma.tma_param_handle_ptr = tma_param_handle;
+    trace.inst.tma.tma_param_handle_size = tma_param_handle_size;
+  }
 
-  /* first active lane pushes information on the channel */
+  // First active lane pushes information on the channel
   if (first_laneid == laneid) {
     ChannelDev *channel_dev = (ChannelDev *)pchannel_dev;
-    channel_dev->push(&ma, sizeof(inst_trace_t));
+    channel_dev->push(&trace, sizeof(inst_trace_t));
     atomicAdd((unsigned long long *)ptotal_dynamic_instr_counter, 1);
     atomicAdd((unsigned long long *)preported_dynamic_instr_counter, 1);
   }

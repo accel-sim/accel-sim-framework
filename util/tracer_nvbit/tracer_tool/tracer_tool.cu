@@ -309,14 +309,6 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
       uint32_t line_num = 0;
-      // Temporary workaround for a bug in NVBit 1.7.4, which does not correctly
-      // handle `call.rel`. Instrumenting this instruction leads to illegal
-      // memory access. Refer to:
-      // https://github.com/NVlabs/NVBit/issues/142#issue-2911561744
-      if (!strcmp(instr->getOpcode(), "CALL.REL.NOINC")) {
-        printf("Warning: Ignoring CALL.REL.NOINC (NVBit 1.7.4 bug)\n");
-        continue;
-      }
 
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
         cnt++;
@@ -375,6 +367,11 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         // Add immediate value for DEPBAR instruction
         else if (op->type == InstrType::OperandType::IMM_UINT64) {
           imm_value = instr->getOperand(i)->u.imm_uint64.value;
+        } else if (op->type == InstrType::OperandType::TMA_PARAM_HANDLE) {
+          // TMA param handle is handled as a whole with
+          // nvbit_add_call_arg_tma_param_handle
+          // Skip here
+          continue;
         }
       }
 
@@ -390,8 +387,21 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         nvbit_add_call_arg_const_val32(instr, opcode_id);
         nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
 
+        /* tma setup */
+        if (instr->isTMAMem()) {
+          // Set is_mem to true and add tma param handle
+          nvbit_add_call_arg_const_val32(instr, 1);
+          nvbit_add_call_arg_tma_param_handle(instr, ctx);
+        } else {
+          // Dummy values for regular instructions
+          nvbit_add_call_arg_const_val32(instr, 0);
+          nvbit_add_call_arg_const_val64(instr, 0);
+          nvbit_add_call_arg_const_val32(instr, 0);
+        }
+
         /* mem addresses info */
         if (mem_oper_idx >= 0) {
+          // Set is_mem to true
           nvbit_add_call_arg_const_val32(instr, 1);
           assert(num_mref <= 2);
           if (num_mref == 2) { // LDGSTS
@@ -972,11 +982,11 @@ void *recv_thread_fun(void *args) {
         (num_recv_bytes = channel_host.recv(recv_buffer, CHANNEL_SIZE)) > 0) {
       uint32_t num_processed_bytes = 0;
       while (num_processed_bytes < num_recv_bytes) {
-        inst_trace_t *ma = (inst_trace_t *)&recv_buffer[num_processed_bytes];
+        inst_trace_t *trace = (inst_trace_t *)&recv_buffer[num_processed_bytes];
 
         /* when we get this cta_id_x it means the kernel has completed
          */
-        if (ma->cta_id_x == -1) {
+        if (trace->cta_id_x == -1) {
           recv_thread_receiving = false;
           if (enable_spinlock_fast_forward) {
             // Clear the counter map for all warps as we are starting a new
@@ -989,8 +999,8 @@ void *recv_thread_fun(void *args) {
         /* Spinlock fast forwarding */
         if (enable_spinlock_fast_forward) {
           // Check if this warp is in the warp_counter_map
-          warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y,
-                                                ma->cta_id_z, ma->warpid_tb);
+          warp_key_t warp_key = std::make_tuple(trace->cta_id_x, trace->cta_id_y,
+                                                trace->cta_id_z, trace->warpid_tb);
           if (warp_counter_map.find(warp_key) == warp_counter_map.end()) {
             // This warp is not in the warp_counter_map, so we create a counter
             // for this warp using the spinlock instruction indices for the
@@ -1004,10 +1014,10 @@ void *recv_thread_fun(void *args) {
           auto &counter = warp_counter_map[warp_key];
 
           // Now check if we should start spinlock fast forwarding for this warp
-          if (counter.find(ma->instr_idx) != counter.end()) {
+          if (counter.find(trace->instr_idx) != counter.end()) {
             // We are still in a spinlock loop, so we increment the counter
-            counter[ma->instr_idx]++;
-            if (counter[ma->instr_idx] > spinlock_iter_to_keep) {
+            counter[trace->instr_idx]++;
+            if (counter[trace->instr_idx] > spinlock_iter_to_keep) {
               // This spinlock instruction is executed more than the threshold
               // so we fast forward it in the output trace
               // Note we are only fast forwarding the innermost spinlock loop
@@ -1022,45 +1032,45 @@ void *recv_thread_fun(void *args) {
             }
           }
         }
+        // Dump trace in text
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_x);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_y);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_z);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_tb);
 
-        /* Dump the instruction trace information */
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_x);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_y);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_z);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_tb);
         if (print_core_id) {
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->sm_id);
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_sm);
+          fprintf(ctx_resultsFile[ctx], "%d ", trace->sm_id);
+          fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_sm);
         }
         if (lineinfo) {
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->line_num);
+          fprintf(ctx_resultsFile[ctx], "%d ", trace->line_num);
         }
-        fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the virtual PC
+        fprintf(ctx_resultsFile[ctx], "%04x ", trace->vpc); // Print the virtual PC
         fprintf(ctx_resultsFile[ctx], "%08x ",
-                ma->active_mask & ma->predicate_mask);
-        if (ma->GPRDst >= 0) {
+                trace->active_mask & trace->predicate_mask);
+        if (trace->inst.regular.GPRDst >= 0) {
           fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRDst);
+          fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRDst);
         } else
           fprintf(ctx_resultsFile[ctx], "0 ");
 
         // Print the opcode.
         fprintf(ctx_resultsFile[ctx], "%s ",
-                id_to_opcode_map[ma->opcode_id].c_str());
+                id_to_opcode_map[trace->opcode_id].c_str());
         unsigned src_count = 0;
         for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
-          if (ma->GPRSrcs[s] >= 0)
+          if (trace->inst.regular.GPRSrcs[s] >= 0)
             src_count++;
         fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
         for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
-          if (ma->GPRSrcs[s] >= 0)
-            fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRSrcs[s]);
+          if (trace->inst.regular.GPRSrcs[s] >= 0)
+            fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRSrcs[s]);
 
         // print addresses
-        std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
-        if (ma->is_mem) {
-          std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
+        std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
+        if (trace->inst_type == TracerInstrType::INST_REGULAR && trace->inst.regular.is_mem) {
+          std::istringstream iss(id_to_opcode_map[trace->opcode_id]);
           std::vector<std::string> tokens;
           std::string token;
           while (std::getline(iss, token, '.')) {
@@ -1078,20 +1088,20 @@ void *recv_thread_fun(void *args) {
           if (enable_compress) {
             // try base+stride format
             base_stride_success =
-                base_stride_compress(ma->addrs, mask, base_addr, stride);
+                base_stride_compress(trace->inst.regular.addrs, mask, base_addr, stride);
             if (!base_stride_success) {
               // if base+stride fails, try base+delta format
-              base_delta_compress(ma->addrs, mask, base_addr, deltas);
+              base_delta_compress(trace->inst.regular.addrs, mask, base_addr, deltas);
             }
           }
 
           if (base_stride_success && enable_compress) {
             // base + stride format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx %d ",
+            fprintf(ctx_resultsFile[ctx], "%u 0x%lx %d ",
                     address_format::base_stride, base_addr, stride);
           } else if (!base_stride_success && enable_compress) {
             // base + delta format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx ",
+            fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
                     address_format::base_delta, base_addr);
             for (int s = 0; s < deltas.size(); s++) {
               fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
@@ -1101,15 +1111,73 @@ void *recv_thread_fun(void *args) {
             fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
             for (int s = 0; s < 32; s++) {
               if (mask.test(s))
-                fprintf(ctx_resultsFile[ctx], "0x%016lx ", ma->addrs[s]);
+                fprintf(ctx_resultsFile[ctx], "0x%016lx ", trace->inst.regular.addrs[s]);
             }
           }
+        } else if (trace->inst_type == TracerInstrType::INST_TMA) {
+          // TMA instructions
+          const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
+          TMATransferInfo_t info = nvbit_parse_tma_transfer_info(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size);
+          // Get TMA transfer size, which is the data width
+          fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
+
+          // Get the TMA addresses
+          TMAElementAddress_t *raw_dst_addrs = nullptr, *raw_src_addrs = nullptr;
+          size_t dst_count = 0, src_count = 0;
+          nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_dst_addrs, &dst_count);
+          nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_src_addrs, &src_count);
+
+          // Get the inbound addresses
+          uint64_t *dst_addrs = nullptr, *src_addrs = nullptr;
+          size_t dst_count_inbound = 0, src_count_inbound = 0;
+
+          // Count inbound addresses
+          for (size_t i = 0; i < dst_count; i++) {
+            if (!raw_dst_addrs[i].is_oob) {
+              dst_count_inbound++;
+            }
+          }
+          for (size_t i = 0; i < src_count; i++) {
+            if (!raw_src_addrs[i].is_oob) {
+              src_count_inbound++;
+            }
+          }
+
+          dst_addrs = (uint64_t *)malloc(dst_count_inbound * sizeof(uint64_t));
+          src_addrs = (uint64_t *)malloc(src_count_inbound * sizeof(uint64_t));
+          size_t dst_idx = 0, src_idx = 0;
+          for (size_t i = 0; i < dst_count; i++) {
+            if (!raw_dst_addrs[i].is_oob) {
+              dst_addrs[dst_idx] = raw_dst_addrs[i].address;
+              dst_idx++;
+            }
+          }
+          for (size_t i = 0; i < src_count; i++) {
+            if (!raw_src_addrs[i].is_oob) {
+              src_addrs[src_idx] = raw_src_addrs[i].address;
+              src_idx++;
+            }
+          }
+
+          // Right now not compression, just dump both src and dst addresses
+          fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
+          for (size_t i = 0; i < dst_count_inbound; i++) {
+            fprintf(ctx_resultsFile[ctx], "0x%016lx ", dst_addrs[i]);
+          }
+          for (size_t i = 0; i < src_count_inbound; i++) {
+            fprintf(ctx_resultsFile[ctx], "0x%016lx ", src_addrs[i]);
+          }
+
+          free(raw_dst_addrs);
+          free(raw_src_addrs);
+          free(dst_addrs);
+          free(src_addrs);
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
         }
 
         // Print the immediate
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->imm);
+        fprintf(ctx_resultsFile[ctx], "%ld ", trace->inst.regular.imm);
 
         fprintf(ctx_resultsFile[ctx], "\n");
 
