@@ -537,7 +537,6 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
   assert(pI != NULL && "Unexpexted behaviour , inst should not be null");
   *pc = pI->pc;
   *rpc = pI->pc;
-  
 }
 
 const active_mask_t &trace_shader_core_ctx::get_active_mask(
@@ -584,13 +583,13 @@ const warp_inst_t *trace_shader_core_ctx::get_next_inst(unsigned warp_id,
   // read the inst from the traces
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[warp_id]);
-  const trace_warp_inst_t * ret =  m_trace_warp->get_next_trace_inst();
-  if (m_trace_warp->trace_done() ) {
+  const trace_warp_inst_t *ret = m_trace_warp->get_next_trace_inst();
+  if (m_trace_warp->trace_done()) {
     if (!m_warp[warp_id]->inst_in_pipeline() &&
         m_warp[warp_id]->stores_done() &&
         !m_scoreboard->pendingWrites(warp_id)) {
-      for(unsigned t = 0; t < m_warp_size; t++){
-        if(m_warp[warp_id]->test_active(t) ){
+      for (unsigned t = 0; t < m_warp_size; t++) {
+        if (m_warp[warp_id]->test_active(t)) {
           m_warp[warp_id]->set_completed(t);
         }
       }

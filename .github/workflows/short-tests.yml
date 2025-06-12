@@ -4,7 +4,7 @@ name: Short Tests
 
 # Controls when the workflow will run
 on:
-  # Triggers the workflow on push or pull request events but only for the mydev branch
+  # Triggers the workflow on push events but only for the mydev branch
   push:
     branches-ignore:
       - "gh-readonly-queue**"
@@ -18,7 +18,7 @@ jobs:
   SASS-Simulation:
     runs-on: ubuntu-latest
     container:
-      image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8
+      image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
       # env:
         
     # Steps represent a sequence of tasks that will be executed as part of the job
@@ -47,23 +47,3 @@ jobs:
       - uses: actions/checkout@v4
       - name: Run Simulation
         run: echo "skipped Tracer-Simulation. Will perform in merge queue"
-  format-code:
-    if: github.event_name == 'pull_request'
-    runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-          ssh-key: ''
-
-      - name: Run clang-format
-        run: |
-          git config user.name "purdue-jenkins"
-          git config user.email "purdue-jenkins@users.noreply.github.com"
-          git remote set-url origin git@github.com:${{github.event.pull_request.head.repo.full_name}}
-          git remote -v
-          /bin/bash ./gpu-simulator/format-code.sh
-          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
-          if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi

@@ -14,6 +14,7 @@ to run the program with nvsight
 #include <assert.h>
 #include <cstdio>
 #include <iostream>
+#include <stdint.h>
 using namespace std;
 
 #include "../../../hw_def/hw_def.h"

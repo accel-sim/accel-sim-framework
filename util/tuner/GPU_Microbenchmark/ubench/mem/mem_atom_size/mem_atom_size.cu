@@ -18,6 +18,7 @@ their reply: https://forums.developer.nvidia.com/t/pascal-l1-cache/49571/15
 #include <assert.h>
 #include <cstdio>
 #include <iostream>
+#include <stdint.h>
 using namespace std;
 
 #include "../../../hw_def/hw_def.h"
