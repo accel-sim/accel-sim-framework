@@ -38,7 +38,7 @@ function get_script_location {
         else echo "ERROR unknown shell, cannot determine script location" && return 1
         fi
     fi
-    echo $SCRIPT_LOC
+    echo "$SCRIPT_LOC"
 }
 
 # Usage: user_input=$(read_user_input "prompt")
