@@ -32,12 +32,18 @@
 /* contains definition of the inst_trace_t structure */
 #include "common.h"
 
+/* contains definition of the WarpsyncCollectiveWatchdog structure */
+#include "watchdog.h"
+
 #define TRACER_VERSION "5"
 
 /* Channel used to communicate from GPU to CPU receiving thread */
 #define CHANNEL_SIZE (1l << 20)
 static __managed__ ChannelDev channel_dev;
 static ChannelHost channel_host;
+
+/* Instance of the WarpsyncCollectiveWatchdog */
+WarpsyncCollectiveWatchdog warpsync_collective_watchdog;
 
 /* receiving thread and its control variables */
 pthread_t recv_thread;
@@ -308,6 +314,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     uint32_t cnt = 0;
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
+
+
       uint32_t line_num = 0;
 
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
@@ -317,6 +325,19 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       if (verbose >= 2) {
         instr->printDecoded();
+      }
+
+      warpsync_collective_watchdog.observe_instruction(instr);
+
+      if(warpsync_collective_watchdog.is_in_region()){
+        // if the opcode matches with "WARPSYNC.COLLECTIVE",
+        // print to stdout the PC value and the immeidate value
+        if (verbose > 1 && strcmp(instr->getOpcode(), "WARPSYNC.COLLECTIVE") == 0) {
+          assert(1 < instr->getNumOperands());
+          printf("Encountered WARPSYNC.COLLECTIVE PC: 0x%lx, Immediate: 0x%lx\n",
+                  instr->getOffset(), instr->getOperand(1)->u.imm_uint64.value);
+        }
+        continue;
       }
 
       if (lineinfo) {
