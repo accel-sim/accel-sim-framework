@@ -25,8 +25,42 @@
 # OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
 # OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
+# Helper functions
+# Usage: location=$(get_script_location)
+function get_script_location {
+    if test -n "$BASH" ; then SCRIPT_LOC=$BASH_SOURCE
+    elif test -n "$ZSH_NAME" ; then SCRIPT_LOC=${(%):-%x}
+    else
+        echo "WARNING this script only tested with bash and zsh, use with caution with your shell at $SHELL"
+        if test -n "$TMOUT"; then SCRIPT_LOC=${.sh.file}
+        elif test ${0##*/} = dash; then x=$(lsof -p $$ -Fn0 | tail -1); SCRIPT_LOC=${x#n}
+        elif test -n "$FISH_VERSION" ; then SCRIPT_LOC=(status current-filename)
+        else echo "ERROR unknown shell, cannot determine script location" && return 1
+        fi
+    fi
+    echo "$SCRIPT_LOC"
+}
+
+# Usage: user_input=$(read_user_input "prompt")
+function read_user_input {
+    # If bash, then read -e -p "$1" user_input
+    # If zsh, then read "user_input?prompt"
+    if test -n "$BASH" ; then
+        read -e -p "$1" user_input
+    elif test -n "$ZSH_NAME" ; then
+        read "user_input?$1"
+    else
+        echo "WARNING unknown shell, using read -e -p"
+        read -e -p "$1" user_input
+    fi
+    echo $user_input
+}
+
+# Get the location of this script when sourcing
+SCRIPT_LOC=$(get_script_location) || (echo "ERROR getting script location" && return 1)
+
 export ACCELSIM_SETUP_ENVIRONMENT_WAS_RUN=
-export ACCELSIM_ROOT="$( cd "$( dirname "$BASH_SOURCE" )" && pwd )"
+export ACCELSIM_ROOT="$( cd "$( dirname "$SCRIPT_LOC" )" && pwd )"
 
 #   Different branches of Accel-Sim should have different values here
 #   For development, we use our internal repo and the dev branch
@@ -60,15 +94,17 @@ if [ -z "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" -o ! -d "$GPGPUSIM_ROOT" ]; then
     echo "No \$GPGPUSIM_ROOT, testing for local folder in: \"$ACCELSIM_ROOT/gpgpu-sim\""
     if [ ! -d "$ACCELSIM_ROOT/gpgpu-sim" ] ; then
         echo "No \$ACCELSIM_ROOT/gpgpu-sim."
+        # If in an interactive shell, then prompt the user for the repo
         if [ ! -z "$PS1" ]; then
-            read -e -p "Please specify the repo you want to sync for GPGPU-Sim (default is $GPGPUSIM_REPO):" user_repo
+            user_repo=$(read_user_input "Please specify the repo you want to sync for GPGPU-Sim (default is $GPGPUSIM_REPO):")
         fi
         if [ -z $user_repo ] ; then
             user_repo=$GPGPUSIM_REPO
         fi
 
+        # If in an interactive shell, then prompt the user for the branch
         if [ ! -z "$PS1" ]; then
-            read -e -p "Please specify the branch for GPGPU-Sim you would like to use (default is $GPGPUSIM_BRANCH):" user_branch
+            user_branch=$(read_user_input "Please specify the branch for GPGPU-Sim you would like to use (default is $GPGPUSIM_BRANCH):")
         fi
         if [ -z $user_branch ] ; then
             user_branch=$GPGPUSIM_BRANCH
