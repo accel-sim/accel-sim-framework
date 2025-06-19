@@ -43,6 +43,8 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+
           ./util/job_launching/monitor_func_test.py -v -s --sleep_time 300 stats-per-app-sass.csv -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Archive Stats
         run: |
@@ -55,6 +57,8 @@ jobs:
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
+          ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C A100-SASS -A | tee ampere-a100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
+
           mkdir -p statistics-archive/ubench/
           # First we merge and archive this run to the main csv that contains all previous runs
           ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass.csv,v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
@@ -63,6 +67,8 @@ jobs:
           | tee turing-ubench-sass.csv && mv turing-ubench-sass.csv ./statistics-archive/ubench/
           ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass.csv,ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
           | tee ampere-ubench-sass.csv && mv ampere-ubench-sass.csv ./statistics-archive/ubench/
+          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-a100-ubench-sass.csv,ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
+          | tee ampere-a100-ubench-sass.csv && mv ampere-a100-ubench-sass.csv ./statistics-archive/ubench/
           # Next we merge the latest run with the current run (used for correlation plots) then archive the current run as the new latest for the next time this action occurs
           ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/v100-ubench-sass-latest.csv,v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
           | tee v100-ubench-sass-latest2.csv && mv v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/v100-ubench-sass-latest.csv
@@ -70,6 +76,8 @@ jobs:
           | tee turing-ubench-sass-latest2.csv && mv turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/turing-ubench-sass-latest.csv
           ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-ubench-sass-latest.csv,ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
           | tee ampere-ubench-sass-latest2.csv && mv ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/ampere-ubench-sass-latest.csv
+          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/ampere-a100-ubench-sass-latest.csv,ampere-a100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv \
+          | tee ampere-a100-ubench-sass-latest2.csv && mv ampere-a100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv ./statistics-archive/ubench/ampere-a100-ubench-sass-latest.csv
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             git -C ./statistics-archive add --all
             git -C ./statistics-archive commit \
@@ -84,6 +92,7 @@ jobs:
           ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H ./hw_run/volta-tesla-v100/11.2/ | tee v100-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./turing-ubench-sass-latest2.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./ampere-ubench-sass-latest2.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
+          ./util/plotting/plot-correlation.py -c ./ampere-a100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/device-0/12.8/ | tee ampere-a100-ubench-correl.txt
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
@@ -132,7 +141,7 @@ jobs:
           srun --time=8:00:00 -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
 
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
   Tracer-Tool:
     if: github.repository == 'accel-sim/accel-sim-framework'

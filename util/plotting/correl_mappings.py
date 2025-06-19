@@ -12,7 +12,7 @@ config_maps = {
     "GV100": set("Quadro GV100"),
     "RTX2060": set("GeForce RTX 2060"),
     "RTX3070": set("GeForce RTX 3070"),
-    "A100": set("NVIDIA H100 80GB"),
+    "A100": set("NVIDIA A100 80GB"),
     "H100" : set("NVIDIA H100 80GB HBM3"),
 }
 
