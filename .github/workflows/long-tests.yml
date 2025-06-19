@@ -44,6 +44,7 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          ./util/job_launching/run_simulations.py -B mlperf_inference -C RTX3070-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/mlperf_rtx3070/traces/device-0/12.8/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
 
           ./util/job_launching/monitor_func_test.py -v -s --sleep_time 300 stats-per-app-sass.csv -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Archive Stats
