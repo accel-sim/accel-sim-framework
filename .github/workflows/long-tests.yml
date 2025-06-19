@@ -43,7 +43,7 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-SASS -T ~/../common/accel-sim/traces/volta-tesla-v100/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C RTX3070-SASS -T ~/../common/accel-sim/traces/ampere-rtx3070/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C A100-SASS -T ~/../common/for-sharing/accel-sim/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
 
           ./util/job_launching/monitor_func_test.py -v -s --sleep_time 300 stats-per-app-sass.csv -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Archive Stats
@@ -92,7 +92,7 @@ jobs:
           ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H ./hw_run/volta-tesla-v100/11.2/ | tee v100-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./turing-ubench-sass-latest2.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./ampere-ubench-sass-latest2.csv -H ./hw_run/AMPERE-RTX3070/11.2/ | tee ampere-ubench-correl.txt
-          ./util/plotting/plot-correlation.py -c ./ampere-a100-ubench-sass-latest2.csv -H ~/../common/for-sharing/accel-sim//device-0/12.8/ | tee ampere-a100-ubench-correl.txt
+          ./util/plotting/plot-correlation.py -c ./ampere-a100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim//device-0/12.8/ | tee ampere-a100-ubench-correl.txt
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
