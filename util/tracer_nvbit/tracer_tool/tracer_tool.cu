@@ -934,6 +934,28 @@ bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   return const_stride;
 }
 
+bool base_stride_compress_tma(const uint64_t *addrs, const size_t num_addrs, const std::bitset<32> &mask,
+                              uint64_t &base_addr, int &stride) {
+  // Use a base address and a stride to compress the addresses
+  // For TMA, it will send address down if there is 1 thread active in the warp
+  // Also there might be more just 32 addresses
+  bool const_stride = true;
+  bool warp_active = false;
+  if (mask.any() && num_addrs > 1) {
+    warp_active = true;
+    base_addr = addrs[0];
+    stride = addrs[1] - addrs[0];
+    for (size_t i = 2; i < num_addrs; i++) {
+      if (addrs[i] != base_addr + i * stride) {
+        const_stride = false;
+        break;
+      }
+    }
+  }
+
+  return warp_active && const_stride;
+}
+
 void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
                          uint64_t &base_addr, std::vector<long long> &deltas) {
   // save the delta from the previous address
@@ -951,6 +973,7 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   }
 }
 
+<<<<<<< HEAD
 void trim_string(std::string &str) {
   // Remove the leading and trailing spaces
   str.erase(0, str.find_first_not_of(' '));
@@ -984,6 +1007,18 @@ parse_spinlock_instructions(const std::string &line) {
     indices.push_back(std::stoi(instr_idx));
   }
   return {kernel_name, indices};
+=======
+void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs, const std::bitset<32> &mask,
+                              uint64_t &base_addr, std::vector<long long> &deltas) {
+  // TMA version for delta compression
+  bool warp_active = mask.any() && num_addrs > 1;
+  if (warp_active) {
+    base_addr = addrs[0];
+    for (size_t i = 1; i < num_addrs; i++) {
+      deltas.push_back(addrs[i] - addrs[i - 1]);
+    }
+  }
+>>>>>>> 573723f (Add TMA addr compression support and only process global addrs)
 }
 
 void *recv_thread_fun(void *args) {
@@ -1142,57 +1177,68 @@ void *recv_thread_fun(void *args) {
           // Get TMA transfer size, which is the data width
           fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
 
-          // Get the TMA addresses
-          TMAElementAddress_t *raw_dst_addrs = nullptr, *raw_src_addrs = nullptr;
-          size_t dst_count = 0, src_count = 0;
-          nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_dst_addrs, &dst_count);
-          nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_src_addrs, &src_count);
-
-          // Get the inbound addresses
-          uint64_t *dst_addrs = nullptr, *src_addrs = nullptr;
-          size_t dst_count_inbound = 0, src_count_inbound = 0;
-
-          // Count inbound addresses
-          for (size_t i = 0; i < dst_count; i++) {
-            if (!raw_dst_addrs[i].is_oob) {
-              dst_count_inbound++;
-            }
+          // Determine the global address
+          TMAElementAddress_t *raw_global_addrs = nullptr;
+          uint64_t *global_addrs = nullptr;
+          size_t global_count = 0, global_count_inbound = 0;
+          if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
+            nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+          } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
+            nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
           }
-          for (size_t i = 0; i < src_count; i++) {
-            if (!raw_src_addrs[i].is_oob) {
-              src_count_inbound++;
+
+          // Count inbound global addresses
+          for (size_t i = 0; i < global_count; i++) {
+            if (!raw_global_addrs[i].is_oob) {
+              global_count_inbound++;
             }
           }
 
-          dst_addrs = (uint64_t *)malloc(dst_count_inbound * sizeof(uint64_t));
-          src_addrs = (uint64_t *)malloc(src_count_inbound * sizeof(uint64_t));
-          size_t dst_idx = 0, src_idx = 0;
-          for (size_t i = 0; i < dst_count; i++) {
-            if (!raw_dst_addrs[i].is_oob) {
-              dst_addrs[dst_idx] = raw_dst_addrs[i].address;
-              dst_idx++;
-            }
-          }
-          for (size_t i = 0; i < src_count; i++) {
-            if (!raw_src_addrs[i].is_oob) {
-              src_addrs[src_idx] = raw_src_addrs[i].address;
-              src_idx++;
+          global_addrs = (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
+          size_t global_idx = 0;
+          for (size_t i = 0; i < global_count; i++) {
+            if (!raw_global_addrs[i].is_oob) {
+              global_addrs[global_idx] = raw_global_addrs[i].address;
+              global_idx++;
             }
           }
 
-          // Right now not compression, just dump both src and dst addresses
-          fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
-          for (size_t i = 0; i < dst_count_inbound; i++) {
-            fprintf(ctx_resultsFile[ctx], "0x%016lx ", dst_addrs[i]);
+          // Try to compress memory addresses
+          bool base_stride_success = false;
+          uint64_t base_addr = 0;
+          int stride = 0;
+          std::vector<long long> deltas;
+          if (enable_compress) {
+            // try base+stride format
+            base_stride_success =
+                base_stride_compress_tma(global_addrs, global_count_inbound, mask, base_addr, stride);
+            if (!base_stride_success) {
+              // if base+stride fails, try base+delta format
+              base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
+            }
           }
-          for (size_t i = 0; i < src_count_inbound; i++) {
-            fprintf(ctx_resultsFile[ctx], "0x%016lx ", src_addrs[i]);
+          
+          if (base_stride_success && enable_compress) {
+            // base + stride format
+            fprintf(ctx_resultsFile[ctx], "%u 0x%lx %d ",
+                    address_format::base_stride, base_addr, stride);
+          } else if (!base_stride_success && enable_compress) {
+            // base + delta format
+            fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
+                    address_format::base_delta, base_addr);
+            for (int s = 0; s < deltas.size(); s++) {
+              fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
+            }
+          } else {
+            // list all the addresses
+            fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
+            for (int s = 0; s < global_count_inbound; s++) {
+              fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);
+            }
           }
 
-          free(raw_dst_addrs);
-          free(raw_src_addrs);
-          free(dst_addrs);
-          free(src_addrs);
+          free(raw_global_addrs);
+          free(global_addrs);
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
         }
