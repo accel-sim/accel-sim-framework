@@ -198,7 +198,7 @@ bool should_trace_kernel(uint64_t kernel_id, const std::string &kernel_name) {
   return false;
 }
 
-enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
+enum address_format { list_all = 0, base_stride = 1, base_delta = 2, tma_list_all = 3, tma_base_delta = 4 };
 
 /* File pointers for the kernels, and stats files */
 static FILE *kernelsFile = NULL;
@@ -934,28 +934,6 @@ bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   return const_stride;
 }
 
-bool base_stride_compress_tma(const uint64_t *addrs, const size_t num_addrs, const std::bitset<32> &mask,
-                              uint64_t &base_addr, int &stride) {
-  // Use a base address and a stride to compress the addresses
-  // For TMA, it will send address down if there is 1 thread active in the warp
-  // Also there might be more just 32 addresses
-  bool const_stride = true;
-  bool warp_active = false;
-  if (mask.any() && num_addrs > 1) {
-    warp_active = true;
-    base_addr = addrs[0];
-    stride = addrs[1] - addrs[0];
-    for (size_t i = 2; i < num_addrs; i++) {
-      if (addrs[i] != base_addr + i * stride) {
-        const_stride = false;
-        break;
-      }
-    }
-  }
-
-  return warp_active && const_stride;
-}
-
 void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
                          uint64_t &base_addr, std::vector<long long> &deltas) {
   // save the delta from the previous address
@@ -1204,34 +1182,23 @@ void *recv_thread_fun(void *args) {
           }
 
           // Try to compress memory addresses
-          bool base_stride_success = false;
           uint64_t base_addr = 0;
-          int stride = 0;
           std::vector<long long> deltas;
           if (enable_compress) {
-            // try base+stride format
-            base_stride_success =
-                base_stride_compress_tma(global_addrs, global_count_inbound, mask, base_addr, stride);
-            if (!base_stride_success) {
-              // if base+stride fails, try base+delta format
-              base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
-            }
+            base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
           }
           
-          if (base_stride_success && enable_compress) {
-            // base + stride format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%lx %d ",
-                    address_format::base_stride, base_addr, stride);
-          } else if (!base_stride_success && enable_compress) {
-            // base + delta format
+          if (enable_compress) {
             fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
-                    address_format::base_delta, base_addr);
+                    address_format::tma_base_delta, base_addr);
+            fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
             for (int s = 0; s < deltas.size(); s++) {
               fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
             }
           } else {
             // list all the addresses
-            fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
+            fprintf(ctx_resultsFile[ctx], "%u ", address_format::tma_list_all);
+            fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
             for (int s = 0; s < global_count_inbound; s++) {
               fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);
             }

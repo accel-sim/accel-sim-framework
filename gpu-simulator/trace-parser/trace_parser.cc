@@ -132,6 +132,17 @@ void inst_memadd_info_t::base_delta_decompress(
   }
 }
 
+void tma_inst_memaddr_info_t::base_delta_decompress(
+    unsigned long long base_address, const std::vector<long long> &deltas,
+    const std::bitset<WARP_SIZE> &mask) {
+  if (mask.any()) {
+    addrs.push_back(base_address);
+    for (auto delta : deltas) {
+      addrs.push_back(addrs.back() + delta);
+    }
+  }
+}
+
 bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
                                      unsigned enable_lineinfo) {
   std::stringstream ss;
@@ -180,8 +191,38 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> mem_width;
 
-  if (mem_width > 0)  // then it is a memory inst
-  {
+  bool is_tma = check_opcode_contain({"UTMALDG","UTMASTG", "UTMAPF", "UTMAREDG", "UBLKCP", "UBLKPF", "UBLKRED"}, opcode);
+
+  if (is_tma) {
+    tma_memadd_info = new tma_inst_memaddr_info_t();
+    tma_memadd_info->width = mem_width;
+    ss >> std::dec >> address_mode;
+    int32_t transfer_count = 0;
+    if (address_mode == address_format::tma_list_all) {
+      ss >> std::dec >> transfer_count;
+      for (int s = 0; s < transfer_count; s++) {
+        uint64_t addr = 0;
+        ss >> std::hex >> addr;
+        tma_memadd_info->addrs.push_back(addr);
+      }
+    } else if (address_mode == address_format::tma_base_delta) {
+      uint64_t base_addr = 0;
+      std::vector<long long> deltas;
+      ss >> std::dec >> transfer_count;
+      ss >> std::hex >> base_addr;
+      for (int s = 1; s < transfer_count; s++) {
+        long long delta = 0;
+        ss >> std::dec >> delta;
+        deltas.push_back(delta);
+      }
+      tma_memadd_info->base_delta_decompress(base_addr, deltas, mask_bits);
+    } else {
+      assert(0 && "Unsupported address mode");
+    }
+  }
+
+  if (!is_tma && mem_width > 0) {
+    // then it is a memory inst
     memadd_info = new inst_memadd_info_t();
 
     // read the memory width from the opcode, as nvbit can report it incorrectly
@@ -217,6 +258,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
         }
       }
       memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
+    } else {
+      assert(0 && "Unsupported address mode");
     }
   }
 

@@ -27,7 +27,8 @@ enum address_scope {
   SYS_MEM,
 };
 
-enum address_format { list_all = 0, base_stride = 1, base_delta = 2 };
+// TODO Fix this shared enum with tracer tool
+enum address_format { list_all = 0, base_stride = 1, base_delta = 2, tma_list_all = 3, tma_base_delta = 4 };
 
 struct trace_command {
   std::string command_string;
@@ -40,6 +41,14 @@ struct inst_memadd_info_t {
 
   void base_stride_decompress(unsigned long long base_address, int stride,
                               const std::bitset<WARP_SIZE> &mask);
+  void base_delta_decompress(unsigned long long base_address,
+                             const std::vector<long long> &deltas,
+                             const std::bitset<WARP_SIZE> &mask);
+};
+
+struct tma_inst_memaddr_info_t {
+  std::vector<uint64_t> addrs;
+  int32_t width;
   void base_delta_decompress(unsigned long long base_address,
                              const std::vector<long long> &deltas,
                              const std::bitset<WARP_SIZE> &mask);
@@ -59,7 +68,8 @@ struct inst_trace_t {
   unsigned reg_src[MAX_SRC];
   uint64_t imm;
 
-  inst_memadd_info_t *memadd_info;
+  inst_memadd_info_t *memadd_info = nullptr;
+  tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
                          unsigned enable_lineinfo);
