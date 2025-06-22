@@ -1,3 +1,4 @@
+
 // developed by Mahmoud Khairy, Purdue Univ
 // abdallm@purdue.edu
 
@@ -178,6 +179,27 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"USHR", OpcodeChar(OP_USHR, SPECIALIZED_UNIT_4_OP)},
     {"VOTEU", OpcodeChar(OP_VOTEU, SPECIALIZED_UNIT_4_OP)},
 
+    // TMA Instructions
+    // TMA memory instructions
+    // TODO For now, ignore bulk copy instructions
+    {"UBLKCP", OpcodeChar(OP_UBLKCP, SPECIALIZED_UNIT_4_OP)},
+    {"UBLKPF", OpcodeChar(OP_UBLKPF, SPECIALIZED_UNIT_4_OP)},
+    {"UBLKRED", OpcodeChar(OP_UBLKRED, SPECIALIZED_UNIT_4_OP)},
+    // TODO For now, treat tensor copy as LOAD_OP and STORE_OP
+    {"UTMALDG", OpcodeChar(OP_UTMALDG, LOAD_OP)},
+    {"UTMAPF", OpcodeChar(OP_UTMAPF, LOAD_OP)},
+    {"UTMAREDG", OpcodeChar(OP_UTMAREDG, STORE_OP)},
+    {"UTMASTG", OpcodeChar(OP_UTMASTG, STORE_OP)},
+    // TMA Control Instructions
+    {"UTMACCTL", OpcodeChar(OP_UTMACCTL, SPECIALIZED_UNIT_4_OP)},
+    {"UTMACMDFLUSH", OpcodeChar(OP_UTMACMDFLUSH, SPECIALIZED_UNIT_4_OP)},
+
+    // SYNC Instructions
+    // TODO Need to handle the fence and syncsproperly
+    // TODO For now, treat fence and syncs as nop
+    {"FENCE", OpcodeChar(OP_NOP, ALU_OP)},
+    {"SYNCS", OpcodeChar(OP_NOP, ALU_OP)},
+
     // Texture Instructions
     // For now, we ignore texture loads, consider it as ALU_OP
     {"TEX", OpcodeChar(OP_TEX, SPECIALIZED_UNIT_2_OP)},
@@ -216,6 +238,7 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"RTT", OpcodeChar(OP_RTT, SPECIALIZED_UNIT_1_OP)},
     {"WARPSYNC", OpcodeChar(OP_WARPSYNC, SPECIALIZED_UNIT_1_OP)},
     {"YIELD", OpcodeChar(OP_YIELD, SPECIALIZED_UNIT_1_OP)},
+    {"ELECT", OpcodeChar(OP_ELECT, SPECIALIZED_UNIT_1_OP)},
 
     // Miscellaneous Instructions
     {"B2R", OpcodeChar(OP_B2R, ALU_OP)},

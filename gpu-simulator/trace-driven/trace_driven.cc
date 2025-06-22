@@ -415,6 +415,21 @@ bool trace_warp_inst_t::parse_from_trace_struct(
           1)  // Make sure initiaion interval never goes below 1
         initiation_interval = 1;
       break;
+    // TMA instructions
+    // TODO For now, just tensor copy
+    case OP_UTMALDG:
+    case OP_UTMAPF:
+      // TODO Handle prefetch properly
+      memory_op = memory_load;
+      cache_op = CACHE_ALL;
+      space.set_type(global_space);
+      break;
+    case OP_UTMASTG:
+    case OP_UTMAREDG:
+      memory_op = memory_store;
+      cache_op = CACHE_ALL;
+      space.set_type(global_space);
+      break;
     default:
       break;
   }

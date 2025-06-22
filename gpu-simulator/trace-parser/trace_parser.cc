@@ -190,8 +190,15 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   unsigned mem_width = 0;
 
   ss >> mem_width;
-
-  bool is_tma = check_opcode_contain({"UTMALDG","UTMASTG", "UTMAPF", "UTMAREDG", "UBLKCP", "UBLKPF", "UBLKRED"}, opcode);
+  // Check if the list of string is included in "opcode"
+  std::vector<std::string> tma_opcodes = {"UTMALDG","UTMASTG", "UTMAPF", "UTMAREDG", "UBLKCP", "UBLKPF", "UBLKRED"};
+  bool is_tma = false;
+  for (auto op : tma_opcodes) {
+    if (opcode.find(op) != std::string::npos) {
+      is_tma = true;
+      break;
+    }
+  }
 
   if (is_tma) {
     tma_memadd_info = new tma_inst_memaddr_info_t();

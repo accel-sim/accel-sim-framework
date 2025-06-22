@@ -227,6 +227,21 @@ enum TraceInstrOpcode {
   OP_SUQUERY,
   // Shared between ampere and turing
   OP_F2FP,
+  // For Hopper TMA
+  OP_UBLKCP,
+  OP_UBLKPF,
+  OP_UBLKRED,
+  OP_UTMACCTL,
+  OP_UTMACMDFLUSH,
+  OP_UTMALDG,
+  OP_UTMAPF,
+  OP_UTMAREDG,
+  OP_UTMASTG,
+  // Synchronization-related Instructions
+  OP_FENCE,
+  OP_SYNCS,
+  // Control Instructions
+  OP_ELECT,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;
