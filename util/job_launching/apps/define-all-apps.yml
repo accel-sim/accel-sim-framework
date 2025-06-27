@@ -832,3 +832,11 @@ pytorch_examples:
       # - inference_vae:
       #     - args:
       #       accel-sim-mem: 10G
+
+huggingface:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/huggingface"
+    data_dirs: ""
+    execs:
+        - helloworld:
+            - args:
+              accel-sim-mem: 10G
