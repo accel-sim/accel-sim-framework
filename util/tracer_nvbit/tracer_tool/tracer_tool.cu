@@ -20,6 +20,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
+#include <memory>
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
@@ -42,8 +43,13 @@
 static __managed__ ChannelDev channel_dev;
 static ChannelHost channel_host;
 
-/* Instance of the WarpsyncCollectiveWatchdog */
-WarpsyncCollectiveWatchdog warpsync_collective_watchdog;
+/*
+ * Instance of the WarpsyncCollectiveWatchdog,
+ * to be initialized in nvbit_at_init. This is a temporary solution and should be
+ * removed once NVBit fixes the bug with warpsync.collective.
+ */
+std::unique_ptr<WatchdogInterface> warpsync_collective_watchdog{};
+bool enable_watchdog = true;
 
 /* receiving thread and its control variables */
 pthread_t recv_thread;
@@ -261,6 +267,8 @@ void nvbit_at_init() {
               "Enable spinlock fast forwarding");
   GET_VAR_INT(spinlock_iter_to_keep, "SPINLOCK_ITER_TO_KEEP", 1,
               "Number of iterations to keep for spinlock fast forwarding");
+  GET_VAR_INT(enable_watchdog, "ENABLE_WATCHDOG", 1,
+              "Enable the watchdog to skip instructions between WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -283,6 +291,7 @@ void nvbit_at_init() {
     }
     instr_fs.close();
   }
+  warpsync_collective_watchdog = WatchdogFactory::create(enable_watchdog);
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
@@ -311,6 +320,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
              nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx, f));
     }
 
+    // reset the watchdog
+    warpsync_collective_watchdog->reset();
+
     uint32_t cnt = 0;
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
@@ -327,9 +339,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         instr->printDecoded();
       }
 
-      warpsync_collective_watchdog.observe_instruction(instr);
+      warpsync_collective_watchdog->observe_instruction(instr);
 
-      if(warpsync_collective_watchdog.is_in_region()){
+      if(warpsync_collective_watchdog->is_in_region()){
         // if the opcode matches with "WARPSYNC.COLLECTIVE",
         // print to stdout the PC value and the immeidate value
         if (verbose > 1 && strcmp(instr->getOpcode(), "WARPSYNC.COLLECTIVE") == 0) {
@@ -951,7 +963,6 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   }
 }
 
-<<<<<<< HEAD
 void trim_string(std::string &str) {
   // Remove the leading and trailing spaces
   str.erase(0, str.find_first_not_of(' '));
@@ -985,7 +996,7 @@ parse_spinlock_instructions(const std::string &line) {
     indices.push_back(std::stoi(instr_idx));
   }
   return {kernel_name, indices};
-=======
+}
 void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs, const std::bitset<32> &mask,
                               uint64_t &base_addr, std::vector<long long> &deltas) {
   // TMA version for delta compression
@@ -996,7 +1007,6 @@ void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs, cons
       deltas.push_back(addrs[i] - addrs[i - 1]);
     }
   }
->>>>>>> 573723f (Add TMA addr compression support and only process global addrs)
 }
 
 void *recv_thread_fun(void *args) {
