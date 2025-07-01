@@ -70,6 +70,7 @@ int exclude_pred_off = 1;
 int active_from_start = 1;
 int lineinfo = 0;
 bool skip_tma_mem = false;
+bool allow_reg_val_tracing = false;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
@@ -272,6 +273,8 @@ void nvbit_at_init() {
               "Enable the watchdog to skip instructions between WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
   GET_VAR_INT(skip_tma_mem, "SKIP_TMA_MEM", 0,
               "Enable the skipping of TMA memory instructions");
+  GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
+              "EXPERIMENTAL: Enable the tracing of register values. Trace format is not stable.");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -479,6 +482,14 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         /* Add instruction index for current instr (spinlock detection) */
         nvbit_add_call_arg_const_val32(instr, (uint32_t)instr->getIdx());
 
+        /* add register values */
+        nvbit_add_call_arg_reg_val(instr, dst_oprd);
+        for (int i = 0; i < srcNum; i++) {
+          nvbit_add_call_arg_reg_val(instr, src_oprd[i]);
+        }
+        for (int i = srcNum; i < MAX_SRC; i++) {
+          nvbit_add_call_arg_reg_val(instr, static_cast<uint32_t>(-1));
+        }
         mem_oper_idx--;
       } while (mem_oper_idx >= 0);
 
@@ -1087,6 +1098,13 @@ void *recv_thread_fun(void *args) {
             }
           }
         }
+        std::string opcode = id_to_opcode_map[trace->opcode_id];
+        // only dump reg val if opcode contains: BAR
+        bool dump_reg_val = false;
+        if (allow_reg_val_tracing && ((opcode.find("BAR") != std::string::npos || opcode.find("HGMMA") != std::string::npos))) {
+          dump_reg_val = true;
+        }
+
         // Dump trace in text
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_x);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_y);
@@ -1105,7 +1123,15 @@ void *recv_thread_fun(void *args) {
                 trace->active_mask & trace->predicate_mask);
         if (trace->inst.regular.GPRDst >= 0) {
           fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRDst);
+          fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRDst);
+          if(dump_reg_val) {
+            fprintf(ctx_resultsFile[ctx], "(");
+            for (int tid=0; tid<32; tid++) {
+              fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.desRegVal[tid]);
+            }
+            fprintf(ctx_resultsFile[ctx], ")");
+          } 
+          fprintf(ctx_resultsFile[ctx], " ");
         } else
           fprintf(ctx_resultsFile[ctx], "0 ");
 
@@ -1118,10 +1144,19 @@ void *recv_thread_fun(void *args) {
             src_count++;
         fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
-          if (trace->inst.regular.GPRSrcs[s] >= 0)
-            fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRSrcs[s]);
-
+        for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
+          if (trace->inst.regular.GPRSrcs[s] >= 0){
+            fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRSrcs[s]);
+            if(dump_reg_val) {
+              fprintf(ctx_resultsFile[ctx], "(");
+              for (int tid=0; tid<32; tid++) {
+                fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.srcRegVals[tid][s]);
+              }
+              fprintf(ctx_resultsFile[ctx], ")");
+            }
+            fprintf(ctx_resultsFile[ctx], " ");
+          }
+        }
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
         if (trace->inst_type == TracerInstrType::INST_REGULAR && trace->inst.regular.is_mem) {
