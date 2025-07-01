@@ -654,6 +654,12 @@ static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
   cudaError_t err = cudaGetLastError();
   if (err != cudaSuccess) {
     printf("cuda error: %s\n", cudaGetErrorName(err));
+    printf("cuda error explanation: %s\n", cudaGetErrorString(err));
+    if (!xz_compress_trace) {
+      fclose(ctx_resultsFile[ctx]);
+    } else {
+      pclose(ctx_resultsFile[ctx]);
+    }
   }
   assert(err == cudaSuccess);
 
