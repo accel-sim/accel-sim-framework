@@ -69,6 +69,7 @@ int print_core_id = 0;
 int exclude_pred_off = 1;
 int active_from_start = 1;
 int lineinfo = 0;
+bool skip_tma_mem = false;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
@@ -269,6 +270,8 @@ void nvbit_at_init() {
               "Number of iterations to keep for spinlock fast forwarding");
   GET_VAR_INT(enable_watchdog, "ENABLE_WATCHDOG", 1,
               "Enable the watchdog to skip instructions between WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
+  GET_VAR_INT(skip_tma_mem, "SKIP_TMA_MEM", 0,
+              "Enable the skipping of TMA memory instructions");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -351,6 +354,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         }
         continue;
       }
+
+      if (skip_tma_mem && instr->isTMAMem()){continue;}
 
       if (lineinfo) {
         char *file_name, *dir_name;
