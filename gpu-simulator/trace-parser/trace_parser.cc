@@ -272,6 +272,19 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> imm;
 
+  if(trace_version == 6) {
+    // check Val or NoVal
+    std::string val_or_no_val;
+    ss >> val_or_no_val;
+    if(val_or_no_val == "Val") {
+      // if Val, look for dest reg values and src reg values
+      // dump the rest to a string
+      std::string rest;
+      std::getline(ss, rest);
+    }
+
+  }
+
   // Finish Parsing
 
   return true;
