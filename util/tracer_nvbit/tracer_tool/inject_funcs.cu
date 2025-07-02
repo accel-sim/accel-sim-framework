@@ -96,11 +96,11 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
 
     for(int tid = 0; tid < 32; tid++) {
       trace.inst.regular.desRegVal[tid] = __shfl_sync(active_mask, desRegVal, tid);
-      trace.inst.regular.srcRegVals[tid][0] = __shfl_sync(active_mask, srcReg1Val, tid);
-      trace.inst.regular.srcRegVals[tid][1] = __shfl_sync(active_mask, srcReg2Val, tid);
-      trace.inst.regular.srcRegVals[tid][2] = __shfl_sync(active_mask, srcReg3Val, tid);
-      trace.inst.regular.srcRegVals[tid][3] = __shfl_sync(active_mask, srcReg4Val, tid);
-      trace.inst.regular.srcRegVals[tid][4] = __shfl_sync(active_mask, srcReg5Val, tid);
+      trace.inst.regular.srcRegVals[0][tid] = __shfl_sync(active_mask, srcReg1Val, tid);
+      trace.inst.regular.srcRegVals[1][tid] = __shfl_sync(active_mask, srcReg2Val, tid);
+      trace.inst.regular.srcRegVals[2][tid] = __shfl_sync(active_mask, srcReg3Val, tid);
+      trace.inst.regular.srcRegVals[3][tid] = __shfl_sync(active_mask, srcReg4Val, tid);
+      trace.inst.regular.srcRegVals[4][tid] = __shfl_sync(active_mask, srcReg5Val, tid);
     }
   } else {
     // For TMA instructions

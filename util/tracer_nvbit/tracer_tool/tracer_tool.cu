@@ -21,6 +21,7 @@
 #include <unordered_set>
 #include <vector>
 #include <memory>
+#include <algorithm> // for std::minmax_element
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
@@ -37,6 +38,7 @@
 #include "watchdog.h"
 
 #define TRACER_VERSION "5"
+#define TRACER_VERSION_ALLOW_REG_VAL "6"
 
 /* Channel used to communicate from GPU to CPU receiving thread */
 #define CHANNEL_SIZE (1l << 20)
@@ -274,7 +276,7 @@ void nvbit_at_init() {
   GET_VAR_INT(skip_tma_mem, "SKIP_TMA_MEM", 0,
               "Enable the skipping of TMA memory instructions");
   GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
-              "EXPERIMENTAL: Enable the tracing of register values. Trace format is not stable.");
+              "EXPERIMENTAL: Enable the tracing of register values. Trace format is not stable. Trace version is 6.");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -488,7 +490,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_reg_val(instr, src_oprd[i]);
         }
         for (int i = srcNum; i < MAX_SRC; i++) {
-          nvbit_add_call_arg_reg_val(instr, static_cast<uint32_t>(-1));
+          nvbit_add_call_arg_reg_val(instr, -1);
         }
         mem_oper_idx--;
       } while (mem_oper_idx >= 0);
@@ -620,15 +622,25 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
             (uint64_t)nvbit_get_local_mem_base_addr(ctx));
     fprintf(ctx_resultsFile[ctx], "-nvbit version = %s\n", NVBIT_VERSION);
     fprintf(ctx_resultsFile[ctx], "-accelsim tracer version = %s\n",
-            TRACER_VERSION);
+            allow_reg_val_tracing ? TRACER_VERSION_ALLOW_REG_VAL : TRACER_VERSION);
     fprintf(ctx_resultsFile[ctx], "-enable lineinfo = %d\n", lineinfo);
     fprintf(ctx_resultsFile[ctx], "\n");
 
-    fprintf(ctx_resultsFile[ctx],
-            "#traces format = [line_num] PC mask dest_num [reg_dests] "
-            "opcode src_num "
-            "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
-            "immediate\n");
+    if(allow_reg_val_tracing) {
+      fprintf(ctx_resultsFile[ctx],
+              "#traces format = [line_num] PC mask dest_num [reg_dests] "
+              "opcode src_num "
+              "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
+              "immediate Val|NoVal [dest_val_num] [dest_val] ... "
+              "[src_val1_num] [src_val1] ... [...] "
+              "[src_valX_num] [src_valX] ...\n");
+    } else {
+      fprintf(ctx_resultsFile[ctx],
+              "#traces format = [line_num] PC mask dest_num [reg_dests] "
+              "opcode src_num "
+              "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
+              "immediate\n");
+    }
     fprintf(ctx_resultsFile[ctx], "\n");
   }
 
@@ -1123,15 +1135,7 @@ void *recv_thread_fun(void *args) {
                 trace->active_mask & trace->predicate_mask);
         if (trace->inst.regular.GPRDst >= 0) {
           fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRDst);
-          if(dump_reg_val) {
-            fprintf(ctx_resultsFile[ctx], "(");
-            for (int tid=0; tid<32; tid++) {
-              fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.desRegVal[tid]);
-            }
-            fprintf(ctx_resultsFile[ctx], ")");
-          } 
-          fprintf(ctx_resultsFile[ctx], " ");
+          fprintf(ctx_resultsFile[ctx], "R%d\n", trace->inst.regular.GPRDst);
         } else
           fprintf(ctx_resultsFile[ctx], "0 ");
 
@@ -1146,15 +1150,7 @@ void *recv_thread_fun(void *args) {
 
         for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
           if (trace->inst.regular.GPRSrcs[s] >= 0){
-            fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRSrcs[s]);
-            if(dump_reg_val) {
-              fprintf(ctx_resultsFile[ctx], "(");
-              for (int tid=0; tid<32; tid++) {
-                fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.srcRegVals[tid][s]);
-              }
-              fprintf(ctx_resultsFile[ctx], ")");
-            }
-            fprintf(ctx_resultsFile[ctx], " ");
+            fprintf(ctx_resultsFile[ctx], "R%d\n", trace->inst.regular.GPRSrcs[s]);
           }
         }
         // print addresses
@@ -1269,6 +1265,46 @@ void *recv_thread_fun(void *args) {
         // Print the immediate
         fprintf(ctx_resultsFile[ctx], "%ld ", trace->inst.regular.imm);
 
+        if(allow_reg_val_tracing) {
+          // Trace version will be 6, a Val|NoVal will follow the immediate number
+          // Print the register values if dump_reg_val is true
+          if (dump_reg_val) {
+            fprintf(ctx_resultsFile[ctx], "Val ");
+
+            // dump destination register values if GPRDst >= 0
+            if (trace->inst.regular.GPRDst >= 0) {
+              auto minmax_pair = std::minmax_element(std::begin(trace->inst.regular.desRegVal), std::end(trace->inst.regular.desRegVal));
+              bool is_all_same = (*minmax_pair.first == *minmax_pair.second);
+              if(!is_all_same) {
+                fprintf(ctx_resultsFile[ctx], "32 ");
+                for (int tid=0; tid<32; tid++) {
+                  fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.desRegVal[tid]);
+                }
+              } else {
+                fprintf(ctx_resultsFile[ctx], "1 ");
+                fprintf(ctx_resultsFile[ctx], "%08x ", *minmax_pair.first);
+              }
+            }
+            // For 0<=s<MAX_SRC, dump source register values if GPRSrcs[s] >= 0
+            for (int s=0; s<MAX_SRC; s++) {
+              if (trace->inst.regular.GPRSrcs[s] >= 0) {
+                auto minmax_pair = std::minmax_element(std::begin(trace->inst.regular.srcRegVals[s]), std::end(trace->inst.regular.srcRegVals[s]));
+                bool is_all_same = (*minmax_pair.first == *minmax_pair.second);
+                if(!is_all_same) {
+                  fprintf(ctx_resultsFile[ctx], "32 ");
+                  for (int tid=0; tid<32; tid++) {
+                    fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.srcRegVals[s][tid]);
+                  }
+                } else {
+                  fprintf(ctx_resultsFile[ctx], "1 ");
+                  fprintf(ctx_resultsFile[ctx], "%08x ", *minmax_pair.first);
+                }
+              }
+            }
+          } else {
+            fprintf(ctx_resultsFile[ctx], "NoVal ");
+          }
+        }
         fprintf(ctx_resultsFile[ctx], "\n");
 
         num_processed_bytes += sizeof(inst_trace_t);

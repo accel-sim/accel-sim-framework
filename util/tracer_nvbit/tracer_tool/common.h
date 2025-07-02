@@ -45,7 +45,7 @@ typedef struct {
       int32_t width;
       uint64_t imm;
       uint32_t desRegVal[32];
-      uint32_t srcRegVals[32][MAX_SRC];
+      uint32_t srcRegVals[MAX_SRC][32];
     } regular;
     // For TMA instructions
     struct {
