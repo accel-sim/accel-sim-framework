@@ -1135,7 +1135,7 @@ void *recv_thread_fun(void *args) {
                 trace->active_mask & trace->predicate_mask);
         if (trace->inst.regular.GPRDst >= 0) {
           fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRDst);
+          fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRDst);
         } else
           fprintf(ctx_resultsFile[ctx], "0 ");
 
@@ -1150,7 +1150,7 @@ void *recv_thread_fun(void *args) {
 
         for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
           if (trace->inst.regular.GPRSrcs[s] >= 0){
-            fprintf(ctx_resultsFile[ctx], "R%d", trace->inst.regular.GPRSrcs[s]);
+            fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRSrcs[s]);
           }
         }
         // print addresses
