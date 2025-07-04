@@ -16,6 +16,8 @@ cache hashing function), we do an extensive searching by simulating each possibl
 
 # Tuning Steps:
 The following steps demonstrate how to tune the Accel-Sim config files to a specific GPU hardware. We assume that you already have the GPU hardware in question.
+
+
 0. **get Microbenchmarks**
   ```bash
     ./get_ubench.sh
