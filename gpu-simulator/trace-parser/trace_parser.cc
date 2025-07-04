@@ -215,8 +215,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     } else if (address_mode == address_format::tma_base_delta) {
       uint64_t base_addr = 0;
       std::vector<long long> deltas;
-      ss >> std::dec >> transfer_count;
       ss >> std::hex >> base_addr;
+      ss >> std::dec >> transfer_count;
       for (int s = 1; s < transfer_count; s++) {
         long long delta = 0;
         ss >> std::dec >> delta;
