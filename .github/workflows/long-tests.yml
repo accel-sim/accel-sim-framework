@@ -137,7 +137,7 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
 
           rm -rf ./gpu-app-collection
-          git clone -b dev  git@github.com:accel-sim/gpu-app-collection.git
+          git clone --recurse-submodules -b dev git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
           srun --time=8:00:00 -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
