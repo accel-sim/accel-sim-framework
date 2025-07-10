@@ -114,10 +114,10 @@ GPU_Atomic:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - atomic_add_bw:
-            - args: 
+            - args:   --tpb 1 --tpsm 1 --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - atomic_add_bw_conflict:
-            - args:
+            - args: --tpb 1024 --tpsm 2048 --blocks 160  --ws 32 
               accel-sim-mem: 1G
         - atomic_add_bw_profile:
             - args: 16
