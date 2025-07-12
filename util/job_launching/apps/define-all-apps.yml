@@ -63,7 +63,7 @@ GPU_Microbenchmark:
             - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
               accel-sim-mem: 2G
         - l1_lat:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
+            - args: --blocks 1 --ws 32
               accel-sim-mem: 1G
         - l2_bw_32f:
             - args: --tpb 1024 --tpsm 1024 --blocks 160 --ws 32
@@ -97,13 +97,13 @@ GPU_Microbenchmark:
             - args: 2
               accel-sim-mem: 1G
         - MaxFlops:
-            - args: --tpb 1 --tpsm 1 --blocks 1  --ws 32 
+            - args: --tpb 1024  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_shared_bw:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1  --ws 32 
+            - args: --tpb 1024  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_bw_32f_unroll:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1  --ws 32 
+            - args: --tpb 1024 --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_bw_32f_unroll_large:
             - args:
