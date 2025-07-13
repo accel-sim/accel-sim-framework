@@ -1098,7 +1098,7 @@ vllm:
               accel-sim-mem: 10G
 
 tma:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/tma"
     data_dirs: ""
     execs:
         - tma_tensor_test:
