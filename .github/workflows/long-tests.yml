@@ -1,5 +1,7 @@
 # This is a basic workflow to help you get started with Actions
 
+#Turing commands are commented out , we regress QV100,RTX3070,A100 
+
 name: Long Tests
 
 # Controls when the workflow will run
@@ -63,7 +65,7 @@ jobs:
           # either create a new branch or check it out if it already exists
           git -C ./statistics-archive checkout $BRANCH_NAME 2>/dev/null || git -C ./statistics-archive checkout -b $BRANCH_NAME
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
-          ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
+          #./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX2060-SASS -A | tee turing-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C RTX3070-SASS -A | tee ampere-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C A100-SASS -A | tee ampere-a100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
 
@@ -97,7 +99,7 @@ jobs:
           source ./env-setup/12.4_env_setup.sh
           ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
           rm -rf ./util/plotting/correl-html/
-          ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/hw_run/device-0/12.8/ | tee v100-ubench-correl.txt
+          ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/device-0/12.8/ | tee v100-ubench-correl.txt
           #./util/plotting/plot-correlation.py -c ./turing-ubench-sass-latest2.csv -H ./hw_run/TURING-RTX2060/10.2/ | tee turing-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./ampere-ubench-sass-latest2.csv -H  /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/RTX3070/hw_run/device-0/12.8/ | tee ampere-ubench-correl.txt
           ./util/plotting/plot-correlation.py -c ./ampere-a100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/device-0/12.8/ | tee ampere-a100-ubench-correl.txt
@@ -149,7 +151,9 @@ jobs:
           srun --time=8:00:00 -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
 
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          #./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX3070-PTX,A100-PTX -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
+
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
   Tracer-Tool:
     if: github.repository == 'accel-sim/accel-sim-framework'
