@@ -74,26 +74,50 @@ After post-processing:
 
 ## 🎯 Selective Tracing (Kernel-Based Filtering)
 
-If you only want to trace specific kernels:
+You can now trace specific kernels using the `DYNAMIC_KERNEL_RANGE` environment variable.
 
-Trace kernels 3 to 5:
+### Usage
+
+Set `DYNAMIC_KERNEL_RANGE` to specify which kernel IDs (and optionally names) to trace. Supported formats:
+
+- **Single ID:**  
+  ```bash
+  export DYNAMIC_KERNEL_RANGE="3"
+  ```
+  Traces only kernel 3.
+
+- **Range:**  
+  ```bash
+  export DYNAMIC_KERNEL_RANGE="5-8"
+  ```
+  Traces kernels 5 through 8 (inclusive).
+
+- **Open-ended Range:**  
+  ```bash
+  export DYNAMIC_KERNEL_RANGE="10-"
+  ```
+  Traces from kernel 10 onward.
+
+- **Multiple Ranges (space-separated):**  
+  ```bash
+  export DYNAMIC_KERNEL_RANGE="2 5-8 10-"
+  ```
+
+- **With Name Filters (regex):**  
+  ```bash
+  export DYNAMIC_KERNEL_RANGE="5-8@kernel_a.*,kernel_b.*"
+  ```
+  Traces kernels 5–8 *only* if their names match `kernel_a.*` or `kernel_b.*`.
+
+### To Disable Tracing But Still List Kernels
+
+To list kernel metadata in `stats.csv` without generating traces, we set the DYNAMIC_KERNEL_RANGE to very large number  :
 ```bash
-export DYNAMIC_KERNEL_LIMIT_START=3
-export DYNAMIC_KERNEL_LIMIT_END=5
+export DYNAMIC_KERNEL_RANGE="1000000"
 ```
 
-Trace only kernel 3:
-```bash
-export DYNAMIC_KERNEL_LIMIT_START=3
-export DYNAMIC_KERNEL_LIMIT_END=3
-```
+This is useful for discovering kernel IDs and names without producing large trace files.
 
-Disable all tracing but list kernels in `stats.csv`:
-```bash
-export DYNAMIC_KERNEL_LIMIT_START=1000000
-```
-
-This is helpful for identifying kernel IDs without producing large trace files.
 
 ---
 

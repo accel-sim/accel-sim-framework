@@ -54,43 +54,40 @@ GPU_Microbenchmark:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - l1_bw_32f:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
               accel-sim-mem: 1G
         - l1_bw_64f:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
               accel-sim-mem: 1G
         - l1_bw_128:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
               accel-sim-mem: 2G
         - l1_lat:
-            - args:
-              accel-sim-mem: 1G
-        - l1_lat:
-            - args:
+            - args: --blocks 1 --ws 32
               accel-sim-mem: 1G
         - l2_bw_32f:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 160 --ws 32
               accel-sim-mem: 6G
         - l2_bw_64f:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 160 --l2 786432 --ws 32
               accel-sim-mem: 6G
 #        - l2_bw_128:
 #            - args:
 #              accel-sim-mem: 1G
         - l2_lat:
-            - args:
+            - args: --tpb 1 --tpsm 1 --blocks 1 --l2 786432 --ws 32
               accel-sim-mem: 1G
         - mem_bw:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 80 --l2 1572864 --ws 32 --memclk 1132 --membw 64
               accel-sim-mem: 2G
         - mem_lat:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 80 --l2 1572864 --ws 32 --memclk 1132 --membw 64
               accel-sim-mem: 1G
         - shared_bw:
-            - args:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1  --ws 32 
               accel-sim-mem: 2G
         - shared_lat:
-            - args:
+            - args:  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - shared_bank_conflicts:
         ## argument 1 kernel has conflicts
@@ -100,13 +97,13 @@ GPU_Microbenchmark:
             - args: 2
               accel-sim-mem: 1G
         - MaxFlops:
-            - args:
+            - args: --tpb 1024  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_shared_bw:
-            - args:
+            - args: --tpb 1024  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_bw_32f_unroll:
-            - args:
+            - args: --tpb 1024 --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_bw_32f_unroll_large:
             - args:
@@ -117,10 +114,10 @@ GPU_Atomic:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - atomic_add_bw:
-            - args: 
+            - args:   --tpb 1 --tpsm 1 --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - atomic_add_bw_conflict:
-            - args:
+            - args: --tpb 1024 --tpsm 2048 --blocks 160  --ws 32 
               accel-sim-mem: 1G
         - atomic_add_bw_profile:
             - args: 16
