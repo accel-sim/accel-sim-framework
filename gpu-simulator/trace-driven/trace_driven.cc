@@ -416,18 +416,44 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         initiation_interval = 1;
       break;
     // TMA instructions
-    // TODO For now, just tensor copy
-    case OP_UTMALDG:
+    case OP_UBLKCP:
+      // Determine if this is a load or store by checking the source and destination space
+      // Src: shared, dst: global -> store
+      // Src: global, dst: shared -> load
+      // Src: shared, dst: shared -> nop
+      if (opcode.find("S.G") != std::string::npos) {
+        memory_op = memory_load;
+        space.set_type(shared_space);
+      } else if (opcode.find("G.S") != std::string::npos) {
+        memory_op = memory_store;
+        space.set_type(global_space);
+      } else {
+        memory_op = no_memory_op;
+      }
+      // TMA access L2 only
+      cache_op = CACHE_GLOBAL;
+      break;
+    case OP_UBLKRED:
+      memory_op = memory_store;
+      // TMA access L2 only
+      cache_op = CACHE_GLOBAL;
+      space.set_type(global_space);
+      break;
+    case OP_UBLKPF:
     case OP_UTMAPF:
-      // TODO Handle prefetch properly
+      // TODO Handle prefetch properly, for now, assume it is a NOP
+      break;
+    case OP_UTMALDG:
       memory_op = memory_load;
-      cache_op = CACHE_ALL;
+      // TMA access L2 only
+      cache_op = CACHE_GLOBAL;
       space.set_type(global_space);
       break;
     case OP_UTMASTG:
     case OP_UTMAREDG:
       memory_op = memory_store;
-      cache_op = CACHE_ALL;
+      // TMA access L2 only
+      cache_op = CACHE_GLOBAL;
       space.set_type(global_space);
       break;
     default:

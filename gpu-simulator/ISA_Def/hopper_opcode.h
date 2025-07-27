@@ -181,13 +181,15 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
     // TMA Instructions
     // TMA memory instructions
-    // TODO For now, ignore bulk copy instructions
-    {"UBLKCP", OpcodeChar(OP_UBLKCP, SPECIALIZED_UNIT_4_OP)},
+    // TODO For now, treat bulk copy as LOAD_OP and STORE_OP
+    // TODO For now, treat prefetch as NOP
+    {"UBLKCP", OpcodeChar(OP_UBLKCP, LOAD_OP)},
     {"UBLKPF", OpcodeChar(OP_UBLKPF, SPECIALIZED_UNIT_4_OP)},
-    {"UBLKRED", OpcodeChar(OP_UBLKRED, SPECIALIZED_UNIT_4_OP)},
+    {"UBLKRED", OpcodeChar(OP_UBLKRED, STORE_OP)},
     // TODO For now, treat tensor copy as LOAD_OP and STORE_OP
+    // TODO For now, treat prefetch as NOP
     {"UTMALDG", OpcodeChar(OP_UTMALDG, LOAD_OP)},
-    {"UTMAPF", OpcodeChar(OP_UTMAPF, LOAD_OP)},
+    {"UTMAPF", OpcodeChar(OP_UTMAPF, SPECIALIZED_UNIT_4_OP)},
     {"UTMAREDG", OpcodeChar(OP_UTMAREDG, STORE_OP)},
     {"UTMASTG", OpcodeChar(OP_UTMASTG, STORE_OP)},
     // TMA Control Instructions
