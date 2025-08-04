@@ -96,7 +96,7 @@ GPU_Microbenchmark:
         ## argument 2 kernel doesn't have conflicts
             - args: 2
               accel-sim-mem: 1G
-        - MaxFlops:
+        - MaxIops_int32:
             - args: --tpb 1024  --blocks 1  --ws 32 
               accel-sim-mem: 1G
         - l1_shared_bw:
