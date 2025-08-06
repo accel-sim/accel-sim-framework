@@ -209,12 +209,10 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       std::vector<long long> deltas;
       // read addresses as base address and deltas
       ss >> std::hex >> base_address;
-      for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s)) {
-          long long delta = 0;
-          ss >> std::dec >> delta;
-          deltas.push_back(delta);
-        }
+      for (int s = 1; s < mask_bits.count(); s++) {
+        long long delta = 0;
+        ss >> std::dec >> delta;
+        deltas.push_back(delta);
       }
       memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
     }
