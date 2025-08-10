@@ -33,14 +33,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun --time=8:00:00 -c20 make -j20 -C gpu-simulator
       - name: Run SASS
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B GPU_Microbenchmark -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100//hw_run/traces/device-0/12.8/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft  -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/device-0/12.8/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
@@ -58,7 +58,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py -v -s --sleep_time 300 stats-per-app-sass.csv -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
       - name: Archive Stats
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           rm -rf ./statistics-archive
           git clone git@github.com:accel-sim/statistics-archive.git
           BRANCH_NAME=${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}
@@ -96,7 +96,7 @@ jobs:
           fi
       - name: Correlate Ubench
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
           rm -rf ./util/plotting/correl-html/
           ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/device-0/12.8/ | tee v100-ubench-correl.txt
@@ -135,14 +135,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun --time=8:00:00 -c20 make -j20 -C gpu-simulator
       - name: Run PTX
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
 
           rm -rf ./gpu-app-collection
@@ -171,14 +171,14 @@ jobs:
           git checkout cluster-ubuntu
       - name: Build Accel-Sim
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           make -j20 -C gpu-simulator
       - name: test-prebuilt-traces
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
           cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
@@ -188,13 +188,13 @@ jobs:
           rm -rf sim_run_11.0
       - name: Build Tracer
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           ./util/tracer_nvbit/install_nvbit.sh
           make clean -C ./util/tracer_nvbit/
           make -C ./util/tracer_nvbit/
       - name: rodinia_2.0-ft-build
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-app-collection/
           git clone git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
@@ -202,18 +202,18 @@ jobs:
           make -C ./gpu-app-collection/src rodinia_2.0-ft
       - name: generate-rodinia_2.0-ft-traces
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
           ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D 7
       - name: generate-rodinia_2.0-ft-hw_stats
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           ./util/hw_stats/run_hw.py -B rodinia_2.0-ft -D 7
       - name: test-new-traces
         run: |
-          source ./env-setup/12.4_env_setup.sh
+          source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
           ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
