@@ -507,19 +507,20 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
           ctx_kernelid[ctx], ctx);
 
   if (!stop_report) {
-    if (!xz_compress_trace) {
-      ctx_resultsFile[ctx] = fopen(buffer, "wb");
-      printf("Writing results to %s\n", buffer);
-    } else {
-      char cmd_buffer[1039];
-      sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
-      ctx_resultsFile[ctx] = popen(cmd_buffer, "w");
-      if (!ctx_resultsFile[ctx]) {
-        perror("popen failed");
-        fprintf(stderr, "Command was: %s\n", cmd_buffer);
-        exit(1);
+    try {
+      if (!xz_compress_trace) {
+        ctx_resultsFile[ctx] = openFileForWriting(buffer, false);
+        printf("Writing results to %s\n", buffer);
+      } else {
+        char cmd_buffer[1039];
+        ctx_resultsFile[ctx] =
+            openFileForWritingXz(buffer, cmd_buffer, sizeof(cmd_buffer));
+        printf("Writing results to %s.xz\n", buffer);
       }
-      printf("Writing results to %s.xz\n", buffer);
+    } catch (const std::runtime_error &e) {
+      perror("Failed to open results file");
+      fprintf(stderr, "Error: %s\n", e.what());
+      exit(1);
     }
 
     kernel_header header;
@@ -906,7 +907,7 @@ void *recv_thread_fun(void *args) {
       while (num_processed_bytes < num_recv_bytes) {
         inst_trace_t *ma = (inst_trace_t *)&recv_buffer[num_processed_bytes];
         std::string opcode = id_to_opcode_map[ma->opcode_id];
-        assert(opcode.size() < MAX_OPCODE_LENGTH);
+        assert(opcode.size() <= MAX_OPCODE_LENGTH);
         strcpy(ma->opcode, opcode.c_str());
 
         /* when we get this cta_id_x it means the kernel has completed

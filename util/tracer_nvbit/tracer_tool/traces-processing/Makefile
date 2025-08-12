@@ -1,7 +1,7 @@
 TARGET := post-traces-processing
 
 $(TARGET): post-traces-processing.cpp
-	g++ -std=c++17 -O3 -g -o $@ $^
+	g++ -std=c++17 -O3 -g -Wno-unused-result -o $@ $^
 
 run: $(TARGET)
 	./$(TARGET)

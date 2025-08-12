@@ -3,10 +3,6 @@
 #include <iostream>
 #include <string>
 
-// Disable -Wunused-result warnings for this file
-#pragma GCC diagnostic push
-#pragma GCC diagnostic ignored "-Wunused-result"
-
 #define DEBUG 1
 
 int main(int argc, char *argv[]) {
@@ -17,26 +13,21 @@ int main(int argc, char *argv[]) {
 
   std::string filepath = argv[1];
   FILE *file;
+  FILE *output_file;
 
-  if (hasEnding(filepath, ".xz")) {
-    // Use xz command to decompress .xz files
-    std::string command = "xz -dc " + std::string(filepath);
-    file = popen(command.c_str(), "r");
-  } else if (hasEnding(filepath, ".traceg")) {
-    // Use cat command for regular trace files
-    file = fopen(filepath.c_str(), "rb");
-  } else {
-    throw std::runtime_error("Unsupported file type!");
-  }
+  try {
+    // Use utility function to open input file
+    file = openFileForReading(filepath);
 
-  std::string output_filepath = filepath + ".txt";
-  FILE *output_file = fopen(output_filepath.c_str(), "w");
-
-  if (!file) {
-    throw std::runtime_error("Failed to open pipe!");
-  }
-  if (!file) {
-    printf("Error: Could not open file %s\n", filepath.c_str());
+    // Open output file
+    std::string output_filepath = filepath + ".txt";
+    output_file = fopen(output_filepath.c_str(), "w");
+    if (!output_file) {
+      throw std::runtime_error("Failed to open output file: " +
+                               output_filepath);
+    }
+  } catch (const std::runtime_error &e) {
+    fprintf(stderr, "Error: %s\n", e.what());
     return 1;
   }
 
@@ -118,6 +109,3 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
-
-// Restore compiler warnings
-#pragma GCC diagnostic pop

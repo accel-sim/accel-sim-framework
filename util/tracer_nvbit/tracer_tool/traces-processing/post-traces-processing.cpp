@@ -179,30 +179,28 @@ int main(int argc, char **argv) {
 // stderr stream. The io redirection will be restored by the time the function
 // returns.
 void group_per_block(const char *filepath) {
-  string command;
   string output_filepath;
   // Open the pipe
   FILE *pipe;
   FILE *kernel_out;
-  if (hasEnding(filepath, ".xz")) {
-    // Use xz command to decompress .xz files
-    command = "xz -dc " + string(filepath);
-    output_filepath =
-        string(filepath).substr(0, string(filepath).find_last_of(".")) + "g.xz";
-    pipe = popen(command.c_str(), "r");
-    std::string out_command = "xz -1 -T0 > " + output_filepath;
-    kernel_out = popen(out_command.c_str(), "w");
-  } else if (hasEnding(filepath, ".trace")) {
-    // Use cat command for regular trace files
-    output_filepath = string(filepath) + "g";
-    pipe = fopen(filepath, "rb");
-    kernel_out = fopen(output_filepath.c_str(), "wb");
-  } else {
-    throw std::runtime_error("Unsupported file type!");
-  }
 
-  if (!pipe) {
-    throw std::runtime_error("Failed to open pipe!");
+  try {
+    // Use utility function to open input file
+    pipe = openFileForReading(filepath);
+
+    // Generate output filepath and open output file
+    if (hasEnding(filepath, ".xz")) {
+      output_filepath = generateOutputFilepath(filepath, "g.xz");
+      kernel_out =
+          openFileForWriting(output_filepath, true); // Use xz compression
+    } else if (hasEnding(filepath, ".trace")) {
+      output_filepath = string(filepath) + "g";
+      kernel_out = openFileForWriting(output_filepath, false); // No compression
+    } else {
+      throw std::runtime_error("Unsupported file type!");
+    }
+  } catch (const std::runtime_error &e) {
+    throw std::runtime_error("Failed to open files: " + string(e.what()));
   }
 
   cerr << "Processing file " << filepath << endl;
