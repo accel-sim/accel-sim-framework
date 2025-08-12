@@ -9,6 +9,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "../common.h"
 #include <errno.h>
 #include <signal.h>
 #include <unistd.h>
@@ -18,13 +19,13 @@
 using namespace std;
 
 struct threadblock_info {
-  bool initialized;
-  unsigned tb_id_x, tb_id_y, tb_id_z;
-  vector<deque<const string *>> warp_insts_array;
-  threadblock_info() {
-    initialized = false;
-    tb_id_x = tb_id_y = tb_id_z = 0;
-  }
+  // bool initialized;
+  // unsigned tb_id_x, tb_id_y, tb_id_z;
+  vector<deque<inst_trace_t>> warp_insts_array;
+  // threadblock_info() {
+  //   initialized = false;
+  //   tb_id_x = tb_id_y = tb_id_z = 0;
+  // }
 };
 
 /// @brief There exist significant repetition in the trace. The WarpInstLUT
@@ -184,122 +185,126 @@ int main(int argc, char **argv) {
 // stderr stream. The io redirection will be restored by the time the function
 // returns.
 void group_per_block(const char *filepath) {
-  preserved_stdin_fileno = dup(STDIN_FILENO);
-  preserved_stdout_fileno = dup(STDOUT_FILENO);
-
-  string filepath_str{filepath};
-  WarpInstLUT warp_inst_lut;
-
-  pid_t sink_process_pid = 0;
-  string trace_sink_cmd;
-  int sink_pipe_fd[2];
-
-  pid_t source_process_pid = 0;
-  string trace_source_cmd;
-  int source_pipe_fd[2];
+  string command;
   string output_filepath;
-
-  bool input_file_is_xz = false;
-  int _l = filepath_str.length();
-  if (_l > 3 && filepath_str.substr(_l - 3, 3) == ".xz") {
-    // kernel-1.trace.xz --(xz -dc)--> f --(xz -1 -T0)--> kernel-1.traceg.xz
-    input_file_is_xz = true;
-    output_filepath = filepath_str.substr(0, _l - 3) + "g.xz";
-    trace_source_cmd = "xz -dc " + filepath_str;
-    trace_sink_cmd = "xz -1 -T0 > " + output_filepath;
-  } else if (_l > 6 && filepath_str.substr(_l - 6, 6) == ".trace") {
-    // kernel-2.trace --(cat)--> f --(cat)--> kernel-2.traceg
-    input_file_is_xz = false;
-    output_filepath = filepath_str + "g";
-    trace_source_cmd = "cat " + filepath_str;
-    trace_sink_cmd = "cat > " + output_filepath;
+  // Open the pipe
+  FILE *pipe;
+  FILE *kernel_out;
+  if (hasEnding(filepath, ".xz")) {
+    // Use xz command to decompress .xz files
+    command = "xz -dc " + string(filepath);
+    output_filepath =
+        string(filepath).substr(0, string(filepath).find_last_of(".")) + "g.xz";
+    pipe = popen(command.c_str(), "r");
+    std::string out_command = "xz -1 -T0 > " + output_filepath;
+    kernel_out = popen(out_command.c_str(), "w");
+  } else if (hasEnding(filepath, ".trace")) {
+    // Use cat command for regular trace files
+    output_filepath = string(filepath) + "g";
+    pipe = fopen(filepath, "rb");
+    kernel_out = fopen(output_filepath.c_str(), "wb");
   } else {
-    cerr << "Only support xz or raw text format. Unable to process - and "
-            "skipping - trace file "
-         << filepath_str << endl;
-    close(preserved_stdin_fileno);
-    close(preserved_stdout_fileno);
-    return;
+    throw std::runtime_error("Unsupported file type!");
   }
 
-  // cerr << "source cmd is "<<trace_source_cmd<<"\n";
-  // cerr << "sink cmd is "<<trace_sink_cmd<<"\n";
-
-  // fork a child process as the trace source
-  if (pipe(source_pipe_fd) != 0) {
-    cerr << "Failed to create pipe\n";
-    perror("pipe");
-    exit(1);
-  }
-  source_process_pid = fork();
-  if (source_process_pid == 0) {
-    //  child process
-    close(source_pipe_fd[0]);
-    dup2(source_pipe_fd[1], STDOUT_FILENO);
-
-    // When using GDB, sending Ctrl+C to the program will send a SIGINT signal
-    // to the child process as well, subsequently causing it to terminate. To
-    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal.
-    // Reference:
-    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes
-    signal(SIGINT, SIG_IGN);
-
-    execle("/bin/sh", "sh", "-c", trace_source_cmd.c_str(), NULL, environ);
-    perror("execle"); // child shouldn't reach here if all is well.
-    exit(1);
-  } else if (source_process_pid > 0) {
-    // parent process - the trace post processor
-    // stdin is now redirected to the read end of the source_pipe
-    close(source_pipe_fd[1]);
-    int r = dup2(source_pipe_fd[0], STDIN_FILENO);
-  } else {
-    cerr << "Failed to fork data source process\n";
-    perror("fork");
-    exit(1);
-  }
-
-  // fork a child process as the trace sink
-  if (pipe(sink_pipe_fd) != 0) {
-    cerr << "Failed to create pipe\n";
-    perror("pipe");
-    exit(1);
-  }
-  sink_process_pid = fork();
-  if (sink_process_pid == 0) {
-    // child process
-    close(sink_pipe_fd[1]);
-    dup2(sink_pipe_fd[0], STDIN_FILENO);
-    signal(SIGINT, SIG_IGN); // ignore SIGINT
-    execle("/bin/sh", "sh", "-c", trace_sink_cmd.c_str(), NULL, environ);
-    perror("execle"); // child shouldn't reach here if all is well.
-    exit(1);
-  } else if (sink_process_pid > 0) {
-    // parent process - the trace post processor
-    // stdout is now redirected to the write end of the sink_pipe
-    close(sink_pipe_fd[0]);
-    int r = dup2(sink_pipe_fd[1], STDOUT_FILENO);
-  } else {
-    cerr << "Failed to fork data sink process\n";
-    perror("fork");
-    exit(1);
+  if (!pipe) {
+    throw std::runtime_error("Failed to open pipe!");
   }
 
   cerr << "Processing file " << filepath << endl;
 
   vector<threadblock_info> insts;
-  unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
-  unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
-  unsigned lineinfo, linenum;
-  string line;
-  stringstream ss;
-  string string1, string2;
-  bool found_grid_dim = false, found_block_dim = false;
 
-  // Add a flag for LDGSTS instruction to indicate which one to remove
-  vector<vector<bool>> ldgsts_flags; // true to remove, false to not
+  // Read the kernel header
+  std::string kernel_name;
+  uint64_t name_size;
+  fread(&name_size, sizeof(uint64_t), 1, pipe);
+  kernel_name.resize(name_size);
+  fread(kernel_name.data(), name_size, 1, pipe);
 
-  // Important... without clear(), cin.eof() may evaluate to true on the second
-  // kernel
+  // Read the kernel header
+  kernel_header header;
+  fread(&header, sizeof(kernel_header), 1, pipe);
+
+  insts.resize(header.grid_dim_x * header.grid_dim_y * header.grid_dim_z);
+  vector<vector<bool>> ldgsts_flags;
+
+  for (unsigned tb = 0; tb < insts.size(); ++tb) {
+    insts[tb].warp_insts_array.resize(ceil(
+        float(header.block_dim_x * header.block_dim_y * header.block_dim_z) /
+        32));
+
+    ldgsts_flags.resize(insts[tb].warp_insts_array.size());
+    for (unsigned j = 0; j < ldgsts_flags[tb].size(); j++) {
+      ldgsts_flags[tb][j] = true;
+    }
+  }
+
+  unsigned size;
+  while (fread(&size, sizeof(unsigned), 1, pipe)) {
+    inst_trace_t inst = {0};
+    fread(&inst, size, 1, pipe);
+
+    unsigned tb_id_x = inst.cta_id_x;
+    unsigned tb_id_y = inst.cta_id_y;
+    unsigned tb_id_z = inst.cta_id_z;
+    unsigned tb_id = tb_id_z * header.grid_dim_y * header.grid_dim_x +
+                     tb_id_y * header.grid_dim_x + tb_id_x;
+    unsigned warp_id = inst.warpid_tb;
+
+    std::string opcode = inst.opcode;
+    if (opcode.find("LDGSTS") != string::npos) {
+      if (!ldgsts_flags[tb_id][warp_id]) {
+        insts[tb_id].warp_insts_array[warp_id].push_back(inst);
+      }
+      ldgsts_flags[tb_id][warp_id] = !ldgsts_flags[tb_id][warp_id];
+    } else {
+      insts[tb_id].warp_insts_array[warp_id].push_back(inst);
+    }
+  }
+
+  fwrite(&name_size, sizeof(uint64_t), 1, kernel_out);
+  fwrite(kernel_name.c_str(), kernel_name.size(), 1, kernel_out);
+
+  fwrite(&header, sizeof(kernel_header), 1, kernel_out);
+
+  for (unsigned tb_id = 0; tb_id < insts.size(); ++tb_id) {
+    if (insts[tb_id].warp_insts_array.size() > 0) {
+      // print total warp count in this thread block
+      unsigned total_warp_count = insts[tb_id].warp_insts_array.size();
+      fwrite(&total_warp_count, sizeof(unsigned), 1, kernel_out);
+
+      for (unsigned warp_id = 0; warp_id < insts[tb_id].warp_insts_array.size();
+           ++warp_id) {
+        // print total inst count in this warp
+        unsigned total_inst_count =
+            insts[tb_id].warp_insts_array[warp_id].size();
+        fwrite(&total_inst_count, sizeof(unsigned), 1, kernel_out);
+
+        for (unsigned inst_id = 0;
+             inst_id < insts[tb_id].warp_insts_array[warp_id].size();
+             ++inst_id) {
+          inst_trace_t &inst = insts[tb_id].warp_insts_array[warp_id][inst_id];
+
+          // Write the inst_trace_t structure as binary data to the file
+          unsigned size = sizeof(inst_trace_t);
+          if (!inst.is_mem) {
+            // write only the part without addrs
+            size = offsetof(inst_trace_t, addrs);
+          }
+          fwrite(&size, sizeof(unsigned), 1, kernel_out);
+          fwrite(&inst, size, 1, kernel_out);
+        }
+      }
+    }
+  }
+  fclose(kernel_out);
+
+  /*
+  // legacy code starts here. Pending to be removed.
+
+  // Important... without clear(), cin.eof() may evaluate to true on the
+  // second kernel
   cin.clear();
   clearerr(stdin);
   while (!cin.eof()) {
@@ -315,14 +320,11 @@ void group_per_block(const char *filepath) {
       ss.ignore();
       ss >> string1 >> string2;
       if (string1 == "grid" && string2 == "dim") {
-        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &grid_dim_x, &grid_dim_y,
-               &grid_dim_z);
-        found_grid_dim = true;
-      } else if (string1 == "block" && string2 == "dim") {
-        sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &tb_dim_x, &tb_dim_y,
-               &tb_dim_z);
-        found_block_dim = true;
-      } else if (string1 == "enable" && string2 == "lineinfo") {
+        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &grid_dim_x,
+  &grid_dim_y, &grid_dim_z); found_grid_dim = true; } else if (string1 ==
+  "block" && string2 == "dim") { sscanf(line.c_str(), "-block dim =
+  (%d,%d,%d)", &tb_dim_x, &tb_dim_y, &tb_dim_z); found_block_dim = true; }
+  else if (string1 == "enable" && string2 == "lineinfo") {
         sscanf(line.c_str(), "-enable lineinfo = %d", &lineinfo);
       }
 
@@ -351,9 +353,8 @@ void group_per_block(const char *filepath) {
       ss.str(line);
       ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb;
       tb_id =
-          tb_id_z * grid_dim_y * grid_dim_x + tb_id_y * grid_dim_x + tb_id_x;
-      if (!insts[tb_id].initialized) {
-        insts[tb_id].tb_id_x = tb_id_x;
+          tb_id_z * grid_dim_y * grid_dim_x + tb_id_y * grid_dim_x +
+  tb_id_x; if (!insts[tb_id].initialized) { insts[tb_id].tb_id_x = tb_id_x;
         insts[tb_id].tb_id_y = tb_id_y;
         insts[tb_id].tb_id_z = tb_id_z;
         insts[tb_id].initialized = true;
@@ -384,7 +385,8 @@ void group_per_block(const char *filepath) {
         inst_ptr = warp_inst_lut.register_new_entry(rest_of_line);
 
       // One actual LDGSTS instruction includes 2 LDGSTS instructions in the
-      // trace, because it has two memory references. This is trying to remove
+      // trace, because it has two memory references. This is trying to
+  remove
       // the one with the shared memory address.
 
       if (opcode.find("LDGSTS") != string::npos) {
@@ -398,33 +400,37 @@ void group_per_block(const char *filepath) {
     }
   }
 
-  for (unsigned i = 0; i < insts.size(); ++i) {
+  for (unsigned tb_id = 0; tb_id < insts.size(); ++tb_id) {
     // ofs<<string<<"\n";
-    if (insts[i].initialized && insts[i].warp_insts_array.size() > 0) {
-      cout << "\n"
+    if (insts[tb_id].initialized && insts[tb_id].warp_insts_array.size() >
+  0) { cout << "\n"
            << "#BEGIN_TB"
            << "\n";
       cout << "\n"
-           << "thread block = " << insts[i].tb_id_x << "," << insts[i].tb_id_y
-           << "," << insts[i].tb_id_z << "\n";
+           << "thread block = " << insts[tb_id].tb_id_x << ","
+           << insts[tb_id].tb_id_y << "," << insts[tb_id].tb_id_z << "\n";
     } else {
-      cerr << "Warning: Thread block " << insts[i].tb_id_x << ","
-           << insts[i].tb_id_y << "," << insts[i].tb_id_z << " is empty"
+      cerr << "Warning: Thread block " << insts[tb_id].tb_id_x << ","
+           << insts[tb_id].tb_id_y << "," << insts[tb_id].tb_id_z << " is
+  empty"
            << "\n";
       continue;
     }
-    for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
+    for (unsigned warp_id = 0; warp_id <
+  insts[tb_id].warp_insts_array.size();
+         ++warp_id) {
       cout << "\n"
-           << "warp = " << j << "\n";
-      cout << "insts = " << insts[i].warp_insts_array[j].size() << "\n";
-      if (insts[i].warp_insts_array[j].size() == 0) {
-        cerr << "Warning: Warp " << j << " in thread block" << insts[i].tb_id_x
-             << "," << insts[i].tb_id_y << "," << insts[i].tb_id_z
-             << " is empty"
+           << "warp = " << warp_id << "\n";
+      cout << "insts = " << insts[tb_id].warp_insts_array[warp_id].size()
+           << "\n";
+      if (insts[tb_id].warp_insts_array[warp_id].size() == 0) {
+        cerr << "Warning: Warp " << warp_id << " in thread block"
+             << insts[tb_id].tb_id_x << "," << insts[tb_id].tb_id_y << ","
+             << insts[tb_id].tb_id_z << " is empty"
              << "\n";
       }
-      for (auto it = insts[i].warp_insts_array[j].cbegin();
-           it != insts[i].warp_insts_array[j].cend(); ++it) {
+      for (auto it = insts[tb_id].warp_insts_array[warp_id].cbegin();
+           it != insts[tb_id].warp_insts_array[warp_id].cend(); ++it) {
         // dereference once: const string*
         // dereference twice: const string
         cout << **it << "\n";
@@ -432,17 +438,7 @@ void group_per_block(const char *filepath) {
     }
     cout << endl << "#END_TB" << endl;
   }
-
-  close(source_pipe_fd[0]);
-  close(source_pipe_fd[1]);
-  close(sink_pipe_fd[0]);
-  close(sink_pipe_fd[1]);
-
-  // restore stdin/stdout file descriptor
-  dup2(preserved_stdin_fileno, STDIN_FILENO);
-  dup2(preserved_stdout_fileno, STDOUT_FILENO);
-  close(preserved_stdin_fileno);
-  close(preserved_stdout_fileno);
+  */
 }
 
 void group_per_core(const char *filepath) {

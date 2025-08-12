@@ -38,7 +38,7 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
     }
   }
 
-  inst_trace_t ma;
+  inst_trace_t ma = {0};
 
   if (is_mem) {
     /* collect memory address information */

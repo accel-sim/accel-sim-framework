@@ -2,6 +2,7 @@
 /* Author2: Jason Shen, shen203@purdue.edu - 2019 */
 
 #include <assert.h>
+#include <cstring>
 #include <inttypes.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -32,6 +33,10 @@
 #include "common.h"
 
 #define TRACER_VERSION "5"
+
+static __managed__ uint64_t total_dynamic_instr_counter = 0;
+static __managed__ uint64_t reported_dynamic_instr_counter = 0;
+static __managed__ bool stop_report = false;
 
 /* Channel used to communicate from GPU to CPU receiving thread */
 #define CHANNEL_SIZE (1l << 20)
@@ -503,44 +508,46 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
 
   if (!stop_report) {
     if (!xz_compress_trace) {
-      ctx_resultsFile[ctx] = fopen(buffer, "w");
+      ctx_resultsFile[ctx] = fopen(buffer, "wb");
       printf("Writing results to %s\n", buffer);
     } else {
       char cmd_buffer[1039];
       sprintf(cmd_buffer, "xz -1 -T0 > %s.xz", buffer);
       ctx_resultsFile[ctx] = popen(cmd_buffer, "w");
+      if (!ctx_resultsFile[ctx]) {
+        perror("popen failed");
+        fprintf(stderr, "Command was: %s\n", cmd_buffer);
+        exit(1);
+      }
       printf("Writing results to %s.xz\n", buffer);
     }
 
-    // Writing header information
-    fprintf(ctx_resultsFile[ctx], "-kernel name = %s\n",
-            nvbit_get_func_name(ctx, func, true));
-    fprintf(ctx_resultsFile[ctx], "-kernel id = %d\n", ctx_kernelid[ctx]);
-    fprintf(ctx_resultsFile[ctx], "-grid dim = (%d,%d,%d)\n", gridDimX,
-            gridDimY, gridDimZ);
-    fprintf(ctx_resultsFile[ctx], "-block dim = (%d,%d,%d)\n", blockDimX,
-            blockDimY, blockDimZ);
-    fprintf(ctx_resultsFile[ctx], "-shmem = %d\n",
-            shmem_static_nbytes + sharedMemBytes);
-    fprintf(ctx_resultsFile[ctx], "-nregs = %d\n", nregs);
-    fprintf(ctx_resultsFile[ctx], "-binary version = %d\n", binary_version);
-    fprintf(ctx_resultsFile[ctx], "-cuda stream id = %lu\n", (uint64_t)hStream);
-    fprintf(ctx_resultsFile[ctx], "-shmem base_addr = 0x%016lx\n",
-            (uint64_t)nvbit_get_shmem_base_addr(ctx));
-    fprintf(ctx_resultsFile[ctx], "-local mem base_addr = 0x%016lx\n",
-            (uint64_t)nvbit_get_local_mem_base_addr(ctx));
-    fprintf(ctx_resultsFile[ctx], "-nvbit version = %s\n", NVBIT_VERSION);
-    fprintf(ctx_resultsFile[ctx], "-accelsim tracer version = %s\n",
-            TRACER_VERSION);
-    fprintf(ctx_resultsFile[ctx], "-enable lineinfo = %d\n", lineinfo);
-    fprintf(ctx_resultsFile[ctx], "\n");
+    kernel_header header;
+    header.kernel_id = ctx_kernelid[ctx];
+    header.grid_dim_x = gridDimX;
+    header.grid_dim_y = gridDimY;
+    header.grid_dim_z = gridDimZ;
+    header.block_dim_x = blockDimX;
+    header.block_dim_y = blockDimY;
+    header.block_dim_z = blockDimZ;
+    header.shared_mem_bytes = shmem_static_nbytes + sharedMemBytes;
+    header.nregs = nregs;
+    header.binary_version = binary_version;
+    header.cuda_stream_id = (uint64_t)hStream;
+    header.shmem_base_addr = (uint64_t)nvbit_get_shmem_base_addr(ctx);
+    header.local_mem_base_addr = (uint64_t)nvbit_get_local_mem_base_addr(ctx);
+    strcpy(header.nvbit_version, NVBIT_VERSION);
+    strcpy(header.accelsim_tracer_version, TRACER_VERSION);
+    header.enable_lineinfo = lineinfo;
 
-    fprintf(ctx_resultsFile[ctx],
-            "#traces format = [line_num] PC mask dest_num [reg_dests] "
-            "opcode src_num "
-            "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
-            "immediate\n");
-    fprintf(ctx_resultsFile[ctx], "\n");
+    // write kernel name
+    std::string kernel_name = std::string(nvbit_get_func_name(ctx, func, true));
+    // write name size
+    uint64_t name_size = kernel_name.size();
+    fwrite(&name_size, sizeof(uint64_t), 1, ctx_resultsFile[ctx]);
+    fwrite(kernel_name.c_str(), kernel_name.size(), 1, ctx_resultsFile[ctx]);
+    printf("Kernel name: %s\n", kernel_name.c_str());
+    fwrite(&header, sizeof(kernel_header), 1, ctx_resultsFile[ctx]);
   }
 
   kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
@@ -898,6 +905,9 @@ void *recv_thread_fun(void *args) {
       uint32_t num_processed_bytes = 0;
       while (num_processed_bytes < num_recv_bytes) {
         inst_trace_t *ma = (inst_trace_t *)&recv_buffer[num_processed_bytes];
+        std::string opcode = id_to_opcode_map[ma->opcode_id];
+        assert(opcode.size() < MAX_OPCODE_LENGTH);
+        strcpy(ma->opcode, opcode.c_str());
 
         /* when we get this cta_id_x it means the kernel has completed
          */
@@ -906,94 +916,103 @@ void *recv_thread_fun(void *args) {
           break;
         }
 
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_x);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_y);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_z);
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_tb);
-        if (print_core_id) {
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->sm_id);
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_sm);
+        // Write the inst_trace_t structure as binary data to the file
+        unsigned size = sizeof(inst_trace_t);
+        if (!ma->is_mem) {
+          // write only the part without addrs
+          size = offsetof(inst_trace_t, addrs);
         }
-        if (lineinfo) {
-          fprintf(ctx_resultsFile[ctx], "%d ", ma->line_num);
-        }
-        fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the virtual PC
-        fprintf(ctx_resultsFile[ctx], "%08x ",
-                ma->active_mask & ma->predicate_mask);
-        if (ma->GPRDst >= 0) {
-          fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRDst);
-        } else
-          fprintf(ctx_resultsFile[ctx], "0 ");
+        fwrite(&size, sizeof(unsigned), 1, ctx_resultsFile[ctx]);
+        fwrite(ma, size, 1, ctx_resultsFile[ctx]);
 
-        // Print the opcode.
-        fprintf(ctx_resultsFile[ctx], "%s ",
-                id_to_opcode_map[ma->opcode_id].c_str());
-        unsigned src_count = 0;
-        for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
-          if (ma->GPRSrcs[s] >= 0)
-            src_count++;
-        fprintf(ctx_resultsFile[ctx], "%d ", src_count);
+        // fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_x);
+        // fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_y);
+        // fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_z);
+        // fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_tb);
+        // if (print_core_id) {
+        //   fprintf(ctx_resultsFile[ctx], "%d ", ma->sm_id);
+        //   fprintf(ctx_resultsFile[ctx], "%d ", ma->warpid_sm);
+        // }
+        // if (lineinfo) {
+        //   fprintf(ctx_resultsFile[ctx], "%d ", ma->line_num);
+        // }
+        // fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the virtual
+        // PC fprintf(ctx_resultsFile[ctx], "%08x ",
+        //         ma->active_mask & ma->predicate_mask);
+        // if (ma->GPRDst >= 0) {
+        //   fprintf(ctx_resultsFile[ctx], "1 ");
+        //   fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRDst);
+        // } else
+        //   fprintf(ctx_resultsFile[ctx], "0 ");
 
-        for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
-          if (ma->GPRSrcs[s] >= 0)
-            fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRSrcs[s]);
+        // // Print the opcode.
+        // fprintf(ctx_resultsFile[ctx], "%s ",
+        //         id_to_opcode_map[ma->opcode_id].c_str());
+        // unsigned src_count = 0;
+        // for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
+        //   if (ma->GPRSrcs[s] >= 0)
+        //     src_count++;
+        // fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        // print addresses
-        std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
-        if (ma->is_mem) {
-          std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
-          std::vector<std::string> tokens;
-          std::string token;
-          while (std::getline(iss, token, '.')) {
-            if (!token.empty())
-              tokens.push_back(token);
-          }
-          fprintf(ctx_resultsFile[ctx], "%d ",
-                  get_datawidth_from_opcode(tokens));
+        // for (int s = 0; s < MAX_SRC; s++) // GPR srcs.
+        //   if (ma->GPRSrcs[s] >= 0)
+        //     fprintf(ctx_resultsFile[ctx], "R%d ", ma->GPRSrcs[s]);
 
-          bool base_stride_success = false;
-          uint64_t base_addr = 0;
-          int stride = 0;
-          std::vector<long long> deltas;
+        // // print addresses
+        // std::bitset<32> mask(ma->active_mask & ma->predicate_mask);
+        // if (ma->is_mem) {
+        //   std::istringstream iss(id_to_opcode_map[ma->opcode_id]);
+        //   std::vector<std::string> tokens;
+        //   std::string token;
+        //   while (std::getline(iss, token, '.')) {
+        //     if (!token.empty())
+        //       tokens.push_back(token);
+        //   }
+        //   fprintf(ctx_resultsFile[ctx], "%d ",
+        //           get_datawidth_from_opcode(tokens));
 
-          if (enable_compress) {
-            // try base+stride format
-            base_stride_success =
-                base_stride_compress(ma->addrs, mask, base_addr, stride);
-            if (!base_stride_success) {
-              // if base+stride fails, try base+delta format
-              base_delta_compress(ma->addrs, mask, base_addr, deltas);
-            }
-          }
+        //   bool base_stride_success = false;
+        //   uint64_t base_addr = 0;
+        //   int stride = 0;
+        //   std::vector<long long> deltas;
 
-          if (base_stride_success && enable_compress) {
-            // base + stride format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx %d ",
-                    address_format::base_stride, base_addr, stride);
-          } else if (!base_stride_success && enable_compress) {
-            // base + delta format
-            fprintf(ctx_resultsFile[ctx], "%u 0x%llx ",
-                    address_format::base_delta, base_addr);
-            for (int s = 0; s < deltas.size(); s++) {
-              fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
-            }
-          } else {
-            // list all the addresses
-            fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
-            for (int s = 0; s < 32; s++) {
-              if (mask.test(s))
-                fprintf(ctx_resultsFile[ctx], "0x%016lx ", ma->addrs[s]);
-            }
-          }
-        } else {
-          fprintf(ctx_resultsFile[ctx], "0 ");
-        }
+        //   if (enable_compress) {
+        //     // try base+stride format
+        //     base_stride_success =
+        //         base_stride_compress(ma->addrs, mask, base_addr, stride);
+        //     if (!base_stride_success) {
+        //       // if base+stride fails, try base+delta format
+        //       base_delta_compress(ma->addrs, mask, base_addr, deltas);
+        //     }
+        //   }
 
-        // Print the immediate
-        fprintf(ctx_resultsFile[ctx], "%d ", ma->imm);
+        //   if (base_stride_success && enable_compress) {
+        //     // base + stride format
+        //     fprintf(ctx_resultsFile[ctx], "%u 0x%llx %d ",
+        //             address_format::base_stride, base_addr, stride);
+        //   } else if (!base_stride_success && enable_compress) {
+        //     // base + delta format
+        //     fprintf(ctx_resultsFile[ctx], "%u 0x%llx ",
+        //             address_format::base_delta, base_addr);
+        //     for (int s = 0; s < deltas.size(); s++) {
+        //       fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
+        //     }
+        //   } else {
+        //     // list all the addresses
+        //     fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
+        //     for (int s = 0; s < 32; s++) {
+        //       if (mask.test(s))
+        //         fprintf(ctx_resultsFile[ctx], "0x%016lx ", ma->addrs[s]);
+        //     }
+        //   }
+        // } else {
+        //   fprintf(ctx_resultsFile[ctx], "0 ");
+        // }
 
-        fprintf(ctx_resultsFile[ctx], "\n");
+        // // Print the immediate
+        // fprintf(ctx_resultsFile[ctx], "%d ", ma->imm);
+
+        // fprintf(ctx_resultsFile[ctx], "\n");
 
         num_processed_bytes += sizeof(inst_trace_t);
       }
