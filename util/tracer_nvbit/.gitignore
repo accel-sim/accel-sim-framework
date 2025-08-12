@@ -5,3 +5,5 @@ tracer_tool/tracer_tool.o
 tracer_tool/tracer_tool.so
 tracer_tool/inject_funcs.o
 tracer_tool/traces-processing/post-traces-processing
+traceDsm
+traceAsm

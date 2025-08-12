@@ -11,7 +11,7 @@
 /* information collected in the instrumentation function and passed
  * on the channel from the GPU to the CPU */
 #define MAX_SRC 5
-#define MAX_OPCODE_LENGTH 16
+#define MAX_OPCODE_LENGTH 32
 
 typedef struct {
   unsigned kernel_id;

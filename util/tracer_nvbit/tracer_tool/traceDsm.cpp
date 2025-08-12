@@ -3,6 +3,10 @@
 #include <iostream>
 #include <string>
 
+// Disable -Wunused-result warnings for this file
+#pragma GCC diagnostic push
+#pragma GCC diagnostic ignored "-Wunused-result"
+
 #define DEBUG 1
 
 int main(int argc, char *argv[]) {
@@ -39,26 +43,15 @@ int main(int argc, char *argv[]) {
   // Read the kernel header
   std::string kernel_name;
   uint64_t name_size;
-  if (fread(&name_size, sizeof(uint64_t), 1, file) != 1) {
-    printf("Error: Failed to read name size\n");
-    fclose(file);
-    return 1;
-  }
+  fread(&name_size, sizeof(uint64_t), 1, file);
+
   kernel_name.resize(name_size);
-  if (fread(kernel_name.data(), name_size, 1, file) != 1) {
-    printf("Error: Failed to read kernel name\n");
-    fclose(file);
-    return 1;
-  }
-  printf("-kernel name = %s\n", kernel_name.c_str());
+  fread(kernel_name.data(), name_size, 1, file);
 
   // Read the kernel header
   kernel_header header;
-  if (fread(&header, sizeof(kernel_header), 1, file) != 1) {
-    printf("Error: Failed to read kernel header\n");
-    fclose(file);
-    return 1;
-  }
+  fread(&header, sizeof(kernel_header), 1, file);
+
   fprintf(output_file, "-kernel name = %s\n", kernel_name.c_str());
   fprintf(output_file, "-kernel id = %d\n", header.kernel_id);
   fprintf(output_file, "-grid dim = (%d,%d,%d)\n", header.grid_dim_x,
@@ -104,27 +97,15 @@ int main(int argc, char *argv[]) {
     while (read_tb < tot_warp_in_id) {
       // WARP
       unsigned num_insts;
-      if (fread(&num_insts, sizeof(unsigned), 1, file) != 1) {
-        printf("Error: Failed to read num_insts\n");
-        fclose(file);
-        return 1;
-      }
+      fread(&num_insts, sizeof(unsigned), 1, file);
       printf("insts in warp: %d\n", num_insts);
 
       unsigned read_inst = 0;
       while (read_inst < num_insts) {
         // INST
         unsigned inst_size;
-        if (fread(&inst_size, sizeof(unsigned), 1, file) != 1) {
-          printf("Error: Failed to read inst_size\n");
-          fclose(file);
-          return 1;
-        }
-        if (fread(&trace, inst_size, 1, file) != 1) {
-          printf("Error: Failed to read trace\n");
-          fclose(file);
-          return 1;
-        }
+        fread(&inst_size, sizeof(unsigned), 1, file);
+        fread(&trace, inst_size, 1, file);
 
         printf("Trace: %s\n", trace.opcode);
 
@@ -137,3 +118,6 @@ int main(int argc, char *argv[]) {
 
   return 0;
 }
+
+// Restore compiler warnings
+#pragma GCC diagnostic pop

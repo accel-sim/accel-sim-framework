@@ -19,13 +19,7 @@
 using namespace std;
 
 struct threadblock_info {
-  // bool initialized;
-  // unsigned tb_id_x, tb_id_y, tb_id_z;
   vector<deque<inst_trace_t>> warp_insts_array;
-  // threadblock_info() {
-  //   initialized = false;
-  //   tb_id_x = tb_id_y = tb_id_z = 0;
-  // }
 };
 
 /// @brief There exist significant repetition in the trace. The WarpInstLUT
