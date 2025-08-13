@@ -157,7 +157,7 @@ inline std::string generateOutputFilepath(const std::string &input_filepath,
                                           const std::string &new_extension) {
   if (hasEnding(input_filepath, ".xz")) {
     // Remove .xz and add new extension
-    return input_filepath.substr(0, input_filepath.find_last_of(".")) + "." +
+    return input_filepath.substr(0, input_filepath.find_last_of(".")) +
            new_extension;
   } else {
     // Add new extension to existing path

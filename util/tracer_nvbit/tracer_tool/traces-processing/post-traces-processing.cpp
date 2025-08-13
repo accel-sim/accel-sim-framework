@@ -190,7 +190,7 @@ void group_per_block(const char *filepath) {
 
     // Generate output filepath and open output file
     if (hasEnding(filepath, ".xz")) {
-      output_filepath = generateOutputFilepath(filepath, "g.xz");
+      output_filepath = generateOutputFilepath(filepath, "g");
       kernel_out =
           openFileForWriting(output_filepath, true); // Use xz compression
     } else if (hasEnding(filepath, ".trace")) {
