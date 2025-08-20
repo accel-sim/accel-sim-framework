@@ -2,6 +2,7 @@
 /* Author2: Jason Shen, shen203@purdue.edu - 2019 */
 
 #include <assert.h>
+#include <climits>
 #include <cstring>
 #include <inttypes.h>
 #include <stdint.h>
@@ -841,61 +842,6 @@ bool check_opcode_contain(const std::vector<std::string> &opcode,
   return false;
 }
 
-bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
-                          uint64_t &base_addr, int &stride) {
-  // calulcate the difference between addresses
-  // write cosnsctive addresses with constant stride in a more
-  // compressed way (i.e. start adress and stride)
-  bool const_stride = true;
-  bool first_bit1_found = false;
-  bool last_bit1_found = false;
-
-  for (int s = 0; s < 32; s++) {
-    if (mask.test(s) && !first_bit1_found) {
-      first_bit1_found = true;
-      base_addr = addrs[s];
-      if (s < 31 && mask.test(s + 1))
-        stride = addrs[s + 1] - addrs[s];
-      else {
-        const_stride = false;
-        break;
-      }
-    } else if (first_bit1_found && !last_bit1_found) {
-      if (mask.test(s)) {
-        if (stride != addrs[s] - addrs[s - 1]) {
-          const_stride = false;
-          break;
-        }
-      } else
-        last_bit1_found = true;
-    } else if (last_bit1_found) {
-      if (mask.test(s)) {
-        const_stride = false;
-        break;
-      }
-    }
-  }
-
-  return const_stride;
-}
-
-void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
-                         uint64_t &base_addr, std::vector<long long> &deltas) {
-  // save the delta from the previous address
-  bool first_bit1_found = false;
-  uint64_t last_address = 0;
-  for (int s = 0; s < 32; s++) {
-    if (mask.test(s) && !first_bit1_found) {
-      base_addr = addrs[s];
-      first_bit1_found = true;
-      last_address = addrs[s];
-    } else if (mask.test(s) && first_bit1_found) {
-      deltas.push_back(addrs[s] - last_address);
-      last_address = addrs[s];
-    }
-  }
-}
-
 void *recv_thread_fun(void *args) {
   CUcontext ctx = (CUcontext)args;
   char *recv_buffer = (char *)malloc(CHANNEL_SIZE);
@@ -908,7 +854,7 @@ void *recv_thread_fun(void *args) {
         inst_trace_t *ma = (inst_trace_t *)&recv_buffer[num_processed_bytes];
         std::string opcode = id_to_opcode_map[ma->opcode_id];
         assert(opcode.size() <= MAX_OPCODE_LENGTH);
-        strcpy(ma->opcode, opcode.c_str());
+        strcpy(ma->base.opcode, opcode.c_str());
 
         /* when we get this cta_id_x it means the kernel has completed
          */
@@ -919,7 +865,7 @@ void *recv_thread_fun(void *args) {
 
         // Write the inst_trace_t structure as binary data to the file
         unsigned size = sizeof(inst_trace_t);
-        if (!ma->is_mem) {
+        if (!ma->base.is_mem) {
           // write only the part without addrs
           size = offsetof(inst_trace_t, addrs);
         }

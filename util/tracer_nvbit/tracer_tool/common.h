@@ -4,6 +4,7 @@
 #ifndef COMMON_H
 #define COMMON_H
 
+#include <assert.h>
 #include <cstdint>
 #include <cstdio>
 #include <stdexcept>
@@ -14,6 +15,13 @@
  * on the channel from the GPU to the CPU */
 #define MAX_SRC 5
 #define MAX_OPCODE_LENGTH 32
+
+typedef enum : uint8_t {
+  INST_BASE = 0,
+  INST_FLAT,
+  INST_DELTA,
+  INST_STRIDE,
+} inst_type_t;
 
 typedef struct {
   unsigned kernel_id;
@@ -36,15 +44,8 @@ typedef struct {
 } kernel_header;
 
 typedef struct {
-  int cta_id_x;
-  int cta_id_y;
-  int cta_id_z;
-  int warpid_tb;
-  int warpid_sm;
-  int sm_id;
-  int opcode_id;
   char opcode[MAX_OPCODE_LENGTH];
-  uint32_t line_num;
+
   uint32_t vpc;
   bool is_mem;
   int32_t GPRDst;
@@ -54,10 +55,63 @@ typedef struct {
   uint32_t active_mask;
   uint32_t predicate_mask;
   uint64_t imm;
+} sim_inst_trace_t;
 
-  // variable size
+typedef struct {
+  sim_inst_trace_t base;
+  uint64_t addrs[32];
+} sim_inst_trace_flat_t;
+
+typedef struct {
+  sim_inst_trace_t base;
+
+  uint64_t base_addr;
+  int32_t delta[32];
+} sim_inst_trace_delta_t;
+
+typedef struct {
+  sim_inst_trace_t base;
+  uint64_t base_addr;
+  int32_t stride;
+} sim_inst_trace_stride_t;
+
+typedef struct {
+  sim_inst_trace_t base;
+
+  int cta_id_x;
+  int cta_id_y;
+  int cta_id_z;
+  int warpid_tb;
+  int warpid_sm;
+  int sm_id;
+  int opcode_id;
+  uint32_t line_num;
   uint64_t addrs[32];
 } inst_trace_t;
+
+typedef union {
+  sim_inst_trace_t sim_inst_base;
+  sim_inst_trace_delta_t sim_inst_delta;
+  sim_inst_trace_flat_t sim_inst_flat;
+  sim_inst_trace_stride_t sim_inst_stride;
+
+} sim_inst_u;
+
+// unsigned get_inst_size(inst_type_t type) {
+//   switch (type) {
+//   case INST_BASE:
+//     return sizeof(sim_inst_trace_t);
+//   case INST_FLAT:
+//     return sizeof(sim_inst_trace_flat_t);
+//   case INST_DELTA:
+//     return sizeof(sim_inst_trace_delta_t);
+//   case INST_STRIDE:
+//     return sizeof(sim_inst_trace_stride_t);
+//   default:
+//     assert(0);
+//     exit(1);
+//   }
+// }
 
 inline bool hasEnding(const std::string &fullString,
                       const std::string &ending) {

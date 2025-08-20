@@ -75,11 +75,33 @@ int main(int argc, char *argv[]) {
       unsigned read_inst = 0;
       while (read_inst < num_insts) {
         // INST
-        inst_trace_t inst;
-        unsigned inst_size;
-        fread(&inst_size, sizeof(unsigned), 1, file);
-        fread(&inst, inst_size, 1, file);
+        sim_inst_u full_inst;
+        inst_type_t inst_type;
+        fread(&inst_type, sizeof(inst_type), 1, file);
+        unsigned size;
+        switch (inst_type) {
+        case INST_BASE:
+          size = sizeof(sim_inst_trace_t);
+          fread(&full_inst.sim_inst_base, size, 1, file);
+          break;
+        case INST_FLAT:
+          size = sizeof(sim_inst_trace_flat_t);
+          fread(&full_inst.sim_inst_flat, size, 1, file);
+          break;
+        case INST_DELTA:
+          size = sizeof(sim_inst_trace_delta_t);
+          fread(&full_inst.sim_inst_delta, size, 1, file);
+          break;
+        case INST_STRIDE:
+          size = sizeof(sim_inst_trace_stride_t);
+          fread(&full_inst.sim_inst_stride, size, 1, file);
+          break;
+        default:
+          assert(0);
+          exit(1);
+        }
 
+        sim_inst_trace_t inst = full_inst.sim_inst_base;
         // print VPC
         fprintf(output_file, "%04x ", inst.vpc);
 
@@ -111,13 +133,39 @@ int main(int argc, char *argv[]) {
 
         // print is_mem
         if (inst.is_mem) {
-          // default no compression for now
-          fprintf(output_file, "0 ");
           std::bitset<32> mask(inst.active_mask & inst.predicate_mask);
+          if (inst_type == INST_FLAT) {
+            // default no compression for now
+            fprintf(output_file, "0 ");
 
-          for (int i = 0; i < 32; i++) {
-            if (mask[i]) {
-              fprintf(output_file, "%016lx ", inst.addrs[i]);
+            for (int i = 0; i < 32; i++) {
+              if (mask[i]) {
+                fprintf(output_file, "0x%llx ",
+                        (unsigned long long)full_inst.sim_inst_flat.addrs[i]);
+              }
+            }
+          } else if (inst_type == INST_DELTA) {
+            // enabled compression
+            fprintf(output_file, "2 ");
+
+            for (int i = 0; i < 32; i++) {
+              if (mask[i]) {
+                fprintf(output_file, "0x%llx ",
+                        (unsigned long long)full_inst.sim_inst_delta.base_addr +
+                            full_inst.sim_inst_delta.delta[i]);
+              }
+            }
+          } else if (inst_type == INST_STRIDE) {
+            // enabled compression
+            fprintf(output_file, "1 ");
+
+            for (int i = 0; i < 32; i++) {
+              if (mask[i]) {
+                fprintf(
+                    output_file, "0x%llx ",
+                    (unsigned long long)full_inst.sim_inst_stride.base_addr +
+                        full_inst.sim_inst_stride.stride * i);
+              }
             }
           }
         }

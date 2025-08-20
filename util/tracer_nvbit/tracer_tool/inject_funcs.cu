@@ -45,10 +45,10 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
     for (int i = 0; i < 32; i++) {
       ma.addrs[i] = __shfl_sync(active_mask, addr, i);
     }
-    ma.width = width;
-    ma.is_mem = true;
+    ma.base.width = width;
+    ma.base.is_mem = true;
   } else {
-    ma.is_mem = false;
+    ma.base.is_mem = false;
   }
 
   int4 cta = get_ctaid();
@@ -62,17 +62,17 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_mem,
   ma.cta_id_z = cta.z;
   ma.warpid_sm = get_warpid();
   ma.opcode_id = opcode_id;
-  ma.vpc = vpc;
-  ma.GPRDst = desReg;
-  ma.GPRSrcs[0] = srcReg1;
-  ma.GPRSrcs[1] = srcReg2;
-  ma.GPRSrcs[2] = srcReg3;
-  ma.GPRSrcs[3] = srcReg4;
-  ma.GPRSrcs[4] = srcReg5;
-  ma.numSrcs = srcNum;
-  ma.imm = immediate;
-  ma.active_mask = active_mask;
-  ma.predicate_mask = predicate_mask;
+  ma.base.vpc = vpc;
+  ma.base.GPRDst = desReg;
+  ma.base.GPRSrcs[0] = srcReg1;
+  ma.base.GPRSrcs[1] = srcReg2;
+  ma.base.GPRSrcs[2] = srcReg3;
+  ma.base.GPRSrcs[3] = srcReg4;
+  ma.base.GPRSrcs[4] = srcReg5;
+  ma.base.numSrcs = srcNum;
+  ma.base.imm = immediate;
+  ma.base.active_mask = active_mask;
+  ma.base.predicate_mask = predicate_mask;
   ma.sm_id = get_smid();
 
   /* first active lane pushes information on the channel */

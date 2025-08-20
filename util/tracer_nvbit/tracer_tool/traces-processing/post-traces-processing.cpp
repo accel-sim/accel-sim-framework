@@ -1,3 +1,5 @@
+#include <bitset>
+#include <cstring>
 #include <deque>
 #include <fstream>
 #include <iostream>
@@ -76,13 +78,78 @@ struct WarpInstLUT {
 void group_per_block(const char *filepath);
 void group_per_core(const char *filepath);
 
-// This program works by redirecting the stdin/stdout to child processes. The
-// stdin is piped to a process that reads from disk the input trace file. The
-// stdout is piped to a process that writes to disk the post-process trace. We
-// should preserve the original file descriptors for stdin/stdout before doing
-// redirections.
-int preserved_stdin_fileno;
-int preserved_stdout_fileno;
+bool base_stride_compress(const uint64_t *addrs, const std::bitset<32> &mask,
+                          uint64_t &base_addr, int &stride) {
+  // calulcate the difference between addresses
+  // write cosnsctive addresses with constant stride in a more
+  // compressed way (i.e. start adress and stride)
+  bool const_stride = true;
+  bool first_bit1_found = false;
+  bool last_bit1_found = false;
+
+  for (int s = 0; s < 32; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      first_bit1_found = true;
+      base_addr = addrs[s];
+      if (s < 31 && mask.test(s + 1))
+        stride = addrs[s + 1] - addrs[s];
+      else {
+        const_stride = false;
+        break;
+      }
+    } else if (first_bit1_found && !last_bit1_found) {
+      if (mask.test(s)) {
+        if (stride != addrs[s] - addrs[s - 1]) {
+          const_stride = false;
+          break;
+        }
+      } else
+        last_bit1_found = true;
+    } else if (last_bit1_found) {
+      if (mask.test(s)) {
+        const_stride = false;
+        break;
+      }
+    }
+  }
+
+  return const_stride;
+}
+
+bool base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
+                         uint64_t &base_addr, std::vector<int32_t> &deltas) {
+  // save the delta from the previous address
+  bool first_bit1_found = false;
+  uint64_t last_address = 0;
+  for (int s = 0; s < 32; s++) {
+    if (mask.test(s) && !first_bit1_found) {
+      base_addr = addrs[s];
+      first_bit1_found = true;
+      last_address = addrs[s];
+    } else if (mask.test(s) && first_bit1_found) {
+      // Check if delta can fit into int32_t
+      uint64_t delta;
+      if (addrs[s] >= last_address) {
+        delta = addrs[s] - last_address;
+        if (delta > INT32_MAX) {
+          // Overflow detected - return false
+          return false;
+        }
+      } else {
+        delta = last_address - addrs[s];
+        if (delta > (uint64_t)INT32_MAX) {
+          // Overflow detected - return false
+          return false;
+        }
+      }
+
+      // Delta fits in int32_t, add it to the vector
+      deltas.push_back(addrs[s] - last_address);
+      last_address = addrs[s];
+    }
+  }
+  return true; // Success
+}
 
 std::vector<std::string> kernelslist_list;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
@@ -244,7 +311,7 @@ void group_per_block(const char *filepath) {
                      tb_id_y * header.grid_dim_x + tb_id_x;
     unsigned warp_id = inst.warpid_tb;
 
-    std::string opcode = inst.opcode;
+    std::string opcode = inst.base.opcode;
     if (opcode.find("LDGSTS") != string::npos) {
       if (!ldgsts_flags[tb_id][warp_id]) {
         insts[tb_id].warp_insts_array[warp_id].push_back(inst);
@@ -276,16 +343,62 @@ void group_per_block(const char *filepath) {
         for (unsigned inst_id = 0;
              inst_id < insts[tb_id].warp_insts_array[warp_id].size();
              ++inst_id) {
-          inst_trace_t &inst = insts[tb_id].warp_insts_array[warp_id][inst_id];
+          inst_trace_t &full_inst =
+              insts[tb_id].warp_insts_array[warp_id][inst_id];
 
-          // Write the inst_trace_t structure as binary data to the file
-          unsigned size = sizeof(inst_trace_t);
-          if (!inst.is_mem) {
-            // write only the part without addrs
-            size = offsetof(inst_trace_t, addrs);
+          if (!full_inst.base.is_mem) {
+            sim_inst_trace_t inst = full_inst.base;
+            inst_type_t type = INST_BASE;
+
+            fwrite(&type, sizeof(inst_type_t), 1, kernel_out);
+            fwrite(&inst, sizeof(inst), 1, kernel_out);
+          } else {
+            std::bitset<32> mask(full_inst.base.active_mask &
+                                 full_inst.base.predicate_mask);
+            bool base_stride_success = false;
+            uint64_t base_addr = 0;
+            int stride = 0;
+            std::vector<int32_t> deltas;
+            bool base_delta_success = false;
+
+            // try base+stride format
+            base_stride_success =
+                base_stride_compress(full_inst.addrs, mask, base_addr, stride);
+            if (!base_stride_success) {
+              // if base+stride fails, try base+delta format
+              base_delta_success =
+                  base_delta_compress(full_inst.addrs, mask, base_addr, deltas);
+            }
+
+            if (base_stride_success) {
+              sim_inst_trace_stride_t inst;
+              inst.base = full_inst.base;
+              inst.base_addr = base_addr;
+              inst.stride = stride;
+              inst_type_t type = INST_STRIDE;
+
+              fwrite(&type, sizeof(inst_type_t), 1, kernel_out);
+              fwrite(&inst, sizeof(inst), 1, kernel_out);
+            } else if (base_delta_success) {
+              sim_inst_trace_delta_t inst;
+              inst.base = full_inst.base;
+              inst.base_addr = base_addr;
+              deltas.resize(32, 0ll);
+              memcpy(inst.delta, deltas.data(), sizeof(inst.delta));
+              inst_type_t type = INST_DELTA;
+
+              fwrite(&type, sizeof(inst_type_t), 1, kernel_out);
+              fwrite(&inst, sizeof(inst), 1, kernel_out);
+            } else {
+              // save the addresses as is
+              sim_inst_trace_flat_t inst;
+              inst.base = full_inst.base;
+              memcpy(inst.addrs, full_inst.addrs, sizeof(inst.addrs));
+              inst_type_t type = INST_FLAT;
+              fwrite(&type, sizeof(inst_type_t), 1, kernel_out);
+              fwrite(&inst, sizeof(inst), 1, kernel_out);
+            }
           }
-          fwrite(&size, sizeof(unsigned), 1, kernel_out);
-          fwrite(&inst, size, 1, kernel_out);
         }
       }
     }
