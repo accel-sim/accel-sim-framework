@@ -147,10 +147,12 @@ int main(int argc, char *argv[]) {
           } else if (inst_type == INST_DELTA) {
             // enabled compression
             fprintf(output_file, "2 ");
+            fprintf(output_file, "0x%llx ",
+                    (unsigned long long)full_inst.sim_inst_delta.base_addr);
 
             for (int i = 0; i < 32; i++) {
               if (mask[i]) {
-                fprintf(output_file, "0x%llx ",
+                fprintf(output_file, "%llx ",
                         (unsigned long long)full_inst.sim_inst_delta.base_addr +
                             full_inst.sim_inst_delta.delta[i]);
               }
@@ -158,11 +160,13 @@ int main(int argc, char *argv[]) {
           } else if (inst_type == INST_STRIDE) {
             // enabled compression
             fprintf(output_file, "1 ");
+            fprintf(output_file, "0x%llx ",
+                    (unsigned long long)full_inst.sim_inst_stride.base_addr);
 
             for (int i = 0; i < 32; i++) {
               if (mask[i]) {
                 fprintf(
-                    output_file, "0x%llx ",
+                    output_file, "%llx ",
                     (unsigned long long)full_inst.sim_inst_stride.base_addr +
                         full_inst.sim_inst_stride.stride * i);
               }
