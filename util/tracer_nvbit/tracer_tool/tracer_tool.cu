@@ -89,6 +89,9 @@ std::unordered_map<CUcontext, FILE *> ctx_resultsFile;
 
 std::string kernel_ranges = "";
 
+std::unordered_map<CUcontext, std::vector<std::vector<unsigned>>>
+    tb_warp_inst_ct;
+
 struct KernelRange {
   uint64_t start;
   uint64_t end; // UINT64_MAX means open-ended
@@ -550,6 +553,15 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
     fwrite(kernel_name.c_str(), kernel_name.size(), 1, ctx_resultsFile[ctx]);
     printf("Kernel name: %s\n", kernel_name.c_str());
     fwrite(&header, sizeof(kernel_header), 1, ctx_resultsFile[ctx]);
+
+    unsigned tot_tb = header.grid_dim_x * header.grid_dim_y * header.grid_dim_z;
+    unsigned tb_size =
+        header.block_dim_x * header.block_dim_y * header.block_dim_z;
+    tb_warp_inst_ct[ctx] = std::vector<std::vector<unsigned>>();
+    tb_warp_inst_ct[ctx].resize(tot_tb, std::vector<unsigned>(tb_size, 0));
+
+    unsigned tot_warp = tot_tb * tb_size;
+    unsigned print_0 = 0;
   }
 
   kernelsFile = fopen(ctx_kernelslist[ctx].c_str(), "a");
@@ -871,6 +883,13 @@ void *recv_thread_fun(void *args) {
         }
         fwrite(&size, sizeof(unsigned), 1, ctx_resultsFile[ctx]);
         fwrite(ma, size, 1, ctx_resultsFile[ctx]);
+        // unsigned tb_id_x = ma->cta_id_x;
+        // unsigned tb_id_y = ma->cta_id_y;
+        // unsigned tb_id_z = ma->cta_id_z;
+        // unsigned tb_id = tb_id_z * header.grid_dim_y * header.grid_dim_x +
+        //                  tb_id_y * header.grid_dim_x + tb_id_x;
+        // unsigned warp_id = ma->warpid_tb;
+        // tb_warp_inst_ct[ctx][tb_id][warp_id]++;
 
         // fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_x);
         // fprintf(ctx_resultsFile[ctx], "%d ", ma->cta_id_y);
@@ -883,8 +902,8 @@ void *recv_thread_fun(void *args) {
         // if (lineinfo) {
         //   fprintf(ctx_resultsFile[ctx], "%d ", ma->line_num);
         // }
-        // fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the virtual
-        // PC fprintf(ctx_resultsFile[ctx], "%08x ",
+        // fprintf(ctx_resultsFile[ctx], "%04x ", ma->vpc); // Print the
+        // virtual PC fprintf(ctx_resultsFile[ctx], "%08x ",
         //         ma->active_mask & ma->predicate_mask);
         // if (ma->GPRDst >= 0) {
         //   fprintf(ctx_resultsFile[ctx], "1 ");
@@ -946,8 +965,8 @@ void *recv_thread_fun(void *args) {
         //     }
         //   } else {
         //     // list all the addresses
-        //     fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
-        //     for (int s = 0; s < 32; s++) {
+        //     fprintf(ctx_resultsFile[ctx], "%u ",
+        //     address_format::list_all); for (int s = 0; s < 32; s++) {
         //       if (mask.test(s))
         //         fprintf(ctx_resultsFile[ctx], "0x%016lx ", ma->addrs[s]);
         //     }

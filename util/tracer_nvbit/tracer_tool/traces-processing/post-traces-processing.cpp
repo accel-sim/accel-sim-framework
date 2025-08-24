@@ -277,23 +277,26 @@ void group_per_block(const char *filepath) {
   // Read the kernel header
   std::string kernel_name;
   uint64_t name_size;
-  fread(&name_size, sizeof(uint64_t), 1, pipe);
+  fread(&name_size, sizeof(name_size), 1, pipe);
   kernel_name.resize(name_size);
   fread(kernel_name.data(), name_size, 1, pipe);
 
   // Read the kernel header
   kernel_header header;
-  fread(&header, sizeof(kernel_header), 1, pipe);
+  fread(&header, sizeof(header), 1, pipe);
 
   insts.resize(header.grid_dim_x * header.grid_dim_y * header.grid_dim_z);
-  vector<vector<bool>> ldgsts_flags;
+  vector<vector<bool>> ldgsts_flags(header.grid_dim_x * header.grid_dim_y *
+                                    header.grid_dim_z);
 
   for (unsigned tb = 0; tb < insts.size(); ++tb) {
     insts[tb].warp_insts_array.resize(ceil(
         float(header.block_dim_x * header.block_dim_y * header.block_dim_z) /
         32));
 
-    ldgsts_flags.resize(insts[tb].warp_insts_array.size());
+    ldgsts_flags[tb].resize(ceil(
+        float(header.block_dim_x * header.block_dim_y * header.block_dim_z) /
+        32));
     for (unsigned j = 0; j < ldgsts_flags[tb].size(); j++) {
       ldgsts_flags[tb][j] = true;
     }
