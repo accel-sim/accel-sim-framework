@@ -247,10 +247,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   tconfig->set_latency(op, latency, initiation_interval);
 
   // fill addresses
-  if (trace.tma_memadd_info != NULL) {
+  if (trace.tma_memadd_info != nullptr) {
     data_size = trace.tma_memadd_info->width;
     std::bitset<WARP_SIZE> exec_mask(trace.mask);
-    if (exec_mask.count() > 1) {
+    if (exec_mask.count() > 1 || exec_mask.count() == 0) {
       assert(0 && "Right now TMA only supports single thread execution");
     }
     // Prepare a buffer for the addresses
@@ -442,6 +442,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_UBLKPF:
     case OP_UTMAPF:
       // TODO Handle prefetch properly, for now, assume it is a NOP
+      printf("Weili: WARNING: TMA prefetch not implemented\n");
       break;
     case OP_UTMALDG:
       memory_op = memory_load;
@@ -643,7 +644,13 @@ const warp_inst_t *trace_shader_core_ctx::get_next_inst(unsigned warp_id,
       static_cast<trace_shd_warp_t *>(m_warp[warp_id]);
   const trace_warp_inst_t *ret = m_trace_warp->get_next_trace_inst();
   if (ret == NULL && m_trace_warp->trace_done()) {
+    // Block warp from exiting if:
+    // 1. There are still instructions in the pipeline
+    // 2. The warp is waiting at a barrier
+    // 3. The warp still has outstanding stores
+    // 4. The warp still has pending writes
     if (!m_warp[warp_id]->inst_in_pipeline() &&
+        !m_barriers.warp_waiting_at_barrier(warp_id) &&
         m_warp[warp_id]->stores_done() &&
         !m_scoreboard->pendingWrites(warp_id)) {
       for (unsigned t = 0; t < m_warp_size; t++) {
