@@ -23,6 +23,8 @@ class accel_sim_framework {
   accel_sim_framework(int argc, const char **argv);
   accel_sim_framework(std::string config_file, std::string trace_file);
 
+  gpgpu_sim *get_gpgpu_sim() { return m_gpgpu_sim; }
+
   void init() {
     active = false;
     sim_cycles = false;
