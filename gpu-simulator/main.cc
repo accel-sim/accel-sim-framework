@@ -34,7 +34,6 @@ int main(int argc, const char **argv) {
   printf("GPGPU-Sim: *** simulation thread exiting ***\n");
   printf("GPGPU-Sim: *** exit detected ***\n");
   fflush(stdout);
-  accel_sim.get_gpgpu_sim()->perf_counters.close();
 
   return 0;
 }
