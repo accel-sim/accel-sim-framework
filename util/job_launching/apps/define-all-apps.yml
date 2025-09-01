@@ -1112,4 +1112,8 @@ tma:
             - args: -n 1024 -o UBLKCP_S_G
             - args: -n 1024 -o UBLKCP_G_S
             - args: -n 1024 -o UBLKRED_G_S
+            - args: -n 262144 -o UBLKPF
+            - args: -n 262144 -o UBLKCP_S_G
+            - args: -n 262144 -o UBLKCP_G_S
+            - args: -n 262144 -o UBLKRED_G_S
               accel-sim-mem: 10G
