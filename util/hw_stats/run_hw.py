@@ -114,6 +114,12 @@ parser.add_option(
     default="other_stats",
     help='Pass what you want from the hardware. Options are: "cycles,other_stats"',
 )
+# Run ncu set stats for more comprehensive analysis
+parser.add_option(
+    "--set",
+    default="none",
+    help="Run ncu profiling on predefined set of metrics for analysis",
+)
 
 (options, args) = parser.parse_args()
 
@@ -255,6 +261,11 @@ for bench in benchmarks:
                     + " | tee "
                     + os.path.join(this_run_dir, logfile + ".nsight")
                 )
+                
+                if options.set != "none":
+                    sh_contents += (
+                        f"\nncu --set {options.set} -o {os.path.join(this_run_dir, f'ncu_set_{options.set}')};"
+                    )
 
         for i in range(int(options.repeat_cycle)):
             if not options.disable_nvprof:
