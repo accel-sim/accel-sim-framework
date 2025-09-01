@@ -404,7 +404,7 @@ correl_list = [
     CorrelStat(
         chart_name="L2 Writes",
         plotfile="l2-write-transactions",
-        hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write.sum"])',
+        hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write.sum"]) + np.average(hw["lts__t_sectors_srcunit_tex_op_red.sum"])',
         hw_error=None,
         sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])',
         hw_name="all",
@@ -415,7 +415,7 @@ correl_list = [
     CorrelStat(
         chart_name="L2 Write Hits",
         plotfile="l2-write-hits",
-        hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum"])',
+        hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum"]) + np.average(hw["lts__t_sectors_srcunit_tex_op_red_lookup_hit.sum"])',
         hw_error=None,
         sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])',
         hw_name="all",
