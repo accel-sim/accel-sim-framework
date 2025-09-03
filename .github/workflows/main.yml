@@ -1,24 +1,42 @@
 # This is a basic workflow to help you get started with Actions
 
-#Turing commands are commented out , we regress QV100,RTX3070,A100 
+#Turing commands are commented out , we regress QV100,RTX3070,A100
 
-name: Long Tests
+name: CI Runs
 
 # Controls when the workflow will run
 on:
   # Triggers the workflow on push or pull request events but only for the mydev branch
   push:
-    branches-ignore:
-      - "gh-readonly-queue**"
   pull_request:
-
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
+  check-format:
+    runs-on: tgrogers-raid
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Check code formatting
+        run: |
+          # Run the formatter to see if it would make any changes
+          /bin/bash ./gpu-simulator/format-code.sh
+          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
+          
+          # Check if there are any uncommitted changes
+          if git diff --quiet; then
+            echo "✅ Code is properly formatted"
+          else
+            echo "❌ Code formatting check failed. The following files need formatting:"
+            git diff --name-only
+            echo ""
+            echo "Please run the formatter locally and commit the changes:"
+            echo "/bin/bash ./format-code.sh"
+            exit 1
+          fi
   SASS-Simulation:
-    if: github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-raid
     defaults:
       run:
@@ -35,6 +53,36 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
+          
+          # Clone gpgpu-sim with fork-aware branch selection
+          echo "Cloning gpgpu-sim with fork-aware branch selection..."
+          git clone https://github.com/accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
+          
+          # Try to checkout the same branch from the same owner's fork first
+          current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
+          # head_ref for PRs, ref_name for pushes
+          current_branch=${{ github.head_ref || github.ref_name }}
+          
+          echo "Attempting to checkout branch '$current_branch' from fork owner '$current_owner'"
+          
+          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/gpgpu-sim_distribution.git 2>/dev/null; then
+            # Check if the branch exists in the fork owner's repository
+            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$current_branch"; then
+              echo "Found branch '$current_branch' in fork owner '$current_owner' repository, checking it out"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -b $current_branch fork-owner/$current_branch
+            else
+              echo "Branch '$current_branch' not found in fork owner '$current_owner' repository, falling back to upstream dev branch"
+              git -C ./gpu-simulator/gpgpu-sim/ checkout dev
+            fi
+            # Remove the temporary remote
+            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
+          else
+            echo "Could not add fork owner remote, falling back to upstream dev branch"
+            git -C ./gpu-simulator/gpgpu-sim/ checkout dev
+          fi
+          
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun --time=8:00:00 -c20 make -j20 -C gpu-simulator
@@ -46,7 +94,7 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft  -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/device-0/12.8/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
 
           #./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C RTX2060-SASS -T ~/../common/accel-sim/traces/turing-rtx2060/latest/ -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
-          
+
           ./util/job_launching/run_simulations.py -B GPU_Microbenchmark -C RTX3070-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/RTX3070/hw_run/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft  -C RTX3070-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/RTX3070/hw_run/traces/device-0/12.8/  -N sass-short-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
 
@@ -61,7 +109,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./statistics-archive
           git clone git@github.com:accel-sim/statistics-archive.git
-          BRANCH_NAME=${GITHUB_REPOSITORY}/${GITHUB_REF_NAME}
+          BRANCH_NAME=${{ github.repository }}/${{ github.head_ref || github.ref_name }}
           # either create a new branch or check it out if it already exists
           git -C ./statistics-archive checkout $BRANCH_NAME 2>/dev/null || git -C ./statistics-archive checkout -b $BRANCH_NAME
           ./util/job_launching/get_stats.py -k -K -R -B GPU_Microbenchmark -C QV100-SASS -A | tee v100-ubench-sass-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT.csv
@@ -137,6 +185,35 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
+          
+          # Clone gpgpu-sim with fork-aware branch selection
+          echo "Cloning gpgpu-sim with fork-aware branch selection..."
+          git clone https://github.com/accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
+          
+          # Try to checkout the same branch from the same owner's fork first
+          current_owner=$(echo $GITHUB_REPOSITORY | cut -d'/' -f1)
+          current_branch=${{ github.head_ref || github.ref_name }}
+          
+          echo "Attempting to checkout branch '$current_branch' from fork owner '$current_owner'"
+          
+          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/gpgpu-sim_distribution.git 2>/dev/null; then
+            # Check if the branch exists in the fork owner's repository
+            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$current_branch"; then
+              echo "Found branch '$current_branch' in fork owner '$current_owner' repository, checking it out"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -b $current_branch fork-owner/$current_branch
+            else
+              echo "Branch '$current_branch' not found in fork owner '$current_owner' repository, falling back to upstream dev branch"
+              git -C ./gpu-simulator/gpgpu-sim/ checkout dev
+            fi
+            # Remove the temporary remote
+            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
+          else
+            echo "Could not add fork owner remote, falling back to upstream dev branch"
+            git -C ./gpu-simulator/gpgpu-sim/ checkout dev
+          fi
+          
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           srun --time=8:00:00 -c20 make -j20 -C gpu-simulator
@@ -217,30 +294,33 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
           ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
-  format-code:
-    if: github.event_name == 'pull_request'
-    runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+  SASS-Simulation-Docker:
+    runs-on: ubuntu-latest
+    container:
+      image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
+      # env:
+        
+    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
+      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
       - uses: actions/checkout@v4
-        with:
-          ref: ${{github.event.pull_request.head.ref}}
-          repository: ${{github.event.pull_request.head.repo.full_name}}
-          ssh-key: ''
+      - name: Run Simulation
+        run: /bin/bash $GITHUB_WORKSPACE/short-tests.sh
+  CI-Success:
+    runs-on: ubuntu-latest
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
+    steps:
+      - run: |
+          echo "✅ All CI tests completed successfully!"
+          echo "SASS-Simulation: ✅"
+          echo "PTX-Simulation: ✅"
+          echo "Tracer-Tool: ✅"
+          echo "SASS-Simulation-Docker: ✅"
 
-      - name: Run clang-format
-        run: |
-          git config user.name "purdue-jenkins"
-          git config user.email "purdue-jenkins@users.noreply.github.com"
-          git remote set-url origin git@github.com:${{github.event.pull_request.head.repo.full_name}}
-          git remote -v
-          /bin/bash ./gpu-simulator/format-code.sh
-          /bin/bash ./util/tracer_nvbit/tracer_tool/format-code.sh
-          if git status --untracked-files=no | grep -q "nothing to commit"; then echo "No changes to commit."; else git commit -a -m "Automated Format"; git push; fi
   failures:
     if: failure()
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - name: Notify Failure
         run: |
