@@ -225,7 +225,7 @@ jobs:
 
           rm -rf ./gpu-app-collection
           git clone --recurse-submodules -b dev git@github.com:accel-sim/gpu-app-collection.git
-          source ./gpu-app-collection/src/setup_environment
+          source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
           srun --time=8:00:00 -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
 
@@ -275,7 +275,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-app-collection/
           git clone git@github.com:accel-sim/gpu-app-collection.git
-          source ./gpu-app-collection/src/setup_environment
+          source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
           make -C ./gpu-app-collection/src rodinia_2.0-ft
       - name: generate-rodinia_2.0-ft-traces
