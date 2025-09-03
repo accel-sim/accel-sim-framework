@@ -308,10 +308,11 @@ jobs:
         run: /bin/bash $GITHUB_WORKSPACE/short-tests.sh
   CI-Success:
     runs-on: ubuntu-latest
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
+    needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - run: |
           echo "✅ All CI tests completed successfully!"
+          echo "check-format: ✅"
           echo "SASS-Simulation: ✅"
           echo "PTX-Simulation: ✅"
           echo "Tracer-Tool: ✅"
@@ -320,7 +321,7 @@ jobs:
   failures:
     if: failure()
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
+    needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - name: Notify Failure
         run: |
