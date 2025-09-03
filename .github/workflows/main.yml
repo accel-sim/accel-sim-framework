@@ -38,6 +38,7 @@ jobs:
           fi
   SASS-Simulation:
     runs-on: tgrogers-raid
+    needs: [check-format]
     defaults:
       run:
         shell: bash
@@ -168,7 +169,7 @@ jobs:
           srun echo "$BODY" | mail -s "$SUBJECT" "$TO"
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${GITHUB_REF}"_"$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT/."
   PTX-Simulation:
-    if: github.repository == 'accel-sim/accel-sim-framework'
+    needs: [check-format]
     runs-on: tgrogers-raid
     defaults:
       run:
@@ -233,7 +234,7 @@ jobs:
 
           ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-$GITHUB_RUN_NUMBER"_"$GITHUB_RUN_ATTEMPT
   Tracer-Tool:
-    if: github.repository == 'accel-sim/accel-sim-framework'
+    needs: [check-format]
     runs-on: tgrogers-gpu01
     defaults:
       run:
@@ -295,6 +296,7 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
           ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
   SASS-Simulation-Docker:
+    needs: [check-format]
     runs-on: ubuntu-latest
     container:
       image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
