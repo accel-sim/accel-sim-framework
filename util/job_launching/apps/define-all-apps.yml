@@ -108,6 +108,8 @@ GPU_Microbenchmark:
         - l1_bw_32f_unroll_large:
             - args:
               accel-sim-mem: 1G
+        - cp_async:
+            - args: 10000 108 1024
 
 GPU_Atomic:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
