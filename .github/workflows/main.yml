@@ -156,14 +156,41 @@ jobs:
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
           fi
-          BODY="Github CI - Build $BRANCH_NAME SUCCESS.
-          Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Branch/PR Name: $BRANCH_NAME
-          Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/.
-          Directory: $PWD"
+          # Base HTML body (reused)
+          BASE_HTML="<html>
+          <body>
+            <h2>✅ Github CI - Build $BRANCH_NAME SUCCESS</h2>
+            <p><strong>Action link:</strong> <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Action</a></p>
+            <p><strong>Branch/PR Name:</strong> $BRANCH_NAME</p>
+            <p><strong>Correlation Report:</strong> <a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/\">View Report</a></p>
+            <p><strong>Directory:</strong> $PWD</p>
+            
+            <h3>Correlation Results:</h3>
+            <ul>
+              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/v100-ubench-correl.html\">V100 Correlation</a></li>
+              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/ampere-ubench-correl.html\">Ampere Correlation</a></li>
+              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/ampere-a100-ubench-correl.html\">A100 Correlation</a></li>
+            </ul>"
+          
+          # Check if combined plots exist and add them to the body
+          if [ -f "./util/plotting/correl-html/combined_plots.html" ]; then
+            # Read the combined plots HTML content
+            COMBINED_PLOTS=$(cat ./util/plotting/correl-html/combined_plots.html)
+            HTML_BODY="$BASE_HTML
+            
+            <h3>Combined Correlation Plots:</h3>
+            $COMBINED_PLOTS
+          </body>
+          </html>"
+          else
+            HTML_BODY="$BASE_HTML
+          </body>
+          </html>"
+          fi
+          
           SUBJECT="✅ Github CI - Build $BRANCH_NAME SUCCESS"
           TO="${{ secrets.GROUP_EMAIL }}"
-          srun echo "$BODY" | mail -s "$SUBJECT" "$TO"
+          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$TO"
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/."
   PTX-Simulation:
     needs: [check-format]
@@ -324,13 +351,18 @@ jobs:
     steps:
       - name: Notify Failure
         run: |
-          BODY="Github CI - Build $BRANCH_NAME FAILED.
-          Action link: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          Branch/PR Name: $BRANCH_NAME"
+          HTML_BODY="<html>
+          <body>
+            <h2>❗ Github CI - Build $BRANCH_NAME FAILED</h2>
+            <p><strong>Action link:</strong> <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Action</a></p>
+            <p><strong>Branch/PR Name:</strong> $BRANCH_NAME</p>
+            <p style=\"color: red;\"><strong>Please check the action logs for details.</strong></p>
+          </body>
+          </html>"
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            SUBJECT="❗Github CI FAILED - Build $BRANCH_NAMEF"
+            SUBJECT="❗Github CI FAILED - Build $BRANCH_NAME"
           else
             SUBJECT="⚠️ Github CI FAILED - PR $BRANCH_NAME"
           fi
           TO="${{ secrets.GROUP_EMAIL }}"
-          srun echo "$BODY" | mail -s "$SUBJECT" "$TO"
+          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$TO"
