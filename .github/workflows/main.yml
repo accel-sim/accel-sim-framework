@@ -190,6 +190,7 @@ jobs:
           
           SUBJECT="✅ Github CI - Build $BRANCH_NAME SUCCESS"
           TO="${{ secrets.GROUP_EMAIL }}"
+          echo "Email recipient: $TO"
           srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$TO"
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/."
   PTX-Simulation:
