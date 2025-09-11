@@ -49,7 +49,7 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
 
   // Set the trace header
   int4 cta = get_ctaid();
-  #if __CUDA_ARCH__ >= 900
+  #if __CUDA_ARCH__ >= 900 && defined(USE_PRIVATE_TMA)
   int4 cluster_cta = get_cluster_ctaid();
   #else
   int4 cluster_cta = {0, 0, 0, 0}; // Dummy values for pre-SM90

@@ -360,7 +360,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         continue;
       }
 
+#ifdef USE_PRIVATE_NVBIT
       if (skip_tma_mem && instr->isTMAMem()){continue;}
+#endif
 
       if (lineinfo) {
         char *file_name, *dir_name;
@@ -410,12 +412,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         // Add immediate value for DEPBAR instruction
         else if (op->type == InstrType::OperandType::IMM_UINT64) {
           imm_value = instr->getOperand(i)->u.imm_uint64.value;
-        } else if (op->type == InstrType::OperandType::TMA_PARAM_HANDLE) {
-          // TMA param handle is handled as a whole with
-          // nvbit_add_call_arg_tma_param_handle
-          // Skip here
-          continue;
         }
+        // TMA param handle is handled as a whole with
+        // nvbit_add_call_arg_tma_param_handle
+        // Skip here
       }
 
       do {
@@ -431,6 +431,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
 
         /* tma setup */
+#ifdef USE_PRIVATE_NVBIT
         if (instr->isTMAMem()) {
           // Set is_mem to true and add tma param handle
           nvbit_add_call_arg_const_val32(instr, 1);
@@ -441,6 +442,12 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val64(instr, 0);
           nvbit_add_call_arg_const_val32(instr, 0);
         }
+#else
+        // If we are not using the private NVBit, we don't need to add the TMA args
+        nvbit_add_call_arg_const_val32(instr, 0);
+        nvbit_add_call_arg_const_val64(instr, 0);
+        nvbit_add_call_arg_const_val32(instr, 0);
+#endif
 
         /* mem addresses info */
         if (mem_oper_idx >= 0) {
@@ -1201,6 +1208,7 @@ void *recv_thread_fun(void *args) {
             }
           }
         } else if (trace->inst_type == TracerInstrType::INST_TMA) {
+#ifdef USE_PRIVATE_NVBIT
           // TMA instructions
           const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
           TMATransferInfo_t info = nvbit_parse_tma_transfer_info(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size);
@@ -1258,6 +1266,7 @@ void *recv_thread_fun(void *args) {
 
           free(raw_global_addrs);
           free(global_addrs);
+#endif
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
         }
