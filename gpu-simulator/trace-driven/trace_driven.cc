@@ -423,10 +423,12 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // Src: shared, dst: shared -> nop
       if (opcode.find("S.G") != std::string::npos) {
         memory_op = memory_load;
-        space.set_type(shared_space);
+        space.set_type(global_space);
+        op = LOAD_OP;
       } else if (opcode.find("G.S") != std::string::npos) {
         memory_op = memory_store;
         space.set_type(global_space);
+        op = STORE_OP;
       } else {
         memory_op = no_memory_op;
       }
