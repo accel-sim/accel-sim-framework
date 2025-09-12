@@ -64,24 +64,27 @@ jobs:
           
           # Try to checkout the same branch from the same owner's fork first
           current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
+          current_repo=$(echo ${{ github.repository }} | cut -d'/' -f2)
+
+          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
           
-          echo "Attempting to checkout branch '$BRANCH_NAME' from fork owner '$current_owner'"
+          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
           
           # First, try to add the fork owner's repository as a remote and check if the branch exists
-          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/gpgpu-sim_distribution.git 2>/dev/null; then
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/$gpgpusim_repo.git 2>/dev/null; then
             # Check if the branch exists in the fork owner's repository
             if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
-              echo "Found branch '$BRANCH_NAME' in fork owner '$current_owner' repository, checking it out"
+              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
               git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -b $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              echo "Branch '$BRANCH_NAME' not found in fork owner '$current_owner' repository, falling back to upstream dev branch"
+              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to upstream dev branch"
               git -C ./gpu-simulator/gpgpu-sim/ checkout dev
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
           else
-            echo "Could not add fork owner remote, falling back to upstream dev branch"
+            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
             git -C ./gpu-simulator/gpgpu-sim/ checkout dev
           fi
           
@@ -189,9 +192,7 @@ jobs:
           fi
           
           SUBJECT="✅ Github CI - Build $BRANCH_NAME SUCCESS"
-          TO="${{ secrets.GROUP_EMAIL }}"
-          echo "Email recipient: $TO"
-          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$TO"
+          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$GROUP_EMAIL"
           echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/."
   PTX-Simulation:
     needs: [check-format]
@@ -219,24 +220,27 @@ jobs:
           # Try to checkout the same branch from the same owner's fork first
           current_owner=$(echo $GITHUB_REPOSITORY | cut -d'/' -f1)
           current_branch=$BRANCH_NAME
+          current_repo=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
           
-          echo "Attempting to checkout branch '$BRANCH_NAME' from fork owner '$current_owner'"
+          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
+
+          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
           
           # First, try to add the fork owner's repository as a remote and check if the branch exists
-          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/gpgpu-sim_distribution.git 2>/dev/null; then
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner https://github.com/$current_owner/$gpgpusim_repo.git 2>/dev/null; then
             # Check if the branch exists in the fork owner's repository
             if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
-              echo "Found branch '$BRANCH_NAME' in fork owner '$current_owner' repository, checking it out"
+              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
               git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -b $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              echo "Branch '$BRANCH_NAME' not found in fork owner '$current_owner' repository, falling back to accel-sim dev branch"
+              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to accel-sim dev branch"
               git -C ./gpu-simulator/gpgpu-sim/ checkout dev
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
           else
-            echo "Could not add fork owner remote, falling back to upstream dev branch"
+            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
             git -C ./gpu-simulator/gpgpu-sim/ checkout dev
           fi
           
@@ -365,5 +369,4 @@ jobs:
           else
             SUBJECT="⚠️ Github CI FAILED - PR $BRANCH_NAME"
           fi
-          TO="${{ secrets.GROUP_EMAIL }}"
-          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$TO"
+          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html" "$GROUP_EMAIL"
