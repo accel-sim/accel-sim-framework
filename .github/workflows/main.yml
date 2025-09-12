@@ -106,7 +106,7 @@ jobs:
 
           ./util/job_launching/run_simulations.py -B mlperf_inference -C RTX3070-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/mlperf_rtx3070/traces/device-0/12.8/ -N sass-short-${{ github.run_number }}"_"${{ github.run_attempt}}
 
-          ./util/job_launching/monitor_func_test.py -v -s --sleep_time 300 stats-per-app-sass.csv -N sass-short-${{ github.run_number }}"_"${{ github.run_attempt}}
+          ./util/job_launching/monitor_func_test.py -v --sleep_time 300 -s stats-per-app-sass.csv -N sass-short-${{ github.run_number }}"_"${{ github.run_attempt}}
       - name: Archive Stats
         run: |
           source ./env-setup/12.8_env_setup.sh
@@ -261,7 +261,7 @@ jobs:
           #./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
 
-          ./util/job_launching/monitor_func_test.py -v -s stats-per-app-ptx.csv -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
+          ./util/job_launching/monitor_func_test.py -v --sleep_time 300 -s stats-per-app-ptx.csv -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
   Tracer-Tool:
     needs: [check-format]
     runs-on: tgrogers-gpu01
