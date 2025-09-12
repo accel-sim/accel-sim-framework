@@ -258,10 +258,10 @@ jobs:
           srun --time=8:00:00 -c20  rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
 
-          #./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
+          #./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}_${{ github.run_attempt}}
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}_${{ github.run_attempt}}
 
-          ./util/job_launching/monitor_func_test.py -v --sleep_time 300 -s stats-per-app-ptx.csv -N short-ptx-${{ github.run_number }}"_"${{ github.run_attempt}}
+          ./util/job_launching/monitor_func_test.py -v --sleep_time 300 -s stats-per-app-ptx.csv -N short-ptx-${{ github.run_number }}_${{ github.run_attempt}}
   Tracer-Tool:
     needs: [check-format]
     runs-on: tgrogers-gpu01
