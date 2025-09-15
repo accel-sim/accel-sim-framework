@@ -145,6 +145,9 @@ jobs:
             git -C ./statistics-archive push -u origin $BRANCH_NAME
           fi
       - name: Correlate Ubench
+        env:
+          ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+          REPORT_URL: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${{ github.head_ref || github.ref_name }}_${{ github.run_number }}_${{ github.run_attempt }}/
         run: |
           source ./env-setup/12.8_env_setup.sh
           ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
@@ -160,8 +163,6 @@ jobs:
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
           fi
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            ACTION_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-            REPORT_URL="https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt }}/"
             bash .github/scripts/send_ci_success_email.sh
           fi
   PTX-Simulation:
@@ -339,4 +340,6 @@ jobs:
           else
             SUBJECT="⚠️ Github CI FAILED - PR $BRANCH_NAME"
           fi
-          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
+          if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
+            srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
+          fi
