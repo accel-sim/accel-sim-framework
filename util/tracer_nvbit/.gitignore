@@ -1,7 +1,4 @@
 nvbit_release/
-silicon_checkpoint_tool/checkpoint/checkpoint.o
-silicon_checkpoint_tool/checkpoint/checkpoint.so
-tracer_tool/tracer_tool.o
-tracer_tool/tracer_tool.so
-tracer_tool/inject_funcs.o
+*.o
+*.so
 tracer_tool/traces-processing/post-traces-processing
