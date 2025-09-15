@@ -159,41 +159,11 @@ jobs:
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
           fi
-          # Base HTML body (reused)
-          BASE_HTML="<html>
-          <body>
-            <h2>✅ Github CI - Build $BRANCH_NAME SUCCESS</h2>
-            <p><strong>Action link:</strong> <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Action</a></p>
-            <p><strong>Branch/PR Name:</strong> $BRANCH_NAME</p>
-            <p><strong>Correlation Report:</strong> <a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/\">View Report</a></p>
-            <p><strong>Directory:</strong> $PWD</p>
-            
-            <h3>Correlation Results:</h3>
-            <ul>
-              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/v100-ubench-correl.html\">V100 Correlation</a></li>
-              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/ampere-ubench-correl.html\">Ampere Correlation</a></li>
-              <li><a href=\"https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/ampere-a100-ubench-correl.html\">A100 Correlation</a></li>
-            </ul>"
-          
-          # Check if combined plots exist and add them to the body
-          if [ -f "./util/plotting/correl-html/combined_per_kernel.html" ]; then
-            # Read the combined plots HTML content
-            COMBINED_PLOTS=$(cat ./util/plotting/correl-html/combined_per_kernel.html)
-            HTML_BODY="$BASE_HTML
-            
-            <h3>Combined Correlation Plots:</h3>
-            $COMBINED_PLOTS
-          </body>
-          </html>"
-          else
-            HTML_BODY="$BASE_HTML
-          </body>
-          </html>"
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            ACTION_URL="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+            REPORT_URL="https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt }}/"
+            bash .github/scripts/send_ci_success_email.sh
           fi
-          
-          SUBJECT="✅ Github CI - Build $BRANCH_NAME SUCCESS"
-          srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
-          echo "Correlation Report at: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/."
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
