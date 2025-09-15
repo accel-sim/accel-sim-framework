@@ -225,8 +225,8 @@ jobs:
 
           rm -rf ./gpu-app-collection
           git clone --quiet --recurse-submodules -b dev git@github.com:accel-sim/gpu-app-collection.git
-          source ./gpu-app-collectimakeon/src/setup_environment > /dev/null 2>&1
-          srun --time=8:00:00 -c20  rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
+          source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
+          srun --time=8:00:00 -c20 make rodinia_2.0-ft GPU_Microbenchmark -j20 -C ./gpu-app-collection/src
           ./gpu-app-collection/get_regression_data.sh
 
           #./util/job_launching/run_simulations.py -B rodinia_2.0-ft,GPU_Microbenchmark -C QV100-PTX,RTX2060-PTX,RTX3070-PTX,A100-PTX -N short-ptx-${{ github.run_number }}_${{ github.run_attempt}}
