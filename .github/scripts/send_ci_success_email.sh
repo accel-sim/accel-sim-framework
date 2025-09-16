@@ -38,7 +38,14 @@ EOF
 fi
 
 SUBJECT="✅ Github CI - Build ${BRANCH_NAME} SUCCESS"
-srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
+
+# Write HTML to temporary file to avoid "Argument list too long" error
+TEMP_HTML=$(mktemp)
+echo "$HTML_BODY" > "$TEMP_HTML"
+
+srun cat "$TEMP_HTML" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
+rm -f "$TEMP_HTML"
+
 echo "Correlation Report at: ${REPORT_URL}."
 
 
