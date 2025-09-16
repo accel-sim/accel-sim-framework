@@ -36,27 +36,13 @@
  * the number of executed instructions would be different, thus we can identify
  * the spinlock section.
  *
- * TODO Some questions:
- * 1. How to link result with accel-sim tracer?
- * 2. What should be the flow of this tool?
- *   - Multiple phases of the tool. Assuming the app kernel launch is deterministic, we can run the tool twice to detect the spinlock section.
- *   - Spinlock detection phase.
- *     - For each kernel, record the instruction execution count and save to file with marking of kernel id and kernel name.
- *     - This histogram tool can be run multiple times to determine the spinlock section.
- *   - Accel-sim tracer tracing phase.
- *     - It will try to consume the spinlock phase data for spinlock section of each kernel (by kernel id)
- *     - If the spinlock section is found, it will mark and trace these instructions only once.
- * 3. Is it possible to replay kernel with NVBit? Probably not, and bit wacky. So we just launch the app multiple times.
- * 4. How to find the chain of the producer of the spinlock sections?
- *   - How do we deal with this data dependency? 
- *     - For these chain that are deterministic, record the register value so that we can do functional execution of the spinlock part.
- * 5. How do we deal with spinlock?
- *   - Fast forward
- *   - Partial Functional execution on the SASS instructions
- *   - If the spinlock pattern is simple, we can replace it with PTX sim or emulation? Which is not 1-1 match of the original SASS instructions.
- *     - If we know this is just a spinlock and takes a small chunk of kernel execution, it really does not matter if we execute it faithfully or via emulation.
- *     - This way we are more accurate than fast forwarding but has less effort than exeucting SASS inst, even just a small subset of it.
- *     - TODO this requires predefining set of spinlock patterns for matching
+ * You will need to pass SPINLOCK_PHASE=0 for first run and SPINLOCK_PHASE=1 for second run.
+ * Each run will generate a folder with the name of ctx_<ctx_id>/spinlock_run_<phase>.
+ * Each folder will contain a file with the name of <kernel_id>-<kernel_name>.histogram.
+ * When SPINLOCK_PHASE=1, the tool will also check for spinlock instructions during context termination.
+ * And generate a file with the name of ctx_<ctx_id>/spinlock_instructions.txt, with each 
+ * line containing the kernel id, kernel name, and the indices of spinlock instructions.
+ * The indices are the instruction indices in the kernel function.
  */
 
 #include <assert.h>
@@ -65,9 +51,7 @@
 #include <stdio.h>
 #include <unistd.h>
 #include <map>
-#include <sstream>
 #include <string>
-#include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
 
@@ -131,6 +115,8 @@ bool skip_callback_flag = false;
 uint32_t instr_begin_interval = 0;
 uint32_t instr_end_interval = UINT32_MAX;
 int verbose = 0;
+
+#define DPRINTF(fmt, ...) {if (verbose) printf(fmt, ##__VA_ARGS__);}
 
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
@@ -197,12 +183,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         /* get vector of instructions of function "f" */
         const std::vector<Instr*>& instrs = nvbit_get_instrs(ctx, f);
 
-        if (verbose) {
-            printf(
-                "MEMTRACE: CTX %p, Inspecting CUfunction %p name %s at address "
-                "0x%lx\n",
-                ctx, f, nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx, f));
-        }
+        DPRINTF(
+            "Spinlock: CTX %p, Inspecting CUfunction %p name %s at address "
+            "0x%lx\n",
+            ctx, f, nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx, f));
 
         uint32_t cnt = 0;
         /* iterate on all the static instructions in the function */
@@ -367,8 +351,12 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
     // Make a folder for the histogram
     std::string folder_name = "ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
 
-    // Create the folder
-    std::filesystem::create_directories(folder_name);
+    std::error_code error_code;
+    bool success = std::filesystem::create_directories(folder_name, error_code);
+    if (error_code) {
+        printf("Spinlock: Failed to create folder %s: %s\n", folder_name.c_str(), error_code.message().c_str());
+        assert(false);
+    }
 
     ctx_state->instr_histogram->saveToFile( folder_name + "/" + std::to_string(ctx_state->instr_histogram->id) + "-" + ctx_state->instr_histogram->name + ".histogram");
 }
@@ -551,9 +539,7 @@ void* recv_thread_fun(void* args) {
 
                 // Increment the instruction count
                 ctx_state->instr_histogram->add(packet->instr_idx, packet->count);
-                if (verbose >= 1) {
-                    printf("Spinlock: Incrementing instruction count for instruction %d by %d\n", packet->instr_idx, packet->count);
-                }
+                DPRINTF("Spinlock: Incrementing instruction count for instruction %d by %d\n", packet->instr_idx, packet->count);
 
                 num_processed_bytes += sizeof(instr_count_t);
             }
@@ -566,9 +552,7 @@ void* recv_thread_fun(void* args) {
 
 void nvbit_at_ctx_init(CUcontext ctx) {
     pthread_mutex_lock(&mutex);
-    if (verbose) {
-        printf("Spinlock: STARTING CONTEXT %p\n", ctx);
-    }
+    DPRINTF("Spinlock: STARTING CONTEXT %p\n", ctx);
     assert(ctx_state_map.find(ctx) == ctx_state_map.end());
     CTXstate* ctx_state = new CTXstate;
     ctx_state_map[ctx] = ctx_state;
@@ -585,9 +569,7 @@ void nvbit_tool_init(CUcontext ctx) {
 void nvbit_at_ctx_term(CUcontext ctx) {
     pthread_mutex_lock(&mutex);
     skip_callback_flag = true;
-    if (verbose) {
-        printf("Spinlock: TERMINATING CONTEXT %p\n", ctx);
-    }
+    DPRINTF("Spinlock: TERMINATING CONTEXT %p\n", ctx);
     /* get context state from map */
     assert(ctx_state_map.find(ctx) != ctx_state_map.end());
     CTXstate* ctx_state = ctx_state_map[ctx];
@@ -606,7 +588,7 @@ void nvbit_at_ctx_term(CUcontext ctx) {
         // nondeterministic.
         // Spawn a thread to identify the spinlock sections of
         // kernels in this context
-        printf("Spinlock: Spawning thread to check for spinlock in context %d\n", ctx_state->id);
+        DPRINTF("Spinlock: Spawning thread to check for spinlock in context %d\n", ctx_state->id);
         pthread_create(&spinlock_check_thread, NULL, spinlock_check_thread_fun, (void*)ctx_state->id);
     }
     // Clean up
@@ -662,45 +644,46 @@ void* spinlock_check_thread_fun(void* args) {
     std::vector<KernelInstructionHistogram*> spinlock_run1_histograms;
 
     // Load the histogram files
-    printf("Spinlock: Loading histograms from %s and %s\n", spinlock_run0_folder.c_str(), spinlock_run1_folder.c_str());
+    DPRINTF("Spinlock: Loading histograms from %s and %s\n", spinlock_run0_folder.c_str(), spinlock_run1_folder.c_str());
     std::map<std::string, std::vector<KernelInstructionHistogram*>*> zipped_folders = {{spinlock_run0_folder, &spinlock_run0_histograms}, {spinlock_run1_folder, &spinlock_run1_histograms}};
     for (const auto& iter : zipped_folders) {
         auto spinlock_run_folder = iter.first;
         auto histograms = iter.second;
-        printf("Spinlock: Loading histograms from %s\n", spinlock_run_folder.c_str());
+        DPRINTF("Spinlock: Loading histograms from %s\n", spinlock_run_folder.c_str());
+        assert(std::filesystem::exists(spinlock_run_folder));
         for (const auto& entry : std::filesystem::directory_iterator(spinlock_run_folder)) {
             if (entry.is_regular_file() && entry.path().extension().compare(".histogram") == 0) {
-                printf("Spinlock: Loading histogram from %s\n", entry.path().string().c_str());
+                DPRINTF("Spinlock: Loading histogram from %s\n", entry.path().string().c_str());
                 KernelInstructionHistogram *histogram = new KernelInstructionHistogram();
                 histogram->loadFromFile(entry.path().string());
                 histograms->push_back(histogram);
             }
         }
     }
-    printf("Spinlock: Loaded %d histograms from %s and %d histograms from %s\n", spinlock_run0_histograms.size(), spinlock_run0_folder.c_str(), spinlock_run1_histograms.size(), spinlock_run1_folder.c_str());
+    DPRINTF("Spinlock: Loaded %d histograms from %s and %d histograms from %s\n", spinlock_run0_histograms.size(), spinlock_run0_folder.c_str(), spinlock_run1_histograms.size(), spinlock_run1_folder.c_str());
     // Check if the kernel count are the same
     assert(spinlock_run0_histograms.size() == spinlock_run1_histograms.size());
 
-    printf("Spinlock: Comparing the two histograms\n");
+    DPRINTF("Spinlock: Comparing the two histograms\n");
     // Now compare the two histograms and generate output of spinlock instructions per context
     // Each row will be kernel id, kernel name, and indices of spinlock instructions
     std::string output_file = context_folder + "/spinlock_instructions.txt";
     std::ofstream output_file_stream(output_file);
-    printf("Spinlock: Generating output file %s\n", output_file.c_str());
+    DPRINTF("Spinlock: Generating output file %s\n", output_file.c_str());
     for (auto run0_histogram : spinlock_run0_histograms) {
-        printf("Spinlock: Comparing histogram %d %s\n", run0_histogram->id, run0_histogram->name.c_str());
+        DPRINTF("Spinlock: Comparing histogram %d %s\n", run0_histogram->id, run0_histogram->name.c_str());
         auto run1_histogram = spinlock_run1_histograms.at(run0_histogram->id);
         auto spinlock_instructions = run0_histogram->findSpinlock(*run1_histogram);
-        printf("Spinlock: Found %d spinlock instructions\n", spinlock_instructions.size());
+        DPRINTF("Spinlock: Found %d spinlock instructions\n", spinlock_instructions.size());
         output_file_stream << run0_histogram->id << ", " << run0_histogram->name << ": ";
         for (auto [instr_idx, counts] : spinlock_instructions) {
             // Write to output file
-            output_file_stream << instr_idx << ", ";
+            output_file_stream << instr_idx << " ";
         }
         output_file_stream << "\n";
     }
     output_file_stream.close();
-    printf("Spinlock: Generated output file %s\n", output_file.c_str());
+    DPRINTF("Spinlock: Generated output file %s\n", output_file.c_str());
     // Free the histograms
     for (auto histogram : spinlock_run0_histograms) {
         delete histogram;
