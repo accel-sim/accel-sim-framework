@@ -349,7 +349,7 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
 
     // Dump the histogram to file
     // Make a folder for the histogram
-    std::string folder_name = "ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
+    std::string folder_name = "spinlock_detection/ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
 
     std::error_code error_code;
     bool success = std::filesystem::create_directories(folder_name, error_code);
@@ -633,7 +633,7 @@ void nvbit_at_graph_node_launch(CUcontext ctx, CUfunction func,
 
 void* spinlock_check_thread_fun(void* args) {
     uint32_t ctx_id = (uint64_t)args;
-    std::string context_folder = "ctx_" + std::to_string(ctx_id);
+    std::string context_folder = "spinlock_detection/ctx_" + std::to_string(ctx_id);
     
     // Scan the context folder for spinlock_run_* folders
     std::string spinlock_run0_folder = context_folder + "/spinlock_run_0";

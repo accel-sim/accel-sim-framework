@@ -21,6 +21,7 @@ typedef struct {
   int opcode_id;
   uint64_t addrs[32];
   uint32_t line_num;
+  uint32_t instr_idx;
   uint32_t vpc;
   bool is_mem;
   int32_t GPRDst;

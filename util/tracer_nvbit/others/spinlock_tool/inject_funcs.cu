@@ -53,8 +53,9 @@ extern "C" __device__ __noinline__ void count_instr(int predicate, uint32_t inst
     const int count = __popc(predicate_mask);
     instr_count_t packet;
 
+    // Also add count of warp instruction (+ 1 for the warp instruction itself)
     packet.instr_idx = instr_idx;
-    packet.count = count;
+    packet.count = count + 1;
 
     /* first active lane pushes information on the channel */
     if (first_laneid == laneid) {
