@@ -53,6 +53,19 @@ parser.add_option(
     action="store_true",
     help="Once the kernel limit is reached, terminate the tracing process",
 )
+parser.add_option(
+    "--fast_forward_spinlock",
+    dest="fast_forward_spinlock",
+    action="store_true",
+    help="Fast forward spinlock instructions",
+)
+parser.add_option(
+    "--spinlock_iterations",
+    dest="spinlock_iterations",
+    type=int,
+    default=1,
+    help="Number of iterations to keep for spinlock fast forwarding",
+)
 
 (options, args) = parser.parse_args()
 
@@ -68,6 +81,7 @@ time_string = now_time.strftime("%H:%M:%S")
 logfile = day_string + "--" + time_string + ".csv"
 
 nvbit_tracer_path = os.path.join(this_directory, "tracer_tool")
+nvbit_spinlock_path = os.path.join(this_directory, "others", "spinlock_tool")
 
 for bench in benchmarks:
     edir, ddir, exe, argslist = bench
@@ -143,13 +157,14 @@ for bench in benchmarks:
             + '"; export CUDA_VISIBLE_DEVICES="'
             + options.device_num
             + '" ; '
+        )
+        
+        tracer_contents = (
+            sh_contents
             + "\nrm -f traces/*"
             + "\nexport TRACES_FOLDER="
             + this_run_dir
-            + "; CUDA_INJECTION64_PATH="
-            + os.path.join(nvbit_tracer_path, "tracer_tool.so")
-            + " "
-            + " LD_PRELOAD="
+            + f"; SPINLOCK_ITER_TO_KEEP={options.spinlock_iterations} CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_tracer_path, "tracer_tool.so")
             + " "
             + exec_path
@@ -167,16 +182,46 @@ for bench in benchmarks:
             + this_trace_folder
             + "/kernelslist "
         )
+        
+        # Spinlock tool run script
+        # will run twice, once for phase 0 and once for phase 1
+        spinlock_contents = (
+            sh_contents
+            + "\nrm -f spinlock_detection/*"
+            + "\nexport TRACES_FOLDER="
+            + this_run_dir
+            + "; SPINLOCK_PHASE=0 CUDA_INJECTION64_PATH="
+            + os.path.join(nvbit_spinlock_path, "spinlock_tool.so")
+            + " "
+            + exec_path
+            + " "
+            + str(args)
+            + " ; "
+            + " SPINLOCK_PHASE=1 CUDA_INJECTION64_PATH="
+            + os.path.join(nvbit_spinlock_path, "spinlock_tool.so")
+            + " "
+            + exec_path
+            + " "
+            + str(args)
+            + " ; "
+        )
 
-        open(os.path.join(this_run_dir, "run.sh"), "w").write(sh_contents)
-        if subprocess.call(["chmod", "u+x", os.path.join(this_run_dir, "run.sh")]) != 0:
-            exit("Error chmod runfile")
+        for path, content in [("run.sh", tracer_contents), ("run_spinlock_detection.sh", spinlock_contents)]:
+            open(os.path.join(this_run_dir, path), "w").write(content)
+            if subprocess.call(["chmod", "u+x", os.path.join(this_run_dir, path)]) != 0:
+                exit(f"Error chmod {path} runfile")
+
 
         if not options.norun:
             saved_dir = os.getcwd()
             os.chdir(this_run_dir)
             print("Running {0}".format(exe))
 
+            # Call the spinlock detection script
+            if options.fast_forward_spinlock:
+                if subprocess.call(["bash", "run_spinlock_detection.sh"]) != 0:
+                    sys.exit(f"Error invoking spinlock detection on {this_run_dir}")
+
             if subprocess.call(["bash", "run.sh"]) != 0:
-                sys.exit("Error invoking nvbit on {0}".format(this_run_dir))
+                sys.exit(f"Error invoking nvbit on {this_run_dir}")
             os.chdir(saved_dir)
