@@ -10,8 +10,8 @@
 
 #include <algorithm>
 #include <bitset>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <regex>
@@ -939,14 +939,17 @@ void *recv_thread_fun(void *args) {
 
   // This counter map will keep track of the spinlock instruction
   // count in the current detected spinlock loop for each warp
-  // The detection start if a spinlock instruction is encountered (start to increment the counter)
-  // and end when a non-spinlock instruction is encountered (clear the counter)
+  // The detection start if a spinlock instruction is encountered (start to
+  // increment the counter) and end when a non-spinlock instruction is
+  // encountered (clear the counter)
   std::map<warp_key_t, counter_t> warp_counter_map;
   std::ifstream instr_fs;
 
   // Initialize the counter map with first kernel in the context launch
   if (enable_spinlock_fast_forward) {
-    std::string spinlock_instr_file = "spinlock_detection/ctx_" + std::to_string(ctx_id) + "/spinlock_instructions.txt";
+    std::string spinlock_instr_file = "spinlock_detection/ctx_" +
+                                      std::to_string(ctx_id) +
+                                      "/spinlock_instructions.txt";
     // Read in the first kernel in the spinlock instructions file
     instr_fs.open(spinlock_instr_file);
     std::string line;
@@ -970,12 +973,13 @@ void *recv_thread_fun(void *args) {
             // Clear the counter map for all warps
             warp_counter_map.clear();
 
-            // Read in the next kernel spinlock instructions in the context launch
+            // Read in the next kernel spinlock instructions in the context
+            // launch
             std::string line;
             std::getline(instr_fs, line);
             if (!instr_fs.eof()) {
-              // Read in the next kernel spinlock instructions in the context launch
-              // else just skip this
+              // Read in the next kernel spinlock instructions in the context
+              // launch else just skip this
               spinlock_instr_indices = parse_spinlock_instructions(line);
             }
           }
@@ -985,7 +989,8 @@ void *recv_thread_fun(void *args) {
         /* Spinlock fast forwarding */
         if (enable_spinlock_fast_forward) {
           // Check if this warp is in the warp_counter_map
-          warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y, ma->cta_id_z, ma->warpid_tb);
+          warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y,
+                                                ma->cta_id_z, ma->warpid_tb);
           if (warp_counter_map.find(warp_key) == warp_counter_map.end()) {
             // This warp is not in the warp_counter_map, so we add it
             warp_counter_map[warp_key] = create_counter(spinlock_instr_indices);
@@ -1005,7 +1010,8 @@ void *recv_thread_fun(void *args) {
               continue;
             }
           } else {
-            // We are exiting the spinlock loop, so we reset the counter map for this warp
+            // We are exiting the spinlock loop, so we reset the counter map for
+            // this warp
             for (auto &[instr_idx, count] : counter) {
               count = 0;
             }
