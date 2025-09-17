@@ -163,7 +163,7 @@ jobs:
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
           fi
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            bash .github/scripts/send_ci_success_email.sh
+            python3 .github/scripts/send_ci_success_email.py
           fi
   PTX-Simulation:
     needs: [check-format]
