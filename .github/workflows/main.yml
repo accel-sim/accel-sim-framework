@@ -330,6 +330,9 @@ jobs:
           echo "PTX-Simulation: ✅"
           echo "Tracer-Tool: ✅"
           echo "SASS-Simulation-Docker: ✅"
+          git clone --quiet git@github.com:purdue-aalp/env-setup.git 
+          cd env-setup 
+          git checkout cluster-ubuntu
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
             python3 .github/scripts/send_ci_email.py -t success 
           fi
@@ -345,6 +348,9 @@ jobs:
       - uses: actions/checkout@v4
       - name: Notify Failure
         run: |
+          git clone --quiet git@github.com:purdue-aalp/env-setup.git 
+          cd env-setup 
+          git checkout cluster-ubuntu
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
             python3 .github/scripts/send_ci_email.py -t failure
           elif [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
