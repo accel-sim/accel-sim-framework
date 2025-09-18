@@ -150,16 +150,28 @@ jobs:
           ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
           rm -rf ./util/plotting/correl-html/
           ./util/plotting/plot-correlation.py -c ./v100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/device-0/12.8/ | tee v100-ubench-correl.txt
+          mv ./util/plotting/correl-html/combined_per_kernel.html ./statistics-archive/ubench/v100-combined_per_kernel.html
+          mv ./util/plotting/correl-html/combined_per_app.html ./statistics-archive/ubench/v100-combined_per_app.html
+
           ./util/plotting/plot-correlation.py -c ./ampere-ubench-sass-latest2.csv -H  /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/RTX3070/hw_run/device-0/12.8/ | tee ampere-ubench-correl.txt
+
           ./util/plotting/plot-correlation.py -c ./ampere-a100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/device-0/12.8/ | tee ampere-a100-ubench-correl.txt
+          mv ./util/plotting/correl-html/combined_per_kernel.html ./statistics-archive/ubench/ampere-a100-combined_per_kernel.html
+          mv ./util/plotting/correl-html/combined_per_app.html ./statistics-archive/ubench/ampere-a100-combined_per_app.html
+
           ssh ghci@tgrogers-pc01 mkdir -p /home/ghci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/
           rsync --delete -r ./util/plotting/correl-html/ ghci@tgrogers-pc01:/home/ghci/accel-sim/correl/git_$BRANCH_NAME"_"${{ github.run_number }}"_"${{ github.run_attempt}}/
           if [[ ${{ github.event_name }} == 'push' ]]; then
             rm -rf /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
+
+            git -C ./statistics-archive reset --soft HEAD~1
+            git -C ./statistics-archive add --all
+            git -C ./statistics-archive commit \
+            -m "CI automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
+            git -C ./statistics-archive push -f -u origin $BRANCH_NAME
           fi
-          echo "PLOT_DIR=$PWD/util/plotting/correl-html/" >> $GITHUB_OUTPUT
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
@@ -306,7 +318,7 @@ jobs:
   CI-Success:
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      REPORT_URL: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${{ github.head_ref || github.ref_name }}_${{ github.run_number }}_${{ github.run_attempt }}/
+      REPORT_URL: https://rawcdn.githack.com/accel-sim/statistics-archive/${{ github.repository }}/$BRANCH_NAME/ubench/
     runs-on: ubuntu-latest
     needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
@@ -318,7 +330,7 @@ jobs:
           echo "Tracer-Tool: ✅"
           echo "SASS-Simulation-Docker: ✅"
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            python3 .github/scripts/send_ci_email.py success
+            python3 .github/scripts/send_ci_email.py -t success 
           fi
 
   failures:
@@ -333,8 +345,8 @@ jobs:
       - name: Notify Failure
         run: |
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            python3 .github/scripts/send_ci_email.py failure warning
+            python3 .github/scripts/send_ci_email.py -t failure
           elif [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
-            # if the push is to the dev branch, send an urgent failure email
-            python3 .github/scripts/send_ci_email.py failure urgent
+             # if the push is to the dev branch, send an urgent failure email
+             python3 .github/scripts/send_ci_email.py -t failure -u
           fi
