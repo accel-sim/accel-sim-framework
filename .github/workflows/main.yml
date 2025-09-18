@@ -141,13 +141,10 @@ jobs:
           if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
             git -C ./statistics-archive add --all
             git -C ./statistics-archive commit \
-            -m "Jenkins automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
+            -m "CI automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
             git -C ./statistics-archive push -u origin $BRANCH_NAME
           fi
       - name: Correlate Ubench
-        env:
-          ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-          REPORT_URL: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${{ github.head_ref || github.ref_name }}_${{ github.run_number }}_${{ github.run_attempt }}/
         run: |
           source ./env-setup/12.8_env_setup.sh
           ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
@@ -162,9 +159,7 @@ jobs:
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess
             mv $PWD/* /scratch/tgrogers-disk01/a/tgrghci/ci/accel_sim_framework/lastDevSuccess/
           fi
-          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            python3 .github/scripts/send_ci_success_email.py
-          fi
+          echo "PLOT_DIR=$PWD/util/plotting/correl-html/" >> $GITHUB_OUTPUT
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
@@ -309,6 +304,9 @@ jobs:
       - name: Run Simulation
         run: /bin/bash $GITHUB_WORKSPACE/short-tests.sh
   CI-Success:
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPORT_URL: https://tgrogers-pc01.ecn.purdue.edu/github-ci/accel-sim/correl/git_${{ github.head_ref || github.ref_name }}_${{ github.run_number }}_${{ github.run_attempt }}/
     runs-on: ubuntu-latest
     needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
@@ -319,27 +317,23 @@ jobs:
           echo "PTX-Simulation: ✅"
           echo "Tracer-Tool: ✅"
           echo "SASS-Simulation-Docker: ✅"
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            python3 .github/scripts/send_ci_email.py success
+          fi
 
   failures:
     if: failure()
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPORT_URL: ""
     runs-on: tgrogers-raid
     needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - name: Notify Failure
         run: |
-          HTML_BODY="<html>
-          <body>
-            <h2>❗ Github CI - Build $BRANCH_NAME FAILED</h2>
-            <p><strong>Action link:</strong> <a href=\"${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}\">View Action</a></p>
-            <p><strong>Branch/PR Name:</strong> $BRANCH_NAME</p>
-            <p style=\"color: red;\"><strong>Please check the action logs for details.</strong></p>
-          </body>
-          </html>"
-          if [[ $GITHUB_EVENT_NAME == 'push' ]]; then
-            SUBJECT="❗Github CI FAILED - Build $BRANCH_NAME"
-          else
-            SUBJECT="⚠️ Github CI FAILED - PR $BRANCH_NAME"
-          fi
-          if [[ $GITHUB_EVENT_NAME == 'pull_request' ]]; then
-            srun echo "$HTML_BODY" | mail -s "$SUBJECT" -a "Content-Type: text/html; charset=UTF-8" "$GROUP_EMAIL"
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            python3 .github/scripts/send_ci_email.py failure warning
+          elif [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
+            # if the push is to the dev branch, send an urgent failure email
+            python3 .github/scripts/send_ci_email.py failure urgent
           fi
