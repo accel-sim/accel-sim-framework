@@ -322,6 +322,7 @@ jobs:
     runs-on: ubuntu-latest
     needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
+      - uses: actions/checkout@v4
       - run: |
           echo "✅ All CI tests completed successfully!"
           echo "check-format: ✅"
