@@ -1076,7 +1076,6 @@ tma:
             - args: -w 1024 -h 1024 -o UTMALDG
             - args: -w 1024 -h 1024 -o UTMASTG
             - args: -w 1024 -h 1024 -o UTMAREDG
-            - args: -w 1024 -h 1024 -o REGULAR_LOAD
               accel-sim-mem: 10G
         - tma_bulk_test:
             - args: -n 1024 -o UBLKPF
@@ -1097,23 +1096,4 @@ vllm:
             - args: # defualt is llama-7b model , pass model name to use other models
               accel-sim-mem: 10G
 
-tma:
-    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/tma"
-    data_dirs: ""
-    execs:
-        - tma_tensor_test:
-            - args: -w 1024 -h 1024 -o UTMAPF
-            - args: -w 1024 -h 1024 -o UTMALDG
-            - args: -w 1024 -h 1024 -o UTMASTG
-            - args: -w 1024 -h 1024 -o UTMAREDG
-              accel-sim-mem: 10G
-        - tma_bulk_test:
-            - args: -n 1024 -o UBLKPF
-            - args: -n 1024 -o UBLKCP_S_G
-            - args: -n 1024 -o UBLKCP_G_S
-            - args: -n 1024 -o UBLKRED_G_S
-            - args: -n 262144 -o UBLKPF
-            - args: -n 262144 -o UBLKCP_S_G
-            - args: -n 262144 -o UBLKCP_G_S
-            - args: -n 262144 -o UBLKRED_G_S
-              accel-sim-mem: 10G
+
