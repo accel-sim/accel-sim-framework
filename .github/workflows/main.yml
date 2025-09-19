@@ -319,7 +319,7 @@ jobs:
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       REPORT_URL: https://rawcdn.githack.com/accel-sim/statistics-archive/${{ github.repository }}/$BRANCH_NAME/ubench/
-    runs-on: ubuntu-latest
+    runs-on: tgrogers-raid
     needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - uses: actions/checkout@v4
