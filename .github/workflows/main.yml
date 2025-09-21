@@ -165,8 +165,8 @@ jobs:
             git -C ./statistics-archive reset --soft HEAD~1
             git -C ./statistics-archive add --all
             git -C ./statistics-archive commit \
-            -m "CI automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
-            git -C ./statistics-archive push -f -u origin $BRANCH_NAME
+            -m "CI automated checkin ${{ github.repository }}/$BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
+            git -C ./statistics-archive push -f -u origin ${{ github.repository }}/$BRANCH_NAME
 
             rm -rf /scratch/tgrogers-disk01/a/tgrghci/ci/lastSuccess/${{ github.repository }}/$BRANCH_NAME
             mkdir -p /scratch/tgrogers-disk01/a/tgrghci/ci/lastSuccess/${{ github.repository }}/$BRANCH_NAME
