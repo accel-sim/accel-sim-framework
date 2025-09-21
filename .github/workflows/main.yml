@@ -333,7 +333,7 @@ jobs:
           git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git 
           source ./env-setup/common/common_inc.sh
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/${{ github.repository }}/$BRANCH_NAME/ubench/"
+            export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/${{ github.repository }}/$BRANCH_NAME/ubench/"
             python3 .github/scripts/send_ci_email.py -t success 
           fi
 
