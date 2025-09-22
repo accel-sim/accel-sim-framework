@@ -206,8 +206,9 @@ unsigned old_total_reported_insts = 0;
 int enable_spinlock_fast_forward = 0;
 int spinlock_iter_to_keep = 0;
 // Map from kernel name to spinlock instruction indices
-std::map<std::string, std::vector<uint32_t>*> spinlock_instr_map;
-std::pair<std::string, std::vector<uint32_t>> parse_spinlock_instructions(const std::string &line);
+std::map<std::string, std::vector<uint32_t> *> spinlock_instr_map;
+std::pair<std::string, std::vector<uint32_t>>
+parse_spinlock_instructions(const std::string &line);
 
 void nvbit_at_init() {
   setenv("CUDA_MANAGED_FORCE_DEVICE_ALLOC", "1", 1);
@@ -263,9 +264,11 @@ void nvbit_at_init() {
     user_folder = usr_defined_folder;
   parse_kernel_ranges_from_env();
 
-  // Read in the spinlock_instructions.txt and build a map from kernel name to spinlock instruction indices
+  // Read in the spinlock_instructions.txt and build a map from kernel name to
+  // spinlock instruction indices
   if (enable_spinlock_fast_forward) {
-    std::string spinlock_instr_file = user_folder + "/spinlock_detection/spinlock_instructions.txt";
+    std::string spinlock_instr_file =
+        user_folder + "/spinlock_detection/spinlock_instructions.txt";
     std::ifstream instr_fs(spinlock_instr_file);
     std::string line;
     while (std::getline(instr_fs, line)) {
@@ -592,7 +595,8 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   fclose(statsFile);
 
   ctx_kernelid[ctx]++;
-  ctx_current_kernel_name[ctx] = std::string(nvbit_get_func_name(ctx, func, true));
+  ctx_current_kernel_name[ctx] =
+      std::string(nvbit_get_func_name(ctx, func, true));
   recv_thread_receiving = true;
 }
 
@@ -933,7 +937,8 @@ counter_t create_counter(const std::vector<uint32_t> &indices) {
   return counter;
 }
 
-std::pair<std::string, std::vector<uint32_t>> parse_spinlock_instructions(const std::string &line) {
+std::pair<std::string, std::vector<uint32_t>>
+parse_spinlock_instructions(const std::string &line) {
   std::vector<uint32_t> indices;
   // Each line is of the form: <kernel_id>, <kernel_name>: <indices>
   // Though kernel id is not used
@@ -974,7 +979,8 @@ void *recv_thread_fun(void *args) {
         if (ma->cta_id_x == -1) {
           recv_thread_receiving = false;
           if (enable_spinlock_fast_forward) {
-            // Clear the counter map for all warps as we are starting a new kernel
+            // Clear the counter map for all warps as we are starting a new
+            // kernel
             warp_counter_map.clear();
           }
           break;
@@ -986,9 +992,11 @@ void *recv_thread_fun(void *args) {
           warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y,
                                                 ma->cta_id_z, ma->warpid_tb);
           if (warp_counter_map.find(warp_key) == warp_counter_map.end()) {
-            // This warp is not in the warp_counter_map, so we create a counter for this warp
-            // using the spinlock instruction indices for the current kernel
-            std::vector<uint32_t>& indices = *(spinlock_instr_map[ctx_current_kernel_name[ctx]]);
+            // This warp is not in the warp_counter_map, so we create a counter
+            // for this warp using the spinlock instruction indices for the
+            // current kernel
+            std::vector<uint32_t> &indices =
+                *(spinlock_instr_map[ctx_current_kernel_name[ctx]]);
             warp_counter_map[warp_key] = create_counter(indices);
           }
 
@@ -1007,7 +1015,8 @@ void *recv_thread_fun(void *args) {
               continue;
             }
           } else {
-            // We are exiting the innermost spinlock loop, so we reset the counter map for this warp
+            // We are exiting the innermost spinlock loop, so we reset the
+            // counter map for this warp
             for (auto &[instr_idx, count] : counter) {
               count = 0;
             }
