@@ -1058,3 +1058,13 @@ huggingface:
         - helloworld:
             - args:
               accel-sim-mem: 10G
+
+
+vllm:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/vllm"
+    data_dirs: ""
+    execs:
+        - througput.sh:
+            - args: # defualt is llama-7b model , pass model name to use other models
+              accel-sim-mem: 10G
+
