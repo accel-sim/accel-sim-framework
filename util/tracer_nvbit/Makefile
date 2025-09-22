@@ -1,9 +1,10 @@
 
 all:
-	make -C tracer_tool
-	make -C tracer_tool/traces-processing
-	#make -C silicon_checkpoint_tool
+	$(MAKE) -C tracer_tool
+	$(MAKE) -C tracer_tool/traces-processing
+	$(MAKE) -C others/spinlock_tool
+#$(MAKE) -C silicon_checkpoint_tool
 
 clean:
-	make clean -C tracer_tool
-	make clean -C tracer_tool/traces-processing
+	$(MAKE) clean -C tracer_tool
+	$(MAKE) clean -C tracer_tool/traces-processing

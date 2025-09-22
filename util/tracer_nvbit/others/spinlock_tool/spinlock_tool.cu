@@ -37,10 +37,11 @@
  * the spinlock section.
  *
  * You will need to pass SPINLOCK_PHASE=0 for first run and SPINLOCK_PHASE=1 for second run.
- * Each run will generate a folder with the name of ctx_<ctx_id>/spinlock_run_<phase>.
+ * Each run will generate a folder with the name of ctx_<ctx_id>/spinlock_run_<phase> and a spinlock_run_<phase>_merged folder.
  * Each folder will contain a file with the name of <kernel_id>-<kernel_name>.histogram.
+ * The spinlock_run_<phase>_merged folder will contain a file for each kernel with the name of <kernel_name>.histogram.
  * When SPINLOCK_PHASE=1, the tool will also check for spinlock instructions during context termination.
- * And generate a file with the name of ctx_<ctx_id>/spinlock_instructions.txt, with each 
+ * And generate a file with the name of spinlock_instructions.txt, with each 
  * line containing the kernel id, kernel name, and the indices of spinlock instructions.
  * The indices are the instruction indices in the kernel function.
  */
