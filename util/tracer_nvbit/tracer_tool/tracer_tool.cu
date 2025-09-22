@@ -10,8 +10,8 @@
 
 #include <algorithm>
 #include <bitset>
-#include <iostream>
 #include <fstream>
+#include <iostream>
 #include <iterator>
 #include <map>
 #include <regex>
@@ -956,8 +956,9 @@ void *recv_thread_fun(void *args) {
 
   // This counter map will keep track of the spinlock instruction
   // count in the current detected spinlock loop for each warp
-  // The detection start if a spinlock instruction is encountered (start to increment the counter)
-  // and end when a non-spinlock instruction is encountered (clear the counter)
+  // The detection start if a spinlock instruction is encountered (start to
+  // increment the counter) and end when a non-spinlock instruction is
+  // encountered (clear the counter)
   std::map<warp_key_t, counter_t> warp_counter_map;
 
   while (recv_thread_started) {
@@ -982,7 +983,8 @@ void *recv_thread_fun(void *args) {
         /* Spinlock fast forwarding */
         if (enable_spinlock_fast_forward) {
           // Check if this warp is in the warp_counter_map
-          warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y, ma->cta_id_z, ma->warpid_tb);
+          warp_key_t warp_key = std::make_tuple(ma->cta_id_x, ma->cta_id_y,
+                                                ma->cta_id_z, ma->warpid_tb);
           if (warp_counter_map.find(warp_key) == warp_counter_map.end()) {
             // This warp is not in the warp_counter_map, so we create a counter for this warp
             // using the spinlock instruction indices for the current kernel
