@@ -19,10 +19,9 @@ __device__ void acquire_spinlock(volatile int* lock_ptr) {
 // Function to release the spinlock
 __device__ void release_spinlock(volatile int* lock_ptr) {
     // Simply set the lock variable back to 0 (unlocked)
-    // A __threadfence() is often used here to ensure writes within the critical section
-    // are visible to other threads before the lock is released.
     *lock_ptr = 0;
-    __threadfence(); // Ensures memory visibility
+    // Ensure the lock is visible to other threads
+    __threadfence();
 }
 
 // Test kernel 1: Simple counter increment with spinlock
@@ -39,6 +38,9 @@ __global__ void testCounterKernel(int* data, int num_elements, int iterations, v
 
             // Release the lock after exiting the critical section
             release_spinlock(lock_ptr);
+            
+            // Ensure all threads reach this point before proceeding to next iter
+            __syncthreads();
         }
     }
 }
