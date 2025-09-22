@@ -52,6 +52,8 @@
 #include <unistd.h>
 #include <map>
 #include <string>
+#include <vector>
+#include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
 
@@ -127,12 +129,12 @@ uint64_t global_grid_launch_id = 0;
 
 /* Spinlock phase */
 int spinlock_phase = 0;
-// At end of phase 1, we will compare the two runs for each context
-// to output a file containing the instructions for each kernel that are
-// nondeterministic.
+// At end of phase SPINLOCK_PHASE_CHECK, we will compare the merged histogram
+// from different runs to output a file containing the instructions for 
+// each kernel that are nondeterministic.
 const int SPINLOCK_PHASE_CHECK = 1;
 std::string spinlock_run_dir = "./";
-void* spinlock_check_thread_fun(void* args);
+void spinlock_check();
 
 void* recv_thread_fun(void* args);
 
@@ -157,6 +159,83 @@ void nvbit_at_init() {
     pthread_mutex_init(&mutex, &attr);
 
     pthread_mutex_init(&cuda_event_mutex, &attr);
+}
+
+/**
+ * This function is called when the program terminates.
+ * We will use this to merge all contexts' kernel histograms by kernel name
+ * so that we can identify all the spinlock/non-deterministic sections of
+ * launched kernels instead of by launched kernel instances, whose context order
+ * is not guaranteed.
+ */
+void nvbit_at_term() {
+    // Read the spinlock_run_PHASE dir under ctx_<ctx_id> and for each unique kernel name, 
+    // we will have a vector of kernel histograms
+    using HistogramMapByName = std::map<std::string, std::vector<KernelInstructionHistogram*>>;
+    HistogramMapByName map;
+
+    // Build the histogram map by reading the spinlock_run_PHASE dir under ctx_<ctx_id>
+    // iterate the ctx_<ctx_id> dir under spinlock_detection folder
+    for (auto& folder : std::filesystem::directory_iterator(spinlock_run_dir + "spinlock_detection")) {
+        // If the folder is not a ctx_<ctx_id> dir, skip
+        if (folder.path().filename().string().find("ctx_") == std::string::npos) {
+            continue;
+        }
+
+        // Now we iterate the spinlock_run_PHASE dir under ctx_<ctx_id> folder
+        std::string context_run_dir = folder.path().string() + "/spinlock_run_" + std::to_string(spinlock_phase);
+
+        // Build this histogram vector for this context
+        for (auto& file : std::filesystem::directory_iterator(context_run_dir)) {
+            if (file.path().extension() == ".histogram") {
+                KernelInstructionHistogram* histogram = new KernelInstructionHistogram();
+                histogram->loadFromFile(file.path().string());
+                map[histogram->name].push_back(histogram);
+            }
+        }
+    }
+
+    // Now, we merge all the histograms for each kernel name
+    std::vector<KernelInstructionHistogram*> merged_histograms;
+    for (auto& [kernel_name, histograms] : map) {
+        KernelInstructionHistogram* merged_histogram = new KernelInstructionHistogram();
+        // Set the name to the kernel name
+        merged_histogram->name = kernel_name;
+        merged_histogram->id = 0;
+        for (auto& histogram : histograms) {
+            // Use hash to merge the histograms to avoid overflow
+            merged_histogram->merge(*histogram, true);
+        }
+        merged_histograms.push_back(merged_histogram);
+    }
+
+    // For each merged histogram, save under spinlock_run_PHASE_merged dir
+    std::string merged_run_dir = spinlock_run_dir + "spinlock_detection/spinlock_run_" + std::to_string(spinlock_phase) + "_merged";
+    std::error_code error_code;
+    bool success = std::filesystem::create_directories(merged_run_dir, error_code);
+    if (error_code) {
+        printf("Spinlock: Failed to create folder %s: %s\n", merged_run_dir.c_str(), error_code.message().c_str());
+        assert(false);
+    }
+
+    for (auto& histogram : merged_histograms) {
+        histogram->saveToFile(merged_run_dir + "/" + histogram->name + ".histogram");
+    }
+
+    // Clean up
+    for (auto& histogram : merged_histograms) {
+        delete histogram;
+    }
+    for (auto& [name, histograms] : map) {
+        for (auto& histogram : histograms) {
+            delete histogram;
+        }
+    }
+
+    // Check for spinlock
+    if (spinlock_phase == SPINLOCK_PHASE_CHECK) {
+        spinlock_check();
+    }
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
@@ -351,7 +430,7 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
 
     // Dump the histogram to file
     // Make a folder for the histogram
-    std::string folder_name = spinlock_run_dir + "ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
+    std::string folder_name = spinlock_run_dir + "spinlock_detection/ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
 
     std::error_code error_code;
     bool success = std::filesystem::create_directories(folder_name, error_code);
@@ -582,26 +661,10 @@ void nvbit_at_ctx_term(CUcontext ctx) {
     while (ctx_state->recv_thread_done != RecvThreadState::FINISHED)
         ;
 
-    // Check for spinlock
-    pthread_t spinlock_check_thread;
-    if (spinlock_phase == SPINLOCK_PHASE_CHECK) {
-        // Compare the two runs for each context
-        // to output a file containing the instructions for each kernel that are
-        // nondeterministic.
-        // Spawn a thread to identify the spinlock sections of
-        // kernels in this context
-        DPRINTF("Spinlock: Spawning thread to check for spinlock in context %d\n", ctx_state->id);
-        pthread_create(&spinlock_check_thread, NULL, spinlock_check_thread_fun, (void*)ctx_state->id);
-    }
-    // Clean up
     ctx_state->channel_host.destroy(false);
     cudaFree(ctx_state->channel_dev);
     skip_callback_flag = false;
     delete ctx_state;
-    // Wait for the spinlock check thread to finish
-    if (spinlock_phase == SPINLOCK_PHASE_CHECK) {
-        pthread_join(spinlock_check_thread, NULL);
-    }
     pthread_mutex_unlock(&mutex);
 }
 
@@ -633,13 +696,10 @@ void nvbit_at_graph_node_launch(CUcontext ctx, CUfunction func,
     pthread_mutex_unlock(&mutex);
 }
 
-void* spinlock_check_thread_fun(void* args) {
-    uint32_t ctx_id = (uint64_t)args;
-    std::string context_folder = spinlock_run_dir + "spinlock_detection/ctx_" + std::to_string(ctx_id);
-    
-    // Scan the context folder for spinlock_run_* folders
-    std::string spinlock_run0_folder = context_folder + "/spinlock_run_0";
-    std::string spinlock_run1_folder = context_folder + "/spinlock_run_1";
+void spinlock_check() {
+    // Get spinlock run folders
+    std::string spinlock_run0_folder = spinlock_run_dir + "spinlock_detection/spinlock_run_0_merged";
+    std::string spinlock_run1_folder = spinlock_run_dir + "spinlock_detection/spinlock_run_1_merged";
 
     // Get the list of histogram files in each spinlock run folder and serialize
     std::vector<KernelInstructionHistogram*> spinlock_run0_histograms;
@@ -669,7 +729,7 @@ void* spinlock_check_thread_fun(void* args) {
     DPRINTF("Spinlock: Comparing the two histograms\n");
     // Now compare the two histograms and generate output of spinlock instructions per context
     // Each row will be kernel id, kernel name, and indices of spinlock instructions
-    std::string output_file = context_folder + "/spinlock_instructions.txt";
+    std::string output_file = spinlock_run_dir + "spinlock_detection/spinlock_instructions.txt";
     std::ofstream output_file_stream(output_file);
     DPRINTF("Spinlock: Generating output file %s\n", output_file.c_str());
     for (auto run0_histogram : spinlock_run0_histograms) {
@@ -693,5 +753,5 @@ void* spinlock_check_thread_fun(void* args) {
     for (auto histogram : spinlock_run1_histograms) {
         delete histogram;
     }
-    return NULL;
+    return;
 }

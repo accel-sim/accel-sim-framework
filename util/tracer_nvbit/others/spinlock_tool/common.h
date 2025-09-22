@@ -56,11 +56,23 @@ public:
         : id(id), name(name), histogram(std::map<uint32_t, uint32_t>()) {
     }
 
-    void add(uint32_t instr_idx, uint32_t count) {
+    void add(uint32_t instr_idx, uint64_t count) {
         if (histogram.find(instr_idx) == histogram.end()) {
             histogram[instr_idx] = count;
         } else {
             histogram[instr_idx] += count;
+        }
+    }
+
+    void merge(const KernelInstructionHistogram& other, bool use_hash = false) {
+        for (const auto& [instr_idx, count] : other.histogram) {
+            if (use_hash) {
+                // Simple modulo hash operation
+                add(instr_idx, count % hash_prime);
+                histogram[instr_idx] %= hash_prime;
+            } else {
+                add(instr_idx, count);
+            }
         }
     }
 
@@ -210,4 +222,6 @@ public:
     uint32_t id;
     std::string name;
     std::map<uint32_t, uint32_t> histogram;
+    // A large 30-bit prime number for hashing to avoid overflow
+    uint32_t hash_prime = 1073741789;
 };
