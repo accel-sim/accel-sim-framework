@@ -29,7 +29,7 @@
 # ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 # POSSIBILITY OF SUCH DAMAGE.
 
-
+from __future__ import print_function
 from optparse import OptionParser
 import os
 import subprocess
@@ -206,7 +206,9 @@ for bench in benchmarks:
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all --demangling off --csv --log-file '
+                    + '" ; timeout 30m nvprof --concurrent-kernels off --print-gpu-trace -u us --metrics all,'
+                    + 'atomic_throughput,atomic_transactions,atomic_transactions_per_request,l2_atomic_throughput,l2_atomic_transactions,global_atomic_requests '
+                    + '--demangling off --csv --log-file '
                     + os.path.join(this_run_dir, logfile)
                     + " "
                     + exec_path
@@ -215,26 +217,41 @@ for bench in benchmarks:
                     + " "
                 )
             if options.nsight_profiler:
+                ncu_report_file = os.path.join(this_run_dir, "ncu_stats.ncu-rep")
+                # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
+
+                extract_command = (
+                    "ncu --import " + ncu_report_file +
+                    " --csv --page raw   " 
+                )
+                profile_command = (
+                    "ncu --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,"
+                    "sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum,"
+                    "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum,lts__t_sectors_srcunit_tex_op_read.sum,"
+                    "lts__t_sectors_srcunit_tex_op_write.sum,lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum,lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum,"
+                    "lts__t_sector_op_write_hit_rate.pct,lts__t_sectors_srcunit_tex_op_read.sum.per_second,dram__sectors_read.sum,dram__sectors_write.sum,dram__bytes_read.sum,"
+                    "sm__inst_executed.sum,smsp__cycles_active.avg.pct_of_peak_sustained_elapsed,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_miss.sum,"
+                    "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum,"
+                    "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum,"
+                    "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum"
+                    " --csv --page raw --target-processes all "
+                    + kernel_number
+                    + " -o "
+                    + os.path.join(this_run_dir, "ncu_stats")
+                )
                 sh_contents += (
                     '\nexport CUDA_VERSION="'
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 30m ncu --metrics gpc__cycles_elapsed.avg,sm__cycles_elapsed.sum,smsp__inst_executed.sum,'
-                    + "sm__warps_active.avg.pct_of_peak_sustained_active,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld.sum,"
-                    + "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_st.sum,lts__t_sectors_srcunit_tex_op_read.sum,"
-                    + "lts__t_sectors_srcunit_tex_op_write.sum,lts__t_sectors_srcunit_tex_op_read_lookup_hit.sum,lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum,"
-                    + "lts__t_sector_op_write_hit_rate.pct,lts__t_sectors_srcunit_tex_op_read.sum.per_second,dram__sectors_read.sum,dram__sectors_write.sum,dram__bytes_read.sum,"
-                    + "sm__inst_executed.sum,smsp__cycles_active.avg.pct_of_peak_sustained_elapsed,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_hit.sum,l1tex__t_sectors_pipe_lsu_mem_global_op_ld_lookup_miss.sum,"
-                    + ",l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum,"
-                    + "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum,"
-                    + "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum"
-                    + " --csv --page raw --target-processes all "
-                    + kernel_number
+                    + '" ;\ntimeout 30m '
+                    + profile_command
                     + " "
                     + exec_path
                     + " "
                     + str(args)
+                    + " ;\n"
+                    + extract_command
                     + " | tee "
                     + os.path.join(this_run_dir, logfile + ".nsight")
                 )
@@ -288,15 +305,32 @@ for bench in benchmarks:
                     + this_run_dir
                 )
             elif options.nsight_profiler:
+                profile_command = (
+                    "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv "
+                    + kernel_number
+                    + " -o "
+                    + os.path.join(this_run_dir, "ncu_cycles.{0}".format(i))
+                )
+                ncu_report_file = os.path.join(this_run_dir, "ncu_cycles.{0}.ncu-rep".format(i))
+                # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
+
+                extract_command = (
+                    "ncu --import " + ncu_report_file +
+                    " --csv  " 
+                )
                 sh_contents += (
                     '\nexport CUDA_VERSION="'
                     + cuda_version
                     + '"; export CUDA_VISIBLE_DEVICES="'
                     + options.device_num
-                    + '" ; timeout 5m ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv '
+                    + '" ;\ntimeout 5m '
+                    + profile_command
+                    + " "
                     + exec_path
                     + " "
                     + str(args)
+                    + ";\n"
+                    +extract_command
                     + " | tee "
                     + os.path.join(
                         this_run_dir, logfile + ".gpc__cycles_elapsed.{0}".format(i)

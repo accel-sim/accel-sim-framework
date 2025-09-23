@@ -377,8 +377,9 @@ class ConfigurationSpec:
             )
         open(os.path.join(this_run_dir, job_template), "w").write(torque_text)
         exec_line = torque_text.splitlines()[-1]
-        justrunfile = os.path.join(this_run_dir, "justrun.sh")
-        open(justrunfile, "w").write(exec_name + " " + txt_args + "\n")
+        justrunfile = os.path.join(this_run_dir , "justrun.sh")
+        # open(justrunfile, 'w').write(exec_name + " " + txt_args + "\n")
+        open(justrunfile, 'w').write(exec_name + " " + txt_args + " | tee gpgpu-sim-out_`date '+%b_%d_%H:%M.%S'`.txt")
         os.chmod(justrunfile, 0o744)
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file

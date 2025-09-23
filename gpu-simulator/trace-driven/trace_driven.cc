@@ -275,8 +275,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // Add for LDGSTS instruction
       if (m_opcode == OP_LDGSTS) m_is_ldgsts = true;
       // check the cache scope, if its strong GPU, then bypass L1
-      if (trace.check_opcode_contain(opcode_tokens, "STRONG") &&
-          trace.check_opcode_contain(opcode_tokens, "GPU")) {
+      if ((trace.check_opcode_contain(opcode_tokens, "STRONG") &&
+           trace.check_opcode_contain(opcode_tokens, "GPU")) ||
+          trace.check_opcode_contain(opcode_tokens, "BYPASS")) {
         cache_op = CACHE_GLOBAL;
       }
       break;
@@ -534,6 +535,7 @@ void trace_shader_core_ctx::get_pdom_stack_top_info(unsigned warp_id,
                                                     unsigned *pc,
                                                     unsigned *rpc) {
   // In trace-driven mode, we assume no control hazard
+  assert(pI != NULL && "Unexpexted behaviour , inst should not be null");
   *pc = pI->pc;
   *rpc = pI->pc;
 }
@@ -582,7 +584,20 @@ const warp_inst_t *trace_shader_core_ctx::get_next_inst(unsigned warp_id,
   // read the inst from the traces
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[warp_id]);
-  return m_trace_warp->get_next_trace_inst();
+  const trace_warp_inst_t *ret = m_trace_warp->get_next_trace_inst();
+  if (m_trace_warp->trace_done()) {
+    if (!m_warp[warp_id]->inst_in_pipeline() &&
+        m_warp[warp_id]->stores_done() &&
+        !m_scoreboard->pendingWrites(warp_id)) {
+      for (unsigned t = 0; t < m_warp_size; t++) {
+        if (m_warp[warp_id]->test_active(t)) {
+          m_warp[warp_id]->set_completed(t);
+        }
+      }
+      m_barriers.warp_exit(warp_id);
+    }
+  }
+  return ret;
 }
 
 void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
@@ -624,10 +639,6 @@ void trace_shader_core_ctx::checkExecutionStatusAndUpdate(warp_inst_t &inst,
         inst.data_size, (new_addr_type *)localaddrs);
     inst.set_addr(t, (new_addr_type *)localaddrs, num_addrs);
   }
-
-  if (inst.op == EXIT_OPS) {
-    m_warp[inst.warp_id()]->set_completed(t);
-  }
 }
 
 void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
@@ -640,17 +651,9 @@ void trace_shader_core_ctx::func_exec_inst(warp_inst_t &inst) {
       checkExecutionStatusAndUpdate(inst, t, tid);
     }
   }
-
   // here, we generate memory acessess and set the status if thread (done?)
   if (inst.is_load() || inst.is_store()) {
     inst.generate_mem_accesses();
-  }
-
-  trace_shd_warp_t *m_trace_warp =
-      static_cast<trace_shd_warp_t *>(m_warp[inst.warp_id()]);
-  if (m_trace_warp->trace_done() && m_trace_warp->functional_done()) {
-    m_trace_warp->ibuffer_flush();
-    m_barriers.warp_exit(inst.warp_id());
   }
 }
 

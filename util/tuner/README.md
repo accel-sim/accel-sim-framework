@@ -17,21 +17,26 @@ cache hashing function), we do an extensive searching by simulating each possibl
 # Tuning Steps:
 The following steps demonstrate how to tune the Accel-Sim config files to a specific GPU hardware. We assume that you already have the GPU hardware in question.
 
+
+0. **Get Microbenchmarks**
+  ```bash
+    ./get_ubench.sh
+  ```
 1. **Provide HW def file and run microbenchmarks**:
-You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). These information can be gathered from Nvidia whitepaper and public website.
-After you write the HW file for the underline card, ensure to add it in [/GPU_Microbenchmark/hw_def/hw_def.h](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/hw_def.h).
+You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](gpu-app-collection-partial/src/cuda/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). These information can be gathered from Nvidia whitepaper and public website.
+After you write the HW file for the underline card, ensure to add it in [/GPU_Microbenchmark/hw_def/hw_def.h](gpu-app-collection-partial/src/cuda/GPU_Microbenchmark/hw_def/hw_def.h).
 Then, compile microbenchmarks and run:
 
   ```bash
   # Make sure PATH includes nvcc
-  # If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
+  # If your hardware has new compute capability, ensure to add it in the ./gpu-app-collection-partial/src/cuda/GPU_Microbenchmark//common/common.mk
   # compile microbenchmarks
-  make -C ./GPU_Microbenchmark/
+  make -C ./gpu-app-collection-partial/src/cuda/GPU_Microbenchmark/
   # set the device id that you want to tune to
   # if you do not know the device id, run ./GPU_Microbenchmark/bin/list_devices
   export CUDA_VISIBLE_DEVICES=0
   #run the ubench and save output in stats.txt
-  ./GPU_Microbenchmark/run_all.sh | tee stats.txt
+  ./run_all.sh | tee stats.txt
   ```
 2. **Run the tuner**:
 The tuner.py script will parse the microbenchmarks output and generate a folder of the HW device name (e.g. "TITAN_V"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end (gpgpusim.config and trace.config files)
