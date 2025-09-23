@@ -54,17 +54,18 @@ parser.add_option(
     help="Once the kernel limit is reached, terminate the tracing process",
 )
 parser.add_option(
-    "--fast_forward_spinlock",
-    dest="fast_forward_spinlock",
-    action="store_true",
-    help="Fast forward spinlock instructions",
+    "--spinlock_handling",
+    dest="spinlock_handling",
+    choices=["none", "fast_forward"],
+    default="none",
+    help="How to handle spinlock instructions",
 )
 parser.add_option(
-    "--spinlock_iterations",
-    dest="spinlock_iterations",
+    "--spinlock_fast_forward_iterations",
+    dest="spinlock_fast_forward_iterations",
     type=int,
     default=1,
-    help="Number of iterations to keep for spinlock fast forwarding",
+    help="Number of iterations to keep for spinlock fast forwarding. Only used if spinlock_handling is fast_forward",
 )
 
 (options, args) = parser.parse_args()
@@ -164,7 +165,7 @@ for bench in benchmarks:
             + "\nrm -f traces/*"
             + "\nexport TRACES_FOLDER="
             + this_run_dir
-            + f"; SPINLOCK_ITER_TO_KEEP={options.spinlock_iterations} CUDA_INJECTION64_PATH="
+            + f"; ENABLE_SPINLOCK_FAST_FORWARD={1 if options.spinlock_handling == 'fast_forward' else 0} SPINLOCK_ITER_TO_KEEP={options.spinlock_fast_forward_iterations} CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_tracer_path, "tracer_tool.so")
             + " "
             + exec_path
@@ -218,7 +219,7 @@ for bench in benchmarks:
             print("Running {0}".format(exe))
 
             # Call the spinlock detection script
-            if options.fast_forward_spinlock:
+            if options.spinlock_handling == 'fast_forward':
                 if subprocess.call(["bash", "run_spinlock_detection.sh"]) != 0:
                     sys.exit(f"Error invoking spinlock detection on {this_run_dir}")
 
