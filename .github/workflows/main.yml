@@ -244,6 +244,9 @@ jobs:
   Tracer-Tool:
     needs: [check-format]
     runs-on: tgrogers-gpu01
+    strategy:
+      matrix:
+        spinlock_handling: ["none", "fast_forward"]
     defaults:
       run:
         shell: bash
@@ -291,7 +294,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D 7
+          ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D 7 --spinlock_handling ${{ matrix.spinlock_handling }}
       - name: generate-rodinia_2.0-ft-hw_stats
         run: |
           source ./env-setup/12.8_env_setup.sh
