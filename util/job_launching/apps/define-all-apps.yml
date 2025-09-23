@@ -126,6 +126,14 @@ GPU_Atomic:
             - args: 16
               accel-sim-mem: 1G
 
+Spinlock:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - spinlock_simple:
+            - args: 
+              accel-sim-mem: 1G
+
 Atomic_Profile:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
