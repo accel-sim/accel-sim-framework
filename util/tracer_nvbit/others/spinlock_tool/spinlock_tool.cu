@@ -702,13 +702,13 @@ void spinlock_check() {
     std::string spinlock_run0_folder = spinlock_run_dir + "spinlock_detection/spinlock_run_0_merged";
     std::string spinlock_run1_folder = spinlock_run_dir + "spinlock_detection/spinlock_run_1_merged";
 
-    // Get the list of histogram files in each spinlock run folder and serialize
-    std::vector<KernelInstructionHistogram*> spinlock_run0_histograms;
-    std::vector<KernelInstructionHistogram*> spinlock_run1_histograms;
+    // Get the map from kernel name to histogram
+    std::map<std::string, KernelInstructionHistogram*> spinlock_run0_histograms;
+    std::map<std::string, KernelInstructionHistogram*> spinlock_run1_histograms;
 
     // Load the histogram files
     DPRINTF("Spinlock: Loading histograms from %s and %s\n", spinlock_run0_folder.c_str(), spinlock_run1_folder.c_str());
-    std::map<std::string, std::vector<KernelInstructionHistogram*>*> zipped_folders = {{spinlock_run0_folder, &spinlock_run0_histograms}, {spinlock_run1_folder, &spinlock_run1_histograms}};
+    std::map<std::string, std::map<std::string, KernelInstructionHistogram*>*> zipped_folders = {{spinlock_run0_folder, &spinlock_run0_histograms}, {spinlock_run1_folder, &spinlock_run1_histograms}};
     for (const auto& iter : zipped_folders) {
         auto spinlock_run_folder = iter.first;
         auto histograms = iter.second;
@@ -719,7 +719,7 @@ void spinlock_check() {
                 DPRINTF("Spinlock: Loading histogram from %s\n", entry.path().string().c_str());
                 KernelInstructionHistogram *histogram = new KernelInstructionHistogram();
                 histogram->loadFromFile(entry.path().string());
-                histograms->push_back(histogram);
+                histograms->insert({histogram->name, histogram});
             }
         }
     }
@@ -733,12 +733,12 @@ void spinlock_check() {
     std::string output_file = spinlock_run_dir + "spinlock_detection/spinlock_instructions.txt";
     std::ofstream output_file_stream(output_file);
     DPRINTF("Spinlock: Generating output file %s\n", output_file.c_str());
-    for (auto run0_histogram : spinlock_run0_histograms) {
-        DPRINTF("Spinlock: Comparing histogram %d %s\n", run0_histogram->id, run0_histogram->name.c_str());
-        auto run1_histogram = spinlock_run1_histograms.at(run0_histogram->id);
+    for (auto [kernel_name, run0_histogram] : spinlock_run0_histograms) {
+        DPRINTF("Spinlock: Comparing histogram %d %s\n", run0_histogram->id, kernel_name.c_str());
+        auto run1_histogram = spinlock_run1_histograms.at(kernel_name);
         auto spinlock_instructions = run0_histogram->findSpinlock(*run1_histogram);
         DPRINTF("Spinlock: Found %d spinlock instructions\n", spinlock_instructions.size());
-        output_file_stream << run0_histogram->id << ", " << run0_histogram->name << ": ";
+        output_file_stream << run0_histogram->id << ", " << kernel_name << ": ";
         for (auto [instr_idx, counts] : spinlock_instructions) {
             // Write to output file
             output_file_stream << instr_idx << " ";
