@@ -748,10 +748,10 @@ void spinlock_check() {
     output_file_stream.close();
     DPRINTF("Spinlock: Generated output file %s\n", output_file.c_str());
     // Free the histograms
-    for (auto histogram : spinlock_run0_histograms) {
+    for (auto [kernel_name, histogram] : spinlock_run0_histograms) {
         delete histogram;
     }
-    for (auto histogram : spinlock_run1_histograms) {
+    for (auto [kernel_name, histogram] : spinlock_run1_histograms) {
         delete histogram;
     }
     return;
