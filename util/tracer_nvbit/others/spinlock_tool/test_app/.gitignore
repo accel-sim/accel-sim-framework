@@ -1,5 +1,0 @@
-spinlock
-*.sass
-traces/
-spinlock_run_*/
-ctx_*/
