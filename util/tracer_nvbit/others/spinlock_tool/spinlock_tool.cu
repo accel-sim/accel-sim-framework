@@ -162,6 +162,11 @@ void nvbit_at_init() {
     pthread_mutex_init(&mutex, &attr);
 
     pthread_mutex_init(&cuda_event_mutex, &attr);
+
+    // Add trailing slash if not empty
+    if (!spinlock_run_dir.empty()) {
+        spinlock_run_dir += "/";
+    }
 }
 
 /**
