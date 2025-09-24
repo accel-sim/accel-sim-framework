@@ -135,6 +135,7 @@ int spinlock_phase = 0;
 // each kernel that are nondeterministic.
 const int SPINLOCK_PHASE_CHECK = 1;
 std::string spinlock_run_dir = "./";
+int spinlock_keep_intermediate_files = 0;
 void spinlock_check();
 
 void* recv_thread_fun(void* args);
@@ -150,6 +151,7 @@ void nvbit_at_init() {
     GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
     GET_VAR_INT(spinlock_phase, "SPINLOCK_PHASE", 0, "Spinlock phase");
     GET_VAR_STR(spinlock_run_dir, "TRACES_FOLDER", "Spinlock detection base directory, use the same as the traces folder");
+    GET_VAR_INT(spinlock_keep_intermediate_files, "SPINLOCK_KEEP_INTERMEDIATE_FILES", 0, "Keep intermediate files");
     std::string pad(100, '-');
     printf("%s\n", pad.c_str());
 
@@ -308,7 +310,7 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 __global__ void flush_channel(ChannelDev* ch_dev) {
     instr_count_t packet;
     // Sentinel value to indicate the end of the histogram
-    packet.instr_idx = -1;
+    packet.instr_idx = UINT32_MAX;
     packet.count = 0;
     ch_dev->push(&packet, sizeof(instr_count_t));
     ch_dev->flush(); 
@@ -434,13 +436,15 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
     std::string folder_name = spinlock_run_dir + "spinlock_detection/ctx_" + std::to_string(ctx_state->id) + "/spinlock_run_" + std::to_string(spinlock_phase);
 
     std::error_code error_code;
-    bool success = std::filesystem::create_directories(folder_name, error_code);
+    std::filesystem::create_directories(folder_name, error_code);
     if (error_code) {
         printf("Spinlock: Failed to create folder %s: %s\n", folder_name.c_str(), error_code.message().c_str());
         assert(false);
     }
 
-    ctx_state->instr_histogram->saveToFile( folder_name + "/" + std::to_string(ctx_state->instr_histogram->id) + "-" + ctx_state->instr_histogram->name + ".histogram");
+    // Save the histogram to file in form of kernel-<kernel_id>.histogram
+    bool success = ctx_state->instr_histogram->saveToFile( folder_name + "/" + "kernel-" + std::to_string(ctx_state->instr_histogram->id) + ".histogram");
+    assert(success);
 }
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
@@ -614,7 +618,7 @@ void* recv_thread_fun(void* args) {
                     (instr_count_t*)&recv_buffer[num_processed_bytes];
                 
                 // Sentinel value to indicate the end of the histogram
-                if (packet->instr_idx == -1) {
+                if (packet->instr_idx == UINT32_MAX) {
                     ctx_state->kernel_receiving_done = true;
                     break;
                 }
@@ -753,6 +757,18 @@ void spinlock_check() {
     }
     for (auto [kernel_name, histogram] : spinlock_run1_histograms) {
         delete histogram;
+    }
+
+    // Clean up intermediate files
+    if (!spinlock_keep_intermediate_files) {
+        // Remove the ctx_<ctx_id> and spinlock_run_<phase>_merged folders
+        for (auto& folder : std::filesystem::directory_iterator(spinlock_run_dir + "spinlock_detection")) {
+            if (folder.path().filename().string().find("ctx_") != std::string::npos) {
+                std::filesystem::remove_all(folder.path());
+            } else if (folder.path().filename().string().find("spinlock_run_") != std::string::npos) {
+                std::filesystem::remove_all(folder.path());
+            }
+        }
     }
     return;
 }
