@@ -10,6 +10,7 @@
   - [Accel-Sim Components](#accel-sim-components)
     - [Accel-Sim Tracer](#accel-sim-tracer)
       - [A simple example](#a-simple-example)
+      - [Spinlock handling](#spinlock-handling)
       - [Pre-traced applications](#pre-traced-applications)
     - [Accel-Sim SASS Frontend and Simulation Engine](#accel-sim-sass-frontend-and-simulation-engine)
     - [Accel-Sim Correlator](#accel-sim-correlator)
@@ -112,6 +113,18 @@ That's it. The traces for the short-running rodinia tests will be generated in:
 ```
 
 To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).
+
+#### Spinlock handling
+
+If your application contains spinlock instructions, you can handle them with the tracer by using the following command:
+
+```bash
+./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on> --spinlock_handling fast_forward
+```
+
+This will fast forward the spinlock instructions and keep the spinlock instructions for the number of iterations specified in the `--spinlock_fast_forward_iterations` arg option.
+
+The tool for spinlock detection is in `./util/tracer_nvbit/others/spinlock_tool/`.
 
 #### Pre-traced applications
 For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:

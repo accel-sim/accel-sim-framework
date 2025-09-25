@@ -223,5 +223,5 @@ public:
     std::string name;
     std::map<uint32_t, uint32_t> histogram;
     // A large 30-bit prime number for hashing to avoid overflow
-    uint32_t hash_prime = 1073741789;
+    static constexpr uint32_t hash_prime = 1073741789;
 };
