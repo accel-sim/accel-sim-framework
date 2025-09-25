@@ -205,11 +205,13 @@ void nvbit_at_term() {
 
     // Now, we merge all the histograms for each kernel name
     std::vector<KernelInstructionHistogram*> merged_histograms;
+    size_t id = 0;
     for (auto& [kernel_name, histograms] : map) {
         KernelInstructionHistogram* merged_histogram = new KernelInstructionHistogram();
         // Set the name to the kernel name
         merged_histogram->name = kernel_name;
-        merged_histogram->id = 0;
+        merged_histogram->id = id;
+        id++;
         for (auto& histogram : histograms) {
             // Use hash to merge the histograms to avoid overflow
             merged_histogram->merge(*histogram, true);
@@ -227,7 +229,7 @@ void nvbit_at_term() {
     }
 
     for (auto& histogram : merged_histograms) {
-        histogram->saveToFile(merged_run_dir + "/" + histogram->name + ".histogram");
+        histogram->saveToFile(merged_run_dir + "/kernel-" + std::to_string(histogram->id) + ".histogram");
     }
 
     // Clean up
