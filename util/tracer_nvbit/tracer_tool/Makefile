@@ -43,16 +43,18 @@ current_dir := $(notdir $(patsubst %/,%,$(dir $(mkfile_path))))
 
 NVBIT_TOOL=$(current_dir).so
 
-all: $(NVBIT_TOOL)
+all: $(NVBIT_TOOL) traceDsm
 
 $(NVBIT_TOOL): $(OBJECTS) $(NVBIT_PATH)/libnvbit.a
 	$(NVCC) -arch=$(ARCH) -O3 $(OBJECTS) $(LIBS) $(NVCC_PATH) -lcuda -lcudart_static -shared -o $@
 
 %.o: %.cu common.h
-	$(NVCC) -dc -c -std=c++11 $(INCLUDES) -Xptxas -cloning=no -Xcompiler -Wall -arch=$(ARCH) -O3 -Xcompiler -fPIC $< -o $@
+	$(NVCC) -dc -c -std=c++11 $(INCLUDES) -Xptxas -cloning=no -Xcompiler -Wall -Xcompiler -Wno-unused-result -arch=$(ARCH) -O3 -Xcompiler -fPIC $< -o $@
 
 inject_funcs.o: inject_funcs.cu common.h
-	$(NVCC) $(INCLUDES) $(MAXRREGCOUNT_FLAG) -Xptxas -astoolspatch --keep-device-functions -arch=$(ARCH) -Xcompiler -Wall -Xcompiler -fPIC -c $< -o $@
+	$(NVCC) $(INCLUDES) $(MAXRREGCOUNT_FLAG) -Xptxas -astoolspatch --keep-device-functions -arch=$(ARCH) -Xcompiler -Wall -Xcompiler -Wno-unused-result -Xcompiler -fPIC -c $< -o $@
 
+traceDsm: traceDsm.cpp common.h
+	$(CXX) -std=c++17 -O3 -g -Wno-unused-result -o $@ $^
 clean:
 	rm -f *.so *.o
