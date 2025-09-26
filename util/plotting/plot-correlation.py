@@ -158,7 +158,7 @@ def make_pretty_app_list(apps_included):
     return ret_str, kernel_str
 
 
-def make_submission_quality_image(image_type, traces, hw_cfg):
+def make_submission_quality_image(image_type, traces, hw_cfg, figs=None):
     kernel_data = []
     app_data = []
     app_min = 999999999999999999999999999999999.9
@@ -436,18 +436,27 @@ def make_submission_quality_image(image_type, traces, hw_cfg):
             png_name, height=512.0 * 1.05, width=512
         )
 
-    # This generates the html
+    # Create the figures
+    kernel_fig = Figure(data=kernel_data, layout=png_layout)
+    app_fig = Figure(data=app_data, layout=app_layout)
+    
+    # Always generate individual HTML files
     plotly.offline.plot(
-        Figure(data=kernel_data, layout=png_layout),
+        kernel_fig,
         filename=plotname + ".per-kernel.html",
         auto_open=False,
     )
 
     plotly.offline.plot(
-        Figure(data=app_data, layout=app_layout),
+        app_fig,
         filename=plotname + ".per-app.html",
         auto_open=False,
     )
+    
+    if figs is not None:
+        # Store figures for combining later
+        figs["kernel"][f"{plotname}_kernel"] = kernel_fig
+        figs["app"][f"{plotname}_app"] = app_fig
 
 
 def make_anno1(text, fontsize, x, y):
@@ -1247,6 +1256,28 @@ for cfg, sim_for_cfg in sim_data.items():
 
 
 correl_outdir = os.path.join(this_directory, "correl-html")
+
+# Collect all figures (separate kernel and app figures)
+figs = {"kernel": {}, "app": {}}
 for (plotfile, hw_cfg), traces in fig_data.items():
-    make_submission_quality_image(options.image_type, traces, hw_cfg)
-print("Output Available at: file://{0}".format(correl_outdir))
+    make_submission_quality_image(options.image_type, traces, hw_cfg, figs=figs)
+
+# Write combined HTML files
+# Combined per-kernel plots
+kernel_out_path = os.path.join(correl_outdir, "combined_per_kernel.html")
+with open(kernel_out_path, 'w') as f:
+    f.write('')
+with open(kernel_out_path, 'a') as f:
+    for fig in figs["kernel"].values():
+        f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+# Combined per-app plots
+app_out_path = os.path.join(correl_outdir, "combined_per_app.html")
+with open(app_out_path, 'w') as f:
+    f.write('')
+with open(app_out_path, 'a') as f:
+    for fig in figs["app"].values():
+        f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
+
+print("Combined per-kernel output available at: file://{0}".format(kernel_out_path))
+print("Combined per-app output available at: file://{0}".format(app_out_path))
