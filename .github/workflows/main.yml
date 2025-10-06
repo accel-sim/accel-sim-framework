@@ -303,7 +303,16 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
           ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
-      - name: generate-rodinia_2.0-ft-traces-spinlock_handling
+      - name: spinlock-build
+        # Spinlock app is part of the microbenchmark suite
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          rm -rf ./gpu-app-collection/
+          git clone --quiet git@github.com:accel-sim/gpu-app-collection.git
+          source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
+          ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
+          make -C ./gpu-app-collection/src GPU_Microbenchmark
+      - name: generate-spinlock-traces-spinlock_handling
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
@@ -317,12 +326,12 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_fast_forward/traces/device-7/ -N rodinia_2.0-ft-$$-fast_forward
-          ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$-fast_forward
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N rodinia_2.0-ft-$$-none
-          ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$-none
-          ./util/job_launching/get_stats.py -N rodinia_2.0-ft-$$-fast_forward | tee stats-fast_forward.csv
-          ./util/job_launching/get_stats.py -N rodinia_2.0-ft-$$-none | tee stats-none.csv
+          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
+          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
+          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
+          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
+          ./util/job_launching/get_stats.py -N spinlock-microbenchmark-$$-fast_forward | tee stats-fast_forward.csv
+          ./util/job_launching/get_stats.py -N spinlock-microbenchmark-$$-none | tee stats-none.csv
           # Extract the simulated instruction count only
           awk '/gpu_tot_sim_insn/,/^----/{if(/^----/)exit; print}' stats-fast_forward.csv > stats-fast_forward.csv 
           awk '/gpu_tot_sim_insn/,/^----/{if(/^----/)exit; print}' stats-none.csv > stats-none.csv 
