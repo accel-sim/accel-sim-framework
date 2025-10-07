@@ -1076,6 +1076,7 @@ tma:
             - args: -w 1024 -h 1024 -o UTMALDG
             - args: -w 1024 -h 1024 -o UTMASTG
             - args: -w 1024 -h 1024 -o UTMAREDG
+            - args: -w 1024 -h 1024 -o REGULAR_LOAD
               accel-sim-mem: 10G
         - tma_bulk_test:
             - args: -n 1024 -o UBLKPF
