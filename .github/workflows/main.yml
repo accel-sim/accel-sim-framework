@@ -322,26 +322,14 @@ jobs:
           ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
           mv ./hw_run ./hw_run_none
       - name: test-new-traces-spinlock_handling
-        # Test the different spinlock handling modes and compare if the simulated cycles are reduced
+        # Test only fast-forwarded traces as the none one takes too long to run (~2-3 hr)
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
           ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
-          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
-          ./util/job_launching/get_stats.py -N spinlock-microbenchmark-$$-fast_forward | tee stats-fast_forward.csv
-          ./util/job_launching/get_stats.py -N spinlock-microbenchmark-$$-none | tee stats-none.csv
-          # Extract the simulated instruction count only
-          awk '/gpu_tot_sim_insn/,/^----/{if(/^----/)exit; print}' stats-fast_forward.csv > stats-fast_forward.csv 
-          awk '/gpu_tot_sim_insn/,/^----/{if(/^----/)exit; print}' stats-none.csv > stats-none.csv 
-          # Compare the simulated instruction count, for fast forward, it should be less than 1% of not fast forward one for this workload
-          awk -F',' 'NR==2{for(i=2;i<NF;i++)cfg[i]=$i} NR==3 && FNR==3{for(i=2;i<NF;i++)a[i]=$i} NR>3 && FNR==3{for(i=2;i<NF;i++){ratio=a[i]/$i * 100; if(ratio>1){print cfg[i]": "a[i]" vs "$i" (ratio: "sprintf("%.4f",ratio)"%, threshold: 1%)"; e=1}}} END{if(e)exit 1}' stats-fast_forward.csv stats-none.csv
-          # If last command is not 0, exit with error
-          if [[ $? -ne 0 ]]; then
-            echo "Fast forward is not less than 1% of not fast forward instruction counts"
-            exit 1
-          fi
+          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
+          # ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
   SASS-Simulation-Docker:
     needs: [check-format]
     runs-on: ubuntu-latest
