@@ -308,7 +308,7 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-app-collection/
-          git clone --quiet git@github.com:accel-sim/gpu-app-collection.git
+          git clone --quiet --recursive git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
           make -C ./gpu-app-collection/src GPU_Microbenchmark
