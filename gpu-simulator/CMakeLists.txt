@@ -19,13 +19,15 @@ else()
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
+# Override default CMake Release flags to keep assertions enabled
+set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g3 -fPIC -Wall")
+
 # check envrionment variable string compare
 if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
     add_compile_definitions(DEBUG=1)
     add_compile_options(-Wall -O0 -g3 -fPIC)
 else()
     add_compile_definitions(DEBUG=0)
-    add_compile_options(-Wall -O3 -g3 -fPIC)
 endif()
 
 # run command
