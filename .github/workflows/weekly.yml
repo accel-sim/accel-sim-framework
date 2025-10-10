@@ -34,7 +34,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           export PATH=/home/tgrogers-raid/a/common/python2:$PATH
           rm -rf ./gpu-app-collection/
-          git clone git@github.com:accel-sim/gpu-app-collection.git
+          git clone --recursive git@github.com:accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
           make -j8 -C ./gpu-app-collection/src rodinia-3.1
@@ -53,6 +53,24 @@ jobs:
           ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
           ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark -D 7
           # ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
+      - name: generate-spinlock-traces-spinlock_handling
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          source ./gpu-app-collection/src/setup_environment
+          rm -rf ./hw_run/
+          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
+          mv ./hw_run ./hw_run_fast_forward
+          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
+          mv ./hw_run ./hw_run_none
+      - name: test-new-traces-spinlock_handling
+        # Test only fast-forwarded traces as the none one takes too long to run (~2-3 hr)
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          source ./gpu-simulator/setup_environment.sh
+          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
+          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
+          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
+          # ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
   SASS-Weekly:
     needs: [Tracer-Weekly]
     if: github.repository == 'accel-sim/accel-sim-framework'

@@ -303,33 +303,6 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
           ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
-      - name: spinlock-build
-        # Spinlock app is part of the microbenchmark suite
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          rm -rf ./gpu-app-collection/
-          git clone --quiet --recursive git@github.com:accel-sim/gpu-app-collection.git
-          source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
-          ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
-          make -C ./gpu-app-collection/src GPU_Microbenchmark
-      - name: generate-spinlock-traces-spinlock_handling
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-app-collection/src/setup_environment
-          rm -rf ./hw_run/
-          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
-          mv ./hw_run ./hw_run_fast_forward
-          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
-          mv ./hw_run ./hw_run_none
-      - name: test-new-traces-spinlock_handling
-        # Test only fast-forwarded traces as the none one takes too long to run (~2-3 hr)
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-simulator/setup_environment.sh
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
-          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
-          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T ./hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
-          # ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
   SASS-Simulation-Docker:
     needs: [check-format]
     runs-on: ubuntu-latest
