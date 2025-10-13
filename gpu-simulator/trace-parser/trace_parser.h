@@ -1,13 +1,15 @@
 // developed by Mahmoud Khairy, Purdue Univ
 
+#ifndef TRACE_PARSER_H
+#define TRACE_PARSER_H
 #include <assert.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string>
 #include <vector>
-#ifndef TRACE_PARSER_H
-#define TRACE_PARSER_H
+#include <bitset>
+#include <array>
 
 #define WARP_SIZE 32
 #define MAX_DST 1
@@ -60,6 +62,8 @@ struct tma_inst_memaddr_info_t {
                              const std::bitset<WARP_SIZE> &mask);
 };
 
+typedef std::array<uint32_t, WARP_SIZE> reg_val_t;
+
 struct inst_trace_t {
   inst_trace_t();
   inst_trace_t(const inst_trace_t &b);
@@ -69,11 +73,12 @@ struct inst_trace_t {
   unsigned mask;
   unsigned reg_dsts_num;
   unsigned reg_dest[MAX_DST];
+  std::vector<reg_val_t> reg_dest_vals;
   std::string opcode;
   unsigned reg_srcs_num;
   unsigned reg_src[MAX_SRC];
+  std::vector<reg_val_t> reg_src_vals;
   uint64_t imm;
-
   inst_memadd_info_t *memadd_info = nullptr;
   tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
 

@@ -278,11 +278,39 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     // check Val or NoVal
     std::string val_or_no_val;
     ss >> val_or_no_val;
-    if (val_or_no_val == "Val") {
-      // if Val, look for dest reg values and src reg values
-      // dump the rest to a string
-      std::string rest;
-      std::getline(ss, rest);
+    if(val_or_no_val == "Val") {
+      // Parse the register values
+      auto parse_reg_vals = [&](reg_val_t &reg_val) {
+        uint32_t distinct_values;
+        ss >> std::dec >> distinct_values;
+        if (distinct_values == 1) {
+          // All the values are the same
+          uint32_t value;
+          ss >> std::hex >> value;
+          for (int j = 0; j < WARP_SIZE; j++) {
+            reg_val[j] = value;
+          }
+        } else if (distinct_values == WARP_SIZE) {
+          // Different values
+          for (int j = 0; j < WARP_SIZE; j++) {
+            ss >> std::hex >> reg_val[j];
+          }
+        } else {
+          // Invalid number of distinct values
+          assert(0 && "Invalid number of distinct values");
+        }
+      };
+      // Resize the register values
+      reg_dest_vals.resize(reg_dsts_num);
+      reg_src_vals.resize(reg_srcs_num);
+      // Parse the destination register values
+      for (unsigned i = 0; i < reg_dsts_num; i++) {
+        parse_reg_vals(reg_dest_vals[i]);
+      }
+      // Parse the source register values
+      for (unsigned i = 0; i < reg_srcs_num; i++) {
+        parse_reg_vals(reg_src_vals[i]);
+      }
     }
   }
 
