@@ -522,12 +522,19 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             nvbit_add_call_arg_reg_val(instr, reg_num);
           }
         };
-        add_reg_val(dst_oprd);
+        if (dst_oprd >= 0) {
+          add_reg_val(dst_oprd);
+        } else {
+          add_reg_val(0);
+        }
         for (int i = 0; i < srcNum; i++) {
           add_reg_val(src_oprd[i]);
         }
         for (int i = srcNum; i < MAX_SRC; i++) {
-          nvbit_add_call_arg_reg_val(instr, -1);
+          // Let tool read in dummy values
+          // this will get ignored anyway when
+          // we are printing to files by checking src_oprd's reg number
+          add_reg_val(0);
         }
         mem_oper_idx--;
       } while (mem_oper_idx >= 0);
