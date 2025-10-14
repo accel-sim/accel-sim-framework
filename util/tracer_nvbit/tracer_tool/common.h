@@ -10,6 +10,8 @@ static __managed__ bool stop_report = false;
 /* information collected in the instrumentation function and passed
  * on the channel from the GPU to the CPU */
 #define MAX_SRC 5
+// Unified registers are offset by 256 from the regular registers
+#define UREG_OFFSET 256
 
 typedef enum MyEnum {
   INST_REGULAR,

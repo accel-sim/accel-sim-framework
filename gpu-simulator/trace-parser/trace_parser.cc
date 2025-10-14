@@ -171,9 +171,18 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> std::dec >> reg_dsts_num;
   assert(reg_dsts_num <= MAX_DST);
+  auto parse_reg_num = [&](reg_t &reg) {
+    std::string reg_str;
+    ss >> reg_str;
+    // Parse the register type and number
+    if (reg_str.find("R") != std::string::npos) reg.type = REG;
+    else if (reg_str.find("UR") != std::string::npos) reg.type = UREG;
+    else if (reg_str.find("P") != std::string::npos) reg.type = PRED;
+    else if (reg_str.find("UP") != std::string::npos) reg.type = UPRED;
+    reg.num = std::stoi(reg_str.substr(reg_str.find_first_not_of("RURPUP")));
+  };
   for (unsigned i = 0; i < reg_dsts_num; ++i) {
-    ss >> temp;
-    sscanf(temp.c_str(), "R%d", &reg_dest[i]);
+    parse_reg_num(reg_dest[i]);
   }
 
   ss >> opcode;
@@ -181,8 +190,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   ss >> reg_srcs_num;
   assert(reg_srcs_num <= MAX_SRC);
   for (unsigned i = 0; i < reg_srcs_num; ++i) {
-    ss >> temp;
-    sscanf(temp.c_str(), "R%d", &reg_src[i]);
+    parse_reg_num(reg_src[i]);
   }
 
   // parse mem info

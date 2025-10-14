@@ -63,6 +63,17 @@ struct tma_inst_memaddr_info_t {
 };
 
 typedef std::array<uint32_t, WARP_SIZE> reg_val_t;
+typedef enum {
+  REG = 0,
+  UREG,
+  PRED,
+  UPRED,
+} reg_type_t;
+
+typedef struct {
+  uint32_t num;
+  reg_type_t type;
+} reg_t;
 
 struct inst_trace_t {
   inst_trace_t();
@@ -72,11 +83,11 @@ struct inst_trace_t {
   unsigned m_pc;
   unsigned mask;
   unsigned reg_dsts_num;
-  unsigned reg_dest[MAX_DST];
+  reg_t reg_dest[MAX_DST];
   std::vector<reg_val_t> reg_dest_vals;
   std::string opcode;
   unsigned reg_srcs_num;
-  unsigned reg_src[MAX_SRC];
+  reg_t reg_src[MAX_SRC];
   std::vector<reg_val_t> reg_src_vals;
   uint64_t imm;
   inst_memadd_info_t *memadd_info = nullptr;

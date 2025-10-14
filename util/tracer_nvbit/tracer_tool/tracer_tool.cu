@@ -419,6 +419,16 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             src_oprd[srcNum] = instr->getOperand(i)->u.reg.num;
             srcNum++;
           }
+        } else if (op->type == InstrType::OperandType::UREG) {
+          if (i == 0) {
+            // find dst reg
+            dst_oprd = instr->getOperand(0)->u.reg.num + UREG_OFFSET;
+          } else {
+            // find src regs
+            assert(srcNum < MAX_SRC);
+            src_oprd[srcNum] = instr->getOperand(i)->u.reg.num + UREG_OFFSET;
+            srcNum++;
+          }
         }
         // Add immediate value for DEPBAR instruction
         else if (op->type == InstrType::OperandType::IMM_UINT64) {
@@ -504,9 +514,17 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         nvbit_add_call_arg_const_val32(instr, (uint32_t)instr->getIdx());
 
         /* add register values */
-        nvbit_add_call_arg_reg_val(instr, dst_oprd);
+        // If >= 256, it is a uniform register
+        auto add_reg_val = [&](int reg_num) {
+          if (reg_num >= 256) {
+            nvbit_add_call_arg_ureg_val(instr, reg_num - UREG_OFFSET);
+          } else {
+            nvbit_add_call_arg_reg_val(instr, reg_num);
+          }
+        };
+        add_reg_val(dst_oprd);
         for (int i = 0; i < srcNum; i++) {
-          nvbit_add_call_arg_reg_val(instr, src_oprd[i]);
+          add_reg_val(src_oprd[i]);
         }
         for (int i = srcNum; i < MAX_SRC; i++) {
           nvbit_add_call_arg_reg_val(instr, -1);
@@ -1163,9 +1181,18 @@ void *recv_thread_fun(void *args) {
                 trace->vpc); // Print the virtual PC
         fprintf(ctx_resultsFile[ctx], "%08x ",
                 trace->active_mask & trace->predicate_mask);
-        if (trace->inst.regular.GPRDst >= 0) {
+        
+        // Helper function to print the register number
+        auto print_reg = [&](int reg_num) {
+          if (reg_num >= 256) {
+            fprintf(ctx_resultsFile[ctx], "UR%d ", reg_num - UREG_OFFSET);
+          } else {
+            fprintf(ctx_resultsFile[ctx], "R%d ", reg_num);
+          }
+        };
+        if (trace->inst.regular.GPRDst >= 0) { // GPR dst
           fprintf(ctx_resultsFile[ctx], "1 ");
-          fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRDst);
+          print_reg(trace->inst.regular.GPRDst);
         } else
           fprintf(ctx_resultsFile[ctx], "0 ");
 
@@ -1178,10 +1205,9 @@ void *recv_thread_fun(void *args) {
             src_count++;
         fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++) { // GPR srcs.
-          if (trace->inst.regular.GPRSrcs[s] >= 0) {
-            fprintf(ctx_resultsFile[ctx], "R%d ",
-                    trace->inst.regular.GPRSrcs[s]);
+        for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
+          if (trace->inst.regular.GPRSrcs[s] >= 0){
+            print_reg(trace->inst.regular.GPRSrcs[s]);
           }
         }
         // print addresses
