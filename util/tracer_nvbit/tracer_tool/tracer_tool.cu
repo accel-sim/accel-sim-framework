@@ -1119,9 +1119,11 @@ void *recv_thread_fun(void *args) {
         if (allow_reg_val_tracing && 
             ((opcode.find("BAR") != std::string::npos   || 
               opcode.find("HGMMA") != std::string::npos ||
+              opcode.find("SYNCS.ARRIVE") != std::string::npos ||
               opcode.find("SYNCS.EXCH.64") != std::string::npos ||
               opcode.find("SYNCS.PHASECHK.TRANS64.TRYWAIT") != std::string::npos))) {
           // SYNCS: Mbarrier related instructions
+          // SYNCS.ARRIVE: equivalent to mbarrier.arrive, register values are the arrival count or expect tx count
           // SYNCS.EXCH.64: equivalent to mbarrier.init, register values are the mbarrier arrival count
           // SYNCS.PHASECHK.TRANS64.TRYWAIT: equivalent to mbarrier.try_wait, register values are the phase this wait is for
           dump_reg_val = true;
