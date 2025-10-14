@@ -92,6 +92,8 @@ struct inst_trace_t {
   uint64_t imm;
   inst_memadd_info_t *memadd_info = nullptr;
   tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
+  uint32_t tma_mbar_addr = 0;
+  size_t tma_byte_count = 0;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
                          unsigned enable_lineinfo);

@@ -213,6 +213,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   if (is_tma) {
     tma_memadd_info = new tma_inst_memaddr_info_t();
     tma_memadd_info->width = mem_width;
+    ss >> std::hex >> tma_mbar_addr;
+    ss >> std::dec >> tma_byte_count;
     ss >> std::dec >> address_mode;
     int32_t transfer_count = 0;
     if (address_mode == address_format::tma_list_all) {

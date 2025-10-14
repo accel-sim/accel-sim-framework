@@ -320,15 +320,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     if (exec_mask.count() > 1 || exec_mask.count() == 0) {
       assert(0 && "Right now TMA only supports single thread execution");
     }
-    // Prepare a buffer for the addresses
-    new_addr_type *addr_buffer =
-        new new_addr_type[trace.tma_memadd_info->addrs.size()];
-    for (unsigned i = 0; i < trace.tma_memadd_info->addrs.size(); ++i) {
-      addr_buffer[i] = trace.tma_memadd_info->addrs[i];
-    }
-    set_addr(exec_mask._Find_first(), addr_buffer,
-             trace.tma_memadd_info->addrs.size());
-    delete[] addr_buffer;
+    set_tma_access_addrs(trace.tma_memadd_info->addrs);
+    // Set TMA mbar address and byte count
+    set_tma_mbar_addr(trace.tma_mbar_addr);
+    set_tma_byte_count(trace.tma_byte_count);
   } else if (trace.memadd_info != NULL) {
     data_size = trace.memadd_info->width;
     for (unsigned i = 0; i < warp_size(); ++i)

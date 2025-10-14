@@ -1270,6 +1270,15 @@ void *recv_thread_fun(void *args) {
           // Get TMA transfer size, which is the data width
           fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
 
+          // Get TMA mbar address
+          if (info.dst_memspace == InstrType::MemorySpace::DISTRIBUTED_SHARED) {
+            assert(info.dst.shared.is_mbar_valid && "Invalid TMA mbar address");
+            fprintf(ctx_resultsFile[ctx], "0x%08x ", info.dst.shared.mbar_address);
+          } else {
+            fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
+          }
+          fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
+
           // Determine the global address
           TMAElementAddress_t *raw_global_addrs = nullptr;
           uint64_t *global_addrs = nullptr;
