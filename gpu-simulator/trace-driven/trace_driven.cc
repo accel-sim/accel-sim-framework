@@ -225,22 +225,89 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD")) sp_op = INT__OP;
   }
 
+  // Fence instructions
+  if (opcode == "FENCE.VIEW.ASYNC.S") {
+    // TODO microbenchmark for cluster fence
+    set_proxy_fence(true);
+    set_fence_proxy_kind(ASYNC_SHARED_CTA);
+  }
+
+  // Handling SYNCS instructions
+  if (opcode1 == "SYNCS") {
+    syncs_operand operand;
+    // Get mbarrier addresses from the trace address info
+    memcpy(operand.addr, trace.memadd_info->addrs, sizeof(operand.addr));
+    if (opcode == "SYNCS.EXCH.64") { // mbarrier.init
+      set_syncs_op(SYNCS_INIT);
+      // SYNCS.EXCH.64 format:
+      // SYNCS.EXCH.64 URA, [URB], URC
+      // URA is destination register
+      // URB is a memory reference operand in NVBit
+      // URC is the count register, so it is the first source register
+      memcpy(operand.u.init.count, trace.reg_src_vals[0].data(), sizeof(operand.u.init.count));
+    } else if (opcode == "SYNCS.ARRIVE.TRANS64") { // mbarrier.arrive.expect_tx
+      set_syncs_op(SYNCS_ARRIVE_EXPECT_TX);
+      // SYNCS.ARRIVE.TRANS64 format:
+      // SYNCS.ARRIVE.TRANS64 RA, [RB+URC], RD
+      // RA: destination register
+      // RB, URC: memory reference operand in NVBit
+      // RD: expected byte count
+      for (int i = 0; i < WARP_SIZE; i++) {
+        // This instruction increase arrival count by 1
+        operand.u.arrive.count[i] = 1;
+      }
+      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[0].data(), sizeof(operand.u.arrive.txCount));
+    } else if (opcode.find("SYNCS.ARRIVE") != std::string::npos) { // mbarrier.arrive
+      set_syncs_op(SYNCS_ARRIVE);
+      memset(operand.u.arrive.txCount, 0, sizeof(operand.u.arrive.txCount));
+      // Handle other variants
+      if (opcode.find("ART0") != std::string::npos) {
+        // Arrival count is the register value in RD above
+        memcpy(operand.u.arrive.count, trace.reg_src_vals[0].data(), sizeof(operand.u.arrive.count));
+      } else if (opcode.find("A1T0") != std::string::npos) {
+        // Arrival 1, transaction 0
+        for (int i = 0; i < WARP_SIZE; i++) {
+          // This instruction increase arrival count by 1
+          operand.u.arrive.count[i] = 1;
+        }
+      } else {
+        printf("WARNING: Unsupported SYNCS ARRIVE variant: %s, ignoring it\n", opcode.c_str());
+      }
+    } else if (opcode == "SYNCS.PHASECHK.TRANS64") { // mbarrier.test_wait
+      set_syncs_op(SYNCS_TEST_WAIT);
+    } else if (opcode == "SYNCS.PHASECHK.TRANS64.TRYWAIT") { // mbarrier.try_wait
+      set_syncs_op(SYNCS_TRY_WAIT);
+      // SYNCS.PHASECHK.TRANS64.TRYWAIT format:
+      // SYNCS.PHASECHK.TRANS64.TRYWAIT PA, [RB+URC], RD
+      // PA: predicate register
+      // RB, URC: memory reference operand in NVBit, to the mbarrier
+      // RD: prior phase count
+      memcpy(operand.u.wait.phase, trace.reg_src_vals[0].data(), sizeof(operand.u.wait.phase));
+    } else {
+      printf("WARNING: Unsupported SYNCS instruction: %s, ignoring it\n", opcode.c_str());
+    }
+    set_syncs_operand(operand);
+  }
+
   // fill regs information
   num_regs = trace.reg_srcs_num + trace.reg_dsts_num;
   num_operands = num_regs;
   outcount = trace.reg_dsts_num;
+  // For now, we only model regular registers usage
+  auto convert_reg_num = [&](const trace_reg_t &reg) -> uint32_t {
+    if (reg.type == REG) return reg.num + 1;  // Increment by one because GPGPU-sim starts
+                                               // from R1, while SASS starts from R0
+    else return 0;
+  };
   for (unsigned m = 0; m < trace.reg_dsts_num; ++m) {
-    out[m] =
-        trace.reg_dest[m] + 1;  // Increment by one because GPGPU-sim starts
-                                // from R1, while SASS starts from R0
-    arch_reg.dst[m] = trace.reg_dest[m] + 1;
+    out[m] = convert_reg_num(trace.reg_dest[m]);
+    arch_reg.dst[m] = convert_reg_num(trace.reg_dest[m]);
   }
 
   incount = trace.reg_srcs_num;
   for (unsigned m = 0; m < trace.reg_srcs_num; ++m) {
-    in[m] = trace.reg_src[m] + 1;  // Increment by one because GPGPU-sim starts
-                                   // from R1, while SASS starts from R0
-    arch_reg.src[m] = trace.reg_src[m] + 1;
+    in[m] = convert_reg_num(trace.reg_src[m]);
+    arch_reg.src[m] = convert_reg_num(trace.reg_src[m]);
   }
 
   // fill latency and initl

@@ -68,12 +68,12 @@ typedef enum {
   UREG,
   PRED,
   UPRED,
-} reg_type_t;
+} trace_reg_type_t;
 
 typedef struct {
   uint32_t num;
-  reg_type_t type;
-} reg_t;
+  trace_reg_type_t type;
+} trace_reg_t;
 
 struct inst_trace_t {
   inst_trace_t();
@@ -83,11 +83,11 @@ struct inst_trace_t {
   unsigned m_pc;
   unsigned mask;
   unsigned reg_dsts_num;
-  reg_t reg_dest[MAX_DST];
+  trace_reg_t reg_dest[MAX_DST];
   std::vector<reg_val_t> reg_dest_vals;
   std::string opcode;
   unsigned reg_srcs_num;
-  reg_t reg_src[MAX_SRC];
+  trace_reg_t reg_src[MAX_SRC];
   std::vector<reg_val_t> reg_src_vals;
   uint64_t imm;
   inst_memadd_info_t *memadd_info = nullptr;

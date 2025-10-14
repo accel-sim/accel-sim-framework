@@ -171,7 +171,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> std::dec >> reg_dsts_num;
   assert(reg_dsts_num <= MAX_DST);
-  auto parse_reg_num = [&](reg_t &reg) {
+  auto parse_trace_reg_num = [&](trace_reg_t &reg) {
     std::string reg_str;
     ss >> reg_str;
     // Parse the register type and number
@@ -182,7 +182,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     reg.num = std::stoi(reg_str.substr(reg_str.find_first_not_of("RURPUP")));
   };
   for (unsigned i = 0; i < reg_dsts_num; ++i) {
-    parse_reg_num(reg_dest[i]);
+    parse_trace_reg_num(reg_dest[i]);
   }
 
   ss >> opcode;
@@ -190,7 +190,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   ss >> reg_srcs_num;
   assert(reg_srcs_num <= MAX_SRC);
   for (unsigned i = 0; i < reg_srcs_num; ++i) {
-    parse_reg_num(reg_src[i]);
+    parse_trace_reg_num(reg_src[i]);
   }
 
   // parse mem info
@@ -288,7 +288,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     ss >> val_or_no_val;
     if(val_or_no_val == "Val") {
       // Parse the register values
-      auto parse_reg_vals = [&](reg_val_t &reg_val) {
+      auto parse_trace_reg_vals = [&](reg_val_t &reg_val) {
         uint32_t distinct_values;
         ss >> std::dec >> distinct_values;
         if (distinct_values == 1) {
@@ -313,11 +313,11 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       reg_src_vals.resize(reg_srcs_num);
       // Parse the destination register values
       for (unsigned i = 0; i < reg_dsts_num; i++) {
-        parse_reg_vals(reg_dest_vals[i]);
+        parse_trace_reg_vals(reg_dest_vals[i]);
       }
       // Parse the source register values
       for (unsigned i = 0; i < reg_srcs_num; i++) {
-        parse_reg_vals(reg_src_vals[i]);
+        parse_trace_reg_vals(reg_src_vals[i]);
       }
     }
   }

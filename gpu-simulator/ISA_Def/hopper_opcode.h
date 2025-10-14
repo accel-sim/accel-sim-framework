@@ -181,28 +181,25 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
     // TMA Instructions
     // TMA memory instructions
-    // TODO For now, treat bulk copy as LOAD_OP and STORE_OP
-    // TODO For now, treat prefetch as NOP
-    // By default, UBLKCP set to be LOAD_OP, but we will fix it in
-    // parse_from_trace_struct
-    {"UBLKCP", OpcodeChar(OP_UBLKCP, LOAD_OP)},
-    {"UBLKPF", OpcodeChar(OP_UBLKPF, SPECIALIZED_UNIT_4_OP)},
-    {"UBLKRED", OpcodeChar(OP_UBLKRED, STORE_OP)},
+    // By default, UBLKCP set to be LOAD_OP, but we will fix it in parse_from_trace_struct
+    {"UBLKCP", OpcodeChar(OP_UBLKCP, TMA_OP)},
+    {"UBLKPF", OpcodeChar(OP_UBLKPF, TMA_OP)},
+    {"UBLKRED", OpcodeChar(OP_UBLKRED, TMA_OP)},
     // TODO For now, treat tensor copy as LOAD_OP and STORE_OP
     // TODO For now, treat prefetch as NOP
-    {"UTMALDG", OpcodeChar(OP_UTMALDG, LOAD_OP)},
-    {"UTMAPF", OpcodeChar(OP_UTMAPF, SPECIALIZED_UNIT_4_OP)},
-    {"UTMAREDG", OpcodeChar(OP_UTMAREDG, STORE_OP)},
-    {"UTMASTG", OpcodeChar(OP_UTMASTG, STORE_OP)},
+    {"UTMALDG", OpcodeChar(OP_UTMALDG, TMA_OP)},
+    {"UTMAPF", OpcodeChar(OP_UTMAPF, TMA_OP)},
+    {"UTMAREDG", OpcodeChar(OP_UTMAREDG, TMA_OP)},
+    {"UTMASTG", OpcodeChar(OP_UTMASTG, TMA_OP)},
     // TMA Control Instructions
-    {"UTMACCTL", OpcodeChar(OP_UTMACCTL, SPECIALIZED_UNIT_4_OP)},
-    {"UTMACMDFLUSH", OpcodeChar(OP_UTMACMDFLUSH, SPECIALIZED_UNIT_4_OP)},
+    {"UTMACCTL", OpcodeChar(OP_UTMACCTL, TMA_OP)},
+    {"UTMACMDFLUSH", OpcodeChar(OP_UTMACMDFLUSH, TMA_OP)},
 
     // SYNC Instructions
     // TODO Need to handle the fence and syncsproperly
     // TODO For now, treat fence and syncs as nop
-    {"FENCE", OpcodeChar(OP_NOP, ALU_OP)},
-    {"SYNCS", OpcodeChar(OP_NOP, ALU_OP)},
+    {"FENCE", OpcodeChar(OP_FENCE, FENCE_OP)},
+    {"SYNCS", OpcodeChar(OP_SYNCS, SYNCS_OP)},
 
     // Texture Instructions
     // For now, we ignore texture loads, consider it as ALU_OP
