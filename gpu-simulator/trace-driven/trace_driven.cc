@@ -161,6 +161,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     const class trace_config *tconfig,
     const class kernel_trace_t *kernel_trace_info) {
   // fill the inst_t and warp_inst_t params
+  set_cuda_cta_ids(trace.cta_ids);
+  set_cuda_cluster_cta_ids(trace.cluster_cta_ids);
 
   // fill active mask
   active_mask_t active_mask = trace.mask;
@@ -236,15 +238,28 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   if (opcode1 == "SYNCS") {
     syncs_operand operand;
     // Get mbarrier addresses from the trace address info
-    memcpy(operand.addr, trace.memadd_info->addrs, sizeof(operand.addr));
+    for (int i = 0; i < WARP_SIZE; i++) {
+      operand.addr[i] = trace.memadd_info->addrs[i];
+    }
     if (opcode == "SYNCS.EXCH.64") { // mbarrier.init
       set_syncs_op(SYNCS_INIT);
       // SYNCS.EXCH.64 format:
       // SYNCS.EXCH.64 URA, [URB], URC
       // URA is destination register
       // URB is a memory reference operand in NVBit
-      // URC is the count register, so it is the first source register
-      memcpy(operand.u.init.count, trace.reg_src_vals[0].data(), sizeof(operand.u.init.count));
+      // URC is the count register, so it is the second source register
+      // but based on Hopper SASS code dump, there are some bit manipulation prior to this
+      // instructions, so we need to undo this to get the actual thread count
+      std::array<uint32_t, WARP_SIZE> thread_counts = trace.reg_src_vals[1];
+      for (int i = 0; i < WARP_SIZE; i++) {
+        // First right shift by 1
+        thread_counts[i] >>= 1;
+        // Then substract by 0x100000
+        thread_counts[i] -= 0x100000;
+        // Finally, take the negation
+        thread_counts[i] = -thread_counts[i];
+      }
+      memcpy(operand.u.init.count, thread_counts.data(), sizeof(operand.u.init.count));
     } else if (opcode == "SYNCS.ARRIVE.TRANS64") { // mbarrier.arrive.expect_tx
       set_syncs_op(SYNCS_ARRIVE_EXPECT_TX);
       // SYNCS.ARRIVE.TRANS64 format:
@@ -256,14 +271,14 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         // This instruction increase arrival count by 1
         operand.u.arrive.count[i] = 1;
       }
-      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[0].data(), sizeof(operand.u.arrive.txCount));
+      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
     } else if (opcode.find("SYNCS.ARRIVE") != std::string::npos) { // mbarrier.arrive
       set_syncs_op(SYNCS_ARRIVE);
       memset(operand.u.arrive.txCount, 0, sizeof(operand.u.arrive.txCount));
       // Handle other variants
       if (opcode.find("ART0") != std::string::npos) {
         // Arrival count is the register value in RD above
-        memcpy(operand.u.arrive.count, trace.reg_src_vals[0].data(), sizeof(operand.u.arrive.count));
+        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.count));
       } else if (opcode.find("A1T0") != std::string::npos) {
         // Arrival 1, transaction 0
         for (int i = 0; i < WARP_SIZE; i++) {
@@ -282,7 +297,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // PA: predicate register
       // RB, URC: memory reference operand in NVBit, to the mbarrier
       // RD: prior phase count
-      memcpy(operand.u.wait.phase, trace.reg_src_vals[0].data(), sizeof(operand.u.wait.phase));
+      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(), sizeof(operand.u.wait.phase));
     } else {
       printf("WARNING: Unsupported SYNCS instruction: %s, ignoring it\n", opcode.c_str());
     }

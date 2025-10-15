@@ -196,8 +196,6 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"UTMACMDFLUSH", OpcodeChar(OP_UTMACMDFLUSH, TMA_OP)},
 
     // SYNC Instructions
-    // TODO Need to handle the fence and syncsproperly
-    // TODO For now, treat fence and syncs as nop
     {"FENCE", OpcodeChar(OP_FENCE, FENCE_OP)},
     {"SYNCS", OpcodeChar(OP_SYNCS, SYNCS_OP)},
 

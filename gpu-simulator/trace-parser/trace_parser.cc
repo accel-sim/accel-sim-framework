@@ -144,7 +144,7 @@ void tma_inst_memaddr_info_t::base_delta_decompress(
 }
 
 bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
-                                     unsigned enable_lineinfo) {
+                                     unsigned enable_lineinfo, dim3 header_cta_ids, dim3 header_cluster_cta_ids) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -159,6 +159,10 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
     ss >> std::dec >> threadblock_x >> threadblock_y >> threadblock_z >>
         warpid_tb;
+  } else {
+    // Set the cta ids
+    cta_ids = header_cta_ids;
+    cluster_cta_ids = header_cluster_cta_ids;
   }
   if (enable_lineinfo) {
     ss >> std::dec >> line_num;
@@ -175,10 +179,10 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     std::string reg_str;
     ss >> reg_str;
     // Parse the register type and number
-    if (reg_str.find("R") != std::string::npos) reg.type = REG;
-    else if (reg_str.find("UR") != std::string::npos) reg.type = UREG;
-    else if (reg_str.find("P") != std::string::npos) reg.type = PRED;
+    if (reg_str.find("UR") != std::string::npos) reg.type = UREG;
+    else if (reg_str.find("R") != std::string::npos) reg.type = UREG;
     else if (reg_str.find("UP") != std::string::npos) reg.type = UPRED;
+    else if (reg_str.find("P") != std::string::npos) reg.type = PRED;
     reg.num = std::stoi(reg_str.substr(reg_str.find_first_not_of("RURPUP")));
   };
   for (unsigned i = 0; i < reg_dsts_num; ++i) {
@@ -269,7 +273,16 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       std::vector<long long> deltas;
       // read addresses as base address and deltas
       ss >> std::hex >> base_address;
+      // No delta will be pushed if there is only one bit set in the mask
+      // Find the first bit set
+      int first_bit_set = -1;
       for (int s = 0; s < WARP_SIZE; s++) {
+        if (mask_bits.test(s)) {
+          first_bit_set = s;
+          break;
+        }
+      }
+      for (int s = first_bit_set + 1; s < WARP_SIZE; s++) {
         if (mask_bits.test(s)) {
           long long delta = 0;
           ss >> std::dec >> delta;
@@ -519,9 +532,10 @@ void trace_parser::get_next_threadblock_traces(
         inst_count = 0;
       } else {
         assert(start_of_tb_stream_found);
+        // TODO Handle cluster block id
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo);
+            .parse_from_string(line, trace_version, enable_lineinfo, dim3(block_id_x, block_id_y, block_id_z), dim3(-1, -1, -1));
         inst_count++;
       }
     }

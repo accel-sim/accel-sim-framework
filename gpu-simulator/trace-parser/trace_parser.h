@@ -10,6 +10,7 @@
 #include <vector>
 #include <bitset>
 #include <array>
+#include <cuda_runtime.h>
 
 #define WARP_SIZE 32
 #define MAX_DST 1
@@ -79,6 +80,8 @@ struct inst_trace_t {
   inst_trace_t();
   inst_trace_t(const inst_trace_t &b);
 
+  dim3 cta_ids;
+  dim3 cluster_cta_ids;
   unsigned line_num;
   unsigned m_pc;
   unsigned mask;
@@ -96,7 +99,7 @@ struct inst_trace_t {
   size_t tma_byte_count = 0;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo);
+                         unsigned enable_lineinfo, dim3 header_cta_ids = dim3(-1, -1, -1), dim3 header_cluster_cta_ids = dim3(-1, -1, -1));
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
