@@ -332,13 +332,19 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   if (trace.tma_memadd_info != nullptr) {
     data_size = trace.tma_memadd_info->width;
     std::bitset<WARP_SIZE> exec_mask(trace.mask);
-    if (exec_mask.count() > 1 || exec_mask.count() == 0) {
-      assert(0 && "Right now TMA only supports single thread execution");
+    // TMA issues on uniform pipeline, so it will issue once even with full mask
+    if (exec_mask.count() != 0 ) {
+      set_tma_access_addrs(trace.tma_memadd_info->addrs);
+      // Set TMA mbar address and byte count
+      set_tma_mbar_addr(trace.tma_mbar_addr);
+      set_tma_byte_count(trace.tma_byte_count);
+    } else {
+      // If the TMA instruction is predicated off, we set the addr array to
+      // to empty, so it won't generate any memory access during generate_mem_access()
+      set_tma_access_addrs(std::vector<uint64_t>());
+      set_tma_mbar_addr(0);
+      set_tma_byte_count(0);
     }
-    set_tma_access_addrs(trace.tma_memadd_info->addrs);
-    // Set TMA mbar address and byte count
-    set_tma_mbar_addr(trace.tma_mbar_addr);
-    set_tma_byte_count(trace.tma_byte_count);
   } else if (trace.memadd_info != NULL) {
     data_size = trace.memadd_info->width;
     for (unsigned i = 0; i < warp_size(); ++i)
