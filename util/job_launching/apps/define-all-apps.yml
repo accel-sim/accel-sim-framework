@@ -1072,21 +1072,23 @@ tma:
     data_dirs: ""
     execs:
         - tma_tensor_test:
-            - args: -w 1024 -h 1024 -o UTMAPF
-            - args: -w 1024 -h 1024 -o UTMALDG -i 128
-            - args: -w 1024 -h 1024 -o UTMASTG -i 128
-            - args: -w 1024 -h 1024 -o UTMAREDG -i 128
+            # Prefetch not implemented in accel-sim yet
+            # - args: -w 1024 -h 1024 -o UTMAPF
+            - args: -w 1024 -h 1024 -o UTMALDG -i 64
+            - args: -w 1024 -h 1024 -o UTMASTG -i 64
+            - args: -w 1024 -h 1024 -o UTMAREDG -i 64
             - args: -w 1024 -h 1024 -o UTMALDG -i 16
             - args: -w 1024 -h 1024 -o UTMASTG -i 16
             - args: -w 1024 -h 1024 -o UTMAREDG -i 16
-            - args: -w 1024 -h 1024 -o REGULAR_LOAD
+            - args: -w 1024 -h 1024 -o REGULAR_LOAD -i 16
               accel-sim-mem: 10G
         - tma_bulk_test:
-            - args: -n 1024 -o UBLKPF
-            - args: -n 1024 -o UBLKCP_S_G -i 128
-            - args: -n 1024 -o UBLKCP_G_S -i 128
-            - args: -n 1024 -o UBLKRED_G_S -i 128
-            - args: -n 262144 -o UBLKPF
+            # Prefetch not implemented in accel-sim yet
+            # - args: -n 1024 -o UBLKPF
+            - args: -n 1024 -o UBLKCP_S_G -i 64
+            - args: -n 1024 -o UBLKCP_G_S -i 64
+            - args: -n 1024 -o UBLKRED_G_S -i 64
+            # - args: -n 262144 -o UBLKPF
             - args: -n 262144 -o UBLKCP_S_G -i 16
             - args: -n 262144 -o UBLKCP_G_S -i 16
             - args: -n 262144 -o UBLKRED_G_S -i 16

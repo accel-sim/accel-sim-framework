@@ -185,7 +185,6 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"UBLKCP", OpcodeChar(OP_UBLKCP, TMA_OP)},
     {"UBLKPF", OpcodeChar(OP_UBLKPF, TMA_OP)},
     {"UBLKRED", OpcodeChar(OP_UBLKRED, TMA_OP)},
-    // TODO For now, treat tensor copy as LOAD_OP and STORE_OP
     // TODO For now, treat prefetch as NOP
     {"UTMALDG", OpcodeChar(OP_UTMALDG, TMA_OP)},
     {"UTMAPF", OpcodeChar(OP_UTMAPF, TMA_OP)},
