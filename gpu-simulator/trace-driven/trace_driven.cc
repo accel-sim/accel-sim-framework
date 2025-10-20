@@ -274,6 +274,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
     } else if (opcode.find("SYNCS.ARRIVE") != std::string::npos) { // mbarrier.arrive
       set_syncs_op(SYNCS_ARRIVE);
+      // Initialize the arrival count and transaction count to 0
+      memset(operand.u.arrive.count, 0, sizeof(operand.u.arrive.count));
       memset(operand.u.arrive.txCount, 0, sizeof(operand.u.arrive.txCount));
       // Handle other variants
       if (opcode.find("ART0") != std::string::npos) {
@@ -285,6 +287,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
           // This instruction increase arrival count by 1
           operand.u.arrive.count[i] = 1;
         }
+      } else if (opcode.find("A0TR") != std::string::npos) {
+        // Arrival 0, transaction count based on register value in RD
+        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
       } else {
         printf("WARNING: Unsupported SYNCS ARRIVE variant: %s, ignoring it\n", opcode.c_str());
       }
