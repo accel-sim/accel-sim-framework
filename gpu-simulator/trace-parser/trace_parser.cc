@@ -180,7 +180,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     ss >> reg_str;
     // Parse the register type and number
     if (reg_str.find("UR") != std::string::npos) reg.type = UREG;
-    else if (reg_str.find("R") != std::string::npos) reg.type = UREG;
+    else if (reg_str.find("R") != std::string::npos) reg.type = REG;
     else if (reg_str.find("UP") != std::string::npos) reg.type = UPRED;
     else if (reg_str.find("P") != std::string::npos) reg.type = PRED;
     reg.num = std::stoi(reg_str.substr(reg_str.find_first_not_of("RURPUP")));
