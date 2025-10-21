@@ -546,6 +546,15 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       cache_op = CACHE_GLOBAL;
       space.set_type(global_space);
       break;
+    case OP_SYNCS:
+      // Although SYNCS will access shared memory, it will need be handled differently
+      // then a normal load, so we set it to no_memory_op here to avoid
+      // confusion with is_load() method.
+      memory_op = no_memory_op;
+      // SYNCS will access shared memory, set the space here
+      // to handle the ldst_unit's writeback correctly
+      space.set_type(shared_space);
+      break;
     default:
       break;
   }
