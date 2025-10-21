@@ -147,7 +147,7 @@ for bench in benchmarks:
             if options.kernel_number > 0:
                 sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(options.kernel_number)+'"\n')
             else:
-                sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE=""\n')
+                sh_contents +=  (f'\nexport DYNAMIC_KERNEL_RANGE="{os.environ.get("DYNAMIC_KERNEL_RANGE", "")}"\n')
 
         # first we generate the traces (.trace and kernelslist files)
         # then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
