@@ -102,6 +102,13 @@ parser.add_option(
     default="",
 )
 parser.add_option(
+    "-r",
+    "--run_dir",
+    dest="run_dir",
+    help="The directory where the benchmark/config directories exist.",
+    default="",
+)
+parser.add_option(
     "-N",
     "--sim_name",
     dest="sim_name",
@@ -167,6 +174,7 @@ parser.add_option(
 options.logfile = options.logfile.strip()
 options.sim_name = options.sim_name.strip()
 options.timeout = float(options.timeout) * 60 * 60
+options.run_dir = options.run_dir.strip()
 
 if options.job_manager != None:
     job_manager = options.job_manager
@@ -206,6 +214,8 @@ while True:
                 options.sim_name,
                 "-j",
                 job_manager,
+                "-r",
+                options.run_dir,
             ],
             stdout=jobstatus_out_file,
             stderr=jobstatus_out_file,
