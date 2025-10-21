@@ -83,6 +83,9 @@ int user_defined_folders = 0;
 /* Use xz to compress the *.trace file */
 int xz_compress_trace = 0;
 
+// Debugging helper
+#define DPRINTF(fmt, ...) {if (verbose > 0) printf(fmt, ##__VA_ARGS__);}
+
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
@@ -114,8 +117,10 @@ void parse_kernel_ranges_from_env() {
   g_max_kernel_id = 0;
 
   const char *env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
+  DPRINTF("DYNAMIC_KERNEL_RANGE environment variable: %s\n", env_var);
   if (!env_var || std::string(env_var).empty()) {
     g_kernel_ranges.push_back({0, 0, {std::regex(".*")}}); // 0 end = trace all
+    DPRINTF("No DYNAMIC_KERNEL_RANGE environment variable found, tracing all kernels\n");
     return;
   }
   std::string input(env_var);
@@ -178,6 +183,7 @@ void parse_kernel_ranges_from_env() {
     }
 
     g_kernel_ranges.push_back({start, end, regexes});
+    DPRINTF("Added kernel range: %lu-%lu with regexes: %s\n", start, end, regex_part.c_str());
     if (end > g_max_kernel_id) {
       g_max_kernel_id = end;
     }
