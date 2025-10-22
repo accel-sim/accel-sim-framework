@@ -14,6 +14,22 @@
 /* contains definition of the inst_trace_t structure */
 #include "common.h"
 
+// Helper functions to get this CTA's cluster rank in a cluster
+// and its cluster id in the grid
+__device__ __forceinline__ int get_cluster_rank(void) {
+  int ret;
+  asm("mov.u32 %0, %cluster_ctarank;" : "=r"(ret));
+  return ret;
+}
+
+__device__ __forceinline__ int4 get_clusterid(void) {
+  int4 ret;
+  asm("mov.u32 %0, %clusterid.x;" : "=r"(ret.x));
+  asm("mov.u32 %0, %clusterid.y;" : "=r"(ret.y));
+  asm("mov.u32 %0, %clusterid.z;" : "=r"(ret.z));
+  return ret;
+}
+
 /* Instrumentation function that we want to inject, please note the use of
  *  extern "C" __device__ __noinline__
  *    To prevent "dead"-code elimination by the compiler.
@@ -53,9 +69,13 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
   int4 cta = get_ctaid();
 #if __CUDA_ARCH__ >= 900 && defined(USE_PRIVATE_TMA)
   int4 cluster_cta = get_cluster_ctaid();
-#else
+  int4 cluster = get_clusterid();
+  int cluster_rank = get_cluster_rank();
+  #else
   int4 cluster_cta = {0, 0, 0, 0}; // Dummy values for pre-SM90
-#endif
+  int4 cluster = {0, 0, 0, 0}; // Dummy values for pre-SM90
+  int cluster_rank = 0; // Dummy value for pre-SM90
+  #endif
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
   trace.instr_idx = instr_idx;
@@ -67,6 +87,10 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
   trace.cluster_cta_id_x = cluster_cta.x;
   trace.cluster_cta_id_y = cluster_cta.y;
   trace.cluster_cta_id_z = cluster_cta.z;
+  trace.cluster_id_x = cluster.x;
+  trace.cluster_id_y = cluster.y;
+  trace.cluster_id_z = cluster.z;
+  trace.cluster_rank = cluster_rank;
   trace.warpid_tb = uniqe_threadId / 32;
   trace.warpid_sm = get_warpid();
   trace.sm_id = get_smid();

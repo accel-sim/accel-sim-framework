@@ -1185,6 +1185,17 @@ void *recv_thread_fun(void *args) {
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_y);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_z);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_tb);
+        // Cluster information
+        // Cluster id within the grid
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_id_x);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_id_y);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_id_z);
+        // CTA id within the cluster
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_cta_id_x);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_cta_id_y);
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_cta_id_z);
+        // CTA rank within the cluster
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->cluster_rank);
         if (print_core_id) {
           fprintf(ctx_resultsFile[ctx], "%d ", trace->sm_id);
           fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_sm);
@@ -1289,7 +1300,19 @@ void *recv_thread_fun(void *args) {
           if (info.dst_memspace == InstrType::MemorySpace::DISTRIBUTED_SHARED) {
             assert(info.dst.shared.is_mbar_valid && "Invalid TMA mbar address");
             fprintf(ctx_resultsFile[ctx], "0x%08x ", info.dst.shared.mbar_address);
+            if (info.is_multicast) {
+              // Using multicast
+              fprintf(ctx_resultsFile[ctx], "1 ");
+              // multicast flags
+              fprintf(ctx_resultsFile[ctx], "0x%04x ", info.multicast_cta_mask);
+            } else {
+              // Not using multicast
+              fprintf(ctx_resultsFile[ctx], "0 ");
+            }
           } else {
+            // mbarrier address, set to 0
+            fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
+            // Not using multicast
             fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
           }
           fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);

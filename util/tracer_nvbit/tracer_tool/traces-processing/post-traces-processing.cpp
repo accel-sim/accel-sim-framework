@@ -19,11 +19,21 @@ using namespace std;
 
 struct threadblock_info {
   bool initialized;
+  // CTA id within the grid
   unsigned tb_id_x, tb_id_y, tb_id_z;
+  // Cluster information
+  unsigned cluster_id_x, cluster_id_y, cluster_id_z;
+  // CTA id within the cluster
+  unsigned cluster_cta_id_x, cluster_cta_id_y, cluster_cta_id_z;
+  // CTA rank within the cluster
+  unsigned cluster_rank;
   vector<deque<const string *>> warp_insts_array;
   threadblock_info() {
     initialized = false;
     tb_id_x = tb_id_y = tb_id_z = 0;
+    cluster_id_x = cluster_id_y = cluster_id_z = 0;
+    cluster_cta_id_x = cluster_cta_id_y = cluster_cta_id_z = 0;
+    cluster_rank = 0;
   }
 };
 
@@ -289,6 +299,12 @@ void group_per_block(const char *filepath) {
   vector<threadblock_info> insts;
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
   unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
+  // Cluster information
+  unsigned cluster_id_x, cluster_id_y, cluster_id_z;
+  // CTA id within the cluster
+  unsigned cluster_cta_id_x, cluster_cta_id_y, cluster_cta_id_z;
+  // CTA rank within the cluster
+  unsigned cluster_rank;
   unsigned lineinfo, linenum;
   string line;
   stringstream ss;
@@ -349,13 +365,20 @@ void group_per_block(const char *filepath) {
     } else {
 
       ss.str(line);
-      ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb;
+      ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb >> cluster_id_x >> cluster_id_y >> cluster_id_z >> cluster_cta_id_x >> cluster_cta_id_y >> cluster_cta_id_z >> cluster_rank;
       tb_id =
           tb_id_z * grid_dim_y * grid_dim_x + tb_id_y * grid_dim_x + tb_id_x;
       if (!insts[tb_id].initialized) {
         insts[tb_id].tb_id_x = tb_id_x;
         insts[tb_id].tb_id_y = tb_id_y;
         insts[tb_id].tb_id_z = tb_id_z;
+        insts[tb_id].cluster_id_x = cluster_id_x;
+        insts[tb_id].cluster_id_y = cluster_id_y;
+        insts[tb_id].cluster_id_z = cluster_id_z;
+        insts[tb_id].cluster_cta_id_x = cluster_cta_id_x;
+        insts[tb_id].cluster_cta_id_y = cluster_cta_id_y;
+        insts[tb_id].cluster_cta_id_z = cluster_cta_id_z;
+        insts[tb_id].cluster_rank = cluster_rank;
         insts[tb_id].initialized = true;
       }
       // ss.ignore(); //remove the space
@@ -407,6 +430,11 @@ void group_per_block(const char *filepath) {
       cout << "\n"
            << "thread block = " << insts[i].tb_id_x << "," << insts[i].tb_id_y
            << "," << insts[i].tb_id_z << "\n";
+      cout << "cluster = " << insts[i].cluster_id_x << "," << insts[i].cluster_id_y
+           << "," << insts[i].cluster_id_z << "\n";
+      cout << "cluster cta = " << insts[i].cluster_cta_id_x << "," << insts[i].cluster_cta_id_y
+           << "," << insts[i].cluster_cta_id_z << "\n";
+      cout << "cluster rank = " << insts[i].cluster_rank << "\n";
     } else {
       cerr << "Warning: Thread block " << insts[i].tb_id_x << ","
            << insts[i].tb_id_y << "," << insts[i].tb_id_z << " is empty"

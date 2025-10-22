@@ -24,9 +24,16 @@ typedef struct {
   int cta_id_x;
   int cta_id_y;
   int cta_id_z;
+  // CTA id within the cluster
   int cluster_cta_id_x;
   int cluster_cta_id_y;
   int cluster_cta_id_z;
+  // CTA rank within the cluster
+  int cluster_rank;
+  // Cluster id within the grid
+  int cluster_id_x;
+  int cluster_id_y;
+  int cluster_id_z;
   int warpid_tb;
   int warpid_sm;
   int sm_id;
