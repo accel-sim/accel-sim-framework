@@ -9,19 +9,19 @@
 #include <unistd.h>
 
 #include <algorithm>
+#include <algorithm> // for std::minmax_element
 #include <bitset>
 #include <fstream>
 #include <iostream>
 #include <iterator>
 #include <map>
+#include <memory>
 #include <regex>
 #include <sstream>
 #include <string>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
-#include <memory>
-#include <algorithm> // for std::minmax_element
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
 
@@ -47,8 +47,8 @@ static ChannelHost channel_host;
 
 /*
  * Instance of the WarpsyncCollectiveWatchdog,
- * to be initialized in nvbit_at_init. This is a temporary solution and should be
- * removed once NVBit fixes the bug with warpsync.collective.
+ * to be initialized in nvbit_at_init. This is a temporary solution and should
+ * be removed once NVBit fixes the bug with warpsync.collective.
  */
 std::unique_ptr<WatchdogInterface> warpsync_collective_watchdog{};
 bool enable_watchdog = true;
@@ -208,7 +208,13 @@ bool should_trace_kernel(uint64_t kernel_id, const std::string &kernel_name) {
   return false;
 }
 
-enum address_format { list_all = 0, base_stride = 1, base_delta = 2, tma_list_all = 3, tma_base_delta = 4 };
+enum address_format {
+  list_all = 0,
+  base_stride = 1,
+  base_delta = 2,
+  tma_list_all = 3,
+  tma_base_delta = 4
+};
 
 /* File pointers for the kernels, and stats files */
 static FILE *kernelsFile = NULL;
@@ -272,11 +278,13 @@ void nvbit_at_init() {
   GET_VAR_INT(spinlock_iter_to_keep, "SPINLOCK_ITER_TO_KEEP", 1,
               "Number of iterations to keep for spinlock fast forwarding");
   GET_VAR_INT(enable_watchdog, "ENABLE_WATCHDOG", 1,
-              "Enable the watchdog to skip instructions between WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
+              "Enable the watchdog to skip instructions between "
+              "WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
   GET_VAR_INT(skip_tma_mem, "SKIP_TMA_MEM", 0,
               "Enable the skipping of TMA memory instructions");
   GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
-              "EXPERIMENTAL: Enable the tracing of register values. Trace format is not stable. Trace version is 6.");
+              "EXPERIMENTAL: Enable the tracing of register values. Trace "
+              "format is not stable. Trace version is 6.");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -335,7 +343,6 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     /* iterate on all the static instructions in the function */
     for (auto instr : instrs) {
 
-
       uint32_t line_num = 0;
 
       if (cnt < instr_begin_interval || cnt >= instr_end_interval) {
@@ -349,19 +356,23 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
 
       warpsync_collective_watchdog->observe_instruction(instr);
 
-      if(warpsync_collective_watchdog->is_in_region()){
+      if (warpsync_collective_watchdog->is_in_region()) {
         // if the opcode matches with "WARPSYNC.COLLECTIVE",
         // print to stdout the PC value and the immeidate value
-        if (verbose > 1 && strcmp(instr->getOpcode(), "WARPSYNC.COLLECTIVE") == 0) {
+        if (verbose > 1 &&
+            strcmp(instr->getOpcode(), "WARPSYNC.COLLECTIVE") == 0) {
           assert(1 < instr->getNumOperands());
-          printf("Encountered WARPSYNC.COLLECTIVE PC: 0x%lx, Immediate: 0x%lx\n",
-                  instr->getOffset(), instr->getOperand(1)->u.imm_uint64.value);
+          printf(
+              "Encountered WARPSYNC.COLLECTIVE PC: 0x%lx, Immediate: 0x%lx\n",
+              instr->getOffset(), instr->getOperand(1)->u.imm_uint64.value);
         }
         continue;
       }
 
 #ifdef USE_PRIVATE_NVBIT
-      if (skip_tma_mem && instr->isTMAMem()){continue;}
+      if (skip_tma_mem && instr->isTMAMem()) {
+        continue;
+      }
 #endif
 
       if (lineinfo) {
@@ -443,7 +454,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           nvbit_add_call_arg_const_val32(instr, 0);
         }
 #else
-        // If we are not using the private NVBit, we don't need to add the TMA args
+        // If we are not using the private NVBit, we don't need to add the TMA
+        // args
         nvbit_add_call_arg_const_val32(instr, 0);
         nvbit_add_call_arg_const_val64(instr, 0);
         nvbit_add_call_arg_const_val32(instr, 0);
@@ -629,11 +641,12 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
             (uint64_t)nvbit_get_local_mem_base_addr(ctx));
     fprintf(ctx_resultsFile[ctx], "-nvbit version = %s\n", NVBIT_VERSION);
     fprintf(ctx_resultsFile[ctx], "-accelsim tracer version = %s\n",
-            allow_reg_val_tracing ? TRACER_VERSION_ALLOW_REG_VAL : TRACER_VERSION);
+            allow_reg_val_tracing ? TRACER_VERSION_ALLOW_REG_VAL
+                                  : TRACER_VERSION);
     fprintf(ctx_resultsFile[ctx], "-enable lineinfo = %d\n", lineinfo);
     fprintf(ctx_resultsFile[ctx], "\n");
 
-    if(allow_reg_val_tracing) {
+    if (allow_reg_val_tracing) {
       fprintf(ctx_resultsFile[ctx],
               "#traces format = [line_num] PC mask dest_num [reg_dests] "
               "opcode src_num "
@@ -1081,11 +1094,21 @@ void *recv_thread_fun(void *args) {
           break;
         }
 
+        std::string opcode = id_to_opcode_map[trace->opcode_id];
+        // only dump reg val if opcode contains: BAR
+        bool dump_reg_val = false;
+        if (allow_reg_val_tracing &&
+            ((opcode.find("BAR") != std::string::npos ||
+              opcode.find("HGMMA") != std::string::npos))) {
+          dump_reg_val = true;
+        }
+
         /* Spinlock fast forwarding */
         if (enable_spinlock_fast_forward) {
           // Check if this warp is in the warp_counter_map
-          warp_key_t warp_key = std::make_tuple(trace->cta_id_x, trace->cta_id_y,
-                                                trace->cta_id_z, trace->warpid_tb);
+          warp_key_t warp_key =
+              std::make_tuple(trace->cta_id_x, trace->cta_id_y, trace->cta_id_z,
+                              trace->warpid_tb);
           if (warp_counter_map.find(warp_key) == warp_counter_map.end()) {
             // This warp is not in the warp_counter_map, so we create a counter
             // for this warp using the spinlock instruction indices for the
@@ -1117,19 +1140,12 @@ void *recv_thread_fun(void *args) {
             }
           }
         }
-        std::string opcode = id_to_opcode_map[trace->opcode_id];
-        // only dump reg val if opcode contains: BAR
-        bool dump_reg_val = false;
-        if (allow_reg_val_tracing && ((opcode.find("BAR") != std::string::npos || opcode.find("HGMMA") != std::string::npos))) {
-          dump_reg_val = true;
-        }
 
         // Dump trace in text
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_x);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_y);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->cta_id_z);
         fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_tb);
-
         if (print_core_id) {
           fprintf(ctx_resultsFile[ctx], "%d ", trace->sm_id);
           fprintf(ctx_resultsFile[ctx], "%d ", trace->warpid_sm);
@@ -1137,7 +1153,8 @@ void *recv_thread_fun(void *args) {
         if (lineinfo) {
           fprintf(ctx_resultsFile[ctx], "%d ", trace->line_num);
         }
-        fprintf(ctx_resultsFile[ctx], "%04x ", trace->vpc); // Print the virtual PC
+        fprintf(ctx_resultsFile[ctx], "%04x ",
+                trace->vpc); // Print the virtual PC
         fprintf(ctx_resultsFile[ctx], "%08x ",
                 trace->active_mask & trace->predicate_mask);
         if (trace->inst.regular.GPRDst >= 0) {
@@ -1155,14 +1172,16 @@ void *recv_thread_fun(void *args) {
             src_count++;
         fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
-          if (trace->inst.regular.GPRSrcs[s] >= 0){
-            fprintf(ctx_resultsFile[ctx], "R%d ", trace->inst.regular.GPRSrcs[s]);
+        for (int s = 0; s < MAX_SRC; s++) { // GPR srcs.
+          if (trace->inst.regular.GPRSrcs[s] >= 0) {
+            fprintf(ctx_resultsFile[ctx], "R%d ",
+                    trace->inst.regular.GPRSrcs[s]);
           }
         }
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
-        if (trace->inst_type == TracerInstrType::INST_REGULAR && trace->inst.regular.is_mem) {
+        if (trace->inst_type == TracerInstrType::INST_REGULAR &&
+            trace->inst.regular.is_mem) {
           std::istringstream iss(id_to_opcode_map[trace->opcode_id]);
           std::vector<std::string> tokens;
           std::string token;
@@ -1180,11 +1199,12 @@ void *recv_thread_fun(void *args) {
 
           if (enable_compress) {
             // try base+stride format
-            base_stride_success =
-                base_stride_compress(trace->inst.regular.addrs, mask, base_addr, stride);
+            base_stride_success = base_stride_compress(
+                trace->inst.regular.addrs, mask, base_addr, stride);
             if (!base_stride_success) {
               // if base+stride fails, try base+delta format
-              base_delta_compress(trace->inst.regular.addrs, mask, base_addr, deltas);
+              base_delta_compress(trace->inst.regular.addrs, mask, base_addr,
+                                  deltas);
             }
           }
 
@@ -1204,14 +1224,17 @@ void *recv_thread_fun(void *args) {
             fprintf(ctx_resultsFile[ctx], "%u ", address_format::list_all);
             for (int s = 0; s < 32; s++) {
               if (mask.test(s))
-                fprintf(ctx_resultsFile[ctx], "0x%016lx ", trace->inst.regular.addrs[s]);
+                fprintf(ctx_resultsFile[ctx], "0x%016lx ",
+                        trace->inst.regular.addrs[s]);
             }
           }
         } else if (trace->inst_type == TracerInstrType::INST_TMA) {
 #ifdef USE_PRIVATE_NVBIT
           // TMA instructions
           const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
-          TMATransferInfo_t info = nvbit_parse_tma_transfer_info(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size);
+          TMATransferInfo_t info = nvbit_parse_tma_transfer_info(
+              ctx, opcode_str, trace->inst.tma.tma_param_handle,
+              trace->inst.tma.tma_param_handle_size);
           // Get TMA transfer size, which is the data width
           fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
 
@@ -1220,9 +1243,15 @@ void *recv_thread_fun(void *args) {
           uint64_t *global_addrs = nullptr;
           size_t global_count = 0, global_count_inbound = 0;
           if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
-            nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+            nvbit_parse_tma_src_addrs(ctx, opcode_str,
+                                      trace->inst.tma.tma_param_handle,
+                                      trace->inst.tma.tma_param_handle_size,
+                                      &raw_global_addrs, &global_count);
           } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
-            nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+            nvbit_parse_tma_dst_addrs(ctx, opcode_str,
+                                      trace->inst.tma.tma_param_handle,
+                                      trace->inst.tma.tma_param_handle_size,
+                                      &raw_global_addrs, &global_count);
           }
 
           // Count inbound global addresses
@@ -1232,7 +1261,8 @@ void *recv_thread_fun(void *args) {
             }
           }
 
-          global_addrs = (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
+          global_addrs =
+              (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
           size_t global_idx = 0;
           for (size_t i = 0; i < global_count; i++) {
             if (!raw_global_addrs[i].is_oob) {
@@ -1245,9 +1275,10 @@ void *recv_thread_fun(void *args) {
           uint64_t base_addr = 0;
           std::vector<long long> deltas;
           if (enable_compress) {
-            base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
+            base_delta_compress_tma(global_addrs, global_count_inbound, mask,
+                                    base_addr, deltas);
           }
-          
+
           if (enable_compress) {
             fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
                     address_format::tma_base_delta, base_addr);
@@ -1274,20 +1305,23 @@ void *recv_thread_fun(void *args) {
         // Print the immediate
         fprintf(ctx_resultsFile[ctx], "%ld ", trace->inst.regular.imm);
 
-        if(allow_reg_val_tracing) {
-          // Trace version will be 6, a Val|NoVal will follow the immediate number
-          // Print the register values if dump_reg_val is true
+        if (allow_reg_val_tracing) {
+          // Trace version will be 6, a Val|NoVal will follow the immediate
+          // number Print the register values if dump_reg_val is true
           if (dump_reg_val) {
             fprintf(ctx_resultsFile[ctx], "Val ");
 
             // dump destination register values if GPRDst >= 0
             if (trace->inst.regular.GPRDst >= 0) {
-              auto minmax_pair = std::minmax_element(std::begin(trace->inst.regular.desRegVal), std::end(trace->inst.regular.desRegVal));
+              auto minmax_pair =
+                  std::minmax_element(std::begin(trace->inst.regular.desRegVal),
+                                      std::end(trace->inst.regular.desRegVal));
               bool is_all_same = (*minmax_pair.first == *minmax_pair.second);
-              if(!is_all_same) {
+              if (!is_all_same) {
                 fprintf(ctx_resultsFile[ctx], "32 ");
-                for (int tid=0; tid<32; tid++) {
-                  fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.desRegVal[tid]);
+                for (int tid = 0; tid < 32; tid++) {
+                  fprintf(ctx_resultsFile[ctx], "%08x ",
+                          trace->inst.regular.desRegVal[tid]);
                 }
               } else {
                 fprintf(ctx_resultsFile[ctx], "1 ");
@@ -1295,14 +1329,17 @@ void *recv_thread_fun(void *args) {
               }
             }
             // For 0<=s<MAX_SRC, dump source register values if GPRSrcs[s] >= 0
-            for (int s=0; s<MAX_SRC; s++) {
+            for (int s = 0; s < MAX_SRC; s++) {
               if (trace->inst.regular.GPRSrcs[s] >= 0) {
-                auto minmax_pair = std::minmax_element(std::begin(trace->inst.regular.srcRegVals[s]), std::end(trace->inst.regular.srcRegVals[s]));
+                auto minmax_pair = std::minmax_element(
+                    std::begin(trace->inst.regular.srcRegVals[s]),
+                    std::end(trace->inst.regular.srcRegVals[s]));
                 bool is_all_same = (*minmax_pair.first == *minmax_pair.second);
-                if(!is_all_same) {
+                if (!is_all_same) {
                   fprintf(ctx_resultsFile[ctx], "32 ");
-                  for (int tid=0; tid<32; tid++) {
-                    fprintf(ctx_resultsFile[ctx], "%08x ", trace->inst.regular.srcRegVals[s][tid]);
+                  for (int tid = 0; tid < 32; tid++) {
+                    fprintf(ctx_resultsFile[ctx], "%08x ",
+                            trace->inst.regular.srcRegVals[s][tid]);
                   }
                 } else {
                   fprintf(ctx_resultsFile[ctx], "1 ");

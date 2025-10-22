@@ -41,8 +41,8 @@
 #include <vector>
 
 #include "../ISA_Def/accelwattch_component_mapping.h"
-#include "../ISA_Def/hopper_opcode.h"
 #include "../ISA_Def/ampere_opcode.h"
+#include "../ISA_Def/hopper_opcode.h"
 #include "../ISA_Def/kepler_opcode.h"
 #include "../ISA_Def/pascal_opcode.h"
 #include "../ISA_Def/trace_opcode.h"
@@ -106,7 +106,7 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
   if (kernel_trace_info->binary_verion == HOPPER_H100_BINART_VERSION)
     OpcodeMap = &Hopper_OpcodeMap;
   else if (kernel_trace_info->binary_verion == AMPERE_RTX_BINART_VERSION ||
-      kernel_trace_info->binary_verion == AMPERE_A100_BINART_VERSION)
+           kernel_trace_info->binary_verion == AMPERE_A100_BINART_VERSION)
     OpcodeMap = &Ampere_OpcodeMap;
   else if (kernel_trace_info->binary_verion == VOLTA_BINART_VERSION)
     OpcodeMap = &Volta_OpcodeMap;
@@ -254,11 +254,13 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       assert(0 && "Right now TMA only supports single thread execution");
     }
     // Prepare a buffer for the addresses
-    new_addr_type *addr_buffer = new new_addr_type[trace.tma_memadd_info->addrs.size()];
+    new_addr_type *addr_buffer =
+        new new_addr_type[trace.tma_memadd_info->addrs.size()];
     for (unsigned i = 0; i < trace.tma_memadd_info->addrs.size(); ++i) {
       addr_buffer[i] = trace.tma_memadd_info->addrs[i];
     }
-    set_addr(exec_mask._Find_first(), addr_buffer, trace.tma_memadd_info->addrs.size());
+    set_addr(exec_mask._Find_first(), addr_buffer,
+             trace.tma_memadd_info->addrs.size());
     delete[] addr_buffer;
   } else if (trace.memadd_info != NULL) {
     data_size = trace.memadd_info->width;
@@ -417,10 +419,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       break;
     // TMA instructions
     case OP_UBLKCP:
-      // Determine if this is a load or store by checking the source and destination space
-      // Src: shared, dst: global -> store
-      // Src: global, dst: shared -> load
-      // Src: shared, dst: shared -> nop
+      // Determine if this is a load or store by checking the source and
+      // destination space Src: shared, dst: global -> store Src: global, dst:
+      // shared -> load Src: shared, dst: shared -> nop
       if (opcode.find("S.G") != std::string::npos) {
         memory_op = memory_load;
         space.set_type(global_space);

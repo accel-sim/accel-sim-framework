@@ -19,20 +19,17 @@
  *    To prevent "dead"-code elimination by the compiler.
  */
 extern "C" __device__ __noinline__ void
-instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma, 
-                uint64_t tma_param_handle, uint32_t tma_param_handle_size, 
-                bool is_mem, uint64_t addr, int32_t width, 
-                int32_t desReg, int32_t srcReg1, int32_t srcReg2, int32_t srcReg3, 
-                int32_t srcReg4, int32_t srcReg5, int32_t srcNum, uint64_t immediate,
-                uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
+instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
+                uint64_t tma_param_handle, uint32_t tma_param_handle_size,
+                bool is_mem, uint64_t addr, int32_t width, int32_t desReg,
+                int32_t srcReg1, int32_t srcReg2, int32_t srcReg3,
+                int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
+                uint64_t immediate, uint64_t pchannel_dev,
+                uint64_t ptotal_dynamic_instr_counter,
                 uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
-                uint32_t line_num, uint32_t instr_idx,
-                uint32_t desRegVal,
-                uint32_t srcReg1Val,
-                uint32_t srcReg2Val,
-                uint32_t srcReg3Val,
-                uint32_t srcReg4Val,
-                uint32_t srcReg5Val) {
+                uint32_t line_num, uint32_t desRegVal, uint32_t srcReg1Val,
+                uint32_t srcReg2Val, uint32_t srcReg3Val, uint32_t srcReg4Val,
+                uint32_t srcReg5Val, uint32_t instr_idx) {
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
   const int laneid = get_laneid();
@@ -49,11 +46,11 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
 
   // Set the trace header
   int4 cta = get_ctaid();
-  #if __CUDA_ARCH__ >= 900 && defined(USE_PRIVATE_TMA)
+#if __CUDA_ARCH__ >= 900 && defined(USE_PRIVATE_TMA)
   int4 cluster_cta = get_cluster_ctaid();
-  #else
+#else
   int4 cluster_cta = {0, 0, 0, 0}; // Dummy values for pre-SM90
-  #endif
+#endif
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
   trace.instr_idx = instr_idx;
@@ -94,19 +91,27 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
     trace.inst.regular.numSrcs = srcNum;
     trace.inst.regular.imm = immediate;
 
-    for(int tid = 0; tid < 32; tid++) {
-      trace.inst.regular.desRegVal[tid] = __shfl_sync(active_mask, desRegVal, tid);
-      trace.inst.regular.srcRegVals[0][tid] = __shfl_sync(active_mask, srcReg1Val, tid);
-      trace.inst.regular.srcRegVals[1][tid] = __shfl_sync(active_mask, srcReg2Val, tid);
-      trace.inst.regular.srcRegVals[2][tid] = __shfl_sync(active_mask, srcReg3Val, tid);
-      trace.inst.regular.srcRegVals[3][tid] = __shfl_sync(active_mask, srcReg4Val, tid);
-      trace.inst.regular.srcRegVals[4][tid] = __shfl_sync(active_mask, srcReg5Val, tid);
+    for (int tid = 0; tid < 32; tid++) {
+      trace.inst.regular.desRegVal[tid] =
+          __shfl_sync(active_mask, desRegVal, tid);
+      trace.inst.regular.srcRegVals[0][tid] =
+          __shfl_sync(active_mask, srcReg1Val, tid);
+      trace.inst.regular.srcRegVals[1][tid] =
+          __shfl_sync(active_mask, srcReg2Val, tid);
+      trace.inst.regular.srcRegVals[2][tid] =
+          __shfl_sync(active_mask, srcReg3Val, tid);
+      trace.inst.regular.srcRegVals[3][tid] =
+          __shfl_sync(active_mask, srcReg4Val, tid);
+      trace.inst.regular.srcRegVals[4][tid] =
+          __shfl_sync(active_mask, srcReg5Val, tid);
     }
   } else {
     // For TMA instructions
     trace.inst_type = TracerInstrType::INST_TMA;
-    memset(trace.inst.tma.tma_param_handle, 0, sizeof(trace.inst.tma.tma_param_handle));
-    memcpy(trace.inst.tma.tma_param_handle, (uint8_t *) tma_param_handle, tma_param_handle_size);
+    memset(trace.inst.tma.tma_param_handle, 0,
+           sizeof(trace.inst.tma.tma_param_handle));
+    memcpy(trace.inst.tma.tma_param_handle, (uint8_t *)tma_param_handle,
+           tma_param_handle_size);
     trace.inst.tma.tma_param_handle_ptr = tma_param_handle;
     trace.inst.tma.tma_param_handle_size = tma_param_handle_size;
   }

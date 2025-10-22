@@ -28,7 +28,13 @@ enum address_scope {
 };
 
 // TODO Fix this shared enum with tracer tool
-enum address_format { list_all = 0, base_stride = 1, base_delta = 2, tma_list_all = 3, tma_base_delta = 4 };
+enum address_format {
+  list_all = 0,
+  base_stride = 1,
+  base_delta = 2,
+  tma_list_all = 3,
+  tma_base_delta = 4
+};
 
 struct trace_command {
   std::string command_string;

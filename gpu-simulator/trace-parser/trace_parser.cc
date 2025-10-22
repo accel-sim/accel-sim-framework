@@ -191,7 +191,9 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> mem_width;
   // Check if the list of string is included in "opcode"
-  std::vector<std::string> tma_opcodes = {"UTMALDG","UTMASTG", "UTMAPF", "UTMAREDG", "UBLKCP", "UBLKPF", "UBLKRED"};
+  std::vector<std::string> tma_opcodes = {"UTMALDG",  "UTMASTG", "UTMAPF",
+                                          "UTMAREDG", "UBLKCP",  "UBLKPF",
+                                          "UBLKRED"};
   bool is_tma = false;
   for (auto op : tma_opcodes) {
     if (opcode.find(op) != std::string::npos) {
@@ -272,17 +274,16 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   ss >> imm;
 
-  if(trace_version == 6) {
+  if (trace_version == 6) {
     // check Val or NoVal
     std::string val_or_no_val;
     ss >> val_or_no_val;
-    if(val_or_no_val == "Val") {
+    if (val_or_no_val == "Val") {
       // if Val, look for dest reg values and src reg values
       // dump the rest to a string
       std::string rest;
       std::getline(ss, rest);
     }
-
   }
 
   // Finish Parsing

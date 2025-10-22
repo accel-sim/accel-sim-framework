@@ -138,7 +138,7 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"LDGDEPBAR", OpcodeChar(OP_LDGDEPBAR, ALU_OP)},
     {"LDGSTS", OpcodeChar(OP_LDGSTS, LOAD_OP)},
 
-    //Hopper specific instructions
+    // Hopper specific instructions
     {"VIADD", OpcodeChar(OP_IADD, INTP_OP)},
     {"VIADDMNMX", OpcodeChar(OP_IADD, INTP_OP)},
     {"VIMNMX", OpcodeChar(OP_IMNMX, SP_OP)},
@@ -183,7 +183,8 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     // TMA memory instructions
     // TODO For now, treat bulk copy as LOAD_OP and STORE_OP
     // TODO For now, treat prefetch as NOP
-    // By default, UBLKCP set to be LOAD_OP, but we will fix it in parse_from_trace_struct
+    // By default, UBLKCP set to be LOAD_OP, but we will fix it in
+    // parse_from_trace_struct
     {"UBLKCP", OpcodeChar(OP_UBLKCP, LOAD_OP)},
     {"UBLKPF", OpcodeChar(OP_UBLKPF, SPECIALIZED_UNIT_4_OP)},
     {"UBLKRED", OpcodeChar(OP_UBLKRED, STORE_OP)},
