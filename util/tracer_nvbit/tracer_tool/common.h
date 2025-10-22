@@ -11,8 +11,7 @@ static __managed__ bool stop_report = false;
  * on the channel from the GPU to the CPU */
 #define MAX_SRC 5
 
-typedef enum MyEnum
-{
+typedef enum MyEnum {
   INST_REGULAR,
   INST_TMA,
 } TracerInstrType;
