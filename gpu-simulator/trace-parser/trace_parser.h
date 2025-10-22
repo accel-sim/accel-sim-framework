@@ -80,8 +80,10 @@ struct inst_trace_t {
   inst_trace_t();
   inst_trace_t(const inst_trace_t &b);
 
-  dim3 cta_ids;
-  dim3 cluster_cta_ids;
+  dim3 cta_id;
+  dim3 cluster_cta_id;
+  dim3 cluster_id;
+  unsigned cluster_rank;
   unsigned line_num;
   unsigned m_pc;
   unsigned mask;
@@ -95,11 +97,13 @@ struct inst_trace_t {
   uint64_t imm;
   inst_memadd_info_t *memadd_info = nullptr;
   tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
+  bool tma_is_multicast = false;
+  uint16_t tma_multicast_cta_mask = 0;
   uint32_t tma_mbar_addr = 0;
   size_t tma_byte_count = 0;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo, dim3 header_cta_ids = dim3(-1, -1, -1), dim3 header_cluster_cta_ids = dim3(-1, -1, -1));
+                         unsigned enable_lineinfo, dim3 header_cta_id = dim3(-1, -1, -1), dim3 header_cluster_cta_id = dim3(-1, -1, -1), dim3 header_cluster_id = dim3(-1, -1, -1), unsigned header_cluster_rank = 0);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;

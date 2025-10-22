@@ -430,7 +430,7 @@ void group_per_block(const char *filepath) {
       cout << "\n"
            << "thread block = " << insts[i].tb_id_x << "," << insts[i].tb_id_y
            << "," << insts[i].tb_id_z << "\n";
-      cout << "cluster = " << insts[i].cluster_id_x << "," << insts[i].cluster_id_y
+      cout << "cluster id = " << insts[i].cluster_id_x << "," << insts[i].cluster_id_y
            << "," << insts[i].cluster_id_z << "\n";
       cout << "cluster cta = " << insts[i].cluster_cta_id_x << "," << insts[i].cluster_cta_id_y
            << "," << insts[i].cluster_cta_id_z << "\n";

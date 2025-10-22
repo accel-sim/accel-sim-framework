@@ -161,9 +161,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     const class trace_config *tconfig,
     const class kernel_trace_t *kernel_trace_info) {
   // fill the inst_t and warp_inst_t params
-  set_cuda_cta_ids(trace.cta_ids);
-  set_cuda_cluster_cta_ids(trace.cluster_cta_ids);
-
+  set_cuda_cta_id(trace.cta_id);
+  set_cuda_cluster_cta_id(trace.cluster_cta_id);
+  set_cuda_cluster_id(trace.cluster_id);
+  set_cuda_cluster_rank(trace.cluster_rank);
   // fill active mask
   active_mask_t active_mask = trace.mask;
   set_active(active_mask);

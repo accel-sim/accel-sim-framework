@@ -144,7 +144,7 @@ void tma_inst_memaddr_info_t::base_delta_decompress(
 }
 
 bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
-                                     unsigned enable_lineinfo, dim3 header_cta_ids, dim3 header_cluster_cta_ids) {
+                                     unsigned enable_lineinfo, dim3 header_cta_id, dim3 header_cluster_cta_id, dim3 header_cluster_id, unsigned header_cluster_rank) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -161,8 +161,10 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
         warpid_tb;
   } else {
     // Set the cta ids
-    cta_ids = header_cta_ids;
-    cluster_cta_ids = header_cluster_cta_ids;
+    cta_id = header_cta_id;
+    cluster_cta_id = header_cluster_cta_id;
+    cluster_id = header_cluster_id;
+    cluster_rank = header_cluster_rank;
   }
   if (enable_lineinfo) {
     ss >> std::dec >> line_num;
@@ -215,9 +217,14 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   }
 
   if (is_tma) {
+
     tma_memadd_info = new tma_inst_memaddr_info_t();
     tma_memadd_info->width = mem_width;
     ss >> std::hex >> tma_mbar_addr;
+    ss >> std::dec >> tma_is_multicast;
+    if (tma_is_multicast) {
+      ss >> std::hex >> tma_multicast_cta_mask;
+    }
     ss >> std::dec >> tma_byte_count;
     ss >> std::dec >> address_mode;
     int32_t transfer_count = 0;
@@ -489,7 +496,10 @@ void trace_parser::get_next_threadblock_traces(
     threadblock_traces[i]->clear();
   }
 
-  unsigned block_id_x = 0, block_id_y = 0, block_id_z = 0;
+  dim3 block_id;
+  dim3 cluster_cta_id;
+  dim3 cluster_id;
+  unsigned cluster_rank = 0;
   bool start_of_tb_stream_found = false;
 
   unsigned warp_id = 0;
@@ -517,8 +527,22 @@ void trace_parser::get_next_threadblock_traces(
         break;  // end of TB stream
       } else if (string1 == "thread" && string2 == "block") {
         assert(start_of_tb_stream_found);
-        sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id_x,
-               &block_id_y, &block_id_z);
+        sscanf(line.c_str(), "thread block = %d,%d,%d", &block_id.x,
+               &block_id.y, &block_id.z);
+        std::cout << line << std::endl;
+      } else if (string1 == "cluster" && string2 == "id") {
+        assert(start_of_tb_stream_found);
+        sscanf(line.c_str(), "cluster id = %d,%d,%d", &cluster_id.x,
+               &cluster_id.y, &cluster_id.z);
+        std::cout << line << std::endl;
+      } else if (string1 == "cluster" && string2 == "cta") {
+        assert(start_of_tb_stream_found);
+        sscanf(line.c_str(), "cluster cta = %d,%d,%d", &cluster_cta_id.x,
+               &cluster_cta_id.y, &cluster_cta_id.z);
+        std::cout << line << std::endl;
+      } else if (string1 == "cluster" && string2 == "rank") {
+        assert(start_of_tb_stream_found);
+        sscanf(line.c_str(), "cluster rank = %d", &cluster_rank);
         std::cout << line << std::endl;
       } else if (string1 == "warp") {
         // the start of new warp stream
@@ -532,10 +556,9 @@ void trace_parser::get_next_threadblock_traces(
         inst_count = 0;
       } else {
         assert(start_of_tb_stream_found);
-        // TODO Handle cluster block id
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo, dim3(block_id_x, block_id_y, block_id_z), dim3(-1, -1, -1));
+            .parse_from_string(line, trace_version, enable_lineinfo, block_id, cluster_cta_id, cluster_id, cluster_rank);
         inst_count++;
       }
     }
