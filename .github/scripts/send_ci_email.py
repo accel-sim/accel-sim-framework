@@ -47,6 +47,8 @@ if EMAIL_TYPE == "success":
         v100_app = os.path.join(REPORT_URL, "v100-combined_per_app.html")
         a100_kernel = os.path.join(REPORT_URL, "ampere-a100-combined_per_kernel.html")
         a100_app = os.path.join(REPORT_URL, "ampere-a100-combined_per_app.html")
+        h100_kernel = os.path.join(REPORT_URL, "hopper-h100-combined_per_kernel.html")
+        h100_app = os.path.join(REPORT_URL, "hopper-h100-combined_per_app.html")
         plots_html = f"""
   <h3>Correlation Plots</h3>
   <ul>
@@ -54,6 +56,8 @@ if EMAIL_TYPE == "success":
     <li><a href=\"{v100_app}\">V100 - Per App</a></li>
     <li><a href=\"{a100_kernel}\">A100 - Per Kernel</a></li>
     <li><a href=\"{a100_app}\">A100 - Per App</a></li>
+    <li><a href=\"{h100_kernel}\">H100 - Per Kernel</a></li>
+    <li><a href=\"{h100_app}\">H100 - Per App</a></li>
   </ul>
 """
     html_body = f"""
