@@ -349,12 +349,16 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // Set TMA mbar address and byte count
       set_tma_mbar_addr(trace.tma_mbar_addr);
       set_tma_byte_count(trace.tma_byte_count);
+      set_tma_multicast(trace.tma_is_multicast);
+      set_tma_multicast_cta_mask(trace.tma_multicast_cta_mask);
     } else {
       // If the TMA instruction is predicated off, we set the addr array to
       // to empty, so it won't generate any memory access during generate_mem_access()
       set_tma_access_addrs(std::vector<uint64_t>());
       set_tma_mbar_addr(0);
       set_tma_byte_count(0);
+      set_tma_multicast(false);
+      set_tma_multicast_cta_mask(0);
     }
   } else if (trace.memadd_info != NULL) {
     data_size = trace.memadd_info->width;
