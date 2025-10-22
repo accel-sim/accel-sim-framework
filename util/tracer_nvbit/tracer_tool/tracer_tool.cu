@@ -1315,7 +1315,15 @@ void *recv_thread_fun(void *args) {
             // Not using multicast
             fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
           }
+          // This is the actual transfer byte count
           fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
+          
+          // This is the oob transfer byte count, if using tensor copy
+          if (info.is_tensor) {
+            fprintf(ctx_resultsFile[ctx], "%ld ", info.tensor.oob_transfer_count * info.transfer_size);
+          } else {
+            fprintf(ctx_resultsFile[ctx], "%ld ", 0);
+          }
 
           // Determine the global address
           TMAElementAddress_t *raw_global_addrs = nullptr;
