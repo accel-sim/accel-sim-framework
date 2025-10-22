@@ -67,7 +67,7 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
 
   // Set the trace header
   int4 cta = get_ctaid();
-#if __CUDA_ARCH__ >= 900 && defined(USE_PRIVATE_TMA)
+  #if __CUDA_ARCH__ >= 900
   int4 cluster_cta = get_cluster_ctaid();
   int4 cluster = get_clusterid();
   int cluster_rank = get_cluster_rank();
