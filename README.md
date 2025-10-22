@@ -1,8 +1,6 @@
 # Welcome to the top-level repo of Accel-Sim and AccelWattch
 [![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/accel-sim/accel-sim-framework)  
-[![Long Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/long-tests.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/long-tests.yml)
-[![Short Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/short-tests.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/short-tests.yml)
-[![Tracer Tool](https://github.com/accel-sim/accel-sim-framework/actions/workflows/tracer-tool.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/tracer-tool.yml)
+[![CI Runs](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml/badge.svg?branch=dev&event=push)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml)
 [![Weekly Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml)
 - [Welcome to the top-level repo of Accel-Sim and AccelWattch](#welcome-to-the-top-level-repo-of-accel-sim-and-accelwattch)
   - [Dependencies](#dependencies)
