@@ -290,6 +290,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       } else if (opcode.find("A0TR") != std::string::npos) {
         // Arrival 0, transaction count based on register value in RD
         memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
+      } else if (opcode.find("A0T1") != std::string::npos) {
+        // Arrival 0, transaction count 1
+        for (int i = 0; i < WARP_SIZE; i++) {
+          operand.u.arrive.txCount[i] = 1;
+        }
       } else {
         printf("WARNING: Unsupported SYNCS ARRIVE variant: %s, ignoring it\n", opcode.c_str());
       }

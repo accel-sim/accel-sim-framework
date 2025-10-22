@@ -240,6 +240,7 @@ enum TraceInstrOpcode {
   // Synchronization-related Instructions
   OP_FENCE,
   OP_SYNCS,
+  OP_ARRIVES,
   // Control Instructions
   OP_ELECT,
   SASS_NUM_OPCODES /* The total number of opcodes. */

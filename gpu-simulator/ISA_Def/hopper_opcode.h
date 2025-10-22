@@ -197,6 +197,17 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     // SYNC Instructions
     {"FENCE", OpcodeChar(OP_FENCE, FENCE_OP)},
     {"SYNCS", OpcodeChar(OP_SYNCS, SYNCS_OP)},
+    // TODO Treat as NOP for now
+    {"ARRIVES", OpcodeChar(OP_ARRIVES, ALU_OP)},
+
+    // UCGABAR Instructions
+    {"UCGABAR_ARV", OpcodeChar(OP_NOP, ALU_OP)},
+    {"UCGABAR_WAIT", OpcodeChar(OP_NOP, ALU_OP)},
+
+    // WARPGROUP MMA Instructions
+    {"WARPGROUP", OpcodeChar(OP_NOP, ALU_OP)},
+    {"QGMMA", OpcodeChar(OP_NOP, ALU_OP)},
+    {"HGMMA", OpcodeChar(OP_NOP, ALU_OP)},
 
     // Texture Instructions
     // For now, we ignore texture loads, consider it as ALU_OP
@@ -254,6 +265,7 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"SETLMEMBASE", OpcodeChar(OP_SETLMEMBASE, ALU_OP)},
     {"VOTE", OpcodeChar(OP_VOTE, ALU_OP)},
     {"VOTE_VTG", OpcodeChar(OP_VOTE_VTG, ALU_OP)},
+    {"USETMAXREG", OpcodeChar(OP_NOP, ALU_OP)},
 
 };
 
