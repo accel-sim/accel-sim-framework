@@ -64,7 +64,7 @@ jobs:
           
           # Try to checkout the same branch from the same owner's fork first
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            current_owner=${{ github.event.pull_request.head.repo.full_name }}
+            current_owner=$(echo ${{ github.event.pull_request.head.repo.full_name }} | cut -d'/' -f1)
           else
             current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
           fi
@@ -202,7 +202,7 @@ jobs:
           
           # Try to checkout the same branch from the same owner's fork first
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            current_owner=${{ github.event.pull_request.head.repo.full_name }}
+            current_owner=$(echo ${{ github.event.pull_request.head.repo.full_name }} | cut -d'/' -f1)
           else
             current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
           fi
