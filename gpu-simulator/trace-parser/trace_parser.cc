@@ -226,6 +226,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       ss >> std::hex >> tma_multicast_cta_mask;
     }
     ss >> std::dec >> tma_byte_count;
+    ss >> std::dec >> tma_oob_byte_count;
     ss >> std::dec >> address_mode;
     int32_t transfer_count = 0;
     if (address_mode == address_format::tma_list_all) {

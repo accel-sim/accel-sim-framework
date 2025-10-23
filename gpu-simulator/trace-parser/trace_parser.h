@@ -101,6 +101,7 @@ struct inst_trace_t {
   uint16_t tma_multicast_cta_mask = 0;
   uint32_t tma_mbar_addr = 0;
   size_t tma_byte_count = 0;
+  size_t tma_oob_byte_count = 0;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
                          unsigned enable_lineinfo, dim3 header_cta_id = dim3(-1, -1, -1), dim3 header_cluster_cta_id = dim3(-1, -1, -1), dim3 header_cluster_id = dim3(-1, -1, -1), unsigned header_cluster_rank = 0);
