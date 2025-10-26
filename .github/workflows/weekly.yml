@@ -104,3 +104,19 @@ jobs:
           # ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
           ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
           ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$
+  failures:
+    if: failure()
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPORT_URL: ""
+    runs-on: tgrogers-raid
+    needs: [Tracer-Weekly, SASS-Weekly]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify Failure
+        run: |
+          # Setup envs
+          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git 
+          source ./env-setup/common/common_inc.sh
+          export BRANCH_NAME="Weekly Tests"
+          python3 .github/scripts/send_ci_email.py -t failure
