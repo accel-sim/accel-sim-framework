@@ -38,6 +38,7 @@ jobs:
           git -C ./gpu-app-collection/ submodule update --init -- ./src/cuda/cuda-samples
           source ./gpu-app-collection/src/setup_environment
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
+          make -j8 -C ./gpu-app-collection/src rodinia_2.0-ft
           make -j8 -C ./gpu-app-collection/src rodinia-3.1
           make -j8 -C ./gpu-app-collection/src GPU_Microbenchmark
           # make -j8 -C ./gpu-app-collection/src Deepbench_nvidia
@@ -52,8 +53,8 @@ jobs:
           rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
-          ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark -D 7
-          # ./util/tracer_nvbit/run_hw_trace.py -B rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
+          ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          # ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
       - name: generate-spinlock-traces-spinlock_handling
         run: |
           source ./env-setup/12.8_env_setup.sh
@@ -101,8 +102,8 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces ./hw_run
-          # ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
-          ./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
+          # ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS-5B_INSN -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
           ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$
   failures:
     if: failure()

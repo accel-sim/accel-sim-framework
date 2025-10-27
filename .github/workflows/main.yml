@@ -267,6 +267,41 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           rm -rf ./gpu-simulator/gpgpu-sim
+
+          # Clone gpgpu-sim with fork-aware branch selection
+          echo "Cloning gpgpu-sim with fork-aware branch selection..."
+          git clone --quiet git@github.com:accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
+
+          # Try to checkout the same branch from the same owner's fork first
+          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
+            current_owner=$(echo ${{ github.event.pull_request.head.repo.full_name }} | cut -d'/' -f1)
+          else
+            current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
+          fi
+          current_repo=$(echo ${{ github.repository }} | cut -d'/' -f2)
+
+          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
+
+          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
+
+          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
+            # Check if the branch exists in the fork owner's repository
+            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
+            else
+              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to upstream dev branch"
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
+            fi
+            # Remove the temporary remote
+            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
+          else
+            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
+            git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
+          fi
+
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           make -j20 -C gpu-simulator
