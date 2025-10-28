@@ -291,13 +291,18 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       } else if (opcode.find("A0TR") != std::string::npos) {
         // Arrival 0, transaction count based on register value in RD
         memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
+      } else if (opcode.find("A0TX") != std::string::npos) {
+        // Arrival 0, complete transaction count based on register value in RD
+        set_syncs_op(SYNCS_COMPELTE_TX);
+        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.complete_tx.txCount));
       } else if (opcode.find("A0T1") != std::string::npos) {
         // Arrival 0, transaction count 1
         for (int i = 0; i < WARP_SIZE; i++) {
           operand.u.arrive.txCount[i] = 1;
         }
       } else {
-        printf("WARNING: Unsupported SYNCS ARRIVE variant: %s, ignoring it\n", opcode.c_str());
+        printf("Error: Unsupported SYNCS ARRIVE variant: %s, aborting execution\n", opcode.c_str());
+        exit(1);
       }
     } else if (opcode == "SYNCS.PHASECHK.TRANS64") { // mbarrier.test_wait
       set_syncs_op(SYNCS_TEST_WAIT);
@@ -493,6 +498,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     // will be assigned once the instruction is met.
     case OP_LDGDEPBAR:
       m_is_ldgdepbar = true;
+      break;
+    // UMACMDFLUSH is to used to form a bulk group containing all the previous stores due to
+    // TMA instructions. Here we reuse the same logic as LDGSTS groups.
+    case OP_UTMACMDFLUSH:
+      m_is_tma_cmdflush = true;
       break;
     // DEPBAR is served as a warp-wise barrier that is only effective for LDGSTS
     // instructions. It is associated with a immediate value. The immediate
