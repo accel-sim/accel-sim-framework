@@ -51,8 +51,8 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run
           # ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
       - name: generate-spinlock-traces-spinlock_handling
