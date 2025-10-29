@@ -285,7 +285,7 @@ for bench in benchmarks:
                 
                 if options.set != "none":
                     sh_contents += (
-                        f"\nncu --set {options.set} -o {os.path.join(this_run_dir, f'ncu_set_{options.set}')} {exec_path} {str(args)}; "
+                        f"\nncu --set {options.set} {options.ncu_flags} -o {os.path.join(this_run_dir, f'ncu_set_{options.set}')} {exec_path} {str(args)}; "
                     )
 
         for i in range(int(options.repeat_cycle)):
