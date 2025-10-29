@@ -9,6 +9,7 @@ env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
 jobs:
   Tracer-Weekly:
+    timeout-minutes: 720
     if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-gpu01
     defaults:
@@ -65,6 +66,7 @@ jobs:
           ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
   SASS-Weekly:
+    timeout-minutes: 720
     needs: [Tracer-Weekly]
     if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-raid 
