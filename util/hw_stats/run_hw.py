@@ -85,6 +85,12 @@ parser.add_option(
     help="use the new nsight cli profiler",
 )
 parser.add_option(
+    "--ncu-flags",
+    dest="ncu_flags",
+    help="Additional flags to pass to ncu",
+    default="",
+)
+parser.add_option(
     "-d",
     "--disable_nvprof",
     dest="disable_nvprof",
@@ -256,6 +262,7 @@ for bench in benchmarks:
                     " --csv --page raw --target-processes all -f "
                     + cuda_graph_flag
                     + kernel_number
+                    + f" {options.ncu_flags} "
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_stats")
                 )
@@ -333,6 +340,7 @@ for bench in benchmarks:
                 profile_command = (
                     "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv -f "
                     + kernel_number
+                    + f" {options.ncu_flags} "
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_cycles.{0}".format(i))
                 )
