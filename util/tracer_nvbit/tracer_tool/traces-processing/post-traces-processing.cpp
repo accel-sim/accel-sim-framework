@@ -410,7 +410,8 @@ void group_per_block(const char *filepath) {
       // trace, because it has two memory references. This is trying to remove
       // the one with the shared memory address.
 
-      if (opcode.find("LDGSTS") != string::npos) {
+      // Check if opcode starts with "LDGSTS" (not just contains it, to avoid matching ARRIVES.LDGSTSBAR)
+      if (opcode.rfind("LDGSTS", 0) == 0) {
         if (!ldgsts_flags[tb_id][warpid_tb]) {
           insts[tb_id].warp_insts_array[warpid_tb].push_back(inst_ptr);
         }
