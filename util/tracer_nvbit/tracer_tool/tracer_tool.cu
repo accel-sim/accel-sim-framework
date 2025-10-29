@@ -577,6 +577,8 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
   if (active_from_start && should_trace_kernel(ctx_kernelid[ctx], func_name))
     active_region = true;
+  else
+    active_region = false;
 
   // Terminate tracing if the limit number of kernels is reached
   if (terminate_after_limit_number_of_kernels_reached && g_max_kernel_id != 0 &&
@@ -777,10 +779,6 @@ static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
       pclose(ctx_resultsFile[ctx]);
     }
   }
-
-  std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
-  if (active_from_start && !should_trace_kernel(ctx_kernelid[ctx], func_name))
-    active_region = false;
 }
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
