@@ -1311,7 +1311,7 @@ void *recv_thread_fun(void *args) {
             // mbarrier address, set to 0
             fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
             // Not using multicast
-            fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
+            fprintf(ctx_resultsFile[ctx], "0 ");
           }
           // This is the actual transfer byte count
           fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
