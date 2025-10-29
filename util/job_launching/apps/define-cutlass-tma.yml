@@ -27,43 +27,19 @@ cutlass_tma_medium:
         - cutlass_48_hopper_warp_specialized_gemm:
             - args: --m=4096 --n=64 --k=4096 --iterations=0
               accel-sim-mem: 20G
-            - args: --m=4096 --n=32 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=16 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=8 --k=4096 --iterations=0
-              accel-sim-mem: 20G
             - args: --m=4096 --n=4 --k=4096 --iterations=0
               accel-sim-mem: 20G
             - args: --m=8192 --n=64 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=8192 --n=32 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=8192 --n=16 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=8192 --n=8 --k=4096 --iterations=0
               accel-sim-mem: 20G
             - args: --m=8192 --n=4 --k=4096 --iterations=0
               accel-sim-mem: 20G
         - cutlass_100_hopper_tma_warpspecialized_gemm:
             - args: --m=4096 --n=64 --k=4096 --iterations=0
               accel-sim-mem: 20G
-            - args: --m=4096 --n=32 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=16 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=8 --k=4096 --iterations=0
-              accel-sim-mem: 20G
             - args: --m=4096 --n=4 --k=4096 --iterations=0
               accel-sim-mem: 20G
         - cutlass_100_hopper_cpasync_warpspecialized_gemm:
             - args: --m=4096 --n=64 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=32 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=16 --k=4096 --iterations=0
-              accel-sim-mem: 20G
-            - args: --m=4096 --n=8 --k=4096 --iterations=0
               accel-sim-mem: 20G
             - args: --m=4096 --n=4 --k=4096 --iterations=0
               accel-sim-mem: 20G
