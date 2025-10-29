@@ -198,7 +198,7 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"FENCE", OpcodeChar(OP_FENCE, FENCE_OP)},
     {"SYNCS", OpcodeChar(OP_SYNCS, SYNCS_OP)},
     // TODO Treat as NOP for now
-    {"ARRIVES", OpcodeChar(OP_ARRIVES, ALU_OP)},
+    {"ARRIVES", OpcodeChar(OP_ARRIVES, ARRIVES_OP)},
 
     // UCGABAR Instructions
     {"UCGABAR_ARV", OpcodeChar(OP_NOP, ALU_OP)},

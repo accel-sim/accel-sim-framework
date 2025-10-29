@@ -577,6 +577,18 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // to handle the ldst_unit's writeback correctly
       space.set_type(shared_space);
       break;
+    case OP_ARRIVES:
+      // Handle ARRIVES.LDGSTSBAR.64.TRANSCNT, which is used to update mbarrier complete count
+      // when all prior LDGSTS instructions are done
+      if (opcode.find("ARRIVES.LDGSTSBAR.64.TRANSCNT") != std::string::npos) {
+        m_is_ldgsts_arrives_mbar = true;
+        for (int i = 0; i < WARP_SIZE; i++) {
+          m_ldgsts_arrives_mbar_addr[i] = trace.memadd_info->addrs[i];
+        }
+      } else {
+        printf("WARNING: Unsupported ARRIVES instruction: %s, ignoring it\n", opcode.c_str());
+      }
+      break;
     default:
       break;
   }
