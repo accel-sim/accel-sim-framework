@@ -312,7 +312,7 @@ jobs:
           ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
           cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/ -N rodinia_2.0-ft-online-$$
-          ./util/job_launching/monitor_func_test.py -N rodinia_2.0-ft-online-$$ -v
+          ./util/job_launching/monitor_func_test.py --sleep_time 300 -N rodinia_2.0-ft-online-$$ -v
           rm -rf hw_run
           rm -rf sim_run_11.0
       - name: Build Tracer
@@ -345,7 +345,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-7/ -N rodinia_2.0-ft-$$
-          ./util/job_launching/monitor_func_test.py -I -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
+          ./util/job_launching/monitor_func_test.py --sleep_time 300 -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
   SASS-Simulation-Docker:
     needs: [check-format]
     runs-on: ubuntu-latest

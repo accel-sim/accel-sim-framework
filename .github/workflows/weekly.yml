@@ -128,16 +128,16 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
           ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run ./hw_run
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
-          ./util/job_launching/monitor_func_test.py -T 12 -S 1800 -I -v -s weekly-stats-per-app.csv -N weekly-$$
+          ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s weekly-stats-per-app.csv -N weekly-$$
       - name: test-new-traces-spinlock_handling
         # Test only fast-forwarded traces as the none one takes too long to run (~2-3 hr)
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
           ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
-          ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
+          ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
           # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
-          # ./util/job_launching/monitor_func_test.py -I -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
+          # ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
   failures:
     if: failure()
     env:
