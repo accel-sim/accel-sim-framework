@@ -241,12 +241,17 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
       std::vector<long long> deltas;
       ss >> std::hex >> base_addr;
       ss >> std::dec >> transfer_count;
-      for (int s = 1; s < transfer_count; s++) {
-        long long delta = 0;
-        ss >> std::dec >> delta;
-        deltas.push_back(delta);
+      // If there are actual accesses, need to parse the deltas
+      if (transfer_count > 0) {
+        for (int s = 1; s < transfer_count; s++) {
+          long long delta = 0;
+          ss >> std::dec >> delta;
+          deltas.push_back(delta);
+        }
+        tma_memadd_info->base_delta_decompress(base_addr, deltas, mask_bits);
+      } else {
+        tma_memadd_info->addrs.clear();
       }
-      tma_memadd_info->base_delta_decompress(base_addr, deltas, mask_bits);
     } else {
       assert(0 && "Unsupported address mode");
     }
