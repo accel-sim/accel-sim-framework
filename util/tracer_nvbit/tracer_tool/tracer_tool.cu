@@ -403,6 +403,8 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int mem_oper_idx = -1;
       int num_mref = 0;
       uint64_t imm_value = 0;
+      // Check if `gsb` exists in full SASS string
+      int is_gmma_commit_group = strstr(instr->getSass(), "gsb") != NULL;
 
       for (int i = 0; i < instr->getNumOperands(); ++i) {
         const InstrType::operand_t *op = instr->getOperand(i);
@@ -542,6 +544,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           // we are printing to files by checking src_oprd's reg number
           add_reg_val(0);
         }
+
+        // Add is_gmma_commit_group flag
+        nvbit_add_call_arg_const_val32(instr, is_gmma_commit_group);
         mem_oper_idx--;
       } while (mem_oper_idx >= 0);
 
@@ -1234,6 +1239,10 @@ void *recv_thread_fun(void *args) {
             print_reg(trace->inst.regular.GPRSrcs[s]);
           }
         }
+
+        // Print is_gmma_commit_group flag
+        fprintf(ctx_resultsFile[ctx], "%d ", trace->is_gmma_commit_group);
+
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
         if (trace->inst_type == TracerInstrType::INST_REGULAR &&

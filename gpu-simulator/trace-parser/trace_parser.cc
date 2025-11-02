@@ -199,6 +199,9 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     parse_trace_reg_num(reg_src[i]);
   }
 
+  // Parse is_gmma_commit_group flag
+  ss >> std::dec >> is_gmma_commit_group;
+
   // parse mem info
   unsigned address_mode = 0;
   unsigned mem_width = 0;

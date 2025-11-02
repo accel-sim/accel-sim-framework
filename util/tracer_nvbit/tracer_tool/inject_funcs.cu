@@ -50,7 +50,8 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
                 uint32_t srcReg2Val,
                 uint32_t srcReg3Val,
                 uint32_t srcReg4Val,
-                uint32_t srcReg5Val) {
+                uint32_t srcReg5Val,
+                bool is_gmma_commit_group) {
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
   const int laneid = get_laneid();
@@ -78,7 +79,6 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
   #endif
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
-  trace.instr_idx = instr_idx;
   trace.active_mask = active_mask;
   trace.predicate_mask = predicate_mask;
   trace.cta_id_x = cta.x;
@@ -97,6 +97,8 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
   trace.opcode_id = opcode_id;
   trace.vpc = vpc;
   trace.line_num = line_num;
+  trace.instr_idx = instr_idx;
+  trace.is_gmma_commit_group = is_gmma_commit_group;
 
   if (!is_tma) {
     // For regular instructions

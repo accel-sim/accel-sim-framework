@@ -94,6 +94,7 @@ struct inst_trace_t {
   unsigned reg_srcs_num;
   trace_reg_t reg_src[MAX_SRC];
   std::vector<reg_val_t> reg_src_vals;
+  unsigned is_gmma_commit_group;
   uint64_t imm;
   inst_memadd_info_t *memadd_info = nullptr;
   tma_inst_memaddr_info_t *tma_memadd_info = nullptr;

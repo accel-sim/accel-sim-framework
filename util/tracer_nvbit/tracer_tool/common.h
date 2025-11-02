@@ -38,9 +38,11 @@ typedef struct {
   int warpid_sm;
   int sm_id;
   int opcode_id;
-  uint32_t instr_idx;
+  // Whether this is a GMMA commit group instruction
+  int is_gmma_commit_group;
   uint32_t vpc;
   uint32_t line_num;
+  uint32_t instr_idx;
   TracerInstrType inst_type;
   union {
     // For regular instructions

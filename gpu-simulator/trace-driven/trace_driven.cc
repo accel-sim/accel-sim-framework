@@ -620,6 +620,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         std::string err_msg = "Failed to extract M, N, K values from the string: " + mxnxk;
         assert(false && err_msg.c_str());
       }
+
+      // Set m_is_gmma_commit_group here
+      m_is_gmma_commit_group = trace.is_gmma_commit_group;
     }
     break;
     default:
