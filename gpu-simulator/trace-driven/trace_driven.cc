@@ -589,6 +589,39 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         printf("WARNING: Unsupported ARRIVES instruction: %s, ignoring it\n", opcode.c_str());
       }
       break;
+    case OP_QGMMA:
+    case OP_HGMMA:
+    case OP_IGMMA: {
+      // For GMMA instructions, their latency and initiation interval depends solely on N size
+      // MxNxK is the MMA tile shape
+      std::string mxnxk = opcode_tokens[1];
+
+      // Extract M, N, K values from the string (format: "MxNxK")
+      std::stringstream ss(mxnxk);
+      std::string m_str, n_str, k_str;
+
+      if (std::getline(ss, m_str, 'x') &&
+          std::getline(ss, n_str, 'x') &&
+          std::getline(ss, k_str)) {
+        int M = std::stoi(m_str);
+        int N = std::stoi(n_str);
+        int K = std::stoi(k_str);
+
+        auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
+        if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
+          // Set the instruction latency based on N size
+          latency = iter->second.first;
+          initiation_interval = iter->second.second;
+        } else {
+          std::string err_msg = "Unsupported N size: " + std::to_string(N);
+          assert(false && err_msg.c_str());
+        }
+      } else {
+        std::string err_msg = "Failed to extract M, N, K values from the string: " + mxnxk;
+        assert(false && err_msg.c_str());
+      }
+    }
+    break;
     default:
       break;
   }

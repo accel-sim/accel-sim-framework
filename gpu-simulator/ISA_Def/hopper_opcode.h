@@ -206,8 +206,10 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
     // WARPGROUP MMA Instructions
     {"WARPGROUP", OpcodeChar(OP_NOP, ALU_OP)},
-    {"QGMMA", OpcodeChar(OP_NOP, ALU_OP)},
-    {"HGMMA", OpcodeChar(OP_NOP, ALU_OP)},
+    // GMMA will be mapped to specialized unit 5
+    {"QGMMA", OpcodeChar(OP_QGMMA, SPECIALIZED_UNIT_5_OP)},
+    {"HGMMA", OpcodeChar(OP_HGMMA, SPECIALIZED_UNIT_5_OP)},
+    {"IGMMA", OpcodeChar(OP_IGMMA, SPECIALIZED_UNIT_5_OP)},
 
     // Texture Instructions
     // For now, we ignore texture loads, consider it as ALU_OP
@@ -267,6 +269,19 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"VOTE_VTG", OpcodeChar(OP_VOTE_VTG, ALU_OP)},
     {"USETMAXREG", OpcodeChar(OP_NOP, ALU_OP)},
 
+};
+
+// Hopper GMMA N size to latency and initiation interval mapping
+// Collected from lat_gmma and MaxFlops_gmma microbenchmarks
+static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
+    {256, std::make_pair(128, 32)},
+    {192, std::make_pair(96, 24)},
+    {128, std::make_pair(64, 16)},
+    {96, std::make_pair(48, 12)},
+    {64, std::make_pair(32, 8)},
+    {32, std::make_pair(24, 6)},
+    {16, std::make_pair(20, 5)},
+    {8, std::make_pair(18, 4)},
 };
 
 #endif

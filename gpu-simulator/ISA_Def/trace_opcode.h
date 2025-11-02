@@ -237,6 +237,10 @@ enum TraceInstrOpcode {
   OP_UTMAPF,
   OP_UTMAREDG,
   OP_UTMASTG,
+  // For Hopper GMMA
+  OP_QGMMA,
+  OP_HGMMA,
+  OP_IGMMA,
   // Synchronization-related Instructions
   OP_FENCE,
   OP_SYNCS,
