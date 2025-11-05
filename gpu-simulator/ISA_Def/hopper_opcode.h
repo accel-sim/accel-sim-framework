@@ -274,28 +274,15 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
 // Hopper GMMA N size to latency and initiation interval mapping
 // Collected from lat_gmma and MaxFlops_gmma microbenchmarks
-// static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
-//     {256, std::make_pair(128, 32)},
-//     {192, std::make_pair(96, 24)},
-//     {128, std::make_pair(64, 16)},
-//     {96, std::make_pair(48, 12)},
-//     {64, std::make_pair(32, 8)},
-//     {32, std::make_pair(24, 6)},
-//     {16, std::make_pair(20, 5)},
-//     {8, std::make_pair(18, 4)},
-// };
-
-// Doubling the real latency and initiation interval to increase the MMA warp's duration
-// for accounting the lack of uniform pipeline and register tacking
 static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
-    {256, std::make_pair(256, 64)},
-    {192, std::make_pair(192, 48)},
-    {128, std::make_pair(128, 32)},
-    {96, std::make_pair(96, 24)},
-    {64, std::make_pair(64, 16)},
-    {32, std::make_pair(48, 12)},
-    {16, std::make_pair(40, 10)},
-    {8, std::make_pair(36, 9)},
+    {256, std::make_pair(128, 128)},
+    {192, std::make_pair(96, 96)},
+    {128, std::make_pair(64, 64)},
+    {96, std::make_pair(48, 48)},
+    {64, std::make_pair(32, 32)},
+    {32, std::make_pair(24, 24)},
+    {16, std::make_pair(20, 20)},
+    {8, std::make_pair(18, 18)},
 };
 
 #endif
