@@ -1296,101 +1296,97 @@ void *recv_thread_fun(void *args) {
         } else if (trace->inst_type == TracerInstrType::INST_TMA) {
 #ifdef USE_PRIVATE_NVBIT
           // TMA instructions
-          const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
-          TMATransferInfo_t info = nvbit_parse_tma_transfer_info(
-              ctx, opcode_str, trace->inst.tma.tma_param_handle,
-              trace->inst.tma.tma_param_handle_size);
-          // Get TMA transfer size, which is the data width
-          fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
+          // Check if the bitmask is all 0, if so, dont parse the TMA instruction
+          if ((trace->active_mask & trace->predicate_mask) == 0) {
+            fprintf(ctx_resultsFile[ctx], "0 ");
+          } else {
+            // Parse the TMA instruction
+            const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
+            TMATransferInfo_t info = nvbit_parse_tma_transfer_info(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size);
+            // Get TMA transfer size, which is the data width
+            fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
 
-          // Get TMA mbar address
-          if (info.dst_memspace == InstrType::MemorySpace::DISTRIBUTED_SHARED) {
-            assert(info.dst.shared.is_mbar_valid && "Invalid TMA mbar address");
-            fprintf(ctx_resultsFile[ctx], "0x%08x ", info.dst.shared.mbar_address);
-            if (info.is_multicast) {
-              // Using multicast
-              fprintf(ctx_resultsFile[ctx], "1 ");
-              // multicast flags
-              fprintf(ctx_resultsFile[ctx], "0x%04x ", info.multicast_cta_mask);
+            // Get TMA mbar address
+            if (info.dst_memspace == InstrType::MemorySpace::DISTRIBUTED_SHARED) {
+              assert(info.dst.shared.is_mbar_valid && "Invalid TMA mbar address");
+              fprintf(ctx_resultsFile[ctx], "0x%08x ", info.dst.shared.mbar_address);
+              if (info.is_multicast) {
+                // Using multicast
+                fprintf(ctx_resultsFile[ctx], "1 ");
+                // multicast flags
+                fprintf(ctx_resultsFile[ctx], "0x%04x ", info.multicast_cta_mask);
+              } else {
+                // Not using multicast
+                fprintf(ctx_resultsFile[ctx], "0 ");
+              }
             } else {
+              // mbarrier address, set to 0
+              fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
               // Not using multicast
               fprintf(ctx_resultsFile[ctx], "0 ");
             }
-          } else {
-            // mbarrier address, set to 0
-            fprintf(ctx_resultsFile[ctx], "0x%08x ", 0);
-            // Not using multicast
-            fprintf(ctx_resultsFile[ctx], "0 ");
-          }
-          // This is the actual transfer byte count
-          fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
-          
-          // This is the oob transfer byte count, if using tensor copy
-          if (info.is_tensor) {
-            fprintf(ctx_resultsFile[ctx], "%ld ", info.tensor.oob_transfer_count * info.transfer_size);
-          } else {
-            fprintf(ctx_resultsFile[ctx], "%ld ", 0);
-          }
-
-          // Determine the global address
-          TMAElementAddress_t *raw_global_addrs = nullptr;
-          uint64_t *global_addrs = nullptr;
-          size_t global_count = 0, global_count_inbound = 0;
-          if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
-            nvbit_parse_tma_src_addrs(ctx, opcode_str,
-                                      trace->inst.tma.tma_param_handle,
-                                      trace->inst.tma.tma_param_handle_size,
-                                      &raw_global_addrs, &global_count);
-          } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
-            nvbit_parse_tma_dst_addrs(ctx, opcode_str,
-                                      trace->inst.tma.tma_param_handle,
-                                      trace->inst.tma.tma_param_handle_size,
-                                      &raw_global_addrs, &global_count);
-          }
-
-          // Count inbound global addresses
-          for (size_t i = 0; i < global_count; i++) {
-            if (!raw_global_addrs[i].is_oob) {
-              global_count_inbound++;
+            // This is the actual transfer byte count
+            fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
+            
+            // This is the oob transfer byte count, if using tensor copy
+            if (info.is_tensor) {
+              fprintf(ctx_resultsFile[ctx], "%ld ", info.tensor.oob_transfer_count * info.transfer_size);
+            } else {
+              fprintf(ctx_resultsFile[ctx], "%ld ", 0);
             }
-          }
 
-          global_addrs =
-              (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
-          size_t global_idx = 0;
-          for (size_t i = 0; i < global_count; i++) {
-            if (!raw_global_addrs[i].is_oob) {
-              global_addrs[global_idx] = raw_global_addrs[i].address;
-              global_idx++;
+            // Determine the global address
+            TMAElementAddress_t *raw_global_addrs = nullptr;
+            uint64_t *global_addrs = nullptr;
+            size_t global_count = 0, global_count_inbound = 0;
+            if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
+              nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+            } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
+              nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
             }
-          }
 
-          // Try to compress memory addresses
-          uint64_t base_addr = 0;
-          std::vector<long long> deltas;
-          if (enable_compress) {
-            base_delta_compress_tma(global_addrs, global_count_inbound, mask,
-                                    base_addr, deltas);
-          }
-
-          if (enable_compress) {
-            fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
-                    address_format::tma_base_delta, base_addr);
-            fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
-            for (int s = 0; s < deltas.size(); s++) {
-              fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
+            // Count inbound global addresses
+            for (size_t i = 0; i < global_count; i++) {
+              if (!raw_global_addrs[i].is_oob) {
+                global_count_inbound++;
+              }
             }
-          } else {
-            // list all the addresses
-            fprintf(ctx_resultsFile[ctx], "%u ", address_format::tma_list_all);
-            fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
-            for (int s = 0; s < global_count_inbound; s++) {
-              fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);
-            }
-          }
 
-          free(raw_global_addrs);
-          free(global_addrs);
+            global_addrs = (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
+            size_t global_idx = 0;
+            for (size_t i = 0; i < global_count; i++) {
+              if (!raw_global_addrs[i].is_oob) {
+                global_addrs[global_idx] = raw_global_addrs[i].address;
+                global_idx++;
+              }
+            }
+
+            // Try to compress memory addresses
+            uint64_t base_addr = 0;
+            std::vector<long long> deltas;
+            if (enable_compress) {
+              base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
+            }
+            
+            if (enable_compress) {
+              fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
+                      address_format::tma_base_delta, base_addr);
+              fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
+              for (int s = 0; s < deltas.size(); s++) {
+                fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
+              }
+            } else {
+              // list all the addresses
+              fprintf(ctx_resultsFile[ctx], "%u ", address_format::tma_list_all);
+              fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
+              for (int s = 0; s < global_count_inbound; s++) {
+                fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);
+              }
+            }
+
+            free(raw_global_addrs);
+            free(global_addrs);
+          }
 #endif
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
