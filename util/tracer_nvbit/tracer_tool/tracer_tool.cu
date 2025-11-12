@@ -90,6 +90,26 @@ int xz_compress_trace = 0;
 std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
+/* Variable to control if NVBit instrumentation is enabled */
+bool nvbit_instrumentation_enabled = false;
+const char* nvbit_instrumentation_tag = "DEFAULT";
+
+/* NVBit instrumentation control functions in C so interaction
+ * is easier with the tool*/
+extern "C" {
+    void set_nvbit_instrumentation_tag(const char* tag) {
+        nvbit_instrumentation_tag = tag;
+    }
+
+    void enable_nvbit_instrumentation() {
+        nvbit_instrumentation_enabled = true;
+    }
+
+    void disable_nvbit_instrumentation() {
+        nvbit_instrumentation_enabled = false;
+    }
+}
+
 std::string user_folder = getcwd(NULL, 0);
 std::string cwd = getcwd(NULL, 0);
 std::string traces_location = cwd + "/traces/";
@@ -291,6 +311,9 @@ void nvbit_at_init() {
   GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
               "EXPERIMENTAL: Enable the tracing of register values. Trace "
               "format is not stable. Trace version is 6.");
+  GET_VAR_INT(nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0, 
+                "Enable NVBit instrumentation. Can be controlled at runtime using "
+                "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -581,7 +604,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   // Mark if the kernel should be traced
   std::string func_name = std::string(nvbit_get_func_name(ctx, func, true));
   if (active_from_start && should_trace_kernel(ctx_kernelid[ctx], func_name))
-    active_region = true;
+    active_region = nvbit_instrumentation_enabled;
   else
     active_region = false;
 
@@ -952,7 +975,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
   // For cuProfiler, we need to set the active region accordingly
   case API_CUDA_cuProfilerStart: {
     if (is_exit && !active_from_start) {
-      active_region = true;
+      active_region = nvbit_instrumentation_enabled;
     }
   } break;
   case API_CUDA_cuProfilerStop: {

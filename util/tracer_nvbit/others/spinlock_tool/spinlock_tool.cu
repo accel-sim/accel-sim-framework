@@ -128,6 +128,26 @@ std::map<int, std::string> id_to_opcode_map;
 /* grid launch id, incremented at every launch */
 uint64_t global_grid_launch_id = 0;
 
+/* Variable to control if NVBit instrumentation is enabled */
+int nvbit_instrumentation_enabled = 0;
+const char* nvbit_instrumentation_tag = "DEFAULT";
+
+/* NVBit instrumentation control functions in C so interaction
+ * is easier with the tool*/
+extern "C" {
+    void set_nvbit_instrumentation_tag(const char* tag) {
+        nvbit_instrumentation_tag = tag;
+    }
+
+    void enable_nvbit_instrumentation() {
+        nvbit_instrumentation_enabled = 1;
+    }
+
+    void disable_nvbit_instrumentation() {
+        nvbit_instrumentation_enabled = 0;
+    }
+}
+
 /* Spinlock phase */
 int spinlock_phase = 0;
 // At end of phase SPINLOCK_PHASE_CHECK, we will compare the merged histogram
@@ -149,6 +169,9 @@ void nvbit_at_init() {
         instr_end_interval, "INSTR_END", UINT32_MAX,
         "End of the instruction interval where to apply instrumentation");
     GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
+    GET_VAR_INT(nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0, 
+        "Enable NVBit instrumentation. Can be controlled at runtime using "
+        "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
     GET_VAR_INT(spinlock_phase, "SPINLOCK_PHASE", 0, "Spinlock phase");
     GET_VAR_STR(spinlock_run_dir, "TRACES_FOLDER", "Spinlock detection base directory, use the same as the traces folder");
     GET_VAR_INT(spinlock_keep_intermediate_files, "SPINLOCK_KEEP_INTERMEDIATE_FILES", 0, "Keep intermediate files");
@@ -372,7 +395,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
     // during stream capture or manual graph build, no kernel is launched, so
     // do not set launch argument, do not print kernel info, do not increase
     // grid_launch_id. All these should be done at graph node launch time.
-    if (!stream_capture && !build_graph) {
+    if (!stream_capture && !build_graph && nvbit_instrumentation_enabled) {
         /* set grid launch id at launch time */
         nvbit_set_at_launch(ctx, func, (uint64_t)grid_launch_id);
 
@@ -411,7 +434,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
     }
 
     /* enable instrumented code to run */
-    nvbit_enable_instrumented(ctx, func, true);
+    nvbit_enable_instrumented(ctx, func, nvbit_instrumentation_enabled);
 
     // Reset the kernel receiving done flag for new kernel launch
     ctx_state->kernel_receiving_done = false;
