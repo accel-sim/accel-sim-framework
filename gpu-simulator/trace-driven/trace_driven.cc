@@ -585,7 +585,7 @@ const warp_inst_t *trace_shader_core_ctx::get_next_inst(unsigned warp_id,
   trace_shd_warp_t *m_trace_warp =
       static_cast<trace_shd_warp_t *>(m_warp[warp_id]);
   const trace_warp_inst_t *ret = m_trace_warp->get_next_trace_inst();
-  if (m_trace_warp->trace_done()) {
+  if (ret == NULL && m_trace_warp->trace_done()) {
     if (!m_warp[warp_id]->inst_in_pipeline() &&
         m_warp[warp_id]->stores_done() &&
         !m_scoreboard->pendingWrites(warp_id)) {
