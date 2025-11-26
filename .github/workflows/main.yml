@@ -15,7 +15,7 @@ on:
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
-  PR_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name }}
+  PR_HEAD_REPO_FULL_NAME: ${{ github.event.pull_request.head.repo.full_name || github.repository }}
 
 jobs:
   check-format:
