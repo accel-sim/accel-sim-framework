@@ -234,7 +234,7 @@ for bench in benchmarks:
                     "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum,"
                     "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum,"
                     "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum"
-                    " --csv --page raw --target-processes all "
+                    " --csv --page raw --target-processes all -f "
                     + kernel_number
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_stats")
@@ -306,7 +306,7 @@ for bench in benchmarks:
                 )
             elif options.nsight_profiler:
                 profile_command = (
-                    "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv "
+                    "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv -f "
                     + kernel_number
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_cycles.{0}".format(i))
