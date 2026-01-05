@@ -592,39 +592,47 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_QGMMA:
     case OP_HGMMA:
     case OP_IGMMA: {
-      // For GMMA instructions, their latency and initiation interval depends solely on N size
-      // MxNxK is the MMA tile shape
-      std::string mxnxk = opcode_tokens[1];
+        // For GMMA instructions, their latency and initiation interval depends solely on N size
+        // MxNxK is the MMA tile shape
+        std::string mxnxk = opcode_tokens[1];
 
-      // Extract M, N, K values from the string (format: "MxNxK")
-      std::stringstream ss(mxnxk);
-      std::string m_str, n_str, k_str;
+        // Extract M, N, K values from the string (format: "MxNxK")
+        std::stringstream ss(mxnxk);
+        std::string m_str, n_str, k_str;
 
-      if (std::getline(ss, m_str, 'x') &&
-          std::getline(ss, n_str, 'x') &&
-          std::getline(ss, k_str)) {
-        int M = std::stoi(m_str);
-        int N = std::stoi(n_str);
-        int K = std::stoi(k_str);
+        if (std::getline(ss, m_str, 'x') &&
+            std::getline(ss, n_str, 'x') &&
+            std::getline(ss, k_str)) {
+          int M = std::stoi(m_str);
+          int N = std::stoi(n_str);
+          int K = std::stoi(k_str);
 
-        auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
-        if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
-          // Set the instruction latency based on N size
-          latency = iter->second.first;
-          initiation_interval = iter->second.second;
+          auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
+          if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
+            // Set the instruction latency based on N size
+            latency = iter->second.first;
+            initiation_interval = iter->second.second;
+          } else {
+            std::string err_msg = "Unsupported N size: " + std::to_string(N);
+            assert(false && err_msg.c_str());
+          }
         } else {
-          std::string err_msg = "Unsupported N size: " + std::to_string(N);
+          std::string err_msg = "Failed to extract M, N, K values from the string: " + mxnxk;
           assert(false && err_msg.c_str());
         }
-      } else {
-        std::string err_msg = "Failed to extract M, N, K values from the string: " + mxnxk;
-        assert(false && err_msg.c_str());
-      }
 
-      // Set m_is_gmma_commit_group here
-      m_is_gmma_commit_group = trace.is_gmma_commit_group;
-    }
-    break;
+        // Set m_is_gmma_commit_group here
+        m_is_gmma_commit_group = trace.is_gmma_commit_group;
+      }
+      break;
+    case OP_WARPGROUP:
+      // Here we handle Hopper's WARPGROUP instructions
+      // For now, we just convert WARPGROUP.DEPBAR into a DEPBAR instruction waiting for GMMA group
+      if (opcode.find("WARPGROUP.DEPBAR") != std::string::npos) {
+        m_is_depbar = true;
+        m_depbar_group_no = trace.imm;
+      }
+      break;
     default:
       break;
   }

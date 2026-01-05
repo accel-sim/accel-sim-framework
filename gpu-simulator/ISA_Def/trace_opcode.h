@@ -238,6 +238,7 @@ enum TraceInstrOpcode {
   OP_UTMAREDG,
   OP_UTMASTG,
   // For Hopper GMMA
+  OP_WARPGROUP,
   OP_QGMMA,
   OP_HGMMA,
   OP_IGMMA,

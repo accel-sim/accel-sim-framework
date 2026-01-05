@@ -205,7 +205,8 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"UCGABAR_WAIT", OpcodeChar(OP_NOP, ALU_OP)},
 
     // WARPGROUP MMA Instructions
-    {"WARPGROUP", OpcodeChar(OP_NOP, ALU_OP)},
+    // Implement WARPGROUP.DEPBAR as a DEPBAR instruction, rest of WARPGROUP can be NOP
+    {"WARPGROUP", OpcodeChar(OP_WARPGROUP, ALU_OP)},
     // GMMA will be mapped to specialized unit 5
     {"QGMMA", OpcodeChar(OP_QGMMA, SPECIALIZED_UNIT_5_OP)},
     {"HGMMA", OpcodeChar(OP_HGMMA, SPECIALIZED_UNIT_5_OP)},
@@ -273,15 +274,28 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
 // Hopper GMMA N size to latency and initiation interval mapping
 // Collected from lat_gmma and MaxFlops_gmma microbenchmarks
+// static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
+//     {256, std::make_pair(128, 32)},
+//     {192, std::make_pair(96, 24)},
+//     {128, std::make_pair(64, 16)},
+//     {96, std::make_pair(48, 12)},
+//     {64, std::make_pair(32, 8)},
+//     {32, std::make_pair(24, 6)},
+//     {16, std::make_pair(20, 5)},
+//     {8, std::make_pair(18, 4)},
+// };
+
+// Doubling the real latency and initiation interval to increase the MMA warp's duration
+// for accounting the lack of uniform pipeline and register tacking
 static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
-    {256, std::make_pair(128, 32)},
-    {192, std::make_pair(96, 24)},
-    {128, std::make_pair(64, 16)},
-    {96, std::make_pair(48, 12)},
-    {64, std::make_pair(32, 8)},
-    {32, std::make_pair(24, 6)},
-    {16, std::make_pair(20, 5)},
-    {8, std::make_pair(18, 4)},
+    {256, std::make_pair(256, 64)},
+    {192, std::make_pair(192, 48)},
+    {128, std::make_pair(128, 32)},
+    {96, std::make_pair(96, 24)},
+    {64, std::make_pair(64, 16)},
+    {32, std::make_pair(48, 12)},
+    {16, std::make_pair(40, 10)},
+    {8, std::make_pair(36, 9)},
 };
 
 #endif
