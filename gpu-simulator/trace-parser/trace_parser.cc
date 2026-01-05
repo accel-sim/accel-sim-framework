@@ -42,10 +42,38 @@ inst_trace_t::~inst_trace_t() {
 }
 
 inst_trace_t::inst_trace_t(const inst_trace_t &b) {
-  if (memadd_info != NULL) {
-    memadd_info = new inst_memadd_info_t();
-    memadd_info = b.memadd_info;
+  // Copy the basic information
+  cta_id = b.cta_id;
+  cluster_cta_id = b.cluster_cta_id;
+  cluster_id = b.cluster_id;
+  cluster_rank = b.cluster_rank;
+  line_num = b.line_num;
+  m_pc = b.m_pc;
+  mask = b.mask;
+  reg_dsts_num = b.reg_dsts_num;
+  memcpy(reg_dest, b.reg_dest, sizeof(reg_dest));
+  reg_dest_vals = b.reg_dest_vals;
+  opcode = b.opcode;
+  reg_srcs_num = b.reg_srcs_num;
+  memcpy(reg_src, b.reg_src, sizeof(reg_src));
+  reg_src_vals = b.reg_src_vals;
+  is_gmma_commit_group = b.is_gmma_commit_group;
+  imm = b.imm;
+
+  // Copy the memory address information
+  if (b.memadd_info != NULL) {
+    memadd_info = new inst_memadd_info_t(*b.memadd_info);
   }
+  if (b.tma_memadd_info != NULL) {
+    tma_memadd_info = new tma_inst_memaddr_info_t(*b.tma_memadd_info);
+  }
+
+  // TMA specific information
+  tma_is_multicast = b.tma_is_multicast;
+  tma_multicast_cta_mask = b.tma_multicast_cta_mask;
+  tma_mbar_addr = b.tma_mbar_addr;
+  tma_byte_count = b.tma_byte_count;
+  tma_oob_byte_count = b.tma_oob_byte_count;
 }
 
 bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,

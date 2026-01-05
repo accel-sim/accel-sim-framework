@@ -74,6 +74,7 @@ typedef enum {
 typedef struct {
   uint32_t num;
   trace_reg_type_t type;
+  
 } trace_reg_t;
 
 struct inst_trace_t {
