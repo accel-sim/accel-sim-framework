@@ -34,24 +34,17 @@ __device__ __forceinline__ int4 get_clusterid(void) {
  *  extern "C" __device__ __noinline__
  *    To prevent "dead"-code elimination by the compiler.
  */
-extern "C" __device__ __noinline__ void
-instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
-                uint64_t tma_param_handle, uint32_t tma_param_handle_size,
-                bool is_mem, uint64_t addr, int32_t width, int32_t desReg,
-                int32_t srcReg1, int32_t srcReg2, int32_t srcReg3,
-                int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
-                uint64_t immediate, uint64_t pchannel_dev,
-                uint64_t ptotal_dynamic_instr_counter,
-                uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
-                uint32_t line_num,
-                uint32_t instr_idx,
-                uint32_t desRegVal,
-                uint32_t srcReg1Val,
-                uint32_t srcReg2Val,
-                uint32_t srcReg3Val,
-                uint32_t srcReg4Val,
-                uint32_t srcReg5Val,
-                bool is_gmma_commit_group) {
+extern "C" __device__ __noinline__ void instrument_inst(
+    int pred, int opcode_id, int32_t vpc, bool is_tma,
+    uint64_t tma_param_handle, uint32_t tma_param_handle_size, bool is_mem,
+    uint64_t addr, int32_t width, int32_t desReg, int32_t srcReg1,
+    int32_t srcReg2, int32_t srcReg3, int32_t srcReg4, int32_t srcReg5,
+    int32_t srcNum, uint64_t immediate, uint64_t pchannel_dev,
+    uint64_t ptotal_dynamic_instr_counter,
+    uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
+    uint32_t line_num, uint32_t instr_idx, uint32_t desRegVal,
+    uint32_t srcReg1Val, uint32_t srcReg2Val, uint32_t srcReg3Val,
+    uint32_t srcReg4Val, uint32_t srcReg5Val, bool is_gmma_commit_group) {
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
   const int laneid = get_laneid();
@@ -68,15 +61,15 @@ instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
 
   // Set the trace header
   int4 cta = get_ctaid();
-  #if __CUDA_ARCH__ >= 900
+#if __CUDA_ARCH__ >= 900
   int4 cluster_cta = get_cluster_ctaid();
   int4 cluster = get_clusterid();
   int cluster_rank = get_cluster_rank();
-  #else
+#else
   int4 cluster_cta = {0, 0, 0, 0}; // Dummy values for pre-SM90
-  int4 cluster = {0, 0, 0, 0}; // Dummy values for pre-SM90
-  int cluster_rank = 0; // Dummy value for pre-SM90
-  #endif
+  int4 cluster = {0, 0, 0, 0};     // Dummy values for pre-SM90
+  int cluster_rank = 0;            // Dummy value for pre-SM90
+#endif
   int uniqe_threadId = threadIdx.z * blockDim.y * blockDim.x +
                        threadIdx.y * blockDim.x + threadIdx.x;
   trace.active_mask = active_mask;

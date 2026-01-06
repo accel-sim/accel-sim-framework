@@ -181,7 +181,8 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
     // TMA Instructions
     // TMA memory instructions
-    // By default, UBLKCP set to be LOAD_OP, but we will fix it in parse_from_trace_struct
+    // By default, UBLKCP set to be LOAD_OP, but we will fix it in
+    // parse_from_trace_struct
     {"UBLKCP", OpcodeChar(OP_UBLKCP, TMA_OP)},
     {"UBLKPF", OpcodeChar(OP_UBLKPF, TMA_OP)},
     {"UBLKRED", OpcodeChar(OP_UBLKRED, TMA_OP)},
@@ -205,7 +206,8 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"UCGABAR_WAIT", OpcodeChar(OP_NOP, ALU_OP)},
 
     // WARPGROUP MMA Instructions
-    // Implement WARPGROUP.DEPBAR as a DEPBAR instruction, rest of WARPGROUP can be NOP
+    // Implement WARPGROUP.DEPBAR as a DEPBAR instruction, rest of WARPGROUP can
+    // be NOP
     {"WARPGROUP", OpcodeChar(OP_WARPGROUP, ALU_OP)},
     // GMMA will be mapped to specialized unit 5
     {"QGMMA", OpcodeChar(OP_QGMMA, SPECIALIZED_UNIT_5_OP)},
@@ -274,15 +276,12 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 
 // Hopper GMMA N size to latency and initiation interval mapping
 // Collected from lat_gmma and MaxFlops_gmma microbenchmarks
-static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>> Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
-    {256, std::make_pair(128, 128)},
-    {192, std::make_pair(96, 96)},
-    {128, std::make_pair(64, 64)},
-    {96, std::make_pair(48, 48)},
-    {64, std::make_pair(32, 32)},
-    {32, std::make_pair(24, 24)},
-    {16, std::make_pair(20, 20)},
-    {8, std::make_pair(18, 18)},
+static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>>
+    Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
+        {256, std::make_pair(128, 128)}, {192, std::make_pair(96, 96)},
+        {128, std::make_pair(64, 64)},   {96, std::make_pair(48, 48)},
+        {64, std::make_pair(32, 32)},    {32, std::make_pair(24, 24)},
+        {16, std::make_pair(20, 20)},    {8, std::make_pair(18, 18)},
 };
 
 #endif

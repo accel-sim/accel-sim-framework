@@ -84,7 +84,11 @@ int user_defined_folders = 0;
 int xz_compress_trace = 0;
 
 // Debugging helper
-#define DPRINTF(fmt, ...) {if (verbose > 0) printf(fmt, ##__VA_ARGS__);}
+#define DPRINTF(fmt, ...)                                                      \
+  {                                                                            \
+    if (verbose > 0)                                                           \
+      printf(fmt, ##__VA_ARGS__);                                              \
+  }
 
 /* opcode to id map and reverse map  */
 std::map<std::string, int> opcode_to_id_map;
@@ -92,22 +96,18 @@ std::map<int, std::string> id_to_opcode_map;
 
 /* Variable to control if NVBit instrumentation is enabled */
 bool nvbit_instrumentation_enabled = false;
-const char* nvbit_instrumentation_tag = "DEFAULT";
+const char *nvbit_instrumentation_tag = "DEFAULT";
 
 /* NVBit instrumentation control functions in C so interaction
  * is easier with the tool*/
 extern "C" {
-    void set_nvbit_instrumentation_tag(const char* tag) {
-        nvbit_instrumentation_tag = tag;
-    }
+void set_nvbit_instrumentation_tag(const char *tag) {
+  nvbit_instrumentation_tag = tag;
+}
 
-    void enable_nvbit_instrumentation() {
-        nvbit_instrumentation_enabled = true;
-    }
+void enable_nvbit_instrumentation() { nvbit_instrumentation_enabled = true; }
 
-    void disable_nvbit_instrumentation() {
-        nvbit_instrumentation_enabled = false;
-    }
+void disable_nvbit_instrumentation() { nvbit_instrumentation_enabled = false; }
 }
 
 std::string user_folder = getcwd(NULL, 0);
@@ -140,7 +140,8 @@ void parse_kernel_ranges_from_env() {
   DPRINTF("DYNAMIC_KERNEL_RANGE environment variable: %s\n", env_var);
   if (!env_var || std::string(env_var).empty()) {
     g_kernel_ranges.push_back({0, 0, {std::regex(".*")}}); // 0 end = trace all
-    DPRINTF("No DYNAMIC_KERNEL_RANGE environment variable found, tracing all kernels\n");
+    DPRINTF("No DYNAMIC_KERNEL_RANGE environment variable found, tracing all "
+            "kernels\n");
     return;
   }
   std::string input(env_var);
@@ -203,7 +204,8 @@ void parse_kernel_ranges_from_env() {
     }
 
     g_kernel_ranges.push_back({start, end, regexes});
-    DPRINTF("Added kernel range: %lu-%lu with regexes: %s\n", start, end, regex_part.c_str());
+    DPRINTF("Added kernel range: %lu-%lu with regexes: %s\n", start, end,
+            regex_part.c_str());
     if (end > g_max_kernel_id) {
       g_max_kernel_id = end;
     }
@@ -311,9 +313,10 @@ void nvbit_at_init() {
   GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
               "EXPERIMENTAL: Enable the tracing of register values. Trace "
               "format is not stable. Trace version is 6.");
-  GET_VAR_INT(nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0, 
-                "Enable NVBit instrumentation. Can be controlled at runtime using "
-                "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
+  GET_VAR_INT(
+      nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0,
+      "Enable NVBit instrumentation. Can be controlled at runtime using "
+      "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
   std::string pad(100, '-');
   printf("%s\n", pad.c_str());
 
@@ -1074,6 +1077,19 @@ void base_delta_compress(const uint64_t *addrs, const std::bitset<32> &mask,
   }
 }
 
+void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs,
+                             const std::bitset<32> &mask, uint64_t &base_addr,
+                             std::vector<long long> &deltas) {
+  // TMA version for delta compression
+  bool warp_active = mask.any() && num_addrs > 1;
+  if (warp_active) {
+    base_addr = addrs[0];
+    for (size_t i = 1; i < num_addrs; i++) {
+      deltas.push_back(addrs[i] - addrs[i - 1]);
+    }
+  }
+}
+
 void trim_string(std::string &str) {
   // Remove the leading and trailing spaces
   str.erase(0, str.find_first_not_of(' '));
@@ -1155,16 +1171,19 @@ void *recv_thread_fun(void *args) {
         std::string opcode = id_to_opcode_map[trace->opcode_id];
         // only dump reg val if opcode contains: BAR
         bool dump_reg_val = false;
-        if (allow_reg_val_tracing && 
-            ((opcode.find("BAR") != std::string::npos   || 
+        if (allow_reg_val_tracing &&
+            ((opcode.find("BAR") != std::string::npos ||
               opcode.find("HGMMA") != std::string::npos ||
               opcode.find("SYNCS.ARRIVE") != std::string::npos ||
               opcode.find("SYNCS.EXCH.64") != std::string::npos ||
-              opcode.find("SYNCS.PHASECHK.TRANS64.TRYWAIT") != std::string::npos))) {
+              opcode.find("SYNCS.PHASECHK.TRANS64.TRYWAIT") !=
+                  std::string::npos))) {
           // SYNCS: Mbarrier related instructions
-          // SYNCS.ARRIVE: equivalent to mbarrier.arrive, register values are the arrival count or expect tx count
-          // SYNCS.EXCH.64: equivalent to mbarrier.init, register values are the mbarrier arrival count
-          // SYNCS.PHASECHK.TRANS64.TRYWAIT: equivalent to mbarrier.try_wait, register values are the phase this wait is for
+          // SYNCS.ARRIVE: equivalent to mbarrier.arrive, register values are
+          // the arrival count or expect tx count SYNCS.EXCH.64: equivalent to
+          // mbarrier.init, register values are the mbarrier arrival count
+          // SYNCS.PHASECHK.TRANS64.TRYWAIT: equivalent to mbarrier.try_wait,
+          // register values are the phase this wait is for
           dump_reg_val = true;
         }
 
@@ -1233,7 +1252,7 @@ void *recv_thread_fun(void *args) {
                 trace->vpc); // Print the virtual PC
         fprintf(ctx_resultsFile[ctx], "%08x ",
                 trace->active_mask & trace->predicate_mask);
-        
+
         // Helper function to print the register number
         auto print_reg = [&](int reg_num) {
           if (reg_num >= 256) {
@@ -1257,8 +1276,8 @@ void *recv_thread_fun(void *args) {
             src_count++;
         fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++) {// GPR srcs.
-          if (trace->inst.regular.GPRSrcs[s] >= 0){
+        for (int s = 0; s < MAX_SRC; s++) { // GPR srcs.
+          if (trace->inst.regular.GPRSrcs[s] >= 0) {
             print_reg(trace->inst.regular.GPRSrcs[s]);
           }
         }
@@ -1319,25 +1338,32 @@ void *recv_thread_fun(void *args) {
         } else if (trace->inst_type == TracerInstrType::INST_TMA) {
 #ifdef USE_PRIVATE_NVBIT
           // TMA instructions
-          // Check if the bitmask is all 0, if so, dont parse the TMA instruction
+          // Check if the bitmask is all 0, if so, dont parse the TMA
+          // instruction
           if ((trace->active_mask & trace->predicate_mask) == 0) {
             fprintf(ctx_resultsFile[ctx], "0 ");
           } else {
             // Parse the TMA instruction
             const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
-            TMATransferInfo_t info = nvbit_parse_tma_transfer_info(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size);
+            TMATransferInfo_t info = nvbit_parse_tma_transfer_info(
+                ctx, opcode_str, trace->inst.tma.tma_param_handle,
+                trace->inst.tma.tma_param_handle_size);
             // Get TMA transfer size, which is the data width
             fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_size);
 
             // Get TMA mbar address
-            if (info.dst_memspace == InstrType::MemorySpace::DISTRIBUTED_SHARED) {
-              assert(info.dst.shared.is_mbar_valid && "Invalid TMA mbar address");
-              fprintf(ctx_resultsFile[ctx], "0x%08x ", info.dst.shared.mbar_address);
+            if (info.dst_memspace ==
+                InstrType::MemorySpace::DISTRIBUTED_SHARED) {
+              assert(info.dst.shared.is_mbar_valid &&
+                     "Invalid TMA mbar address");
+              fprintf(ctx_resultsFile[ctx], "0x%08x ",
+                      info.dst.shared.mbar_address);
               if (info.is_multicast) {
                 // Using multicast
                 fprintf(ctx_resultsFile[ctx], "1 ");
                 // multicast flags
-                fprintf(ctx_resultsFile[ctx], "0x%04x ", info.multicast_cta_mask);
+                fprintf(ctx_resultsFile[ctx], "0x%04x ",
+                        info.multicast_cta_mask);
               } else {
                 // Not using multicast
                 fprintf(ctx_resultsFile[ctx], "0 ");
@@ -1350,10 +1376,11 @@ void *recv_thread_fun(void *args) {
             }
             // This is the actual transfer byte count
             fprintf(ctx_resultsFile[ctx], "%ld ", info.byte_count);
-            
+
             // This is the oob transfer byte count, if using tensor copy
             if (info.is_tensor) {
-              fprintf(ctx_resultsFile[ctx], "%ld ", info.tensor.oob_transfer_count * info.transfer_size);
+              fprintf(ctx_resultsFile[ctx], "%ld ",
+                      info.tensor.oob_transfer_count * info.transfer_size);
             } else {
               fprintf(ctx_resultsFile[ctx], "%ld ", 0);
             }
@@ -1363,9 +1390,15 @@ void *recv_thread_fun(void *args) {
             uint64_t *global_addrs = nullptr;
             size_t global_count = 0, global_count_inbound = 0;
             if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
-              nvbit_parse_tma_src_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+              nvbit_parse_tma_src_addrs(ctx, opcode_str,
+                                        trace->inst.tma.tma_param_handle,
+                                        trace->inst.tma.tma_param_handle_size,
+                                        &raw_global_addrs, &global_count);
             } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
-              nvbit_parse_tma_dst_addrs(ctx, opcode_str, trace->inst.tma.tma_param_handle, trace->inst.tma.tma_param_handle_size, &raw_global_addrs, &global_count);
+              nvbit_parse_tma_dst_addrs(ctx, opcode_str,
+                                        trace->inst.tma.tma_param_handle,
+                                        trace->inst.tma.tma_param_handle_size,
+                                        &raw_global_addrs, &global_count);
             }
 
             // Count inbound global addresses
@@ -1375,7 +1408,8 @@ void *recv_thread_fun(void *args) {
               }
             }
 
-            global_addrs = (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
+            global_addrs =
+                (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
             size_t global_idx = 0;
             for (size_t i = 0; i < global_count; i++) {
               if (!raw_global_addrs[i].is_oob) {
@@ -1388,9 +1422,10 @@ void *recv_thread_fun(void *args) {
             uint64_t base_addr = 0;
             std::vector<long long> deltas;
             if (enable_compress) {
-              base_delta_compress_tma(global_addrs, global_count_inbound, mask, base_addr, deltas);
+              base_delta_compress_tma(global_addrs, global_count_inbound, mask,
+                                      base_addr, deltas);
             }
-            
+
             if (enable_compress) {
               fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
                       address_format::tma_base_delta, base_addr);
@@ -1400,7 +1435,8 @@ void *recv_thread_fun(void *args) {
               }
             } else {
               // list all the addresses
-              fprintf(ctx_resultsFile[ctx], "%u ", address_format::tma_list_all);
+              fprintf(ctx_resultsFile[ctx], "%u ",
+                      address_format::tma_list_all);
               fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
               for (int s = 0; s < global_count_inbound; s++) {
                 fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);

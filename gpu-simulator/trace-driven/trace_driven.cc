@@ -242,15 +242,16 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     for (int i = 0; i < WARP_SIZE; i++) {
       operand.addr[i] = trace.memadd_info->addrs[i];
     }
-    if (opcode == "SYNCS.EXCH.64") { // mbarrier.init
+    if (opcode == "SYNCS.EXCH.64") {  // mbarrier.init
       set_syncs_op(SYNCS_INIT);
       // SYNCS.EXCH.64 format:
       // SYNCS.EXCH.64 URA, [URB], URC
       // URA is destination register
       // URB is a memory reference operand in NVBit
       // URC is the count register, so it is the second source register
-      // but based on Hopper SASS code dump, there are some bit manipulation prior to this
-      // instructions, so we need to undo this to get the actual thread count
+      // but based on Hopper SASS code dump, there are some bit manipulation
+      // prior to this instructions, so we need to undo this to get the actual
+      // thread count
       std::array<uint32_t, WARP_SIZE> thread_counts = trace.reg_src_vals[1];
       for (int i = 0; i < WARP_SIZE; i++) {
         // First right shift by 1
@@ -260,8 +261,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         // Finally, take the negation
         thread_counts[i] = -thread_counts[i];
       }
-      memcpy(operand.u.init.count, thread_counts.data(), sizeof(operand.u.init.count));
-    } else if (opcode == "SYNCS.ARRIVE.TRANS64") { // mbarrier.arrive.expect_tx
+      memcpy(operand.u.init.count, thread_counts.data(),
+             sizeof(operand.u.init.count));
+    } else if (opcode == "SYNCS.ARRIVE.TRANS64") {  // mbarrier.arrive.expect_tx
       set_syncs_op(SYNCS_ARRIVE_EXPECT_TX);
       // SYNCS.ARRIVE.TRANS64 format:
       // SYNCS.ARRIVE.TRANS64 RA, [RB+URC], RD
@@ -272,8 +274,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         // This instruction increase arrival count by 1
         operand.u.arrive.count[i] = 1;
       }
-      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
-    } else if (opcode.find("SYNCS.ARRIVE") != std::string::npos) { // mbarrier.arrive
+      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
+             sizeof(operand.u.arrive.txCount));
+    } else if (opcode.find("SYNCS.ARRIVE") !=
+               std::string::npos) {  // mbarrier.arrive
       set_syncs_op(SYNCS_ARRIVE);
       // Initialize the arrival count and transaction count to 0
       memset(operand.u.arrive.count, 0, sizeof(operand.u.arrive.count));
@@ -281,7 +285,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       // Handle other variants
       if (opcode.find("ART0") != std::string::npos) {
         // Arrival count is the register value in RD above
-        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.count));
+        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.arrive.count));
       } else if (opcode.find("A1T0") != std::string::npos) {
         // Arrival 1, transaction 0
         for (int i = 0; i < WARP_SIZE; i++) {
@@ -290,32 +295,39 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         }
       } else if (opcode.find("A0TR") != std::string::npos) {
         // Arrival 0, transaction count based on register value in RD
-        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.arrive.txCount));
+        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.arrive.txCount));
       } else if (opcode.find("A0TX") != std::string::npos) {
         // Arrival 0, complete transaction count based on register value in RD
         set_syncs_op(SYNCS_COMPELTE_TX);
-        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(), sizeof(operand.u.complete_tx.txCount));
+        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.complete_tx.txCount));
       } else if (opcode.find("A0T1") != std::string::npos) {
         // Arrival 0, transaction count 1
         for (int i = 0; i < WARP_SIZE; i++) {
           operand.u.arrive.txCount[i] = 1;
         }
       } else {
-        printf("Error: Unsupported SYNCS ARRIVE variant: %s, aborting execution\n", opcode.c_str());
+        printf(
+            "Error: Unsupported SYNCS ARRIVE variant: %s, aborting execution\n",
+            opcode.c_str());
         exit(1);
       }
-    } else if (opcode == "SYNCS.PHASECHK.TRANS64") { // mbarrier.test_wait
+    } else if (opcode == "SYNCS.PHASECHK.TRANS64") {  // mbarrier.test_wait
       set_syncs_op(SYNCS_TEST_WAIT);
-    } else if (opcode == "SYNCS.PHASECHK.TRANS64.TRYWAIT") { // mbarrier.try_wait
+    } else if (opcode ==
+               "SYNCS.PHASECHK.TRANS64.TRYWAIT") {  // mbarrier.try_wait
       set_syncs_op(SYNCS_TRY_WAIT);
       // SYNCS.PHASECHK.TRANS64.TRYWAIT format:
       // SYNCS.PHASECHK.TRANS64.TRYWAIT PA, [RB+URC], RD
       // PA: predicate register
       // RB, URC: memory reference operand in NVBit, to the mbarrier
       // RD: prior phase count
-      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(), sizeof(operand.u.wait.phase));
+      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(),
+             sizeof(operand.u.wait.phase));
     } else {
-      printf("WARNING: Unsupported SYNCS instruction: %s, ignoring it\n", opcode.c_str());
+      printf("WARNING: Unsupported SYNCS instruction: %s, ignoring it\n",
+             opcode.c_str());
     }
     set_syncs_operand(operand);
   }
@@ -326,9 +338,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   outcount = trace.reg_dsts_num;
   // For now, we only model regular registers usage
   auto convert_reg_num = [&](const trace_reg_t &reg) -> uint32_t {
-    if (reg.type == REG) return reg.num + 1;  // Increment by one because GPGPU-sim starts
-                                               // from R1, while SASS starts from R0
-    else return 0;
+    if (reg.type == REG)
+      return reg.num + 1;  // Increment by one because GPGPU-sim starts
+                           // from R1, while SASS starts from R0
+    else
+      return 0;
   };
   for (unsigned m = 0; m < trace.reg_dsts_num; ++m) {
     out[m] = convert_reg_num(trace.reg_dest[m]);
@@ -349,7 +363,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     data_size = trace.tma_memadd_info->width;
     std::bitset<WARP_SIZE> exec_mask(trace.mask);
     // TMA issues on uniform pipeline, so it will issue once even with full mask
-    if (exec_mask.count() != 0 ) {
+    if (exec_mask.count() != 0) {
       set_tma_access_addrs(trace.tma_memadd_info->addrs);
       // Set TMA mbar address and byte count
       set_tma_mbar_addr(trace.tma_mbar_addr);
@@ -359,7 +373,8 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       set_tma_multicast_cta_mask(trace.tma_multicast_cta_mask);
     } else {
       // If the TMA instruction is predicated off, we set the addr array to
-      // to empty, so it won't generate any memory access during generate_mem_access()
+      // to empty, so it won't generate any memory access during
+      // generate_mem_access()
       set_tma_access_addrs(std::vector<uint64_t>());
       set_tma_mbar_addr(0);
       set_tma_byte_count(0);
@@ -499,8 +514,9 @@ bool trace_warp_inst_t::parse_from_trace_struct(
     case OP_LDGDEPBAR:
       m_is_ldgdepbar = true;
       break;
-    // UMACMDFLUSH is to used to form a bulk group containing all the previous stores due to
-    // TMA instructions. Here we reuse the same logic as LDGSTS groups.
+    // UMACMDFLUSH is to used to form a bulk group containing all the previous
+    // stores due to TMA instructions. Here we reuse the same logic as LDGSTS
+    // groups.
     case OP_UTMACMDFLUSH:
       m_is_tma_cmdflush = true;
       break;
@@ -569,65 +585,66 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       space.set_type(global_space);
       break;
     case OP_SYNCS:
-      // Although SYNCS will access shared memory, it will need be handled differently
-      // then a normal load, so we set it to no_memory_op here to avoid
-      // confusion with is_load() method.
+      // Although SYNCS will access shared memory, it will need be handled
+      // differently then a normal load, so we set it to no_memory_op here to
+      // avoid confusion with is_load() method.
       memory_op = no_memory_op;
       // SYNCS will access shared memory, set the space here
       // to handle the ldst_unit's writeback correctly
       space.set_type(shared_space);
       break;
     case OP_ARRIVES:
-      // Handle ARRIVES.LDGSTSBAR.64.TRANSCNT, which is used to update mbarrier complete count
-      // when all prior LDGSTS instructions are done
+      // Handle ARRIVES.LDGSTSBAR.64.TRANSCNT, which is used to update mbarrier
+      // complete count when all prior LDGSTS instructions are done
       if (opcode.find("ARRIVES.LDGSTSBAR.64.TRANSCNT") != std::string::npos) {
         m_is_ldgsts_arrives_mbar = true;
         for (int i = 0; i < WARP_SIZE; i++) {
           m_ldgsts_arrives_mbar_addr[i] = trace.memadd_info->addrs[i];
         }
       } else {
-        printf("WARNING: Unsupported ARRIVES instruction: %s, ignoring it\n", opcode.c_str());
+        printf("WARNING: Unsupported ARRIVES instruction: %s, ignoring it\n",
+               opcode.c_str());
       }
       break;
     case OP_QGMMA:
     case OP_HGMMA:
     case OP_IGMMA: {
-        // For GMMA instructions, their latency and initiation interval depends solely on N size
-        // MxNxK is the MMA tile shape
-        std::string mxnxk = opcode_tokens[1];
+      // For GMMA instructions, their latency and initiation interval depends
+      // solely on N size MxNxK is the MMA tile shape
+      std::string mxnxk = opcode_tokens[1];
 
-        // Extract M, N, K values from the string (format: "MxNxK")
-        std::stringstream ss(mxnxk);
-        std::string m_str, n_str, k_str;
+      // Extract M, N, K values from the string (format: "MxNxK")
+      std::stringstream ss(mxnxk);
+      std::string m_str, n_str, k_str;
 
-        if (std::getline(ss, m_str, 'x') &&
-            std::getline(ss, n_str, 'x') &&
-            std::getline(ss, k_str)) {
-          int M = std::stoi(m_str);
-          int N = std::stoi(n_str);
-          int K = std::stoi(k_str);
+      if (std::getline(ss, m_str, 'x') && std::getline(ss, n_str, 'x') &&
+          std::getline(ss, k_str)) {
+        int M = std::stoi(m_str);
+        int N = std::stoi(n_str);
+        int K = std::stoi(k_str);
 
-          auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
-          if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
-            // Set the instruction latency based on N size
-            latency = iter->second.first;
-            initiation_interval = iter->second.second;
-          } else {
-            std::string err_msg = "Unsupported N size: " + std::to_string(N);
-            assert(false && err_msg.c_str());
-          }
+        auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
+        if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
+          // Set the instruction latency based on N size
+          latency = iter->second.first;
+          initiation_interval = iter->second.second;
         } else {
-          std::string err_msg = "Failed to extract M, N, K values from the string: " + mxnxk;
+          std::string err_msg = "Unsupported N size: " + std::to_string(N);
           assert(false && err_msg.c_str());
         }
-
-        // Set m_is_gmma_commit_group here
-        m_is_gmma_commit_group = trace.is_gmma_commit_group;
+      } else {
+        std::string err_msg =
+            "Failed to extract M, N, K values from the string: " + mxnxk;
+        assert(false && err_msg.c_str());
       }
-      break;
+
+      // Set m_is_gmma_commit_group here
+      m_is_gmma_commit_group = trace.is_gmma_commit_group;
+    } break;
     case OP_WARPGROUP:
       // Here we handle Hopper's WARPGROUP instructions
-      // For now, we just convert WARPGROUP.DEPBAR into a DEPBAR instruction waiting for GMMA group
+      // For now, we just convert WARPGROUP.DEPBAR into a DEPBAR instruction
+      // waiting for GMMA group
       if (opcode.find("WARPGROUP.DEPBAR") != std::string::npos) {
         m_is_depbar = true;
         m_depbar_group_no = trace.imm;

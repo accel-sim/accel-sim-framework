@@ -365,7 +365,9 @@ void group_per_block(const char *filepath) {
     } else {
 
       ss.str(line);
-      ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb >> cluster_id_x >> cluster_id_y >> cluster_id_z >> cluster_cta_id_x >> cluster_cta_id_y >> cluster_cta_id_z >> cluster_rank;
+      ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb >> cluster_id_x >>
+          cluster_id_y >> cluster_id_z >> cluster_cta_id_x >>
+          cluster_cta_id_y >> cluster_cta_id_z >> cluster_rank;
       tb_id =
           tb_id_z * grid_dim_y * grid_dim_x + tb_id_y * grid_dim_x + tb_id_x;
       if (!insts[tb_id].initialized) {
@@ -410,7 +412,8 @@ void group_per_block(const char *filepath) {
       // trace, because it has two memory references. This is trying to remove
       // the one with the shared memory address.
 
-      // Check if opcode starts with "LDGSTS" (not just contains it, to avoid matching ARRIVES.LDGSTSBAR)
+      // Check if opcode starts with "LDGSTS" (not just contains it, to avoid
+      // matching ARRIVES.LDGSTSBAR)
       if (opcode.rfind("LDGSTS", 0) == 0) {
         if (!ldgsts_flags[tb_id][warpid_tb]) {
           insts[tb_id].warp_insts_array[warpid_tb].push_back(inst_ptr);
@@ -431,10 +434,11 @@ void group_per_block(const char *filepath) {
       cout << "\n"
            << "thread block = " << insts[i].tb_id_x << "," << insts[i].tb_id_y
            << "," << insts[i].tb_id_z << "\n";
-      cout << "cluster id = " << insts[i].cluster_id_x << "," << insts[i].cluster_id_y
-           << "," << insts[i].cluster_id_z << "\n";
-      cout << "cluster cta = " << insts[i].cluster_cta_id_x << "," << insts[i].cluster_cta_id_y
-           << "," << insts[i].cluster_cta_id_z << "\n";
+      cout << "cluster id = " << insts[i].cluster_id_x << ","
+           << insts[i].cluster_id_y << "," << insts[i].cluster_id_z << "\n";
+      cout << "cluster cta = " << insts[i].cluster_cta_id_x << ","
+           << insts[i].cluster_cta_id_y << "," << insts[i].cluster_cta_id_z
+           << "\n";
       cout << "cluster rank = " << insts[i].cluster_rank << "\n";
     } else {
       cerr << "Warning: Thread block " << insts[i].tb_id_x << ","

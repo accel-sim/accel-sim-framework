@@ -172,7 +172,11 @@ void tma_inst_memaddr_info_t::base_delta_decompress(
 }
 
 bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
-                                     unsigned enable_lineinfo, dim3 header_cta_id, dim3 header_cluster_cta_id, dim3 header_cluster_id, unsigned header_cluster_rank) {
+                                     unsigned enable_lineinfo,
+                                     dim3 header_cta_id,
+                                     dim3 header_cluster_cta_id,
+                                     dim3 header_cluster_id,
+                                     unsigned header_cluster_rank) {
   std::stringstream ss;
   ss.str(trace);
 
@@ -209,10 +213,14 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     std::string reg_str;
     ss >> reg_str;
     // Parse the register type and number
-    if (reg_str.find("UR") != std::string::npos) reg.type = UREG;
-    else if (reg_str.find("R") != std::string::npos) reg.type = REG;
-    else if (reg_str.find("UP") != std::string::npos) reg.type = UPRED;
-    else if (reg_str.find("P") != std::string::npos) reg.type = PRED;
+    if (reg_str.find("UR") != std::string::npos)
+      reg.type = UREG;
+    else if (reg_str.find("R") != std::string::npos)
+      reg.type = REG;
+    else if (reg_str.find("UP") != std::string::npos)
+      reg.type = UPRED;
+    else if (reg_str.find("P") != std::string::npos)
+      reg.type = PRED;
     reg.num = std::stoi(reg_str.substr(reg_str.find_first_not_of("RURPUP")));
   };
   for (unsigned i = 0; i < reg_dsts_num; ++i) {
@@ -248,7 +256,6 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   }
 
   if (is_tma) {
-
     tma_memadd_info = new tma_inst_memaddr_info_t();
     tma_memadd_info->width = mem_width;
     ss >> std::hex >> tma_mbar_addr;
@@ -345,7 +352,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     // check Val or NoVal
     std::string val_or_no_val;
     ss >> val_or_no_val;
-    if(val_or_no_val == "Val") {
+    if (val_or_no_val == "Val") {
       // Parse the register values
       auto parse_trace_reg_vals = [&](reg_val_t &reg_val) {
         uint32_t distinct_values;
@@ -595,7 +602,8 @@ void trace_parser::get_next_threadblock_traces(
         assert(start_of_tb_stream_found);
         threadblock_traces[warp_id]
             ->at(inst_count)
-            .parse_from_string(line, trace_version, enable_lineinfo, block_id, cluster_cta_id, cluster_id, cluster_rank);
+            .parse_from_string(line, trace_version, enable_lineinfo, block_id,
+                               cluster_cta_id, cluster_id, cluster_rank);
         inst_count++;
       }
     }

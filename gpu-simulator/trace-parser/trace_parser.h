@@ -3,14 +3,14 @@
 #ifndef TRACE_PARSER_H
 #define TRACE_PARSER_H
 #include <assert.h>
+#include <cuda_runtime.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <array>
+#include <bitset>
 #include <string>
 #include <vector>
-#include <bitset>
-#include <array>
-#include <cuda_runtime.h>
 
 #define WARP_SIZE 32
 #define MAX_DST 1
@@ -74,7 +74,7 @@ typedef enum {
 typedef struct {
   uint32_t num;
   trace_reg_type_t type;
-  
+
 } trace_reg_t;
 
 struct inst_trace_t {
@@ -106,7 +106,11 @@ struct inst_trace_t {
   size_t tma_oob_byte_count = 0;
 
   bool parse_from_string(std::string trace, unsigned tracer_version,
-                         unsigned enable_lineinfo, dim3 header_cta_id = dim3(-1, -1, -1), dim3 header_cluster_cta_id = dim3(-1, -1, -1), dim3 header_cluster_id = dim3(-1, -1, -1), unsigned header_cluster_rank = 0);
+                         unsigned enable_lineinfo,
+                         dim3 header_cta_id = dim3(-1, -1, -1),
+                         dim3 header_cluster_cta_id = dim3(-1, -1, -1),
+                         dim3 header_cluster_id = dim3(-1, -1, -1),
+                         unsigned header_cluster_rank = 0);
 
   bool check_opcode_contain(const std::vector<std::string> &opcode,
                             std::string param) const;
