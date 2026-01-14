@@ -10,7 +10,7 @@ env:
 jobs:
   Tracer-Weekly:
     timeout-minutes: 720
-    if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
+    # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-gpu01
     defaults:
       run:
@@ -70,7 +70,7 @@ jobs:
   SASS-Weekly:
     timeout-minutes: 720
     needs: [Tracer-Weekly]
-    if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
+    # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-raid 
     defaults:
       run:
