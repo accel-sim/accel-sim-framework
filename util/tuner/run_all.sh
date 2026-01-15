@@ -22,27 +22,27 @@ echo "running core_config"
 echo "/////////////////////////////////"
 
 echo "running config_dpu"
-./config_dpu
+./config_dpu --blocks 1
 echo "/////////////////////////////////"
 
 echo "running config_fpu"
-./config_fpu
+./config_fpu --blocks 1
 echo "/////////////////////////////////"
 
 echo "running config_int"
-./config_int
+./config_int --blocks 1
 echo "/////////////////////////////////"
 
 echo "running config_sfu"
-./config_sfu
+./config_sfu --blocks 1
 echo "/////////////////////////////////"
 
 echo "running config_tensor"
-./config_tensor
+./config_tensor --blocks 1
 echo "/////////////////////////////////"
 
 echo "running config_udp"
-./config_udp
+./config_udp --blocks 1
 echo "/////////////////////////////////"
 
 echo "running regfile_bw"
