@@ -1124,18 +1124,6 @@ parse_spinlock_instructions(const std::string &line) {
   }
   return {kernel_name, indices};
 }
-void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs,
-                             const std::bitset<32> &mask, uint64_t &base_addr,
-                             std::vector<long long> &deltas) {
-  // TMA version for delta compression
-  bool warp_active = mask.any() && num_addrs > 1;
-  if (warp_active) {
-    base_addr = addrs[0];
-    for (size_t i = 1; i < num_addrs; i++) {
-      deltas.push_back(addrs[i] - addrs[i - 1]);
-    }
-  }
-}
 
 void *recv_thread_fun(void *args) {
   CUcontext ctx = (CUcontext)args;
