@@ -1051,8 +1051,9 @@ parse_spinlock_instructions(const std::string &line) {
   }
   return {kernel_name, indices};
 }
-void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs, const std::bitset<32> &mask,
-                              uint64_t &base_addr, std::vector<long long> &deltas) {
+void base_delta_compress_tma(const uint64_t *addrs, const size_t num_addrs,
+                             const std::bitset<32> &mask, uint64_t &base_addr,
+                             std::vector<long long> &deltas) {
   // TMA version for delta compression
   bool warp_active = mask.any() && num_addrs > 1;
   if (warp_active) {
