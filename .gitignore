@@ -1,7 +1,7 @@
 env-setup/
 gpu-app-collection/
 hw_run/
-hw_run*/
+hw_run*
 sim_run_*
 *.DS_Store*
 *.csv

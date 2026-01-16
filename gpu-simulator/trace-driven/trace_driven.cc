@@ -326,8 +326,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(),
              sizeof(operand.u.wait.phase));
     } else {
-      printf("WARNING: Unsupported SYNCS instruction: %s, ignoring it\n",
-             opcode.c_str());
+      printf(
+          "Error: Unsupported SYNCS instruction: %s at PC: 0x%llx, exiting "
+          "execution\n",
+          opcode.c_str(), (address_type)trace.m_pc);
+      exit(1);
     }
     set_syncs_operand(operand);
   }
