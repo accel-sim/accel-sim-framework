@@ -43,6 +43,7 @@ jobs:
   SASS-Simulation:
     runs-on: tgrogers-raid
     needs: [check-format]
+    timeout-minutes: 720
     defaults:
       run:
         shell: bash
@@ -167,6 +168,7 @@ jobs:
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
+    timeout-minutes: 720
     defaults:
       run:
         shell: bash
@@ -239,6 +241,7 @@ jobs:
   Tracer-Tool:
     needs: [check-format]
     runs-on: tgrogers-gpu01
+    timeout-minutes: 720
     defaults:
       run:
         shell: bash
