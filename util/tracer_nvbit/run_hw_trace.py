@@ -181,6 +181,8 @@ for bench in benchmarks:
             + this_trace_folder
             + "/*.trace ; rm -f "
             + this_trace_folder
+            + "/*.trace.xz ; rm -f "
+            + this_trace_folder
             + "/kernelslist "
         )
         
