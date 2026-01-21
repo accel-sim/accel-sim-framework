@@ -515,10 +515,9 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
   }
 
   // Get the number of registers and shared memory size for the kernel
-  int nregs =
-      get_attr_with_kernel_fallback(func, CU_FUNC_ATTRIBUTE_NUM_REGS);
-  int shmem_static_nbytes = get_attr_with_kernel_fallback(
-      func, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES);
+  int nregs = get_attr_with_kernel_fallback(func, CU_FUNC_ATTRIBUTE_NUM_REGS);
+  int shmem_static_nbytes =
+      get_attr_with_kernel_fallback(func, CU_FUNC_ATTRIBUTE_SHARED_SIZE_BYTES);
   int binary_version =
       get_attr_with_kernel_fallback(func, CU_FUNC_ATTRIBUTE_BINARY_VERSION);
 
