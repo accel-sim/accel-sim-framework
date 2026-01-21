@@ -54,40 +54,40 @@ GPU_Microbenchmark:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - l1_bw_32f:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
               accel-sim-mem: 1G
         - l1_bw_64f:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
               accel-sim-mem: 1G
         - l1_bw_128:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1 --ws 32
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
               accel-sim-mem: 2G
         - l1_lat:
-            - args: --blocks 1 --ws 32
+            - args: --blocks 1 --fast
               accel-sim-mem: 1G
         - l2_bw_32f:
-            - args: --tpb 1024 --tpsm 1024 --blocks 160 --ws 32
+            - args: --tpb 1024 --tpsm 1024 --fast
               accel-sim-mem: 6G
         - l2_bw_64f:
-            - args: --tpb 1024 --tpsm 1024 --blocks 160 --l2 786432 --ws 32
+            - args: --tpb 1024 --tpsm 1024 --fast
               accel-sim-mem: 6G
 #        - l2_bw_128:
 #            - args:
 #              accel-sim-mem: 1G
         - l2_lat:
-            - args: --tpb 1 --tpsm 1 --blocks 1 --l2 786432 --ws 32
+            - args: --fast
               accel-sim-mem: 1G
         - mem_bw:
-            - args: --tpb 1024 --tpsm 1024 --blocks 80 --l2 1572864 --ws 32 --memclk 1132 --membw 64
+            - args: --tpb 1024 --tpsm 1024
               accel-sim-mem: 2G
         - mem_lat:
-            - args: --tpb 1024 --tpsm 1024 --blocks 80 --l2 1572864 --ws 32 --memclk 1132 --membw 64
+            - args: --fast
               accel-sim-mem: 1G
         - shared_bw:
-            - args: --tpb 1024 --tpsm 1024 --blocks 1  --ws 32 
+            - args: --tpb 1024 --tpsm 1024 --blocks 1  
               accel-sim-mem: 2G
         - shared_lat:
-            - args:  --blocks 1  --ws 32 
+            - args:  --blocks 1  
               accel-sim-mem: 1G
         - shared_bank_conflicts:
         ## argument 1 kernel has conflicts
@@ -97,16 +97,16 @@ GPU_Microbenchmark:
             - args: 2
               accel-sim-mem: 1G
         - MaxIops_int32:
-            - args: --tpb 1024  --blocks 1  --ws 32 
+            - args: --tpb 1024  --blocks 1  
               accel-sim-mem: 1G
         - l1_shared_bw:
-            - args: --tpb 1024  --blocks 1  --ws 32 
+            - args: --tpb 1024  --blocks 1  
               accel-sim-mem: 1G
         - l1_bw_32f_unroll:
-            - args: --tpb 1024 --blocks 1  --ws 32 
+            - args: --tpb 1024 --blocks 1  
               accel-sim-mem: 1G
         - l1_bw_32f_unroll_large:
-            - args:
+            - args: --tpb 1024  --blocks 1 
               accel-sim-mem: 1G
 
 GPU_Atomic:
@@ -114,10 +114,10 @@ GPU_Atomic:
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
         - atomic_add_bw:
-            - args:   --tpb 1 --tpsm 1 --blocks 1  --ws 32 
+            - args:   --tpb 1 --tpsm 1 --blocks 1  --fast
               accel-sim-mem: 1G
         - atomic_add_bw_conflict:
-            - args: --tpb 1024 --tpsm 2048 --blocks 160  --ws 32 
+            - args: --tpb 1024 --tpsm 2048 --fast
               accel-sim-mem: 1G
         - atomic_add_bw_profile:
             - args: 16
@@ -1067,6 +1067,27 @@ huggingface:
             - args:
               accel-sim-mem: 10G
 
+tma:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/tma"
+    data_dirs: ""
+    execs:
+        - tma_tensor_test:
+            - args: -w 1024 -h 1024 -o UTMAPF
+            - args: -w 1024 -h 1024 -o UTMALDG
+            - args: -w 1024 -h 1024 -o UTMASTG
+            - args: -w 1024 -h 1024 -o UTMAREDG
+            - args: -w 1024 -h 1024 -o REGULAR_LOAD
+              accel-sim-mem: 10G
+        - tma_bulk_test:
+            - args: -n 1024 -o UBLKPF
+            - args: -n 1024 -o UBLKCP_S_G
+            - args: -n 1024 -o UBLKCP_G_S
+            - args: -n 1024 -o UBLKRED_G_S
+            - args: -n 262144 -o UBLKPF
+            - args: -n 262144 -o UBLKCP_S_G
+            - args: -n 262144 -o UBLKCP_G_S
+            - args: -n 262144 -o UBLKRED_G_S
+              accel-sim-mem: 10G
 
 vllm:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/vllm"
