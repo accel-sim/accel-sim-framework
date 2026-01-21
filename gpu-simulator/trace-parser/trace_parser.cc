@@ -402,7 +402,7 @@ std::vector<trace_command> trace_parser::parse_commandlist_file() {
   fs.open(kernellist_filename);
 
   if (!fs.is_open()) {
-    std::cout << "Unable to open file: " << kernellist_filename << std::endl;
+    std::cerr << "Unable to open file: " << kernellist_filename << std::endl;
     exit(1);
   }
 
