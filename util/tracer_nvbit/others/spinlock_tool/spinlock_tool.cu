@@ -129,7 +129,7 @@ std::map<int, std::string> id_to_opcode_map;
 uint64_t global_grid_launch_id = 0;
 
 /* Variable to control if NVBit instrumentation is enabled */
-int nvbit_instrumentation_enabled = 0;
+int nvbit_instrumentation_enabled = 1;
 const char* nvbit_instrumentation_tag = "DEFAULT";
 
 /* NVBit instrumentation control functions in C so interaction
@@ -169,7 +169,7 @@ void nvbit_at_init() {
         instr_end_interval, "INSTR_END", UINT32_MAX,
         "End of the instruction interval where to apply instrumentation");
     GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
-    GET_VAR_INT(nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0, 
+    GET_VAR_INT(nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 1, 
         "Enable NVBit instrumentation. Can be controlled at runtime using "
         "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
     GET_VAR_INT(spinlock_phase, "SPINLOCK_PHASE", 0, "Spinlock phase");

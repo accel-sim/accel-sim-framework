@@ -95,7 +95,7 @@ std::map<std::string, int> opcode_to_id_map;
 std::map<int, std::string> id_to_opcode_map;
 
 /* Variable to control if NVBit instrumentation is enabled */
-bool nvbit_instrumentation_enabled = false;
+bool nvbit_instrumentation_enabled = 1;
 const char *nvbit_instrumentation_tag = "DEFAULT";
 
 /* NVBit instrumentation control functions in C so interaction
@@ -314,7 +314,7 @@ void nvbit_at_init() {
               "EXPERIMENTAL: Enable the tracing of register values. Trace "
               "format is not stable. Trace version is 6.");
   GET_VAR_INT(
-      nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 0,
+      nvbit_instrumentation_enabled, "NVBIT_INSTRUMENTATION_ENABLED", 1,
       "Enable NVBit instrumentation. Can be controlled at runtime using "
       "enable_nvbit_instrumentation() and disable_nvbit_instrumentation()");
   std::string pad(100, '-');

@@ -165,7 +165,7 @@ for bench in benchmarks:
             + "\nrm -f traces/*"
             + "\nexport TRACES_FOLDER="
             + this_run_dir
-            + f"; NVBIT_INSTRUMENTATION_ENABLED=1 ENABLE_SPINLOCK_FAST_FORWARD={1 if options.spinlock_handling == 'fast_forward' else 0} SPINLOCK_ITER_TO_KEEP={options.spinlock_fast_forward_iterations} CUDA_INJECTION64_PATH="
+            + f"; ENABLE_SPINLOCK_FAST_FORWARD={1 if options.spinlock_handling == 'fast_forward' else 0} SPINLOCK_ITER_TO_KEEP={options.spinlock_fast_forward_iterations} CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_tracer_path, "tracer_tool.so")
             + " "
             + exec_path
@@ -193,14 +193,14 @@ for bench in benchmarks:
             + "\nrm -f spinlock_detection/*"
             + "\nexport TRACES_FOLDER="
             + this_run_dir
-            + "; NVBIT_INSTRUMENTATION_ENABLED=1 SPINLOCK_PHASE=0 CUDA_INJECTION64_PATH="
+            + "; SPINLOCK_PHASE=0 CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_spinlock_path, "spinlock_tool.so")
             + " "
             + exec_path
             + " "
             + str(args)
             + " ; "
-            + " NVBIT_INSTRUMENTATION_ENABLED=1 SPINLOCK_PHASE=1 CUDA_INJECTION64_PATH="
+            + " SPINLOCK_PHASE=1 CUDA_INJECTION64_PATH="
             + os.path.join(nvbit_spinlock_path, "spinlock_tool.so")
             + " "
             + exec_path
