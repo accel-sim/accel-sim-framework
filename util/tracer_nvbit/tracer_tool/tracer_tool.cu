@@ -429,8 +429,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int mem_oper_idx = -1;
       int num_mref = 0;
       uint64_t imm_value = 0;
-      // Check if `gsb` exists in full SASS string
-      int is_gmma_commit_group = strstr(instr->getSass(), "gsb") != NULL;
+      // Check if `gsb` exists in full SASS string and the instruction is a GMMA instruction
+      bool is_gmma_instruction = strstr(instr->getSass(), "GMMA") != NULL;
+      // A GMMA instruction with gsb is a commit group
+      int is_gmma_commit_group = is_gmma_instruction && strstr(instr->getSass(), "gsb") != NULL;
 
       for (int i = 0; i < instr->getNumOperands(); ++i) {
         const InstrType::operand_t *op = instr->getOperand(i);
@@ -1271,7 +1273,10 @@ void *recv_thread_fun(void *args) {
         }
 
         // Print is_gmma_commit_group flag
-        fprintf(ctx_resultsFile[ctx], "%d ", trace->is_gmma_commit_group);
+        bool is_gmma_instruction = strstr(id_to_opcode_map[trace->opcode_id].c_str(), "GMMA") != NULL;
+        if (is_gmma_instruction) {
+          fprintf(ctx_resultsFile[ctx], "%d ", trace->is_gmma_commit_group);
+        }
 
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);

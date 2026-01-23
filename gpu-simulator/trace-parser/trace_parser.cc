@@ -235,8 +235,10 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     parse_trace_reg_num(reg_src[i]);
   }
 
-  // Parse is_gmma_commit_group flag
-  ss >> std::dec >> is_gmma_commit_group;
+  // Parse is_gmma_commit_group flag if the instruction is a GMMA instruction
+  if (strstr(opcode.c_str(), "GMMA") != NULL) {
+    ss >> std::dec >> is_gmma_commit_group;
+  }
 
   // parse mem info
   unsigned address_mode = 0;
