@@ -53,7 +53,7 @@ jobs:
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
           ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-          ./util/tracer_nvbit/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          ./util/hw_stats/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
           rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run
