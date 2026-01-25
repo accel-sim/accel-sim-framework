@@ -1,0 +1,189 @@
+name: Hopper Weekly
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 19 * * FRI'  # 7:00 PM every Friday
+
+env:
+  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+
+jobs:
+  Tracer-Hopper:
+    runs-on: tgrogers-raid
+    timeout-minutes: 720
+    concurrency:
+      group: sk-h200-remote
+      cancel-in-progress: false
+    env:
+      VPN_HOST: "211.179.16.22"
+      VPN_CERT: "pin-sha256:t1qxDIv4DWnlmfO+m8Q1xKyPmnhuPtjEuf3KTa/3A28="
+      OPENCONNECT_PATH: "/home/tgrogers-raid/a/common/openconnect/openconnect"
+      OCPROXY_PATH: "/home/tgrogers-raid/a/common/ocproxy/ocproxy"
+      SOCKS_PORT: "1080"
+      REMOTE_HOST: "172.20.40.191"
+      REMOTE_USER: "tgrghci"
+      WORK_DIR: "/purdue/tgrghci/accel-sim-framework-ci"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Connect to VPN
+        run: |
+          echo "Starting VPN connection..."
+          cat $HOME/sk_password | $OPENCONNECT_PATH \
+              --script-tun \
+              --script "$OCPROXY_PATH -L 2222:unix-host:22 -D $SOCKS_PORT" \
+              --protocol=gp \
+              --user=$(cat $HOME/sk_user) \
+              --servercert $VPN_CERT \
+              --background \
+              $VPN_HOST
+
+          echo "Waiting for VPN to establish..."
+          sleep 5
+
+          for i in {1..10}; do
+              if nc -z 127.0.0.1 $SOCKS_PORT 2>/dev/null; then
+                  echo "VPN connection established (SOCKS proxy ready on port $SOCKS_PORT)"
+                  break
+              fi
+              if [ $i -eq 10 ]; then
+                  echo "ERROR: VPN connection failed to establish"
+                  exit 1
+              fi
+              sleep 2
+          done
+
+      - name: Clean and sync repository to remote
+        run: |
+          echo "Checking if $WORK_DIR exists on remote..."
+          ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
+              $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
+          if [ -d "/purdue/tgrghci/accel-sim-framework-ci" ]; then
+              echo "Removing existing directory..."
+              rm -rf /purdue/tgrghci/accel-sim-framework-ci
+          fi
+          ENDSSH
+
+          echo "Syncing repository to remote host $REMOTE_USER@$REMOTE_HOST..."
+          rsync -az \
+              -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
+              $GITHUB_WORKSPACE/ \
+              $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/
+          echo "Repository synced successfully"
+
+      - name: Generate traces on H200
+        run: |
+          echo "Connecting to remote host to run trace generation..."
+          ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
+              $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
+          set -e
+          cd /purdue/tgrghci/accel-sim-framework-ci
+          echo "Running trace commands..."
+          .github/scripts/h200.sh
+          ENDSSH
+
+      - name: Sync traces back from remote
+        run: |
+          echo "Syncing traces from remote host back to local..."
+          mkdir -p ./hw_run
+          rsync -az \
+              -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
+              $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/hw_run/ \
+              ./hw_run/
+          echo "Traces synced successfully"
+          # move to trace depot
+          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+          mv ./hw_run/ /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+          chmod 777 -R /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+
+      - name: Cleanup VPN
+        if: always()
+        run: |
+          echo "Cleaning up VPN connection..."
+          pkill -f "openconnect.*$VPN_HOST" || true
+
+  SASS-Hopper:
+    timeout-minutes: 720
+    needs: [Tracer-Hopper]
+    runs-on: tgrogers-raid
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup Environment
+        run: |
+          rm -rf env-setup
+          git clone --quiet git@github.com:purdue-aalp/env-setup.git
+          cd env-setup
+          git checkout cluster-ubuntu
+
+      - name: Build Accel-Sim
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          rm -rf ./gpu-simulator/gpgpu-sim
+
+          # Clone gpgpu-sim with fork-aware branch selection
+          echo "Cloning gpgpu-sim with fork-aware branch selection..."
+          git clone --quiet git@github.com:accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
+
+          current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
+          current_branch=$BRANCH_NAME
+          current_repo=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
+
+          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
+
+          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
+
+          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
+            # Check if the branch exists in the fork owner's repository
+            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
+            else
+              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to accel-sim dev branch"
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
+            fi
+            # Remove the temporary remote
+            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
+          else
+            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
+            git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
+          fi
+
+          source ./gpu-simulator/setup_environment.sh
+          make clean -C gpu-simulator
+          make -j -C gpu-simulator
+
+      - name: Run SASS Simulation
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          source ./gpu-simulator/setup_environment.sh
+          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run ./hw_run
+          git show -q
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C H100-SASS -T ./hw_run/traces/ -N hopper-weekly-$$
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/ -N hopper-weekly-$$
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/traces/ -N hopper-weekly-$$
+          ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s hopper-weekly-stats-per-app.csv -N hopper-weekly-$$
+
+  failures:
+    if: failure()
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPORT_URL: ""
+    runs-on: tgrogers-raid
+    needs: [Tracer-Hopper, SASS-Hopper]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify Failure
+        run: |
+          # Setup envs
+          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
+          source ./env-setup/common/common_inc.sh
+          export BRANCH_NAME="Hopper Weekly"
+          python3 .github/scripts/send_ci_email.py -t failure

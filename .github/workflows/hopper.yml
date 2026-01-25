@@ -1,0 +1,105 @@
+# This is a basic workflow to help you get started with Actions
+
+
+name: Hopper Workflow
+# Controls when the workflow will run
+on:
+    # Triggers the workflow on push or pull request events but only for the mydev branch
+    push:
+    pull_request:
+    # Allows you to run this workflow manually from the Actions tab
+    workflow_dispatch:
+jobs:
+    sk_h200:
+        runs-on: tgrogers-raid
+        concurrency:
+            group: sk-h200-remote
+            cancel-in-progress: false
+        env:
+            VPN_HOST: "211.179.16.22"
+            VPN_CERT: "pin-sha256:t1qxDIv4DWnlmfO+m8Q1xKyPmnhuPtjEuf3KTa/3A28="
+            OPENCONNECT_PATH: "/home/tgrogers-raid/a/common/openconnect/openconnect"
+            OCPROXY_PATH: "/home/tgrogers-raid/a/common/ocproxy/ocproxy"
+            SOCKS_PORT: "1080"
+            REMOTE_HOST: "172.20.40.191"
+            REMOTE_USER: "tgrghci"
+            WORK_DIR: "/purdue/tgrghci/accel-sim-framework-ci"
+        steps:
+            - uses: actions/checkout@v4
+
+            - name: Connect to VPN
+              run: |
+                  echo "Starting VPN connection..."
+                  cat $HOME/sk_password | $OPENCONNECT_PATH \
+                      --script-tun \
+                      --script "$OCPROXY_PATH -L 2222:unix-host:22 -D $SOCKS_PORT" \
+                      --protocol=gp \
+                      --user=$(cat $HOME/sk_user) \
+                      --servercert $VPN_CERT \
+                      --background \
+                      $VPN_HOST
+
+                  echo "Waiting for VPN to establish..."
+                  sleep 5
+
+                  for i in {1..10}; do
+                      if nc -z 127.0.0.1 $SOCKS_PORT 2>/dev/null; then
+                          echo "VPN connection established (SOCKS proxy ready on port $SOCKS_PORT)"
+                          break
+                      fi
+                      if [ $i -eq 10 ]; then
+                          echo "ERROR: VPN connection failed to establish"
+                          exit 1
+                      fi
+                      sleep 2
+                  done
+
+            - name: Clean and sync repository to remote
+              run: |
+                  echo "Checking if $WORK_DIR exists on remote..."
+                  ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
+                      $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
+                  if [ -d "/purdue/tgrghci/accel-sim-framework-ci" ]; then
+                      echo "Removing existing directory..."
+                      rm -rf /purdue/tgrghci/accel-sim-framework-ci
+                  fi
+                  ENDSSH
+
+                  echo "Syncing repository to remote host $REMOTE_USER@$REMOTE_HOST..."
+                  rsync -az \
+                      -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
+                      $GITHUB_WORKSPACE/ \
+                      $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/
+                  echo "Repository synced successfully"
+
+            - name: execute actions
+              run: |
+                  echo "Connecting to remote host to run trace..."
+                  ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
+                      $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
+                  set -e
+                  cd /purdue/tgrghci/accel-sim-framework-ci
+                  echo "Running trace commands..."
+                  .github/scripts/h200.sh
+                  ENDSSH
+
+            - name: Sync traces back from remote
+              run: |
+                  echo "Syncing traces from remote host back to local..."
+                  mkdir -p ./hw_run
+                  rsync -az \
+                      -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
+                      $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/hw_run/ \
+                      ./hw_run/
+                  echo "Traces synced successfully"
+                  # move to trace depot
+                  rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+                  mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+                  mv ./hw_run/ /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+                
+
+            - name: Cleanup VPN
+              if: always()
+              run: |
+                  echo "Cleaning up VPN connection..."
+                  pkill -f "openconnect.*$VPN_HOST" || true
