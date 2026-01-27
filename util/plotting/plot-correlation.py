@@ -936,6 +936,8 @@ logger.log("Getting HW data\n")
 hw_data = {}
 if options.hardware_dict == None:
     for root, dirs, files in os.walk(options.hardware_dir):
+        # Skip traces folders - they are large and don't contain stats files
+        dirs[:] = [d for d in dirs if d != "traces"]
         for d in dirs:
             csv_dir = os.path.join(root, d)
             csvs = sorted(glob.glob(os.path.join(csv_dir, "*.csv*")))

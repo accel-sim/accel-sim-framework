@@ -93,10 +93,10 @@ jobs:
               ./hw_run/
           echo "Traces synced successfully"
           # move to trace depot
-          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
-          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
-          mv ./hw_run/ /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
-          chmod 777 -R /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/
+          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
+          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
+          mv ./hw_run/ /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
+          chmod 777 -R /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
 
       - name: Cleanup VPN
         if: always()
@@ -164,9 +164,8 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
-          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run ./hw_run
-          git show -q
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C H100-SASS -T ./hw_run/traces/ -N hopper-weekly-$$
+          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C H100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/traces/ -N hopper-weekly-$$
+          ./util/job_launching/run_simulations.py -B GPU_Microbenchmark_TMA,cutlass_tma_small -C H100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/traces/ -N hopper-weekly-$$
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/ -N hopper-weekly-$$
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/traces/ -N hopper-weekly-$$
           ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s hopper-weekly-stats-per-app.csv -N hopper-weekly-$$

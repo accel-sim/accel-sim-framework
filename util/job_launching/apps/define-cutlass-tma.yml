@@ -8,11 +8,6 @@ cutlass_tma_small:
               accel-sim-mem: 13G
             - args: --m=512 --n=4 --k=512 --iterations=0
               accel-sim-mem: 13G
-        - cutlass_100_hopper_tma_warpspecialized_gemm:
-            - args: --m=512 --n=512 --k=512 --iterations=0
-              accel-sim-mem: 13G
-            - args: --m=512 --n=4 --k=512 --iterations=0
-              accel-sim-mem: 13G
 
 cutlass_tma_medium:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
