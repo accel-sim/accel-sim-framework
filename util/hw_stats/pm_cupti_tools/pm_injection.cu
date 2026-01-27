@@ -71,6 +71,9 @@ struct CtxData {
     int curKernels{0};
     int iterations{0};
     
+    // kernel name tracking
+    vector<string> kernelNames;              // store kernel names for current session
+    
     bool samplingActive{false};
 };
 
@@ -274,6 +277,27 @@ static void writeCsvLines(int session, int deviceId, int kernelsInSession,
     }
 }
 
+static void writeKernelNamesFile(const vector<string>& kernelNames)
+{
+    static int globalKernelIndex = 0;
+    static bool firstWrite = true;
+    std::string fileName = "kernel_names.txt";
+    std::ios_base::openmode mode = firstWrite ? std::ios::out : std::ios::app;
+    std::ofstream ofs(fileName, mode);
+    if (!ofs) {
+        std::cerr << "[PM-SAMPLING] Failed to open kernel names file: " << fileName << "\n";
+        return;
+    }
+    
+    for (size_t i = 0; i < kernelNames.size(); ++i) {
+        ofs << globalKernelIndex << "," << kernelNames[i] << "\n";
+        globalKernelIndex++;
+    }
+    
+    firstWrite = false;
+    ofs.close();
+}
+
 // stop->decode->evaluate->print, then reset images for reuse
 static void flushSession(CtxData& cd, const char* reason)
 {
@@ -313,11 +337,17 @@ static void flushSession(CtxData& cd, const char* reason)
 
         // Optional CSV
         writeCsvLines((int)cd.iterations, cd.deviceId, cd.curKernels, capture.str());
+        
+        // Write kernel names file
+        if (!cd.kernelNames.empty()) {
+            writeKernelNamesFile(cd.kernelNames);
+        }
     }
     // reuse the same buffers for next session
     CUPTI_API_CALL(cd.sampler.ResetCounterDataImage(cd.counterDataImage));
     cd.host.ClearRanges();
     cd.curKernels = 0;
+    cd.kernelNames.clear();
 }
 
 // application exit hook
@@ -376,6 +406,12 @@ static void CUPTIAPI callback(
             // start sampling before kernel runs
             if (!cd.samplingActive) startIfNeeded(cd);
             cd.curKernels++;
+            
+            // Extract kernel name from callback data
+            // For cuLaunchKernel callbacks, symbolName contains the kernel name
+            const char* kernelName = d->symbolName ? d->symbolName : 
+                                    (d->functionName ? d->functionName : "unknown");
+            cd.kernelNames.push_back(kernelName);
         } else if (d->callbackSite == CUPTI_API_EXIT) {
             // flush after kernel completes
             if (cd.curKernels >= cd.maxKernels) {
