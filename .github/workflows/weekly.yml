@@ -36,8 +36,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           export PATH=/home/tgrogers-raid/a/common/python2:$PATH
           rm -rf ./gpu-app-collection/
-          git clone --quiet git@github.com:accel-sim/gpu-app-collection.git
-          git -C ./gpu-app-collection/ submodule update --init -- ./src/cuda/cuda-samples
+          git clone --quiet --recurse-submodules https://github.com/accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
           make -j8 -C ./gpu-app-collection/src rodinia_2.0-ft
