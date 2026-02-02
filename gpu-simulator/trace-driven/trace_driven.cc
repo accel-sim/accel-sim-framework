@@ -237,6 +237,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   // Handling SYNCS instructions
   if (opcode1 == "SYNCS") {
+    // SYNCS instructions require register value tracing
+    assert(!trace.reg_src_vals.empty() &&
+           "SYNCS instructions require register value tracing");
+
     syncs_operand operand;
     // Get mbarrier addresses from the trace address info
     for (int i = 0; i < WARP_SIZE; i++) {

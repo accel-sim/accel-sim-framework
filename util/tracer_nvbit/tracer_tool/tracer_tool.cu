@@ -1337,7 +1337,10 @@ void *recv_thread_fun(void *args) {
           // Check if the bitmask is all 0, if so, dont parse the TMA
           // instruction
           if ((trace->active_mask & trace->predicate_mask) == 0) {
-            fprintf(ctx_resultsFile[ctx], "0 ");
+            // Dummy values to NOP TMA instruction
+            // transfer_size mbar_addr is_multicast byte_count oob_byte_count
+            // tma_base_delta base_addr transfer_count
+            fprintf(ctx_resultsFile[ctx], "0 0x0 0 0 0 4 0x0 0 ");
           } else {
             // Parse the TMA instruction
             const char *opcode_str = id_to_opcode_map[trace->opcode_id].c_str();
@@ -1442,6 +1445,11 @@ void *recv_thread_fun(void *args) {
             free(raw_global_addrs);
             free(global_addrs);
           }
+#else
+          // Dummy values to NOP TMA instruction
+          // transfer_size mbar_addr is_multicast byte_count oob_byte_count
+          // tma_base_delta base_addr transfer_count
+          fprintf(ctx_resultsFile[ctx], "0 0x0 0 0 0 4 0x0 0 ");
 #endif
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
