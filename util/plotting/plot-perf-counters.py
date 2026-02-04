@@ -7,27 +7,31 @@ import pandas as pd
 def parse_args():
     parser = argparse.ArgumentParser(description="Plot data from a CSV file")
     parser.add_argument("csv_file", type=str, help="Path to the CSV file to load")
+    parser.add_argument("--normalize", action="store_true", help="Normalize metrics per cycle")
     return parser.parse_args()
 
 
-def get_to_plot(df: pd.DataFrame) -> tuple[pd.Series, pd.DataFrame]:
+def get_to_plot(df: pd.DataFrame, normalize: bool = False) -> tuple[pd.Series, pd.DataFrame]:
     """
     Get the global cycles and the to plot dataframe.
     """
     global_cycles = df.filter(regex=r'gpu_sim_cycle$').sum(axis=1)
+    cycle_diff = global_cycles.diff()
     to_plot = pd.DataFrame()
 
     # ---------------------------
-    to_plot["L2 Read Misses"] = df.filter(regex=r'L2.*GLOBAL_ACC_R_MISS$').sum(axis=1).diff()
+    norm_factor = cycle_diff if normalize else 1
+
+    to_plot["L2 Read Misses"] = df.filter(regex=r'L2.*GLOBAL_ACC_R_MISS$').sum(axis=1).diff() / norm_factor
     to_plot["Accumulated L2 Read Misses"] = df.filter(regex=r'L2.*GLOBAL_ACC_R_MISS$').sum(axis=1)
-    to_plot["Normalized IPC"] = df.filter(regex=r'sim_insn$').sum(axis=1).diff() / global_cycles.diff()
-    to_plot["L2 Bandwidth - Replies in parallel"] = df.filter(regex=r'partiton_replys_in_parallel').sum(axis=1).diff()
-    to_plot["L2 Bandwidth - Reqs in parallel"] = df.filter(regex=r'partiton_reqs_in_parallel').sum(axis=1).diff()
-    to_plot["SIMT to Mem"] = df.filter(regex=r'n_simt_to_mem_').sum(axis=1).diff()
-    to_plot["Mem to SIMT"] = df.filter(regex=r'n_mem_to_simt_').sum(axis=1).diff()
-    to_plot["L2 Writes"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_W_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff()
-    to_plot["L2 Reads"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_R_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff()
-    to_plot["L1 Write RESERVATION_FAIL"] = df.filter(regex=r'L1D_.*_GLOBAL_ACC_W_RESERVATION_FAIL').sum(axis=1).diff()
+    to_plot["Normalized IPC"] = df.filter(regex=r'sim_insn$').sum(axis=1).diff() / cycle_diff
+    to_plot["L2 Bandwidth - Replies in parallel"] = df.filter(regex=r'partiton_replys_in_parallel').sum(axis=1).diff() / norm_factor
+    to_plot["L2 Bandwidth - Reqs in parallel"] = df.filter(regex=r'partiton_reqs_in_parallel').sum(axis=1).diff() / norm_factor
+    to_plot["SIMT to Mem"] = df.filter(regex=r'n_simt_to_mem_').sum(axis=1).diff() / norm_factor
+    to_plot["Mem to SIMT"] = df.filter(regex=r'n_mem_to_simt_').sum(axis=1).diff() / norm_factor
+    to_plot["L2 Writes"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_W_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff() / norm_factor
+    to_plot["L2 Reads"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_R_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff() / norm_factor
+    to_plot["L1 Write RESERVATION_FAIL"] = df.filter(regex=r'L1D_.*_GLOBAL_ACC_W_RESERVATION_FAIL').sum(axis=1).diff() / norm_factor
     # to_plot["Shader Idle"] = df.filter(regex=r'shader_cycle_distro_0_').diff()
     # to_plot["Shader Waiting for RAW"] = df.filter(regex=r'shader_cycle_distro_1_').diff()
     # to_plot["Shader Stalled"] = df.filter(regex=r'shader_cycle_distro_2_').diff()
@@ -99,7 +103,7 @@ def main():
     args = parse_args()
     df = pd.read_csv(args.csv_file)
 
-    global_cycles, to_plot = get_to_plot(df)
+    global_cycles, to_plot = get_to_plot(df, normalize=args.normalize)
     figs = plot_series(global_cycles, to_plot, config_name=args.csv_file)
     save_figs(figs)
     # show_figs(figs)
