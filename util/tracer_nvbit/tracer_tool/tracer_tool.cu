@@ -1281,6 +1281,24 @@ void *recv_thread_fun(void *args) {
           fprintf(ctx_resultsFile[ctx], "%d ", trace->is_gmma_commit_group);
         }
 
+#ifndef USE_PRIVATE_NVBIT
+        // For public NVBit, TMA instructions are treated as regular instruction
+        // during instrumentation. To handle the trace generation for it
+        // properly, we have to manually set the flag for TMA instructions here.
+        const static std::string TMAMemOpcodes[] = {
+            "UBLKCP", "UBLKPF",   "UBLKRED", "UTMALDG",
+            "UTMAPF", "UTMAREDG", "UTMASTG"};
+
+        // Check if current inst contain the TMA opcode
+        for (auto tma_opcode : TMAMemOpcodes) {
+          if (id_to_opcode_map[trace->opcode_id].find(tma_opcode) !=
+              std::string::npos) {
+            trace->inst_type = TracerInstrType::INST_TMA;
+            break;
+          }
+        }
+#endif
+
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
         if (trace->inst_type == TracerInstrType::INST_REGULAR &&
