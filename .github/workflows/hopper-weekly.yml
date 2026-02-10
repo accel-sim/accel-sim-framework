@@ -170,6 +170,37 @@ jobs:
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/traces/ -N hopper-weekly-$$
           ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s hopper-weekly-stats-per-app.csv -N hopper-weekly-$$
 
+      - name: Archive Stats
+        if: always()
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          rm -rf ./statistics-archive
+          git clone --quiet git@github.com:accel-sim/statistics-archive.git
+          BRANCH_NAME=hopper-weekly/$BRANCH_NAME
+          git -C ./statistics-archive checkout $BRANCH_NAME 2>/dev/null || git -C ./statistics-archive checkout -b $BRANCH_NAME
+          ./util/job_launching/get_stats.py -k -K -R -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,GPU_Microbenchmark_TMA,cutlass_tma_small -C H100-SASS -A | tee hopper-h100-ubench-sass-local.csv
+
+          mkdir -p statistics-archive/ubench/
+          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/hopper-h100-ubench-sass.csv,hopper-h100-ubench-sass-local.csv \
+          | tee hopper-h100-ubench-sass.csv && mv hopper-h100-ubench-sass.csv ./statistics-archive/ubench/
+          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv,hopper-h100-ubench-sass-local.csv \
+          | tee hopper-h100-ubench-sass-latest2.csv && mv hopper-h100-ubench-sass-local.csv ./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv
+
+      - name: Correlate Ubench
+        if: always()
+        run: |
+          source ./env-setup/12.8_env_setup.sh
+          ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
+          rm -rf ./util/plotting/correl-html/
+          ./util/plotting/plot-correlation.py -c ./hopper-h100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/ | tee hopper-h100-ubench-correl.txt
+          mv ./util/plotting/correl-html/combined_per_kernel.html ./statistics-archive/ubench/hopper-h100-combined_per_kernel.html
+          mv ./util/plotting/correl-html/combined_per_app.html ./statistics-archive/ubench/hopper-h100-combined_per_app.html
+
+          git -C ./statistics-archive add --all
+          git -C ./statistics-archive commit \
+          -m "Hopper Weekly CI automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
+          git -C ./statistics-archive push -f -u origin hopper-weekly/$BRANCH_NAME
+
   failures:
     if: failure()
     env:
@@ -186,3 +217,19 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
           python3 .github/scripts/send_ci_email.py -t failure
+
+  success:
+    if: success()
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.head_ref || github.ref_name }}/ubench/"
+    runs-on: tgrogers-raid
+    needs: [Tracer-Hopper, SASS-Hopper]
+    steps:
+      - uses: actions/checkout@v4
+      - name: Notify Success
+        run: |
+          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
+          source ./env-setup/common/common_inc.sh
+          export BRANCH_NAME="Hopper Weekly"
+          python3 .github/scripts/send_ci_email.py -t success

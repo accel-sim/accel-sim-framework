@@ -18,7 +18,7 @@ echo "Building applications..."
 rm -rf ./gpu-app-collection/
 git clone --quiet --recurse-submodules https://github.com/accel-sim/gpu-app-collection.git
 source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
-make -C ./gpu-app-collection/src -j64 rodinia_2.0-ft rodinia-3.1 GPU_Microbenchmark cutlass_mini
+make -C ./gpu-app-collection/src -j64 rodinia_2.0-ft rodinia-3.1 GPU_Microbenchmark cutlass_mini GPU_Microbenchmark_gmma
 # create dummy data_dirs
 ln -s /purdue/tgrghci/gpu-app-collection/data_dirs ./gpu-app-collection/data_dirs
 
@@ -27,7 +27,7 @@ echo "Generating traces..."
 source ./gpu-app-collection/src/setup_environment
 rm -rf ./hw_run/
 ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-./util/tracer_nvbit/run_hw_trace.py -B GPU_Microbenchmark_TMA,cutlass_tma_small -D 7 --spinlock_handling fast_forward
+ALLOW_REG_VAL_TRACING=1 ./util/tracer_nvbit/run_hw_trace.py -B GPU_Microbenchmark_TMA,cutlass_tma_small -D 7 --spinlock_handling fast_forward
 
 # Generate hardware stats
 echo "Generating hardware stats..."

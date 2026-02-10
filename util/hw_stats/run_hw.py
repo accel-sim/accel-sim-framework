@@ -240,10 +240,7 @@ for bench in benchmarks:
                 ncu_report_file = os.path.join(this_run_dir, "ncu_stats.ncu-rep")
                 # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
 
-                if options.cuda_graph:
-                    cuda_graph_flag = " --cache-control none "
-                else:
-                    cuda_graph_flag = " --replay-mode application "
+                cuda_graph_flag = " --cache-control none "
 
                 extract_command = (
                     "ncu --import " + ncu_report_file +
