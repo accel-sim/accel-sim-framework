@@ -237,9 +237,15 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   // Handling SYNCS instructions
   if (opcode1 == "SYNCS") {
-    // SYNCS instructions require register value tracing
-    assert(!trace.reg_src_vals.empty() &&
-           "SYNCS instructions require register value tracing");
+    // All SYNCS instructions supported below need register value tracing
+    if (trace.reg_src_vals.empty()) {
+      printf(
+          "Error: SYNCS instruction %s require register value tracing at PC: "
+          "0x%llx, exiting "
+          "execution\n",
+          opcode.c_str(), (address_type)trace.m_pc);
+      exit(1);
+    }
 
     syncs_operand operand;
     // Get mbarrier addresses from the trace address info
