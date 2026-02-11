@@ -97,6 +97,8 @@ struct inst_trace_t {
   std::vector<reg_val_t> reg_src_vals;
   unsigned is_gmma_commit_group;
   uint64_t imm;
+  // Optional second immediate value (used e.g. by Hopper BAR instructions)
+  uint64_t imm2;
   inst_memadd_info_t *memadd_info = nullptr;
   tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
   bool tma_is_multicast = false;

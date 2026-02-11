@@ -54,6 +54,7 @@ typedef struct {
       int32_t numSrcs;
       int32_t width;
       uint64_t imm;
+      uint64_t imm2;
       uint32_t desRegVal[32];
       uint32_t srcRegVals[MAX_SRC][32];
     } regular;

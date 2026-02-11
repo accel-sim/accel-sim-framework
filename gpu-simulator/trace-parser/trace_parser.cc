@@ -35,6 +35,7 @@ void split(const std::string &str, std::vector<std::string> &cont,
 inst_trace_t::inst_trace_t() {
   memadd_info = NULL;
   imm = 0;
+  imm2 = 0;
 }
 
 inst_trace_t::~inst_trace_t() {
@@ -59,6 +60,7 @@ inst_trace_t::inst_trace_t(const inst_trace_t &b) {
   reg_src_vals = b.reg_src_vals;
   is_gmma_commit_group = b.is_gmma_commit_group;
   imm = b.imm;
+  imm2 = b.imm2;
 
   // Copy the memory address information
   if (b.memadd_info != NULL) {
@@ -349,6 +351,16 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   }
 
   ss >> imm;
+  imm2 = 0;
+  if (trace_version == 6) {
+    // Try to read a second immediate; if it fails (old traces), leave imm2=0.
+    uint64_t tmp_imm2 = 0;
+    if (ss >> tmp_imm2) {
+      imm2 = tmp_imm2;
+    } else {
+      ss.clear();
+    }
+  }
 
   if (trace_version == 6) {
     // check Val or NoVal

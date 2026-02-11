@@ -60,8 +60,8 @@ extern "C" __device__ __noinline__ void instrument_inst(
     uint64_t tma_param_handle, uint32_t tma_param_handle_size, bool is_mem,
     uint64_t addr, int32_t width, int32_t desReg, int32_t srcReg1,
     int32_t srcReg2, int32_t srcReg3, int32_t srcReg4, int32_t srcReg5,
-    int32_t srcNum, uint64_t immediate, uint64_t pchannel_dev,
-    uint64_t ptotal_dynamic_instr_counter,
+    int32_t srcNum, uint64_t immediate, uint64_t immediate2,
+    uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
     uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
     uint32_t line_num, uint32_t instr_idx, uint32_t desRegVal,
     uint32_t srcReg1Val, uint32_t srcReg2Val, uint32_t srcReg3Val,
@@ -135,6 +135,7 @@ extern "C" __device__ __noinline__ void instrument_inst(
     trace.inst.regular.GPRSrcs[4] = srcReg5;
     trace.inst.regular.numSrcs = srcNum;
     trace.inst.regular.imm = immediate;
+    trace.inst.regular.imm2 = immediate2;
 
     for (int tid = 0; tid < 32; tid++) {
       trace.inst.regular.desRegVal[tid] =

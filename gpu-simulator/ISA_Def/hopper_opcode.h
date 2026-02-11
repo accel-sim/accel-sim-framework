@@ -144,6 +144,8 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"VIMNMX", OpcodeChar(OP_IMNMX, SP_OP)},
     {"VIMNMX3", OpcodeChar(OP_IMNMX, SP_OP)},
     {"CGAERRBAR", OpcodeChar(OP_ERRBAR, ALU_OP)},
+    {"ACQBULK", OpcodeChar(OP_NOP, ALU_OP)},
+    {"STSM", OpcodeChar(OP_NOP, ALU_OP)},
 
     // Uniform Datapath Instruction
     // UDP unit

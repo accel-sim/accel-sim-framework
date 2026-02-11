@@ -428,7 +428,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
       int dst_oprd = -1;
       int mem_oper_idx = -1;
       int num_mref = 0;
+      // Support up to two immediate operands
       uint64_t imm_value = 0;
+      uint64_t imm_value2 = 0;
+      int imm_count = 0;
       // Check if `gsb` exists in full SASS string and the instruction is a GMMA
       // instruction
       bool is_gmma_instruction = strstr(instr->getSass(), "GMMA") != NULL;
@@ -468,9 +471,14 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             srcNum++;
           }
         }
-        // Add immediate value for DEPBAR instruction
+        // Add immediate value(s) for instructions with IMM_UINT64 operands
         else if (op->type == InstrType::OperandType::IMM_UINT64) {
-          imm_value = instr->getOperand(i)->u.imm_uint64.value;
+          if (imm_count == 0) {
+            imm_value = instr->getOperand(i)->u.imm_uint64.value;
+          } else if (imm_count == 1) {
+            imm_value2 = instr->getOperand(i)->u.imm_uint64.value;
+          }
+          imm_count++;
         }
         // TMA param handle is handled as a whole with
         // nvbit_add_call_arg_tma_param_handle
@@ -536,8 +544,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         }
         nvbit_add_call_arg_const_val32(instr, srcNum);
 
-        /* immediate info */
+        /* immediate info (up to two immediates) */
         nvbit_add_call_arg_const_val64(instr, imm_value);
+        nvbit_add_call_arg_const_val64(instr, imm_value2);
 
         /* add pointer to channel_dev and other counters*/
         nvbit_add_call_arg_const_val64(instr, (uint64_t)&channel_dev);
@@ -719,7 +728,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
               "#traces format = [line_num] PC mask dest_num [reg_dests] "
               "opcode src_num "
               "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
-              "immediate Val|NoVal [dest_val_num] [dest_val] ... "
+              "immediate1 immediate2 Val|NoVal [dest_val_num] [dest_val] ... "
               "[src_val1_num] [src_val1] ... [...] "
               "[src_valX_num] [src_valX] ...\n");
     } else {
@@ -727,7 +736,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
               "#traces format = [line_num] PC mask dest_num [reg_dests] "
               "opcode src_num "
               "[reg_srcs] mem_width [adrrescompress?] [mem_addresses] "
-              "immediate\n");
+              "immediate1 immediate2\n");
     }
     fprintf(ctx_resultsFile[ctx], "\n");
   }
@@ -1476,8 +1485,9 @@ void *recv_thread_fun(void *args) {
           fprintf(ctx_resultsFile[ctx], "0 ");
         }
 
-        // Print the immediate
+        // Print the immediate values
         fprintf(ctx_resultsFile[ctx], "%ld ", trace->inst.regular.imm);
+        fprintf(ctx_resultsFile[ctx], "%ld ", trace->inst.regular.imm2);
 
         if (allow_reg_val_tracing) {
           // Trace version will be 6, a Val|NoVal will follow the immediate

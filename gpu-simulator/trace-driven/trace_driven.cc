@@ -511,15 +511,17 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
       break;
     case OP_BAR:
-      // TO DO: fill this correctly
-      bar_id = 0;
-      bar_count = (unsigned)-1;
-      bar_type = SYNC;
-      // TO DO
-      // if bar_type = RED;
-      // set bar_type
-      // barrier_type bar_type;
-      // reduction_type red_type;
+      if (opcode.find("ARV") != std::string::npos) {
+        bar_type = ARRIVE;
+      } else {
+        bar_type = SYNC;
+      }
+      bar_id = static_cast<unsigned>(trace.imm);
+      if (trace.imm2 != 0) {
+        bar_count = static_cast<unsigned>(trace.imm2);
+      } else {
+        bar_count = static_cast<unsigned>(-1);
+      }
       break;
     // LDGDEPBAR is to form a group containing the previous LDGSTS instructions
     // that have not been grouped yet. In the implementation, a group number
