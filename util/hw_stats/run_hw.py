@@ -241,6 +241,53 @@ for bench in benchmarks:
                 # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
 
                 cuda_graph_flag = " --cache-control none "
+                    
+                # Set device number
+                sh_contents += (
+                    f'\nexport CUDA_VERSION="{cuda_version}";\n'
+                    f'export CUDA_VISIBLE_DEVICES="{options.device_num}" ;\n'
+                )
+                # These metrics are card specific and might not be available on all cards.
+                # The key of this dictionary is the metric base name
+                # and the value list contain all the suffixes needed for this metric.
+                card_specific_metrics = {
+                    # LRC related metrics
+                    "lrc__xbar2gpc_sectors_op_read": ["sum"],
+                    "lrc__lts2lrc_sectors_op_read": ["sum"],
+                    "lrc__xbar2gpc_sectors_op_read_coalescing_achieved": ["sum"],
+                    "lrc__xbar2gpc_sectors_op_read_coalescing_achieved_type_hardware": ["sum"],
+                    "lrc__xbar2gpc_sectors_op_read_coalescing_achieved_type_programmatic": ["sum"],
+                    "lrc__average_xbar2gpc_sectors_op_read": ["ratio"],
+                }
+
+                # Build space-separated list of full metric names (base.suffix)
+                metric_list_str = " ".join(
+                    f"{base}.{suffix}"
+                    for base, suffixes in card_specific_metrics.items()
+                    for suffix in suffixes
+                )
+
+                # Generate bash loop to query which card-specific metrics are available
+                query_metrics_sh = (
+                    '\n# Query card-specific metrics support\n'
+                    'AVAILABLE_METRICS=$(ncu --query-metrics 2>&1)\n'
+                    'CARD_SPECIFIC_METRICS=""\n'
+                    f'for full_metric in {metric_list_str}; do\n'
+                    '  base="${full_metric%%.*}"\n'
+                    f'  if echo "$AVAILABLE_METRICS" | grep -q "^${{base}} "; then\n'
+                    '    if [ -z "$CARD_SPECIFIC_METRICS" ]; then\n'
+                    '      CARD_SPECIFIC_METRICS="$full_metric"\n'
+                    '    else\n'
+                    f'      CARD_SPECIFIC_METRICS="${{CARD_SPECIFIC_METRICS}},${{full_metric}}"\n'
+                    '    fi\n'
+                    '  fi\n'
+                    'done\n'
+                    f'echo "CARD_SPECIFIC_METRICS: ${{CARD_SPECIFIC_METRICS}}";\n'
+                    f'if [ -n "${{CARD_SPECIFIC_METRICS}}" ]; then\n'
+                    f'  CARD_SPECIFIC_METRICS=",${{CARD_SPECIFIC_METRICS}}"\n'
+                    'fi;\n'
+                )
+                sh_contents += query_metrics_sh
 
                 extract_command = (
                     "ncu --import " + ncu_report_file +
@@ -256,6 +303,7 @@ for bench in benchmarks:
                     "l1tex__t_sectors_pipe_lsu_mem_global_op_st_lookup_miss.sum,idc__requests.sum,idc__requests_lookup_hit.sum,"
                     "sm__sass_inst_executed_op_shared_ld.sum,sm__sass_inst_executed_op_shared_st.sum,lts__t_sectors_srcunit_tex_op_read_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_write_lookup_miss.sum,lts__t_sectors_srcunit_tex_op_red_lookup_miss.sum,sm__pipe_alu_cycles_active.sum,sm__pipe_fma_cycles_active.sum,sm__pipe_fp64_cycles_active.sum,sm__pipe_shared_cycles_active.sum,sm__pipe_tensor_cycles_active.sum,sm__pipe_tensor_op_hmma_cycles_active.sum,sm__cycles_active.sum,sm__cycles_active.avg,sm__cycles_elapsed.avg,sm__sass_thread_inst_executed_op_integer_pred_on.sum,sm__sass_thread_inst_executed_ops_dadd_dmul_dfma_pred_on.sum,sm__sass_thread_inst_executed_ops_fadd_fmul_ffma_pred_on.sum,sm__sass_thread_inst_executed_ops_hadd_hmul_hfma_pred_on.sum,sm__inst_executed_pipe_alu.sum,sm__inst_executed_pipe_fma.sum,sm__inst_executed_pipe_fp16.sum,sm__inst_executed_pipe_fp64.sum,sm__inst_executed_pipe_tensor.sum,sm__inst_executed_pipe_tex.sum,sm__inst_executed_pipe_xu.sum,sm__inst_executed_pipe_lsu.sum,"
                     "sm__sass_thread_inst_executed_op_fp16_pred_on.sum,sm__sass_thread_inst_executed_op_fp32_pred_on.sum,sm__sass_thread_inst_executed_op_fp64_pred_on.sum,sm__sass_thread_inst_executed_op_dmul_pred_on.sum,sm__sass_thread_inst_executed_op_dfma_pred_on.sum,sm__sass_inst_executed_op_memory_128b.sum,sm__sass_inst_executed_op_memory_64b.sum,sm__sass_inst_executed_op_memory_32b.sum,sm__sass_inst_executed_op_memory_16b.sum,sm__sass_inst_executed_op_memory_8b.sum,smsp__thread_inst_executed_per_inst_executed.ratio,sm__sass_thread_inst_executed.sum"
+                    f"${{CARD_SPECIFIC_METRICS}}"
                     " --csv --page raw --target-processes all -f "
                     + cuda_graph_flag
                     + kernel_number
@@ -264,11 +312,8 @@ for bench in benchmarks:
                     + os.path.join(this_run_dir, "ncu_stats")
                 )
                 sh_contents += (
-                    '\nexport CUDA_VERSION="'
-                    + cuda_version
-                    + '"; export CUDA_VISIBLE_DEVICES="'
-                    + options.device_num
-                    + '" ;\ntimeout 30m '
+                    '\n# Profiling\n'
+                    'timeout 30m '
                     + profile_command
                     + " "
                     + exec_path

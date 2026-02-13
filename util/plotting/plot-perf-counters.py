@@ -32,6 +32,13 @@ def get_to_plot(df: pd.DataFrame, normalize: bool = False) -> tuple[pd.Series, p
     to_plot["L2 Writes"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_W_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff() / norm_factor
     to_plot["L2 Reads"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_R_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff() / norm_factor
     to_plot["L1 Write RESERVATION_FAIL"] = df.filter(regex=r'L1D_.*_GLOBAL_ACC_W_RESERVATION_FAIL').sum(axis=1).diff() / norm_factor
+    to_plot["LRC ICNT to LRC sectors"] = df.filter(regex=r'LRC_subpartition_num_icnt_to_lrc_sectors_.*').sum(axis=1).diff() / norm_factor
+    to_plot["LRC LRC to L2 sectors"] = df.filter(regex=r'LRC_subpartition_num_lrc_to_l2_sectors.*').sum(axis=1).diff() / norm_factor
+    to_plot["LRC L2 stall due to LRC queue full"] = df.filter(regex=r'LRC_subpartition_l2_stall_due_to_lrc_full.*').sum(axis=1).diff() / norm_factor
+    to_plot["LRC average queue size"] = df.filter(regex=r'LRC_subpartition_lrc_queue_size.*').mean(axis=1)
+    to_plot["LRC max coalesced count"] = df.filter(regex=r'LRC_subpartition_current_max_coalesced_count.*').max(axis=1)
+    to_plot["LRC average max coalesced count"] = df.filter(regex=r'LRC_subpartition_current_max_coalesced_count.*').mean(axis=1)
+    to_plot["LRC average coalesced count"] = df.filter(regex=r'LRC_subpartition_current_avg_coalesced_count.*').mean(axis=1)
     # to_plot["Shader Idle"] = df.filter(regex=r'shader_cycle_distro_0_').diff()
     # to_plot["Shader Waiting for RAW"] = df.filter(regex=r'shader_cycle_distro_1_').diff()
     # to_plot["Shader Stalled"] = df.filter(regex=r'shader_cycle_distro_2_').diff()

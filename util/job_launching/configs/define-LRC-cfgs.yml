@@ -1,0 +1,25 @@
+
+# LRC configs
+LRC:
+    extra_params: "-gpgpu_lrc_enabled 1"
+
+NO_LRC:
+    extra_params: "-gpgpu_lrc_enabled 0"
+
+LRC_MERGED_16:
+    extra_params: "-gpgpu_lrc_max_merged 16"
+
+LRC_MERGED_32:
+    extra_params: "-gpgpu_lrc_max_merged 32"
+
+LRC_MERGED_64:
+    extra_params: "-gpgpu_lrc_max_merged 64"
+
+LRC_ENTRIES_128:
+    extra_params: "-gpgpu_lrc_max_entries 128"
+
+LRC_ENTRIES_256:
+    extra_params: "-gpgpu_lrc_max_entries 256"
+
+LRC_ENTRIES_512:
+    extra_params: "-gpgpu_lrc_max_entries 512"
