@@ -13,19 +13,23 @@ set(CMAKE_CXX_STANDARD_REQUIRED True)
 
 set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 
+# Enable position-independent code for all targets (required for shared libraries/Python module)
+set(CMAKE_POSITION_INDEPENDENT_CODE ON)
+
 if($ENV{ACCELSIM_CONFIG} STREQUAL "debug")
-    set(CMAKE_BUILD_TYPE Debug)
+    set(CMAKE_BUILD_TYPE RelWithDebInfo)
 else()
     set(CMAKE_BUILD_TYPE Release)
 endif()
 
-# Override default CMake Release flags to keep assertions enabled
-set(CMAKE_CXX_FLAGS_RELEASE "-O3 -g3 -fPIC -Wall")
+# Remove -DNDEBUG from Release and RelWithDebInfo to keep assertions enabled
+string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
+string(REPLACE "-DNDEBUG" "" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 
 # check envrionment variable string compare
-if(${CMAKE_BUILD_TYPE} STREQUAL "Debug")
+if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWithDebInfo")
     add_compile_definitions(DEBUG=1)
-    add_compile_options(-Wall -O0 -g3 -fPIC)
+    # add_compile_options(-Wall -O0 -g3 -fPIC)
 else()
     add_compile_definitions(DEBUG=0)
 endif()
