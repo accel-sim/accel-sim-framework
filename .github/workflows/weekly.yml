@@ -62,11 +62,11 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
+          mkdir -p ./hw_run/
           srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
-          sleep 5  # wait for NFS sync before moving
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward
+          mkdir -p ./hw_run/
           srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
-          sleep 5  # wait for NFS sync before moving
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
   SASS-Weekly:
     timeout-minutes: 720
