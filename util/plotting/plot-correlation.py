@@ -934,36 +934,66 @@ logger = Logger(options.verbose, options.logchannel)
 # Get the hardware Data
 logger.log("Getting HW data\n")
 hw_data = {}
+
+
+def find_hw_base_dirs(hw_dir):
+    """
+    Find base directories containing app data.
+    Handles structures like:
+      hw_dir/device-*/version/app/args/  -> returns [hw_dir/device-*/version/]
+      hw_dir/app/args/                   -> returns [hw_dir/]
+    """
+    base_dirs = []
+    # Check for device-* pattern
+    device_dirs = glob.glob(os.path.join(hw_dir, "device-*"))
+    if device_dirs:
+        for device_dir in device_dirs:
+            # Look for version subdirectories (anything inside device-*)
+            for subdir in os.listdir(device_dir):
+                subdir_path = os.path.join(device_dir, subdir)
+                if os.path.isdir(subdir_path) and subdir != "traces":
+                    base_dirs.append(subdir_path)
+    else:
+        # No device-* pattern, use hw_dir directly
+        base_dirs.append(hw_dir)
+    return base_dirs
+
+
 if options.hardware_dict == None:
-    for root, dirs, files in os.walk(options.hardware_dir):
-        # Skip traces folders - they are large and don't contain stats files
-        dirs[:] = [d for d in dirs if d != "traces"]
-        for d in dirs:
-            csv_dir = os.path.join(root, d)
-            csvs = sorted(glob.glob(os.path.join(csv_dir, "*.csv*")))
-            if len(csvs) == 0:
-                continue
-            #        latest_date = re.search("(.*).csv*",os.path.basename(csvs[-1])).group(1)
-            #        csvs = glob.glob(os.path.join(csv_dir,"{0}.csv*".format(latest_date)))
-            #        logger.log("For {0}: Using Date: [{1}]. Containd {2} files\n".format(csv_dir, latest_date, len(csvs)))
-            kdata = []
-            for csvf in csvs:
-                if "gpc__cycles_elapsed" in csvf:
-                    parse_hw_csv_2(
-                        csvf,
-                        hw_data,
-                        os.path.join(os.path.basename(root), d),
-                        kdata,
-                        logger,
-                    )
-                else:
-                    parse_hw_csv(
-                        csvf,
-                        hw_data,
-                        os.path.join(os.path.basename(root), d),
-                        kdata,
-                        logger,
-                    )
+    hw_base_dirs = find_hw_base_dirs(options.hardware_dir)
+    logger.log("Found HW base directories: {0}".format(hw_base_dirs))
+
+    for base_dir in hw_base_dirs:
+        for root, dirs, files in os.walk(base_dir):
+            # Skip traces folders - they are large and don't contain stats files
+            dirs[:] = [d for d in dirs if d != "traces"]
+            for d in dirs:
+                csv_dir = os.path.join(root, d)
+                csvs = sorted(glob.glob(os.path.join(csv_dir, "*.csv*")))
+                if len(csvs) == 0:
+                    continue
+                # Construct appargs relative to the base_dir
+                rel_path = os.path.relpath(csv_dir, base_dir)
+                appargs = rel_path
+                logger.log("Found CSVs in {0}, appargs={1}".format(csv_dir, appargs))
+                kdata = []
+                for csvf in csvs:
+                    if "gpc__cycles_elapsed" in csvf:
+                        parse_hw_csv_2(
+                            csvf,
+                            hw_data,
+                            appargs,
+                            kdata,
+                            logger,
+                        )
+                    else:
+                        parse_hw_csv(
+                            csvf,
+                            hw_data,
+                            appargs,
+                            kdata,
+                            logger,
+                        )
 else:
     print("Begin pickle.load")
     with open(options.hardware_dict, "rb") as hw_dictionary_file:
