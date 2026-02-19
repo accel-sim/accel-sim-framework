@@ -516,12 +516,29 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       } else {
         bar_type = SYNC;
       }
-      bar_id = static_cast<unsigned>(trace.imm);
-      if (trace.imm2 != 0) {
-        bar_count = static_cast<unsigned>(trace.imm2);
+      // Check if register values are available (new format)
+      // New format: "BAR.ARV 0 0 <bar_count> 0 Val 1 <bar_id>"
+      //   - imm is bar_count, imm2 is 0, bar_id is in first destination
+      //   register value
+      // Old format: "BAR.ARV 0 0 <bar_id> <bar_count> Val"
+      //   - imm is bar_id, imm2 is bar_count
+      if (trace.reg_dsts_num > 0 && !trace.reg_dest_vals.empty() &&
+          trace.imm2 == 0) {
+        // New format: imm is bar_count, bar_id is in first destination register
+        // value
+        bar_count = static_cast<unsigned>(trace.imm);
+        bar_id = static_cast<unsigned>(trace.reg_dest_vals[0][0]);
       } else {
-        bar_count = static_cast<unsigned>(-1);
+        // Old format: imm is bar_id, imm2 is bar_count
+        bar_id = static_cast<unsigned>(trace.imm);
+        if (trace.imm2 != 0) {
+          bar_count = static_cast<unsigned>(trace.imm2);
+        } else {
+          bar_count = static_cast<unsigned>(-1);
+        }
       }
+      assert(bar_id < 16 &&
+             "Named barrier id is 0~15, possibly a trace format problem.");
       break;
     // LDGDEPBAR is to form a group containing the previous LDGSTS instructions
     // that have not been grouped yet. In the implementation, a group number

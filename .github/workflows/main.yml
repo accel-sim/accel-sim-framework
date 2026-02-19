@@ -374,7 +374,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py --sleep_time 300 -v -s rodinia-stats-per-app.csv -N rodinia_2.0-ft-$$
   SASS-Simulation-Docker:
     needs: [check-format]
-    runs-on: ubuntu-latest
+    runs-on: tgrogers-pc01
     # container:
       # image: ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8-minimal
         
