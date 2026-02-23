@@ -172,6 +172,9 @@ static void initContext(CUcontext ctx)
     // determine current device
     RUNTIME_API_CALL(cudaGetDevice(&cd.deviceId));
 
+    printf("[PM-SAMPLING] Initializing context %p on device %d for PM sampling\n",
+           (void*)ctx, cd.deviceId);
+
     // Check compute capability before proceeding
     if (!checkPmSamplingSupport(cd.deviceId)) {
         return;  // Skip this context - PM sampling not supported
@@ -303,7 +306,7 @@ static void flushSession(CtxData& cd, const char* reason)
 {
     if (!cd.samplingActive) return;
 
-    cout << "\n[PM-SAMPLING] Flushing session " << cd.iterations
+    cout << "[PM-SAMPLING] Flushing session " << cd.iterations
          << " on device " << cd.deviceId << " (" << reason << ")\n";
 
     CUPTI_API_CALL(cd.sampler.StopPmSampling());
@@ -362,17 +365,17 @@ static void atexitHandler()
             if (cd.samplingActive || cd.curKernels > 0) {
                 flushSession(cd, "process-exit");
             }
-            // keep sampler tidy
-            cd.sampler.DisablePmSampling();
-            cd.sampler.TearDown();
-            cd.host.TearDown();
         }
+        // Clear the map without calling DisablePmSampling/TearDown.
+        // The CUDA runtime's own atexit handlers may have already torn down
+        // the underlying CUPTI/nvperf objects by this point, so calling into
+        // them causes a double-free inside libnvperf_host.so.
+        g_ctx.clear();
         g_mutex.unlock();
     } else {
         std::cerr << "[PM-SAMPLING] Warning: Could not acquire mutex during exit cleanup\n";
-        exit(1);
     }
-    // If we can't get the lock, just exit without cleanup to avoid deadlock
+    // If we can't get the lock, skip cleanup to avoid deadlock
 }
 
 // CUPTI callback
@@ -412,7 +415,12 @@ static void CUPTIAPI callback(
             const char* kernelName = d->symbolName ? d->symbolName : 
                                     (d->functionName ? d->functionName : "unknown");
             cd.kernelNames.push_back(kernelName);
+            // print out as well
+            cout << "[PM-SAMPLING] Launching kernel '" << kernelName 
+                 << "' on device " << cd.deviceId << " (kernel " << cd.curKernels 
+                 << " of " << cd.maxKernels << " in session " << cd.iterations << ")\n";
         } else if (d->callbackSite == CUPTI_API_EXIT) {
+            cuCtxSynchronize(); // block until kernel completes
             // flush after kernel completes
             if (cd.curKernels >= cd.maxKernels) {
                 flushSession(cd, "kernel-rotation");
@@ -441,10 +449,8 @@ static void registerCallbacksOnce()
 // CUDA will call this when the .so is injected
 extern "C" DLLEXPORT int InitializeInjection()
 {
-    // Basic CUPTI init mirrors your samples
-    CUpti_Profiler_Initialize_Params profilerInit { CUpti_Profiler_Initialize_Params_STRUCT_SIZE };
-    CUPTI_API_CALL(cuptiProfilerInitialize(&profilerInit));
-
+    // Register callbacks first; cuptiProfilerInitialize will be called
+    // later in initContext() once a CUDA context exists.
     registerCallbacksOnce();
 
     cout << "[PM-SAMPLING] Injection initialized. "

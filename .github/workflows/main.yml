@@ -79,7 +79,7 @@ jobs:
           current_repo=$(echo ${{ github.repository }} | cut -d'/' -f2)
 
           gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
-          
+
           echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
           
           # First, try to add the fork owner's repository as a remote and check if the branch exists
@@ -90,16 +90,11 @@ jobs:
               git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              # Try the default branch of the fork owner's repository
+              # Use the default branch of the fork owner's repository
               default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
-              if [[ -n "$default_branch" ]] && git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$default_branch"; then
-                echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-                git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
-              else
-                echo "No suitable branch found in '$current_owner/$gpgpusim_repo', falling back to upstream dev branch"
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-              fi
+              echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
@@ -230,16 +225,11 @@ jobs:
               git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              # Try the default branch of the fork owner's repository
+              # Use the default branch of the fork owner's repository
               default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
-              if [[ -n "$default_branch" ]] && git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$default_branch"; then
-                echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-                git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
-              else
-                echo "No suitable branch found in '$current_owner/$gpgpusim_repo', falling back to upstream dev branch"
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-              fi
+              echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
@@ -310,16 +300,11 @@ jobs:
               git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              # Try the default branch of the fork owner's repository
+              # Use the default branch of the fork owner's repository
               default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
-              if [[ -n "$default_branch" ]] && git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$default_branch"; then
-                echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-                git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
-              else
-                echo "No suitable branch found in '$current_owner/$gpgpusim_repo', falling back to upstream dev branch"
-                git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-              fi
+              echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
+              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner

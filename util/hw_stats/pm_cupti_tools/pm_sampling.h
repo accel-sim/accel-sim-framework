@@ -181,7 +181,7 @@ class CuptiProfilerHost
         }
 
         outFile.close();
-        std::cout << "Data written to " << fileName << "\n";
+        std::cout << "Data written to " << fileName << "\n\n";
     }
 
     void ClearRanges()
