@@ -36,8 +36,7 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           export PATH=/home/tgrogers-raid/a/common/python2:$PATH
           rm -rf ./gpu-app-collection/
-          git clone --quiet git@github.com:accel-sim/gpu-app-collection.git
-          git -C ./gpu-app-collection/ submodule update --init -- ./src/cuda/cuda-samples
+          git clone --quiet --recurse-submodules https://github.com/accel-sim/gpu-app-collection.git
           source ./gpu-app-collection/src/setup_environment
           ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
           make -j8 -C ./gpu-app-collection/src rodinia_2.0-ft
@@ -52,8 +51,8 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-          ./util/tracer_nvbit/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/hw_stats/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
           rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run
@@ -63,9 +62,11 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
+          mkdir -p ./hw_run/
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward
-          ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
+          mkdir -p ./hw_run/
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
   SASS-Weekly:
     timeout-minutes: 900
