@@ -139,6 +139,9 @@ PAE:
 IPOLY:
     extra_params: "-gpgpu_memory_partition_indexing 2"
 
+IPOLY_MODULO:
+    extra_params: "-gpgpu_memory_partition_indexing 6"  
+
 VISUAL:
     extra_params: "-visualizer_enabled 1"
 
