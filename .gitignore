@@ -17,7 +17,6 @@ compile_commands.json
 .cache
 
 # LLM tools
-.claude/
+.claude
 CLAUDE.md
-.cursor/
-.cursorrules
+.cursor
