@@ -82,18 +82,17 @@ jobs:
 
           echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
           
-          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          # First, try to add the fork owner's repository as a remote and fetch
           if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            # Check if the branch exists in the fork owner's repository
-            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+            git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+            # Check if the branch exists after fetching
+            if git -C ./gpu-simulator/gpgpu-sim/ rev-parse --verify fork-owner/$BRANCH_NAME >/dev/null 2>&1; then
               echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
               # Use the default branch of the fork owner's repository
-              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
+              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ remote show fork-owner | grep 'HEAD branch' | awk '{print $NF}')
               echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
@@ -217,18 +216,17 @@ jobs:
 
           echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
           
-          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          # First, try to add the fork owner's repository as a remote and fetch
           if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            # Check if the branch exists in the fork owner's repository
-            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+            git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+            # Check if the branch exists after fetching
+            if git -C ./gpu-simulator/gpgpu-sim/ rev-parse --verify fork-owner/$BRANCH_NAME >/dev/null 2>&1; then
               echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
               # Use the default branch of the fork owner's repository
-              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
+              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ remote show fork-owner | grep 'HEAD branch' | awk '{print $NF}')
               echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
@@ -292,18 +290,17 @@ jobs:
 
           echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
 
-          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          # First, try to add the fork owner's repository as a remote and fetch
           if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            # Check if the branch exists in the fork owner's repository
-            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+            git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+            # Check if the branch exists after fetching
+            if git -C ./gpu-simulator/gpgpu-sim/ rev-parse --verify fork-owner/$BRANCH_NAME >/dev/null 2>&1; then
               echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
               # Use the default branch of the fork owner's repository
-              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ ls-remote --symref fork-owner HEAD | grep '^ref:' | sed 's|ref: refs/heads/||' | awk '{print $1}')
+              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ remote show fork-owner | grep 'HEAD branch' | awk '{print $NF}')
               echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote

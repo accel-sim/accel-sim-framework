@@ -2,6 +2,12 @@ name: Hopper Weekly
 
 on:
   workflow_dispatch:
+    inputs:
+      skip_tracer:
+        description: 'Skip tracer step (use existing traces)'
+        required: false
+        type: boolean
+        default: false
   schedule:
     - cron: '0 19 * * FRI'  # 7:00 PM every Friday
 
@@ -10,6 +16,7 @@ env:
 
 jobs:
   Tracer-Hopper:
+    if: ${{ !inputs.skip_tracer }}
     runs-on: tgrogers-raid
     timeout-minutes: 720
     concurrency:
@@ -107,6 +114,7 @@ jobs:
   SASS-Hopper:
     timeout-minutes: 720
     needs: [Tracer-Hopper]
+    if: ${{ !cancelled() && (needs.Tracer-Hopper.result == 'success' || needs.Tracer-Hopper.result == 'skipped') }}
     runs-on: tgrogers-raid
     defaults:
       run:
@@ -138,16 +146,18 @@ jobs:
 
           echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
 
-          # First, try to add the fork owner's repository as a remote and check if the branch exists
+          # First, try to add the fork owner's repository as a remote and fetch
           if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            # Check if the branch exists in the fork owner's repository
-            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
+            git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
+            # Check if the branch exists after fetching
+            if git -C ./gpu-simulator/gpgpu-sim/ rev-parse --verify fork-owner/$BRANCH_NAME >/dev/null 2>&1; then
               echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
               git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
             else
-              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to accel-sim dev branch"
-              git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
+              # Use the default branch of the fork owner's repository
+              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ remote show fork-owner | grep 'HEAD branch' | awk '{print $NF}')
+              echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
+              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
             fi
             # Remove the temporary remote
             git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
@@ -219,7 +229,7 @@ jobs:
           python3 .github/scripts/send_ci_email.py -t failure
 
   success:
-    if: success()
+    if: ${{ !cancelled() && !failure() }}
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.head_ref || github.ref_name }}/ubench/"

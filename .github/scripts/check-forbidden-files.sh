@@ -43,18 +43,41 @@ echo "Checking for forbidden files in commits: $BASE_REF..$HEAD_REF"
 # Forbidden patterns - files that should never be committed
 # These match .gitignore entries and trace file patterns
 FORBIDDEN_PATTERNS=(
+    # Directories that should not be committed
     '^hw_run/'
-    '/traces/'
-    '\.traceg$'
-    '\.mem$'
-    '\.sass$'
     '^env-setup/'
     '^gpu-app-collection/'
     '^sim_run_'
-    '\.DS_Store'
     '^4\.2/'
-    'gpucomputingsdk.*\.run$'
     '^extern/'
+    '^debug_config/'
+    '/traces/'
+
+    # Trace and simulation output files
+    '\.traceg$'
+    '\.trace$'
+    '\.mem$'
+    '\.sass$'
+
+    # Binary/compiled files
+    '\.so$'
+    '\.a$'
+    '\.dylib$'
+
+    # Large data/output files
+    '\.pdf$'
+    '\.ppm$'
+    '\.bin$'
+    '\.tgz$'
+    '\.tar\.gz$'
+
+    # Job output files (Slurm/Torque)
+    '\.o[0-9]+$'
+    '\.e[0-9]+$'
+
+    # Misc
+    '\.DS_Store'
+    'gpucomputingsdk.*\.run$'
     '\.csv$'
 )
 
@@ -65,6 +88,25 @@ GREP_PATTERN=$(IFS='|'; echo "${FORBIDDEN_PATTERNS[*]}")
 FORBIDDEN_FILES=$(git log --diff-filter=A --name-only --pretty=format:"" "$BASE_REF".."$HEAD_REF" 2>/dev/null | \
     grep -E "$GREP_PATTERN" | \
     sort -u || true)
+
+# Check for large files (e.g., notebooks with embedded outputs)
+# Size limit in bytes (512KB)
+SIZE_LIMIT=524288
+SIZE_LIMIT_HUMAN="512KB"
+
+LARGE_FILES=""
+while IFS= read -r file; do
+    [ -z "$file" ] && continue
+    # Get the blob size for this file at HEAD_REF
+    size=$(git cat-file -s "$HEAD_REF:$file" 2>/dev/null || echo 0)
+    if [ "$size" -gt "$SIZE_LIMIT" ]; then
+        size_mb=$(echo "scale=1; $size / 1048576" | bc)
+        LARGE_FILES="${LARGE_FILES}${file} (${size_mb}MB)\n"
+    fi
+done < <(git log --diff-filter=A --name-only --pretty=format:"" "$BASE_REF".."$HEAD_REF" 2>/dev/null | \
+    grep -E '\.ipynb$' | sort -u || true)
+
+HAS_ERRORS=0
 
 if [ -n "$FORBIDDEN_FILES" ]; then
     echo ""
@@ -87,6 +129,25 @@ if [ -n "$FORBIDDEN_FILES" ]; then
     echo "Please remove these files from git history using:"
     echo "  git rebase -i $BASE_REF"
     echo "  # Then edit the commit(s) that added these files"
+    HAS_ERRORS=1
+fi
+
+if [ -n "$LARGE_FILES" ]; then
+    echo ""
+    echo "=========================================="
+    echo "ERROR: Large notebook files detected!"
+    echo "=========================================="
+    echo ""
+    echo "The following .ipynb files exceed ${SIZE_LIMIT_HUMAN}:"
+    echo ""
+    echo -e "$LARGE_FILES"
+    echo "Notebooks with embedded outputs (especially Plotly charts) can be huge."
+    echo "Please clear outputs before committing:"
+    echo "  jupyter nbconvert --clear-output --inplace <notebook.ipynb>"
+    HAS_ERRORS=1
+fi
+
+if [ "$HAS_ERRORS" -eq 1 ]; then
     echo ""
     exit 1
 fi
