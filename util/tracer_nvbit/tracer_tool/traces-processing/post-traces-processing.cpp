@@ -1,11 +1,14 @@
+#include <condition_variable>
 #include <deque>
 #include <fstream>
 #include <iostream>
 #include <math.h>
 #include <memory>
+#include <mutex>
 #include <sstream>
 #include <stdio.h>
 #include <string>
+#include <thread>
 #include <unordered_map>
 #include <vector>
 
@@ -88,37 +91,102 @@ struct WarpInstLUT {
   }
 };
 
-void group_per_block(const char *filepath);
+void group_per_block(const string &filepath);
 void group_per_core(const char *filepath);
 
-// This program works by redirecting the stdin/stdout to child processes. The
-// stdin is piped to a process that reads from disk the input trace file. The
-// stdout is piped to a process that writes to disk the post-process trace. We
-// should preserve the original file descriptors for stdin/stdout before doing
-// redirections.
-int preserved_stdin_fileno;
-int preserved_stdout_fileno;
+// Mutex for thread-safe stderr output
+std::mutex stderr_mutex;
+
+// Simple thread pool for processing kernel files
+class ThreadPool {
+  std::vector<std::thread> workers;
+  std::deque<std::string> tasks;
+  std::mutex queue_mutex;
+  std::condition_variable cv;
+  std::condition_variable done_cv;
+  bool stop = false;
+  size_t in_flight = 0; // tasks being processed + tasks in queue
+
+public:
+  explicit ThreadPool(size_t num_threads) {
+    for (size_t i = 0; i < num_threads; ++i) {
+      workers.emplace_back([this] {
+        while (true) {
+          std::string filepath;
+          {
+            std::unique_lock<std::mutex> lock(queue_mutex);
+            cv.wait(lock, [this] { return stop || !tasks.empty(); });
+            if (stop && tasks.empty())
+              return;
+            filepath = std::move(tasks.front());
+            tasks.pop_front();
+          }
+          group_per_block(filepath);
+          {
+            std::lock_guard<std::mutex> lock(queue_mutex);
+            --in_flight;
+          }
+          done_cv.notify_all();
+        }
+      });
+    }
+  }
+
+  void enqueue(const std::string &filepath) {
+    {
+      std::lock_guard<std::mutex> lock(queue_mutex);
+      tasks.push_back(filepath);
+      ++in_flight;
+    }
+    cv.notify_one();
+  }
+
+  // Wait for all currently enqueued tasks to complete
+  void wait_for_tasks() {
+    std::unique_lock<std::mutex> lock(queue_mutex);
+    done_cv.wait(lock, [this] { return in_flight == 0; });
+  }
+
+  ~ThreadPool() {
+    {
+      std::lock_guard<std::mutex> lock(queue_mutex);
+      stop = true;
+    }
+    cv.notify_all();
+    for (auto &worker : workers) {
+      worker.join();
+    }
+  }
+};
 
 std::vector<std::string> kernelslist_list;
 //////////////////////////////////////////////////////////////////////////////////////////////////////////////////
 int main(int argc, char **argv) {
   string kernellist_filepath;
   string filepath;
-  bool is_per_core;
-  if (argc == 1) {
-    cerr << "File path is missing\n";
-    return 1;
-  } else if (argc == 2) {
-    filepath = argv[1];
-    is_per_core = true;
+  int max_threads = 8; // default thread limit
 
-  } else if (argc == 3) {
-    filepath = argv[1];
-    is_per_core = bool(argv[2]);
-  } else {
-    cerr << "Too Many Arguemnts!\n";
+  // Parse arguments
+  if (argc == 1) {
+    cerr << "Usage: " << argv[0] << " <path> [-j N]\n";
+    cerr << "  path: kernelslist file or directory containing kernelslist "
+            "files\n";
+    cerr << "  -j N: limit to N parallel threads (default: 8)\n";
     return 1;
   }
+
+  filepath = argv[1];
+  for (int i = 2; i < argc; i++) {
+    if (string(argv[i]) == "-j" && i + 1 < argc) {
+      max_threads = atoi(argv[++i]);
+      if (max_threads < 1)
+        max_threads = 1;
+    }
+  }
+
+  // Initialize thread pool
+  ThreadPool pool(max_threads);
+  cerr << "Using " << max_threads << " parallel threads\n";
 
   ifstream ifs;
   ofstream ofs;
@@ -128,7 +196,10 @@ int main(int argc, char **argv) {
   if (std::filesystem::is_directory(p)) {
     for (const auto &entry : std::filesystem::directory_iterator(p)) {
       std::string filename = entry.path().filename();
-      if (filename.find("kernelslist") != std::string::npos) {
+      // Skip output files (kernelslist.g) - only process input kernelslist
+      // files
+      if (filename.find("kernelslist") != std::string::npos &&
+          filename.find(".g") == std::string::npos) {
         kernelslist_list.push_back(entry.path().string());
       }
     }
@@ -159,6 +230,10 @@ int main(int argc, char **argv) {
       return 1;
     }
 
+    // First pass: collect all kernel files and output lines
+    vector<string> kernel_filepaths;
+    vector<string> output_lines;
+
     string line;
     string filepath;
     while (!ifs.eof()) {
@@ -166,21 +241,34 @@ int main(int argc, char **argv) {
       if (line.empty())
         continue;
       else if (line.substr(0, 6) == "Memcpy") {
-        ofs << line << endl;
+        output_lines.push_back(line);
       } else if (line.substr(0, 6) == "kernel") {
         filepath = directory + "/" + line;
-        group_per_block(filepath.c_str());
+        kernel_filepaths.push_back(filepath);
 
         int _l = line.length();
         if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
-          ofs << line.substr(0, _l - 3) << "g.xz" << endl;
+          output_lines.push_back(line.substr(0, _l - 3) + "g.xz");
         } else {
-          ofs << line + "g" << endl;
+          output_lines.push_back(line + "g");
         }
       } else {
         cerr << "Undefined command: " << line << endl;
-        return 1;
+        continue;
       }
+    }
+
+    // Enqueue kernel files to thread pool
+    for (const auto &kf : kernel_filepaths) {
+      pool.enqueue(kf);
+    }
+
+    // Wait for all tasks to complete before writing output
+    pool.wait_for_tasks();
+
+    // Write output file after all processing is done
+    for (const auto &out_line : output_lines) {
+      ofs << out_line << endl;
     }
 
     ifs.close();
@@ -189,112 +277,69 @@ int main(int argc, char **argv) {
   return 0;
 }
 
-// This function redirects stdin and stdout for trace processing.
-// For error/warning/info message to print to the terminal, always use the
-// stderr stream. The io redirection will be restored by the time the function
-// returns.
-void group_per_block(const char *filepath) {
-  preserved_stdin_fileno = dup(STDIN_FILENO);
-  preserved_stdout_fileno = dup(STDOUT_FILENO);
+// Helper to read a line from FILE* into a string
+static bool fgets_string(FILE *fp, string &out) {
+  out.clear();
+  char buf[4096];
+  while (fgets(buf, sizeof(buf), fp)) {
+    out += buf;
+    if (!out.empty() && out.back() == '\n') {
+      out.pop_back(); // remove trailing newline
+      return true;
+    }
+  }
+  return !out.empty(); // return true if we got partial line at EOF
+}
 
-  string filepath_str{filepath};
+// Thread-safe function using popen/pclose for I/O instead of stdin/stdout
+// redirection. Each thread processes one kernel trace file independently.
+void group_per_block(const string &filepath) {
+  const string &filepath_str = filepath;
   WarpInstLUT warp_inst_lut;
 
-  pid_t sink_process_pid = 0;
-  string trace_sink_cmd;
-  int sink_pipe_fd[2];
-
-  pid_t source_process_pid = 0;
   string trace_source_cmd;
-  int source_pipe_fd[2];
+  string trace_sink_cmd;
   string output_filepath;
 
-  bool input_file_is_xz = false;
   int _l = filepath_str.length();
   if (_l > 3 && filepath_str.substr(_l - 3, 3) == ".xz") {
     // kernel-1.trace.xz --(xz -dc)--> f --(xz -1 -T0)--> kernel-1.traceg.xz
-    input_file_is_xz = true;
     output_filepath = filepath_str.substr(0, _l - 3) + "g.xz";
     trace_source_cmd = "xz -dc " + filepath_str;
     trace_sink_cmd = "xz -1 -T0 > " + output_filepath;
   } else if (_l > 6 && filepath_str.substr(_l - 6, 6) == ".trace") {
     // kernel-2.trace --(cat)--> f --(cat)--> kernel-2.traceg
-    input_file_is_xz = false;
     output_filepath = filepath_str + "g";
     trace_source_cmd = "cat " + filepath_str;
     trace_sink_cmd = "cat > " + output_filepath;
   } else {
+    lock_guard<mutex> lock(stderr_mutex);
     cerr << "Only support xz or raw text format. Unable to process - and "
             "skipping - trace file "
          << filepath_str << endl;
-    close(preserved_stdin_fileno);
-    close(preserved_stdout_fileno);
     return;
   }
 
-  // cerr << "source cmd is "<<trace_source_cmd<<"\n";
-  // cerr << "sink cmd is "<<trace_sink_cmd<<"\n";
-
-  // fork a child process as the trace source
-  if (pipe(source_pipe_fd) != 0) {
-    cerr << "Failed to create pipe\n";
-    perror("pipe");
-    exit(1);
-  }
-  source_process_pid = fork();
-  if (source_process_pid == 0) {
-    //  child process
-    close(source_pipe_fd[0]);
-    dup2(source_pipe_fd[1], STDOUT_FILENO);
-
-    // When using GDB, sending Ctrl+C to the program will send a SIGINT signal
-    // to the child process as well, subsequently causing it to terminate. To
-    // avoid this, we let the child process ignore (SIG_IGN) the SIGINT signal.
-    // Reference:
-    // https://stackoverflow.com/questions/38404925/gdb-interrupt-running-process-without-killing-child-processes
-    signal(SIGINT, SIG_IGN);
-
-    execle("/bin/sh", "sh", "-c", trace_source_cmd.c_str(), NULL, environ);
-    perror("execle"); // child shouldn't reach here if all is well.
-    exit(1);
-  } else if (source_process_pid > 0) {
-    // parent process - the trace post processor
-    // stdin is now redirected to the read end of the source_pipe
-    close(source_pipe_fd[1]);
-    int r = dup2(source_pipe_fd[0], STDIN_FILENO);
-  } else {
-    cerr << "Failed to fork data source process\n";
-    perror("fork");
-    exit(1);
+  // Open pipes for reading input and writing output
+  FILE *source_fp = popen(trace_source_cmd.c_str(), "r");
+  if (!source_fp) {
+    lock_guard<mutex> lock(stderr_mutex);
+    cerr << "Failed to open source pipe for " << filepath_str << endl;
+    return;
   }
 
-  // fork a child process as the trace sink
-  if (pipe(sink_pipe_fd) != 0) {
-    cerr << "Failed to create pipe\n";
-    perror("pipe");
-    exit(1);
-  }
-  sink_process_pid = fork();
-  if (sink_process_pid == 0) {
-    // child process
-    close(sink_pipe_fd[1]);
-    dup2(sink_pipe_fd[0], STDIN_FILENO);
-    signal(SIGINT, SIG_IGN); // ignore SIGINT
-    execle("/bin/sh", "sh", "-c", trace_sink_cmd.c_str(), NULL, environ);
-    perror("execle"); // child shouldn't reach here if all is well.
-    exit(1);
-  } else if (sink_process_pid > 0) {
-    // parent process - the trace post processor
-    // stdout is now redirected to the write end of the sink_pipe
-    close(sink_pipe_fd[0]);
-    int r = dup2(sink_pipe_fd[1], STDOUT_FILENO);
-  } else {
-    cerr << "Failed to fork data sink process\n";
-    perror("fork");
-    exit(1);
+  FILE *sink_fp = popen(trace_sink_cmd.c_str(), "w");
+  if (!sink_fp) {
+    lock_guard<mutex> lock(stderr_mutex);
+    cerr << "Failed to open sink pipe for " << filepath_str << endl;
+    pclose(source_fp);
+    return;
   }
 
-  cerr << "Processing file " << filepath << endl;
+  {
+    lock_guard<mutex> lock(stderr_mutex);
+    cerr << "Processing file " << filepath_str << endl;
+  }
 
   vector<threadblock_info> insts;
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
@@ -314,19 +359,14 @@ void group_per_block(const char *filepath) {
   // Add a flag for LDGSTS instruction to indicate which one to remove
   vector<vector<bool>> ldgsts_flags; // true to remove, false to not
 
-  // Important... without clear(), cin.eof() may evaluate to true on the second
-  // kernel
-  cin.clear();
-  clearerr(stdin);
-  while (!cin.eof()) {
-    getline(cin, line);
-
+  while (fgets_string(source_fp, line)) {
     if (line.length() == 0 || line[0] == '#') {
-      cout << line << endl;
+      fprintf(sink_fp, "%s\n", line.c_str());
       continue;
     }
 
     else if (line[0] == '-') {
+      ss.clear();
       ss.str(line);
       ss.ignore();
       ss >> string1 >> string2;
@@ -360,10 +400,10 @@ void group_per_block(const char *filepath) {
           }
         }
       }
-      cout << line << endl;
+      fprintf(sink_fp, "%s\n", line.c_str());
       continue;
     } else {
-
+      ss.clear();
       ss.str(line);
       ss >> tb_id_x >> tb_id_y >> tb_id_z >> warpid_tb >> cluster_id_x >>
           cluster_id_y >> cluster_id_z >> cluster_cta_id_x >>
@@ -383,10 +423,7 @@ void group_per_block(const char *filepath) {
         insts[tb_id].cluster_rank = cluster_rank;
         insts[tb_id].initialized = true;
       }
-      // ss.ignore(); //remove the space
-      // rest_of_line.clear();
-      // getline(ss, rest_of_line); //get rest of the string!
-      string rest_of_line(ss.str().substr(ss.tellg() + 1));
+      string rest_of_line(ss.str().substr(static_cast<size_t>(ss.tellg()) + 1));
 
       // Ni: ignore the shmem LDGSTS instruction
       stringstream opcode_ss;
@@ -426,31 +463,27 @@ void group_per_block(const char *filepath) {
   }
 
   for (unsigned i = 0; i < insts.size(); ++i) {
-    // ofs<<string<<"\n";
     if (insts[i].initialized && insts[i].warp_insts_array.size() > 0) {
-      cout << "\n"
-           << "#BEGIN_TB"
-           << "\n";
-      cout << "\n"
-           << "thread block = " << insts[i].tb_id_x << "," << insts[i].tb_id_y
-           << "," << insts[i].tb_id_z << "\n";
-      cout << "cluster id = " << insts[i].cluster_id_x << ","
-           << insts[i].cluster_id_y << "," << insts[i].cluster_id_z << "\n";
-      cout << "cluster cta = " << insts[i].cluster_cta_id_x << ","
-           << insts[i].cluster_cta_id_y << "," << insts[i].cluster_cta_id_z
-           << "\n";
-      cout << "cluster rank = " << insts[i].cluster_rank << "\n";
+      fprintf(sink_fp, "\n#BEGIN_TB\n");
+      fprintf(sink_fp, "\nthread block = %u,%u,%u\n", insts[i].tb_id_x,
+              insts[i].tb_id_y, insts[i].tb_id_z);
+      fprintf(sink_fp, "cluster id = %u,%u,%u\n", insts[i].cluster_id_x,
+              insts[i].cluster_id_y, insts[i].cluster_id_z);
+      fprintf(sink_fp, "cluster cta = %u,%u,%u\n", insts[i].cluster_cta_id_x,
+              insts[i].cluster_cta_id_y, insts[i].cluster_cta_id_z);
+      fprintf(sink_fp, "cluster rank = %u\n", insts[i].cluster_rank);
     } else {
+      lock_guard<mutex> lock(stderr_mutex);
       cerr << "Warning: Thread block " << insts[i].tb_id_x << ","
            << insts[i].tb_id_y << "," << insts[i].tb_id_z << " is empty"
            << "\n";
       continue;
     }
     for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
-      cout << "\n"
-           << "warp = " << j << "\n";
-      cout << "insts = " << insts[i].warp_insts_array[j].size() << "\n";
+      fprintf(sink_fp, "\nwarp = %u\n", j);
+      fprintf(sink_fp, "insts = %zu\n", insts[i].warp_insts_array[j].size());
       if (insts[i].warp_insts_array[j].size() == 0) {
+        lock_guard<mutex> lock(stderr_mutex);
         cerr << "Warning: Warp " << j << " in thread block" << insts[i].tb_id_x
              << "," << insts[i].tb_id_y << "," << insts[i].tb_id_z
              << " is empty"
@@ -460,22 +493,14 @@ void group_per_block(const char *filepath) {
            it != insts[i].warp_insts_array[j].cend(); ++it) {
         // dereference once: const string*
         // dereference twice: const string
-        cout << **it << "\n";
+        fprintf(sink_fp, "%s\n", (*it)->c_str());
       }
     }
-    cout << endl << "#END_TB" << endl;
+    fprintf(sink_fp, "\n#END_TB\n");
   }
 
-  close(source_pipe_fd[0]);
-  close(source_pipe_fd[1]);
-  close(sink_pipe_fd[0]);
-  close(sink_pipe_fd[1]);
-
-  // restore stdin/stdout file descriptor
-  dup2(preserved_stdin_fileno, STDIN_FILENO);
-  dup2(preserved_stdout_fileno, STDOUT_FILENO);
-  close(preserved_stdin_fileno);
-  close(preserved_stdout_fileno);
+  pclose(source_fp);
+  pclose(sink_fp);
 }
 
 void group_per_core(const char *filepath) {
