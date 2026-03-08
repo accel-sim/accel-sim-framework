@@ -240,7 +240,7 @@ for bench in benchmarks:
                 ncu_report_file = os.path.join(this_run_dir, "ncu_stats.ncu-rep")
                 # ncu_output_csv = os.path.join(this_run_dir, "ncu_stats_processed.csv")
 
-                cuda_graph_flag = " --cache-control none "
+                cuda_graph_flag = " --replay-mode application --cache-control none "
                     
                 # Set device number
                 sh_contents += (
