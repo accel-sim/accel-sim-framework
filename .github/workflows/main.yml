@@ -240,7 +240,7 @@ jobs:
           ./util/job_launching/monitor_func_test.py -v --sleep_time 300 -s stats-per-app-ptx.csv -N short-ptx-${{ github.run_number }}_${{ github.run_attempt}}
   Tracer-Tool:
     needs: [check-format]
-    runs-on: tgrogers-gpu01
+    runs-on: tgrogers-raid
     timeout-minutes: 720
     defaults:
       run:
@@ -295,16 +295,6 @@ jobs:
           source ./gpu-simulator/setup_environment.sh
           make clean -C gpu-simulator
           make -j20 -C gpu-simulator
-      - name: test-prebuilt-traces
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-simulator/setup_environment.sh
-          ./get-accel-sim-traces.py -a tesla-v100/rodinia_2.0-ft
-          cd hw_run; tar -xzvf rodinia_2.0-ft.tgz; cd -
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/ -N rodinia_2.0-ft-online-$$
-          ./util/job_launching/monitor_func_test.py --sleep_time 300 -N rodinia_2.0-ft-online-$$ -v
-          rm -rf hw_run
-          rm -rf sim_run_11.0
       - name: Build Tracer
         run: |
           source ./env-setup/12.8_env_setup.sh
@@ -324,12 +314,12 @@ jobs:
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D 7
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D 7
       - name: generate-rodinia_2.0-ft-hw_stats
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
-          ./util/hw_stats/run_hw.py -B rodinia_2.0-ft -D 7
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- ./util/hw_stats/run_hw.py -B rodinia_2.0-ft -D 7
       - name: test-new-traces
         run: |
           source ./env-setup/12.8_env_setup.sh

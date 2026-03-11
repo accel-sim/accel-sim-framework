@@ -57,6 +57,7 @@
 #include <unordered_map>
 #include <unordered_set>
 #include <filesystem>
+#include <regex>
 
 /* every tool needs to include this once */
 #include "nvbit_tool.h"
@@ -138,6 +139,117 @@ std::string spinlock_run_dir = "./";
 int spinlock_keep_intermediate_files = 0;
 void spinlock_check();
 
+/* Kernel range filter */
+// Maybe move these to a util lib for all tracer tools?
+std::string kernel_ranges = "";
+
+struct KernelRange {
+  uint64_t start;
+  uint64_t end; // UINT64_MAX means open-ended
+  std::vector<std::regex>
+      kernel_name_regexes; // Vector of regexes for multiple patterns
+};
+std::vector<KernelRange> g_kernel_ranges;
+uint64_t g_max_kernel_id = 0;
+void parse_kernel_ranges_from_env() {
+  g_kernel_ranges.clear();
+  g_max_kernel_id = 0;
+
+  const char *env_var = std::getenv("DYNAMIC_KERNEL_RANGE");
+  if (!env_var || std::string(env_var).empty()) {
+    g_kernel_ranges.push_back({0, 0, {std::regex(".*")}}); // 0 end = trace all
+    return;
+  }
+  std::string input(env_var);
+  std::istringstream stream(input);
+  std::string token;
+
+  while (stream >> token) {
+    if (token.empty())
+      continue;
+
+    uint64_t start = 0, end = 0;
+    std::vector<std::regex> regexes;
+
+    size_t at_pos = token.find('@');
+    std::string range_part, regex_part;
+
+    if (at_pos != std::string::npos) {
+      range_part = token.substr(0, at_pos);
+      regex_part = token.substr(at_pos + 1);
+    } else {
+      range_part = token;
+    }
+
+    // Parse the range
+    if (!range_part.empty()) {
+      size_t dash_pos = range_part.find('-');
+      if (dash_pos != std::string::npos) {
+        std::string start_str = range_part.substr(0, dash_pos);
+        std::string end_str = range_part.substr(dash_pos + 1);
+
+        start = std::stoull(start_str);
+        if (!end_str.empty()) {
+          end = std::stoull(end_str);
+        } else {
+          end = 0; // open-ended
+        }
+      } else {
+        start = std::stoull(range_part);
+        end = start;
+      }
+    } else {
+      // No range → match all IDs
+      start = 0;
+      end = 0;
+    }
+
+    // Parse the regexes
+    if (!regex_part.empty()) {
+      std::istringstream regex_stream(regex_part);
+      std::string regex_token;
+      while (std::getline(regex_stream, regex_token, ',')) {
+        try {
+          regexes.emplace_back(regex_token);
+        } catch (const std::regex_error &e) {
+          std::cerr << "Invalid regex: " << regex_token << std::endl;
+        }
+      }
+    } else {
+      regexes.emplace_back(".*"); // match all kernel names
+    }
+
+    g_kernel_ranges.push_back({start, end, regexes});
+    if (end > g_max_kernel_id) {
+      g_max_kernel_id = end;
+    }
+  }
+}
+
+bool should_trace_kernel(uint64_t kernel_id, const std::string &kernel_name) {
+  for (const auto &range : g_kernel_ranges) {
+    // Check range for kernel ID
+    if (range.end == 0) {
+      if (kernel_id >= range.start) {
+        // Match any of the regexes for this range
+        for (const auto &regex : range.kernel_name_regexes) {
+          if (std::regex_match(kernel_name, regex)) {
+            return true;
+          }
+        }
+      }
+    } else if (kernel_id >= range.start && kernel_id <= range.end) {
+      // Match any of the regexes for this range
+      for (const auto &regex : range.kernel_name_regexes) {
+        if (std::regex_match(kernel_name, regex)) {
+          return true;
+        }
+      }
+    }
+  }
+  return false;
+}
+
 void* recv_thread_fun(void* args);
 
 void nvbit_at_init() {
@@ -152,6 +264,16 @@ void nvbit_at_init() {
     GET_VAR_INT(spinlock_phase, "SPINLOCK_PHASE", 0, "Spinlock phase");
     GET_VAR_STR(spinlock_run_dir, "TRACES_FOLDER", "Spinlock detection base directory, use the same as the traces folder");
     GET_VAR_INT(spinlock_keep_intermediate_files, "SPINLOCK_KEEP_INTERMEDIATE_FILES", 0, "Keep intermediate files");
+    GET_VAR_STR(
+        kernel_ranges, "DYNAMIC_KERNEL_RANGE",
+        "Specify kernel IDs or ranges to trace. Format:\n"
+        "  - Single ID:       \"2\" traces only kernel 2.\n"
+        "  - Range:           \"5-8\" traces kernels 5 through 8 (inclusive).\n"
+        "  - Open-ended:      \"10-\" traces from kernel 10 onward.\n"
+        "  - Multiple ranges: \"2 5-8 10-\" (space-separated).\n"
+        "  - With regex:      \"5-8@kernel_a.*,kernel_b.*\" traces kernels 5-8 "
+        "with matching names.\n"
+        "If unset or empty, all kernels will be traced from the beginning.");
     std::string pad(100, '-');
     printf("%s\n", pad.c_str());
 
@@ -167,6 +289,9 @@ void nvbit_at_init() {
     if (!spinlock_run_dir.empty()) {
         spinlock_run_dir += "/";
     }
+
+    // Parse the kernel ranges
+    parse_kernel_ranges_from_env();
 }
 
 /**
@@ -179,6 +304,7 @@ void nvbit_at_init() {
 void nvbit_at_term() {
     // Read the spinlock_run_PHASE dir under ctx_<ctx_id> and for each unique kernel name, 
     // we will have a vector of kernel histograms
+    printf("Spinlock: Start to merge histograms from %s\n", spinlock_run_dir.c_str());
     using HistogramMapByName = std::map<std::string, std::vector<KernelInstructionHistogram*>>;
     HistogramMapByName map;
 
@@ -192,6 +318,7 @@ void nvbit_at_term() {
 
         // Now we iterate the spinlock_run_PHASE dir under ctx_<ctx_id> folder
         std::string context_run_dir = folder.path().string() + "/spinlock_run_" + std::to_string(spinlock_phase);
+        DPRINTF("Spinlock: Read saved histograms from %s\n", context_run_dir.c_str());
 
         // Build this histogram vector for this context
         for (auto& file : std::filesystem::directory_iterator(context_run_dir)) {
@@ -201,11 +328,15 @@ void nvbit_at_term() {
                 map[histogram->name].push_back(histogram);
             }
         }
+
+        DPRINTF("Spinlock: Read %zu kernels from %s\n", map.size(), context_run_dir.c_str());
+
     }
 
     // Now, we merge all the histograms for each kernel name
     std::vector<KernelInstructionHistogram*> merged_histograms;
     size_t id = 0;
+    DPRINTF("Spinlock: Start to merge histograms\n");
     for (auto& [kernel_name, histograms] : map) {
         KernelInstructionHistogram* merged_histogram = new KernelInstructionHistogram();
         // Set the name to the kernel name
@@ -218,6 +349,7 @@ void nvbit_at_term() {
         }
         merged_histograms.push_back(merged_histogram);
     }
+    DPRINTF("Spinlock: Merged %zu kernels\n", merged_histograms.size());
 
     // For each merged histogram, save under spinlock_run_PHASE_merged dir
     std::string merged_run_dir = spinlock_run_dir + "spinlock_detection/spinlock_run_" + std::to_string(spinlock_phase) + "_merged";
@@ -228,6 +360,7 @@ void nvbit_at_term() {
         assert(false);
     }
 
+    DPRINTF("Spinlock: Start to save merged histograms to %s\n", merged_run_dir.c_str());
     for (auto& histogram : merged_histograms) {
         histogram->saveToFile(merged_run_dir + "/kernel-" + std::to_string(histogram->id) + ".histogram");
     }
@@ -244,6 +377,7 @@ void nvbit_at_term() {
 
     // Check for spinlock
     if (spinlock_phase == SPINLOCK_PHASE_CHECK) {
+        DPRINTF("Spinlock: Start to check for spinlock\n");
         spinlock_check();
     }
 }
@@ -346,15 +480,24 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
         assert(cudaGetLastError() == cudaSuccess);
     }
 
+    // Plus 1 since tracer_tool use 1-based kernel id
+    uint64_t kernel_id = grid_launch_id + 1;
+    std::string mangled_func_name = std::string(nvbit_get_func_name(ctx, func, true));
+
     // Initialize kernel instruction histogram map
     if (ctx_state->instr_histogram == nullptr) {
-        ctx_state->instr_histogram = new KernelInstructionHistogram(grid_launch_id, nvbit_get_func_name(ctx, func, true));
+        ctx_state->instr_histogram = new KernelInstructionHistogram(kernel_id, mangled_func_name);
     } else {
-        ctx_state->instr_histogram->reinit(grid_launch_id, nvbit_get_func_name(ctx, func, true));
+        ctx_state->instr_histogram->reinit(kernel_id, mangled_func_name);
     }
 
     /* instrument */
     instrument_function_if_needed(ctx, func);
+
+    /* Determine if need to enable instrumentation */
+    // Plus 1 since tracer_tool use 1-based kernel id
+    bool enable_instrumentation = should_trace_kernel(kernel_id, mangled_func_name);
+    bool disable_print = !enable_instrumentation;
 
     int nregs = 0;
     CUDA_SAFECALL(
@@ -379,29 +522,33 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
         if (cbid == API_CUDA_cuLaunchKernelEx_ptsz ||
             cbid == API_CUDA_cuLaunchKernelEx) {
             cuLaunchKernelEx_params* p = (cuLaunchKernelEx_params*)params;
-            printf(
-                "Spinlock: CTX 0x%016lx - LAUNCH - Kernel pc 0x%016lx - "
-                "Kernel name %s - grid launch id %ld - grid size %d,%d,%d "
-                "- block size %d,%d,%d - nregs %d - shmem %d - cuda stream "
-                "id %ld\n",
-                (uint64_t)ctx, pc, func_name, grid_launch_id,
-                p->config->gridDimX, p->config->gridDimY,
-                p->config->gridDimZ, p->config->blockDimX,
-                p->config->blockDimY, p->config->blockDimZ, nregs,
-                shmem_static_nbytes + p->config->sharedMemBytes,
-                (uint64_t)p->config->hStream);
+            if (!disable_print) {
+                printf(
+                    "Spinlock: CTX 0x%016lx - LAUNCH - Kernel pc 0x%016lx - "
+                    "Kernel name %s - grid launch id %ld - grid size %d,%d,%d "
+                    "- block size %d,%d,%d - nregs %d - shmem %d - cuda stream "
+                    "id %ld\n",
+                    (uint64_t)ctx, pc, func_name, grid_launch_id,
+                    p->config->gridDimX, p->config->gridDimY,
+                    p->config->gridDimZ, p->config->blockDimX,
+                    p->config->blockDimY, p->config->blockDimZ, nregs,
+                    shmem_static_nbytes + p->config->sharedMemBytes,
+                    (uint64_t)p->config->hStream);
+            }
         } else {
             cuLaunchKernel_params* p = (cuLaunchKernel_params*)params;
-            printf(
-                "Spinlock: CTX 0x%016lx - LAUNCH - Kernel pc 0x%016lx - "
-                "Kernel name %s - grid launch id %ld - grid size %d,%d,%d "
-                "- block size %d,%d,%d - nregs %d - shmem %d - cuda stream "
-                "id %ld\n",
-                (uint64_t)ctx, pc, func_name, grid_launch_id, p->gridDimX,
-                p->gridDimY, p->gridDimZ, p->blockDimX, p->blockDimY,
-                p->blockDimZ, nregs,
-                shmem_static_nbytes + p->sharedMemBytes,
-                (uint64_t)p->hStream);
+            if (!disable_print) {
+                printf(
+                    "Spinlock: CTX 0x%016lx - LAUNCH - Kernel pc 0x%016lx - "
+                    "Kernel name %s - grid launch id %ld - grid size %d,%d,%d "
+                    "- block size %d,%d,%d - nregs %d - shmem %d - cuda stream "
+                    "id %ld\n",
+                    (uint64_t)ctx, pc, func_name, grid_launch_id, p->gridDimX,
+                    p->gridDimY, p->gridDimZ, p->blockDimX, p->blockDimY,
+                    p->blockDimZ, nregs,
+                    shmem_static_nbytes + p->sharedMemBytes,
+                    (uint64_t)p->hStream);
+            }
         }
 
         // increment grid launch id for next launch
@@ -410,8 +557,7 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
         grid_launch_id++;
     }
 
-    /* enable instrumented code to run */
-    nvbit_enable_instrumented(ctx, func, true);
+    nvbit_enable_instrumented(ctx, func, enable_instrumentation);
 
     // Reset the kernel receiving done flag for new kernel launch
     ctx_state->kernel_receiving_done = false;
@@ -450,8 +596,13 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
     }
 
     // Save the histogram to file in form of kernel-<kernel_id>.histogram
-    bool success = ctx_state->instr_histogram->saveToFile( folder_name + "/" + "kernel-" + std::to_string(ctx_state->instr_histogram->id) + ".histogram");
-    assert(success);
+    // if we have specified to trace this kernel
+    uint64_t kernel_id = ctx_state->instr_histogram->id;
+    bool enable_save = should_trace_kernel(kernel_id, ctx_state->instr_histogram->name);
+    if (enable_save) {
+        bool success = ctx_state->instr_histogram->saveToFile( folder_name + "/" + "kernel-" + std::to_string(kernel_id) + ".histogram");
+        assert(success);
+    }
 }
 
 void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,

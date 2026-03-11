@@ -197,7 +197,7 @@ class ProcMan:
                 continue
             for child in p.children(recursive=True):
                 os.kill(child.pid, 9)
-        os.kill(activeJob.procId, 9)
+            os.kill(activeJob.procId, 9)
 
     def tick(self):
         if self.tickingProcess == None:
