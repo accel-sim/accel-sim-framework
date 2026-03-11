@@ -81,6 +81,15 @@ class trace_warp_inst_t : public warp_inst_t {
 
  private:
   unsigned m_opcode;
+  /**
+   * @brief Parse the SASS opcode string for certain instruction
+   * that requires special handling.
+   *
+   * @param opcode_tokens
+   * @param trace
+   */
+  void parseSASSInstruction(std::vector<std::string> &opcode_tokens,
+                            const inst_trace_t &trace);
 };
 
 class trace_kernel_info_t : public kernel_info_t {

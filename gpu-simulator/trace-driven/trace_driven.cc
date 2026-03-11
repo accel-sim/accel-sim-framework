@@ -197,8 +197,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
 
   // get the opcode
   std::vector<std::string> opcode_tokens = trace.get_opcode_tokens();
-  std::string opcode1 = opcode_tokens[0];
+  const std::string &opcode1 = opcode_tokens[0];
+  const std::string &opcode = trace.opcode;
 
+  // Set instruction operand type based on the opcode for all instructions
   std::unordered_map<std::string, OpcodeChar>::const_iterator it =
       OpcodeMap->find(opcode1);
   if (it != OpcodeMap->end()) {
@@ -214,136 +216,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
               << " Opcode: " << opcode1 << std::endl;
     assert(0 && "undefined instruction");
   }
-  std::string opcode = trace.opcode;
-  if (opcode1 == "MUFU") {  // Differentiate between different MUFU operations
-                            // for power model
-    if ((opcode == "MUFU.SIN") || (opcode == "MUFU.COS")) sp_op = FP_SIN_OP;
-    if ((opcode == "MUFU.EX2") || (opcode == "MUFU.RCP")) sp_op = FP_EXP_OP;
-    if (opcode == "MUFU.RSQ") sp_op = FP_SQRT_OP;
-    if (opcode == "MUFU.LG2") sp_op = FP_LG_OP;
-  }
 
-  if (opcode1 == "IMAD") {  // Differentiate between different IMAD operations
-                            // for power model
-    if ((opcode == "IMAD.MOV") || (opcode == "IMAD.IADD")) sp_op = INT__OP;
-  }
-
-  // Fence instructions
-  if (opcode == "FENCE.VIEW.ASYNC.S") {
-    // TODO microbenchmark for cluster fence
-    set_proxy_fence(true);
-    set_fence_proxy_kind(ASYNC_SHARED_CTA);
-  }
-
-  // Handling SYNCS instructions
-  if (opcode1 == "SYNCS") {
-    // All SYNCS instructions supported below need register value tracing
-    if (trace.reg_src_vals.empty()) {
-      printf(
-          "Error: SYNCS instruction %s require register value tracing at PC: "
-          "0x%llx, exiting "
-          "execution\n",
-          opcode.c_str(), (address_type)trace.m_pc);
-      exit(1);
-    }
-
-    syncs_operand operand;
-    // Get mbarrier addresses from the trace address info
-    for (int i = 0; i < WARP_SIZE; i++) {
-      operand.addr[i] = trace.memadd_info->addrs[i];
-    }
-    if (opcode == "SYNCS.EXCH.64") {  // mbarrier.init
-      set_syncs_op(SYNCS_INIT);
-      // SYNCS.EXCH.64 format:
-      // SYNCS.EXCH.64 URA, [URB], URC
-      // URA is destination register
-      // URB is a memory reference operand in NVBit
-      // URC is the count register, so it is the second source register
-      // but based on Hopper SASS code dump, there are some bit manipulation
-      // prior to this instructions, so we need to undo this to get the actual
-      // thread count
-      std::array<uint32_t, WARP_SIZE> thread_counts = trace.reg_src_vals[1];
-      for (int i = 0; i < WARP_SIZE; i++) {
-        // First right shift by 1
-        thread_counts[i] >>= 1;
-        // Then substract by 0x100000
-        thread_counts[i] -= 0x100000;
-        // Finally, take the negation
-        thread_counts[i] = -thread_counts[i];
-      }
-      memcpy(operand.u.init.count, thread_counts.data(),
-             sizeof(operand.u.init.count));
-    } else if (opcode == "SYNCS.ARRIVE.TRANS64") {  // mbarrier.arrive.expect_tx
-      set_syncs_op(SYNCS_ARRIVE_EXPECT_TX);
-      // SYNCS.ARRIVE.TRANS64 format:
-      // SYNCS.ARRIVE.TRANS64 RA, [RB+URC], RD
-      // RA: destination register
-      // RB, URC: memory reference operand in NVBit
-      // RD: expected byte count
-      for (int i = 0; i < WARP_SIZE; i++) {
-        // This instruction increase arrival count by 1
-        operand.u.arrive.count[i] = 1;
-      }
-      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
-             sizeof(operand.u.arrive.txCount));
-    } else if (opcode.find("SYNCS.ARRIVE") !=
-               std::string::npos) {  // mbarrier.arrive
-      set_syncs_op(SYNCS_ARRIVE);
-      // Initialize the arrival count and transaction count to 0
-      memset(operand.u.arrive.count, 0, sizeof(operand.u.arrive.count));
-      memset(operand.u.arrive.txCount, 0, sizeof(operand.u.arrive.txCount));
-      // Handle other variants
-      if (opcode.find("ART0") != std::string::npos) {
-        // Arrival count is the register value in RD above
-        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.arrive.count));
-      } else if (opcode.find("A1T0") != std::string::npos) {
-        // Arrival 1, transaction 0
-        for (int i = 0; i < WARP_SIZE; i++) {
-          // This instruction increase arrival count by 1
-          operand.u.arrive.count[i] = 1;
-        }
-      } else if (opcode.find("A0TR") != std::string::npos) {
-        // Arrival 0, transaction count based on register value in RD
-        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.arrive.txCount));
-      } else if (opcode.find("A0TX") != std::string::npos) {
-        // Arrival 0, complete transaction count based on register value in RD
-        set_syncs_op(SYNCS_COMPELTE_TX);
-        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.complete_tx.txCount));
-      } else if (opcode.find("A0T1") != std::string::npos) {
-        // Arrival 0, transaction count 1
-        for (int i = 0; i < WARP_SIZE; i++) {
-          operand.u.arrive.txCount[i] = 1;
-        }
-      } else {
-        printf(
-            "Error: Unsupported SYNCS ARRIVE variant: %s, aborting execution\n",
-            opcode.c_str());
-        exit(1);
-      }
-    } else if (opcode == "SYNCS.PHASECHK.TRANS64") {  // mbarrier.test_wait
-      set_syncs_op(SYNCS_TEST_WAIT);
-    } else if (opcode ==
-               "SYNCS.PHASECHK.TRANS64.TRYWAIT") {  // mbarrier.try_wait
-      set_syncs_op(SYNCS_TRY_WAIT);
-      // SYNCS.PHASECHK.TRANS64.TRYWAIT format:
-      // SYNCS.PHASECHK.TRANS64.TRYWAIT PA, [RB+URC], RD
-      // PA: predicate register
-      // RB, URC: memory reference operand in NVBit, to the mbarrier
-      // RD: prior phase count
-      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(),
-             sizeof(operand.u.wait.phase));
-    } else {
-      printf(
-          "Error: Unsupported SYNCS instruction: %s at PC: 0x%llx, exiting "
-          "execution\n",
-          opcode.c_str(), (address_type)trace.m_pc);
-      exit(1);
-    }
-    set_syncs_operand(operand);
-  }
+  // Parse the SASS opcode string for instructions that requires special
+  // handling
+  parseSASSInstruction(opcode_tokens, trace);
 
   // fill regs information
   num_regs = trace.reg_srcs_num + trace.reg_dsts_num;
@@ -693,6 +569,150 @@ bool trace_warp_inst_t::parse_from_trace_struct(
   }
 
   return true;
+}
+
+void trace_warp_inst_t::parseSASSInstruction(
+    std::vector<std::string> &opcode_tokens, const inst_trace_t &trace) {
+  // Get full SASS string and the opcode token
+  const std::string &opcodeStr = trace.opcode;
+  const std::string &opcode1 = opcode_tokens[0];
+  if (opcode1 == "MUFU") {  // Differentiate between different MUFU operations
+                            // for power model
+    if ((opcodeStr == "MUFU.SIN") || (opcodeStr == "MUFU.COS"))
+      sp_op = FP_SIN_OP;
+    if ((opcodeStr == "MUFU.EX2") || (opcodeStr == "MUFU.RCP"))
+      sp_op = FP_EXP_OP;
+    if (opcodeStr == "MUFU.RSQ") sp_op = FP_SQRT_OP;
+    if (opcodeStr == "MUFU.LG2") sp_op = FP_LG_OP;
+  }
+
+  if (opcode1 == "IMAD") {  // Differentiate between different IMAD operations
+                            // for power model
+    if ((opcodeStr == "IMAD.MOV") || (opcodeStr == "IMAD.IADD"))
+      sp_op = INT__OP;
+  }
+
+  // Fence instructions
+  if (opcodeStr == "FENCE.VIEW.ASYNC.S") {
+    // TODO microbenchmark for cluster fence
+    set_proxy_fence(true);
+    set_fence_proxy_kind(ASYNC_SHARED_CTA);
+  }
+
+  // Handling SYNCS instructions
+  if (opcode1 == "SYNCS") {
+    // All SYNCS instructions supported below need register value tracing
+    if (trace.reg_src_vals.empty()) {
+      printf(
+          "Error: SYNCS instruction %s require register value tracing at PC: "
+          "0x%llx, exiting "
+          "execution\n",
+          opcodeStr.c_str(), (address_type)trace.m_pc);
+      exit(1);
+    }
+
+    syncs_operand operand;
+    // Get mbarrier addresses from the trace address info
+    for (int i = 0; i < WARP_SIZE; i++) {
+      operand.addr[i] = trace.memadd_info->addrs[i];
+    }
+
+    // Handle SYNCS instructions following PTX classification
+    if (opcodeStr == "SYNCS.EXCH.64") {  // mbarrier.init
+      set_syncs_op(SYNCS_INIT);
+      // SYNCS.EXCH.64 format:
+      // SYNCS.EXCH.64 URA, [URB], URC
+      // URA is destination register
+      // URB is a memory reference operand in NVBit
+      // URC is the count register, so it is the second source register
+      // but based on Hopper SASS code dump, there are some bit manipulation
+      // prior to this instructions, so we need to undo this to get the actual
+      // thread count
+      // As the thread count is implemented as a roll-up counter
+      std::array<uint32_t, WARP_SIZE> thread_counts = trace.reg_src_vals[1];
+      for (int i = 0; i < WARP_SIZE; i++) {
+        // First right shift by 1
+        thread_counts[i] >>= 1;
+        // Then substract by 0x100000
+        thread_counts[i] -= 0x100000;
+        // Finally, take the negation
+        thread_counts[i] = -thread_counts[i];
+      }
+      memcpy(operand.u.init.count, thread_counts.data(),
+             sizeof(operand.u.init.count));
+    } else if (opcodeStr == "SYNCS.ARRIVE.TRANS64" ||
+               opcodeStr ==
+                   "SYNCS.ARRIVE.TRANS64.RED") {  // mbarrier.arrive.expect_tx
+      set_syncs_op(SYNCS_ARRIVE_EXPECT_TX);
+      // SYNCS.ARRIVE.TRANS64 format:
+      // SYNCS.ARRIVE.TRANS64 RA, [RB+URC], RD
+      // RA: destination register
+      // RB, URC: memory reference operand in NVBit
+      // RD: expected byte count
+      for (int i = 0; i < WARP_SIZE; i++) {
+        // This instruction increase arrival count by 1
+        operand.u.arrive.count[i] = 1;
+      }
+      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
+             sizeof(operand.u.arrive.txCount));
+    } else if (opcodeStr.find("SYNCS.ARRIVE") !=
+               std::string::npos) {  // mbarrier.arrive
+      set_syncs_op(SYNCS_ARRIVE);
+      // Initialize the arrival count and transaction count to 0
+      memset(operand.u.arrive.count, 0, sizeof(operand.u.arrive.count));
+      memset(operand.u.arrive.txCount, 0, sizeof(operand.u.arrive.txCount));
+      // Handle other variants
+      if (opcodeStr.find("ART0") != std::string::npos) {
+        // Arrival count is the register value in RD above
+        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.arrive.count));
+      } else if (opcodeStr.find("A1T0") != std::string::npos) {
+        // Arrival 1, transaction 0
+        for (int i = 0; i < WARP_SIZE; i++) {
+          // This instruction increase arrival count by 1
+          operand.u.arrive.count[i] = 1;
+        }
+      } else if (opcodeStr.find("A0TR") != std::string::npos) {
+        // Arrival 0, transaction count based on register value in RD
+        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.arrive.txCount));
+      } else if (opcodeStr.find("A0TX") != std::string::npos) {
+        // Arrival 0, complete transaction count based on register value in RD
+        set_syncs_op(SYNCS_COMPELTE_TX);
+        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(),
+               sizeof(operand.u.complete_tx.txCount));
+      } else if (opcodeStr.find("A0T1") != std::string::npos) {
+        // Arrival 0, transaction count 1
+        for (int i = 0; i < WARP_SIZE; i++) {
+          operand.u.arrive.txCount[i] = 1;
+        }
+      } else {
+        printf(
+            "Error: Unsupported SYNCS ARRIVE variant: %s, aborting execution\n",
+            opcodeStr.c_str());
+        exit(1);
+      }
+    } else if (opcodeStr == "SYNCS.PHASECHK.TRANS64") {  // mbarrier.test_wait
+      set_syncs_op(SYNCS_TEST_WAIT);
+    } else if (opcodeStr ==
+               "SYNCS.PHASECHK.TRANS64.TRYWAIT") {  // mbarrier.try_wait
+      set_syncs_op(SYNCS_TRY_WAIT);
+      // SYNCS.PHASECHK.TRANS64.TRYWAIT format:
+      // SYNCS.PHASECHK.TRANS64.TRYWAIT PA, [RB+URC], RD
+      // PA: predicate register
+      // RB, URC: memory reference operand in NVBit, to the mbarrier
+      // RD: prior phase of the mbarrier that it should wait for
+      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(),
+             sizeof(operand.u.wait.phase));
+    } else {
+      printf(
+          "Error: Unsupported SYNCS instruction: %s at PC: 0x%llx, exiting "
+          "execution\n",
+          opcodeStr.c_str(), (address_type)trace.m_pc);
+      exit(1);
+    }
+    set_syncs_operand(operand);
+  }
 }
 
 trace_config::trace_config() {}
