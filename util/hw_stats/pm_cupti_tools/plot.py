@@ -24,6 +24,38 @@ def main():
     # drop na
     df = df.dropna()
 
+    # Auto-compute: for .pct columns, find matching .sum columns and create
+    # derived columns = pct * sum / 100.
+    # E.g. lts__average_t_sector_srcnode_gpc_aperture_device_op_read.pct
+    #    * lts__t_sectors.sum / 100
+    #    -> lts__t_sectors_srcnode_gpc_aperture_device_op_read
+    pct_cols = [c for c in df.columns if c.endswith(".pct")]
+    sum_cols = [c for c in df.columns if c.endswith(".sum")]
+    for pct_col in pct_cols:
+        pct_base = pct_col.rsplit(".", 1)[0]  # e.g. lts__average_t_sector_srcnode_gpc...
+        pct_prefix = pct_base.split("__", 1)[0]  # e.g. lts
+        for sum_col in sum_cols:
+            sum_base = sum_col.rsplit(".", 1)[0]  # e.g. lts__t_sectors
+            sum_prefix = sum_base.split("__", 1)[0]  # e.g. lts
+            if pct_prefix != sum_prefix:
+                continue
+            # Check measurement root match: "average_t_sector" <-> "t_sectors"
+            pct_measurement = pct_base.split("__", 1)[1]  # average_t_sector_srcnode_gpc...
+            sum_measurement = sum_base.split("__", 1)[1]  # t_sectors
+            # The .pct measurement should start with "average_" + singular of sum measurement
+            # e.g. pct has "average_t_sector_*", sum has "t_sectors"
+            if sum_measurement.endswith("s"):
+                singular = sum_measurement[:-1]  # t_sector
+            else:
+                singular = sum_measurement
+            if not pct_measurement.startswith(f"average_{singular}"):
+                continue
+            # Extract the suffix after the measurement root
+            suffix = pct_measurement[len(f"average_{singular}"):]  # e.g. _srcnode_gpc...
+            new_name = f"{pct_prefix}__{sum_measurement}{suffix}"
+            df[new_name] = df[pct_col] * df[sum_col] / 100
+            print(f"Derived: {new_name} = {pct_col} * {sum_col} / 100")
+
     # Ignore timestamp columns
     ignore_cols = {"StartTimestamp", "EndTimestamp"}
     cols = [c for c in df.columns if c not in ignore_cols]

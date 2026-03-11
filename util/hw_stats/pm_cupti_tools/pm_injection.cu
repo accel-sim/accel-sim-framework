@@ -73,8 +73,12 @@ struct CtxData {
     
     // kernel name tracking
     vector<string> kernelNames;              // store kernel names for current session
-    
+
     bool samplingActive{false};
+
+    // CUDA graph capture tracking: when true, kernel launch callbacks are recording
+    // into a graph, not actually executing, so we must NOT start PM sampling.
+    int captureDepth{0};
 };
 
 // global state
@@ -223,9 +227,24 @@ static void startIfNeeded(CtxData& cd)
     }
 }
 
-static const char* getCsvPath() {
-    static const char* path = std::getenv("PM_SAMPLING_CSV_PATH");
-    return path;
+// Per-device CSV state so each MPI rank / GPU writes to its own file
+struct PerDeviceCsvState {
+    bool opened{false};
+    bool wrote_header{false};
+};
+static unordered_map<int, PerDeviceCsvState> g_csvState;
+
+static std::string getCsvPathForDevice(int deviceId) {
+    const char* env = std::getenv("PM_SAMPLING_CSV_PATH");
+    if (!env || !*env) return "";
+
+    // Insert device ID before the extension: "output.csv" -> "output_dev0.csv"
+    std::string base(env);
+    auto dot = base.rfind('.');
+    if (dot != std::string::npos) {
+        return base.substr(0, dot) + "_dev" + std::to_string(deviceId) + base.substr(dot);
+    }
+    return base + "_dev" + std::to_string(deviceId);
 }
 
 static bool shouldTruncateCsvOnce() {
@@ -240,15 +259,16 @@ static bool shouldTruncateCsvOnce() {
 static void writeCsvLines(int session, int deviceId, int kernelsInSession,
                           const std::string& captured)
 {
-    const char* path = getCsvPath();
-    if (!path || !*path) return;
+    std::string path = getCsvPathForDevice(deviceId);
+    if (path.empty()) return;
+
+    auto& state = g_csvState[deviceId];
 
     // handle truncate-on-first-use
     std::ios_base::openmode mode = std::ios::out | std::ios::app;
-    static bool opened = false;
-    if (!opened) {
+    if (!state.opened) {
         if (shouldTruncateCsvOnce()) mode = std::ios::out; // overwrite once
-        opened = true;
+        state.opened = true;
     }
 
     std::ofstream ofs(path, mode);
@@ -257,10 +277,9 @@ static void writeCsvLines(int session, int deviceId, int kernelsInSession,
         return;
     }
 
-    static bool wrote_header = false;
-    if (!wrote_header || mode == std::ios::out) {
+    if (!state.wrote_header || mode == std::ios::out) {
         ofs << "session,device,kernels_in_session,line\n";
-        wrote_header = true;
+        state.wrote_header = true;
     }
 
     std::istringstream iss(captured);
@@ -280,24 +299,30 @@ static void writeCsvLines(int session, int deviceId, int kernelsInSession,
     }
 }
 
-static void writeKernelNamesFile(const vector<string>& kernelNames)
+// Per-device kernel name file state
+struct PerDeviceKernelState {
+    int globalKernelIndex{0};
+    bool firstWrite{true};
+};
+static unordered_map<int, PerDeviceKernelState> g_kernelState;
+
+static void writeKernelNamesFile(const vector<string>& kernelNames, int deviceId)
 {
-    static int globalKernelIndex = 0;
-    static bool firstWrite = true;
-    std::string fileName = "kernel_names.txt";
-    std::ios_base::openmode mode = firstWrite ? std::ios::out : std::ios::app;
+    auto& state = g_kernelState[deviceId];
+    std::string fileName = "kernel_names_dev" + std::to_string(deviceId) + ".txt";
+    std::ios_base::openmode mode = state.firstWrite ? std::ios::out : std::ios::app;
     std::ofstream ofs(fileName, mode);
     if (!ofs) {
         std::cerr << "[PM-SAMPLING] Failed to open kernel names file: " << fileName << "\n";
         return;
     }
-    
+
     for (size_t i = 0; i < kernelNames.size(); ++i) {
-        ofs << globalKernelIndex << "," << kernelNames[i] << "\n";
-        globalKernelIndex++;
+        ofs << state.globalKernelIndex << "," << kernelNames[i] << "\n";
+        state.globalKernelIndex++;
     }
-    
-    firstWrite = false;
+
+    state.firstWrite = false;
     ofs.close();
 }
 
@@ -332,7 +357,7 @@ static void flushSession(CtxData& cd, const char* reason)
         std::ostringstream capture;
         auto* oldbuf = std::cout.rdbuf(capture.rdbuf());
         // cd.host.PrintSampleRanges();     // <-- prints into 'capture'
-        cd.host.WriteCSVRanges();      // <-- Nice CSV write
+        cd.host.WriteCSVRanges(cd.deviceId);      // <-- Nice CSV write
         std::cout.rdbuf(oldbuf);         // restore
 
         // Tee to console
@@ -343,7 +368,7 @@ static void flushSession(CtxData& cd, const char* reason)
         
         // Write kernel names file
         if (!cd.kernelNames.empty()) {
-            writeKernelNamesFile(cd.kernelNames);
+            writeKernelNamesFile(cd.kernelNames, cd.deviceId);
         }
     }
     // reuse the same buffers for next session
@@ -378,6 +403,14 @@ static void atexitHandler()
     // If we can't get the lock, skip cleanup to avoid deadlock
 }
 
+// Helper: check if a driver API callback ID is a kernel launch variant
+static bool isKernelLaunchCbid(CUpti_CallbackId cbid)
+{
+    return cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchKernel
+        || cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchCooperativeKernel
+        || cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchKernelEx;
+}
+
 // CUPTI callback
 static void CUPTIAPI callback(
     void* /*userData*/,
@@ -396,8 +429,71 @@ static void CUPTIAPI callback(
         return;
     }
 
-    if (domain == CUPTI_CB_DOMAIN_DRIVER_API &&
-        cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchKernel)
+    if (domain != CUPTI_CB_DOMAIN_DRIVER_API) return;
+
+    // --- Track CUDA graph stream capture state ---
+    // During capture, kernel launches are recorded into a graph and do NOT
+    // actually execute, so we must skip PM sampling.
+    if (cbid == CUPTI_DRIVER_TRACE_CBID_cuStreamBeginCapture ||
+        cbid == CUPTI_DRIVER_TRACE_CBID_cuStreamBeginCapture_v2)
+    {
+        const CUpti_CallbackData* d = static_cast<const CUpti_CallbackData*>(pCallbackData);
+        if (d->callbackSite == CUPTI_API_ENTER) {
+            std::lock_guard<mutex> lk(g_mutex);
+            auto it = g_ctx.find(d->context);
+            if (it != g_ctx.end()) {
+                it->second.captureDepth++;
+                cout << "[PM-SAMPLING] Stream capture BEGIN (depth="
+                     << it->second.captureDepth << ") on device "
+                     << it->second.deviceId << "\n";
+            }
+        }
+        return;
+    }
+
+    if (cbid == CUPTI_DRIVER_TRACE_CBID_cuStreamEndCapture)
+    {
+        const CUpti_CallbackData* d = static_cast<const CUpti_CallbackData*>(pCallbackData);
+        if (d->callbackSite == CUPTI_API_EXIT) {
+            std::lock_guard<mutex> lk(g_mutex);
+            auto it = g_ctx.find(d->context);
+            if (it != g_ctx.end() && it->second.captureDepth > 0) {
+                it->second.captureDepth--;
+                cout << "[PM-SAMPLING] Stream capture END (depth="
+                     << it->second.captureDepth << ") on device "
+                     << it->second.deviceId << "\n";
+            }
+        }
+        return;
+    }
+
+    // --- cuGraphLaunch: the graph's kernels execute here ---
+    if (cbid == CUPTI_DRIVER_TRACE_CBID_cuGraphLaunch)
+    {
+        const CUpti_CallbackData* d = static_cast<const CUpti_CallbackData*>(pCallbackData);
+        std::lock_guard<mutex> lk(g_mutex);
+        auto it = g_ctx.find(d->context);
+        if (it == g_ctx.end()) return;
+        auto& cd = it->second;
+
+        if (d->callbackSite == CUPTI_API_ENTER) {
+            startIfNeeded(cd);
+            cd.curKernels++;
+            cd.kernelNames.push_back("cuGraphLaunch");
+            cout << "[PM-SAMPLING] cuGraphLaunch on device " << cd.deviceId
+                 << " (kernel " << cd.curKernels << " of " << cd.maxKernels
+                 << " in session " << cd.iterations << ")\n";
+        } else if (d->callbackSite == CUPTI_API_EXIT) {
+            cuCtxSynchronize();
+            if (cd.curKernels >= cd.maxKernels) {
+                flushSession(cd, "kernel-rotation");
+            }
+        }
+        return;
+    }
+
+    // --- Individual kernel launches (cuLaunchKernel, cuLaunchCooperativeKernel, cuLaunchKernelEx) ---
+    if (isKernelLaunchCbid(cbid))
     {
         const CUpti_CallbackData* d = static_cast<const CUpti_CallbackData*>(pCallbackData);
         std::lock_guard<mutex> lk(g_mutex);
@@ -405,19 +501,25 @@ static void CUPTIAPI callback(
         if (it == g_ctx.end()) return; // not profiled / not supported
         auto& cd = it->second;
 
+        // Skip kernels launched during graph capture — they are not executing yet
+        if (cd.captureDepth > 0) return;
+
         if (d->callbackSite == CUPTI_API_ENTER) {
             // start sampling before kernel runs
             if (!cd.samplingActive) startIfNeeded(cd);
             cd.curKernels++;
-            
+
             // Extract kernel name from callback data
-            // For cuLaunchKernel callbacks, symbolName contains the kernel name
-            const char* kernelName = d->symbolName ? d->symbolName : 
+            const char* kernelName = d->symbolName ? d->symbolName :
                                     (d->functionName ? d->functionName : "unknown");
             cd.kernelNames.push_back(kernelName);
-            // print out as well
-            cout << "[PM-SAMPLING] Launching kernel '" << kernelName 
-                 << "' on device " << cd.deviceId << " (kernel " << cd.curKernels 
+
+            const char* launchType =
+                (cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchCooperativeKernel) ? "cuLaunchCooperativeKernel" :
+                (cbid == CUPTI_DRIVER_TRACE_CBID_cuLaunchKernelEx)          ? "cuLaunchKernelEx" :
+                                                                              "cuLaunchKernel";
+            cout << "[PM-SAMPLING] " << launchType << " '" << kernelName
+                 << "' on device " << cd.deviceId << " (kernel " << cd.curKernels
                  << " of " << cd.maxKernels << " in session " << cd.iterations << ")\n";
         } else if (d->callbackSite == CUPTI_API_EXIT) {
             cuCtxSynchronize(); // block until kernel completes
@@ -439,8 +541,28 @@ static void registerCallbacksOnce()
 
     CUpti_SubscriberHandle sub;
     CUPTI_API_CALL(cuptiSubscribe(&sub, (CUpti_CallbackFunc)callback, nullptr));
+
+    // Kernel launch variants
     CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
                                        CUPTI_DRIVER_TRACE_CBID_cuLaunchKernel));
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuLaunchCooperativeKernel));
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuLaunchKernelEx));
+
+    // CUDA Graph launch
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuGraphLaunch));
+
+    // Stream capture tracking (to skip PM sampling during graph capture)
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuStreamBeginCapture));
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuStreamBeginCapture_v2));
+    CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_DRIVER_API,
+                                       CUPTI_DRIVER_TRACE_CBID_cuStreamEndCapture));
+
+    // Resource tracking
     CUPTI_API_CALL(cuptiEnableCallback(1, sub, CUPTI_CB_DOMAIN_RESOURCE,
                                        CUPTI_CBID_RESOURCE_CONTEXT_CREATED));
     atexit(atexitHandler);

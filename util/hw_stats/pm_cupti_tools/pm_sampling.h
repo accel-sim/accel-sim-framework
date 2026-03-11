@@ -141,7 +141,7 @@ class CuptiProfilerHost
 
     }
 
-    void WriteCSVRanges()
+    void WriteCSVRanges(int deviceId = -1)
     {
         if (m_samplerRanges.empty())
         {
@@ -149,10 +149,15 @@ class CuptiProfilerHost
             return;
         }
 
-        // Use globalRangeIndex to create a unique filename idx
-        std::string fileName = "output_" + std::to_string(globalRangeIndex) + ".csv"; 
+        // Use globalRangeIndex to create a unique filename idx, with per-device prefix
+        std::string fileName;
+        if (deviceId >= 0) {
+            fileName = "output_dev" + std::to_string(deviceId) + "_" + std::to_string(globalRangeIndex) + ".csv";
+        } else {
+            fileName = "output_" + std::to_string(globalRangeIndex) + ".csv";
+        }
         std::ofstream outFile(fileName);
-        globalRangeIndex++; // Figure out how to map this to kernel id later
+        globalRangeIndex++;
         if (!outFile.is_open())
         {
             std::cerr << "Failed to open " << fileName << " for writing\n";
