@@ -16,7 +16,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: dev
       - name: Setup Environment
@@ -77,7 +77,7 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
         with:
           ref: dev
       - name: Setup Environment
@@ -148,7 +148,7 @@ jobs:
     runs-on: tgrogers-raid
     needs: [Tracer-Weekly, SASS-Weekly]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Notify Failure
         run: |
           # Setup envs

@@ -13,6 +13,9 @@ on:
 
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  GITHUB_REPOSITORY: ${{ github.repository }}
+  GITHUB_RUN_NUMBER: ${{ github.run_number }}
+  GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
 
 jobs:
   Tracer-Hopper:
@@ -22,94 +25,27 @@ jobs:
     concurrency:
       group: sk-h200-remote
       cancel-in-progress: false
-    env:
-      VPN_HOST: "211.179.16.22"
-      VPN_CERT: "pin-sha256:t1qxDIv4DWnlmfO+m8Q1xKyPmnhuPtjEuf3KTa/3A28="
-      OPENCONNECT_PATH: "/home/tgrogers-raid/a/common/openconnect/openconnect"
-      OCPROXY_PATH: "/home/tgrogers-raid/a/common/ocproxy/ocproxy"
-      SOCKS_PORT: "1080"
-      REMOTE_HOST: "172.20.40.191"
-      REMOTE_USER: "tgrghci"
-      WORK_DIR: "/purdue/tgrghci/accel-sim-framework-ci"
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Connect to VPN
-        run: |
-          echo "Starting VPN connection..."
-          cat $HOME/sk_password | $OPENCONNECT_PATH \
-              --script-tun \
-              --script "$OCPROXY_PATH -L 2222:unix-host:22 -D $SOCKS_PORT" \
-              --protocol=gp \
-              --user=$(cat $HOME/sk_user) \
-              --servercert $VPN_CERT \
-              --background \
-              $VPN_HOST
+        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-connect
 
-          echo "Waiting for VPN to establish..."
-          sleep 5
+      - name: Clean remote directory
+        run: ./.github/scripts/hopper-weekly.sh tracer-clean-remote
 
-          for i in {1..10}; do
-              if nc -z 127.0.0.1 $SOCKS_PORT 2>/dev/null; then
-                  echo "VPN connection established (SOCKS proxy ready on port $SOCKS_PORT)"
-                  break
-              fi
-              if [ $i -eq 10 ]; then
-                  echo "ERROR: VPN connection failed to establish"
-                  exit 1
-              fi
-              sleep 2
-          done
-
-      - name: Clean and sync repository to remote
-        run: |
-          echo "Checking if $WORK_DIR exists on remote..."
-          ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
-              $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
-          if [ -d "/purdue/tgrghci/accel-sim-framework-ci" ]; then
-              echo "Removing existing directory..."
-              rm -rf /purdue/tgrghci/accel-sim-framework-ci
-          fi
-          ENDSSH
-
-          echo "Syncing repository to remote host $REMOTE_USER@$REMOTE_HOST..."
-          rsync -az \
-              -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
-              $GITHUB_WORKSPACE/ \
-              $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/
-          echo "Repository synced successfully"
+      - name: Sync repository to remote
+        run: ./.github/scripts/hopper-weekly.sh tracer-sync-push
 
       - name: Generate traces on H200
-        run: |
-          echo "Connecting to remote host to run trace generation..."
-          ssh -o "ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p" \
-              $REMOTE_USER@$REMOTE_HOST bash -s << 'ENDSSH'
-          set -e
-          cd /purdue/tgrghci/accel-sim-framework-ci
-          echo "Running trace commands..."
-          .github/scripts/h200.sh
-          ENDSSH
+        run: ./.github/scripts/hopper-weekly.sh tracer-run
 
       - name: Sync traces back from remote
-        run: |
-          echo "Syncing traces from remote host back to local..."
-          mkdir -p ./hw_run
-          rsync -az \
-              -e "ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'" \
-              $REMOTE_USER@$REMOTE_HOST:$WORK_DIR/hw_run/ \
-              ./hw_run/
-          echo "Traces synced successfully"
-          # move to trace depot
-          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
-          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
-          mv ./hw_run/ /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
-          chmod 777 -R /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/
+        run: ./.github/scripts/hopper-weekly.sh tracer-sync-pull
 
       - name: Cleanup VPN
         if: always()
-        run: |
-          echo "Cleaning up VPN connection..."
-          pkill -f "openconnect.*$VPN_HOST" || true
+        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-cleanup
 
   SASS-Hopper:
     timeout-minutes: 720
@@ -120,96 +56,24 @@ jobs:
       run:
         shell: bash
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
 
       - name: Setup Environment
-        run: |
-          rm -rf env-setup
-          git clone --quiet git@github.com:purdue-aalp/env-setup.git
-          cd env-setup
-          git checkout cluster-ubuntu
+        run: ./.github/scripts/hopper-weekly.sh sass-setup
 
       - name: Build Accel-Sim
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          rm -rf ./gpu-simulator/gpgpu-sim
-
-          # Clone gpgpu-sim with fork-aware branch selection
-          echo "Cloning gpgpu-sim with fork-aware branch selection..."
-          git clone --quiet git@github.com:accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
-
-          current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
-          current_branch=$BRANCH_NAME
-          current_repo=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
-
-          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
-
-          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
-
-          # First, try to add the fork owner's repository as a remote and fetch
-          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
-            # Check if the branch exists after fetching
-            if git -C ./gpu-simulator/gpgpu-sim/ rev-parse --verify fork-owner/$BRANCH_NAME >/dev/null 2>&1; then
-              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
-            else
-              # Use the default branch of the fork owner's repository
-              default_branch=$(git -C ./gpu-simulator/gpgpu-sim/ remote show fork-owner | grep 'HEAD branch' | awk '{print $NF}')
-              echo "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$current_owner/$gpgpusim_repo'"
-              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $default_branch fork-owner/$default_branch
-            fi
-            # Remove the temporary remote
-            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
-          else
-            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
-            git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-          fi
-
-          source ./gpu-simulator/setup_environment.sh
-          make clean -C gpu-simulator
-          make -j -C gpu-simulator
+        run: ./.github/scripts/hopper-weekly.sh sass-build
 
       - name: Run SASS Simulation
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-simulator/setup_environment.sh
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C H100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/traces/ -N hopper-weekly-$$
-          ./util/job_launching/run_simulations.py -B GPU_Microbenchmark_TMA,cutlass_tma_small -C H100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/traces/ -N hopper-weekly-$$
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/ -N hopper-weekly-$$
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C A100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/traces/ -N hopper-weekly-$$
-          ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s hopper-weekly-stats-per-app.csv -N hopper-weekly-$$
+        run: ./.github/scripts/hopper-weekly.sh sass-simulate
 
       - name: Archive Stats
         if: always()
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          rm -rf ./statistics-archive
-          git clone --quiet git@github.com:accel-sim/statistics-archive.git
-          BRANCH_NAME=hopper-weekly/$BRANCH_NAME
-          git -C ./statistics-archive checkout $BRANCH_NAME 2>/dev/null || git -C ./statistics-archive checkout -b $BRANCH_NAME
-          ./util/job_launching/get_stats.py -k -K -R -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,GPU_Microbenchmark_TMA,cutlass_tma_small -C H100-SASS -A | tee hopper-h100-ubench-sass-local.csv
-
-          mkdir -p statistics-archive/ubench/
-          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/hopper-h100-ubench-sass.csv,hopper-h100-ubench-sass-local.csv \
-          | tee hopper-h100-ubench-sass.csv && mv hopper-h100-ubench-sass.csv ./statistics-archive/ubench/
-          ./util/plotting/merge-stats.py -R -c ./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv,hopper-h100-ubench-sass-local.csv \
-          | tee hopper-h100-ubench-sass-latest2.csv && mv hopper-h100-ubench-sass-local.csv ./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv
+        run: ./.github/scripts/hopper-weekly.sh sass-archive
 
       - name: Correlate Ubench
         if: always()
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          ./util/hw_stats/get_hw_data.sh > /dev/null 2>&1
-          rm -rf ./util/plotting/correl-html/
-          ./util/plotting/plot-correlation.py -c ./hopper-h100-ubench-sass-latest2.csv -H /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/hw_run/ | tee hopper-h100-ubench-correl.txt
-          mv ./util/plotting/correl-html/combined_per_kernel.html ./statistics-archive/ubench/hopper-h100-combined_per_kernel.html
-          mv ./util/plotting/correl-html/combined_per_app.html ./statistics-archive/ubench/hopper-h100-combined_per_app.html
-
-          git -C ./statistics-archive add --all
-          git -C ./statistics-archive commit \
-          -m "Hopper Weekly CI automated checkin $BRANCH_NAME Build:${{ github.run_number }}"_"${{ github.run_attempt}}" || echo "No Changes."
-          git -C ./statistics-archive push -f -u origin hopper-weekly/$BRANCH_NAME
+        run: ./.github/scripts/hopper-weekly.sh sass-correlate
 
   failures:
     if: failure()
@@ -219,10 +83,9 @@ jobs:
     runs-on: tgrogers-raid
     needs: [Tracer-Hopper, SASS-Hopper]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Notify Failure
         run: |
-          # Setup envs
           git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
@@ -236,7 +99,7 @@ jobs:
     runs-on: tgrogers-raid
     needs: [Tracer-Hopper, SASS-Hopper]
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - name: Notify Success
         run: |
           git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git

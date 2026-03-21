@@ -196,6 +196,7 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     // TMA Control Instructions
     {"UTMACCTL", OpcodeChar(OP_UTMACCTL, TMA_OP)},
     {"UTMACMDFLUSH", OpcodeChar(OP_UTMACMDFLUSH, TMA_OP)},
+    {"STAS", OpcodeChar(OP_STAS, STAS_OP)},
 
     // SYNC Instructions
     {"FENCE", OpcodeChar(OP_FENCE, FENCE_OP)},
@@ -256,6 +257,10 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
     {"YIELD", OpcodeChar(OP_YIELD, SPECIALIZED_UNIT_1_OP)},
     {"ELECT", OpcodeChar(OP_ELECT, SPECIALIZED_UNIT_1_OP)},
 
+    // Replay region markers (pseudo-opcodes for spinlock simulation)
+    {"REPLAY_START", OpcodeChar(OP_REPLAY_START, ALU_OP)},
+    {"REPLAY_END", OpcodeChar(OP_REPLAY_END, ALU_OP)},
+
     // Miscellaneous Instructions
     {"B2R", OpcodeChar(OP_B2R, ALU_OP)},
     {"BAR", OpcodeChar(OP_BAR, BARRIER_OP)},
@@ -280,10 +285,11 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 // Collected from lat_gmma and MaxFlops_gmma microbenchmarks
 static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>>
     Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
-        {256, std::make_pair(128, 128)}, {192, std::make_pair(96, 96)},
-        {128, std::make_pair(64, 64)},   {96, std::make_pair(48, 48)},
-        {64, std::make_pair(32, 32)},    {32, std::make_pair(24, 24)},
-        {16, std::make_pair(20, 20)},    {8, std::make_pair(18, 18)},
+        {256, std::make_pair(128, 128)}, {224, std::make_pair(112, 112)},
+        {192, std::make_pair(96, 96)},   {128, std::make_pair(64, 64)},
+        {96, std::make_pair(48, 48)},    {64, std::make_pair(32, 32)},
+        {32, std::make_pair(24, 24)},    {16, std::make_pair(20, 20)},
+        {8, std::make_pair(18, 18)},
 };
 
 #endif

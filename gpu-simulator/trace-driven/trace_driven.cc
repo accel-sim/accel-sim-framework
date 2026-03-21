@@ -58,22 +58,99 @@
 #include "option_parser.h"
 #include "trace_driven.h"
 
+bool trace_shd_warp_t::handle_replay_region_exit() {
+  if (!get_trywait_acquired()) {
+    // mbarrier not acquired — loop back
+    m_replay_iterations++;
+    if (m_replay_iterations >= 100) {
+      fprintf(stderr,
+              "GPGPU-Sim: DEADLOCK detected - warp stuck in replay region "
+              "for %u iterations\n",
+              m_replay_iterations);
+      fflush(stdout);
+      fflush(stderr);
+      abort();
+    }
+    trace_pc = m_replay_start_trace_pc;
+    set_trywait_acquired(true);  // reset for next iteration
+    return false;                // looped back
+  }
+  // Acquired — exit replay mode
+  m_replay_active = false;
+  m_replay_iterations = 0;
+  return true;  // proceed
+}
+
 const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
-  if (trace_pc < warp_traces.size()) {
-    trace_warp_inst_t *new_inst =
-        new trace_warp_inst_t(get_shader()->get_config());
-    new_inst->parse_from_trace_struct(
-        warp_traces[trace_pc], m_kernel_info->OpcodeMap,
-        m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
-    trace_pc++;
-    return new_inst;
-  } else
+  if (trace_pc >= warp_traces.size()) {
+    // Handle missing REPLAY_END - trace ended while in replay region
+    if (m_replay_active) {
+      m_replay_active = false;
+      m_replay_iterations = 0;
+    }
     return NULL;
+  }
+
+  // Check for replay markers (pseudo-opcodes for spinlock simulation)
+  const std::string &opcode = warp_traces[trace_pc].opcode;
+
+  if (opcode == "REPLAY_START") {
+    m_replay_active = true;
+    m_replay_start_trace_pc = trace_pc + 1;  // first real instruction
+    trace_pc++;
+    return get_next_trace_inst();  // skip marker
+  }
+
+  if (opcode == "REPLAY_END") {
+    if (m_replay_active && !handle_replay_region_exit()) {
+      return get_next_trace_inst();  // looped back
+    }
+    // Proceed past marker (or not in replay)
+    trace_pc++;
+    return get_next_trace_inst();
+  }
+
+  // If EXIT is the last instruction and replay is active, force all threads to
+  // exit instead of replaying. Override the active mask to include only threads
+  // that are still active (haven't exited yet).
+  if (opcode == "EXIT" && m_replay_active &&
+      trace_pc == warp_traces.size() - 1) {
+    unsigned mask_before = warp_traces[trace_pc].mask;
+    // Only override if the trace's mask is not already all threads
+    if (mask_before != 0xFFFFFFFF) {
+      // Build mask from threads that are still active
+      unsigned active_mask = 0;
+      for (unsigned t = 0; t < WARP_SIZE; t++) {
+        if (test_active(t)) {
+          active_mask |= (1u << t);
+        }
+      }
+      printf(
+          "WARNING: sid %u warp %u pc 0x%x EXIT in replay region - "
+          "overriding mask 0x%08x -> 0x%08x\n",
+          get_shader()->get_sid(), get_warp_id(), warp_traces[trace_pc].m_pc,
+          mask_before, active_mask);
+      warp_traces[trace_pc].mask = active_mask;
+    }
+    m_replay_active = false;  // End replay region without looping
+  }
+
+  // Normal instruction fetch
+  trace_warp_inst_t *new_inst =
+      new trace_warp_inst_t(get_shader()->get_config());
+  new_inst->parse_from_trace_struct(
+      warp_traces[trace_pc], m_kernel_info->OpcodeMap, m_kernel_info->m_tconfig,
+      m_kernel_info->m_kernel_trace_info);
+  trace_pc++;
+  return new_inst;
 }
 
 void trace_shd_warp_t::clear() {
   trace_pc = 0;
   warp_traces.clear();
+  m_replay_active = false;
+  m_replay_start_trace_pc = 0;
+  m_replay_iterations = 0;
 }
 
 // functional_done
@@ -338,6 +415,11 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       memory_op = memory_store;
       space.set_type(shared_space);
       break;
+    case OP_STAS:
+      assert(data_size > 0);
+      memory_op = memory_store;
+      space.set_type(shared_space);
+      break;
     case OP_ATOMS:
       assert(data_size > 0);
       m_isatomic = true;
@@ -543,13 +625,13 @@ bool trace_warp_inst_t::parse_from_trace_struct(
           latency = iter->second.first;
           initiation_interval = iter->second.second;
         } else {
-          std::string err_msg = "Unsupported N size: " + std::to_string(N);
-          assert(false && err_msg.c_str());
+          std::cerr << "Unsupported GMMA N size: " << N << std::endl;
+          assert(0);
         }
       } else {
-        std::string err_msg =
-            "Failed to extract M, N, K values from the string: " + mxnxk;
-        assert(false && err_msg.c_str());
+        std::cerr << "Failed to extract M, N, K values from: " << mxnxk
+                  << std::endl;
+        assert(0);
       }
 
       // Set m_is_gmma_commit_group here
@@ -563,6 +645,10 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         m_is_depbar = true;
         m_depbar_group_no = trace.imm;
       }
+      break;
+    case OP_NANOSLEEP:
+      // op = NANOSLEEP_OP;
+      // m_nanosleep_ns = trace.imm;
       break;
     default:
       break;
@@ -935,6 +1021,31 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
   // set the pc from the traces and ignore the functional model
   for (unsigned i = start_warp; i < end_warp; ++i) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
+
+    // Check if any instruction is UTMALDG (TMA load)
+    bool has_tma = false;
+    for (const auto &trace : m_trace_warp->warp_traces) {
+      if (trace.opcode.find("UTMALDG") != std::string::npos) {
+        has_tma = true;
+        break;
+      }
+    }
+    m_trace_warp->set_is_tma_warp(has_tma);
+
+    // Scan for SYNCS.ARRIVE to collect used mbarrier addresses
+    for (const auto &trace : m_trace_warp->warp_traces) {
+      if (trace.opcode.find("SYNCS.ARRIVE") != std::string::npos) {
+        if (trace.memadd_info != nullptr) {
+          for (int t = 0; t < WARP_SIZE; t++) {
+            if (trace.mask & (1u << t)) {
+              uint32_t addr = trace.memadd_info->addrs[t];
+              kernel.register_used_mbarrier_addr(addr);
+            }
+          }
+        }
+      }
+    }
+
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
     m_trace_warp->set_kernel(&trace_kernel);
   }
@@ -977,6 +1088,9 @@ void trace_shader_core_ctx::issue_warp(register_set &warp,
                                        const active_mask_t &active_mask,
                                        unsigned warp_id, unsigned sch_id) {
   shader_core_ctx::issue_warp(warp, pI, active_mask, warp_id, sch_id);
+
+  // Note: TRYWAIT retry is now handled in scheduler before issue_warp(),
+  // so no trace_pc rollback needed here - instruction stays in ibuffer
 
   // delete warp_inst_t class here, it is not required anymore by gpgpu-sim
   // after issue

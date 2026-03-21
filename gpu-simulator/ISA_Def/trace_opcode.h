@@ -88,6 +88,7 @@ enum TraceInstrOpcode {
   OP_STG,
   OP_STL,
   OP_STS,
+  OP_STAS,
   OP_MATCH,
   OP_QSPC,
   OP_ATOM,
@@ -248,6 +249,9 @@ enum TraceInstrOpcode {
   OP_ARRIVES,
   // Control Instructions
   OP_ELECT,
+  // Replay region markers (pseudo-opcodes for spinlock simulation)
+  OP_REPLAY_START,
+  OP_REPLAY_END,
   SASS_NUM_OPCODES /* The total number of opcodes. */
 };
 typedef enum TraceInstrOpcode sass_op_type;

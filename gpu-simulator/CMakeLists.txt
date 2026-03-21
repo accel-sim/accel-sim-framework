@@ -17,7 +17,7 @@ set(CMAKE_EXPORT_COMPILE_COMMANDS ON)
 set(CMAKE_POSITION_INDEPENDENT_CODE ON)
 
 if($ENV{ACCELSIM_CONFIG} STREQUAL "debug")
-    set(CMAKE_BUILD_TYPE RelWithDebInfo)
+    set(CMAKE_BUILD_TYPE Debug)
 else()
     set(CMAKE_BUILD_TYPE Release)
 endif()
@@ -32,6 +32,7 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWith
     # add_compile_options(-Wall -O0 -g3 -fPIC)
 else()
     add_compile_definitions(DEBUG=0)
+    add_compile_options(-g)
 endif()
 
 # run command

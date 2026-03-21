@@ -14,6 +14,7 @@ config_maps = {
     "RTX3070": set("GeForce RTX 3070"),
     "A100": set("NVIDIA A100 80GB"),
     "H100" : set("NVIDIA H100 80GB HBM3"),
+    "H200": set("NVIDIA H200 80GB HBM3"),
 }
 
 

@@ -252,8 +252,11 @@ static bool first_call = true;
 unsigned old_total_insts = 0;
 unsigned old_total_reported_insts = 0;
 
-/* Spinlock fast forward control */
-int enable_spinlock_fast_forward = 0;
+/* Spinlock handling mode: 0=none, 1=fast_forward, 2=mark_region */
+const int SPINLOCK_MODE_NONE = 0;
+const int SPINLOCK_MODE_FAST_FORWARD = 1;
+const int SPINLOCK_MODE_MARK_REGION = 2;
+int spinlock_handling_mode = 0;
 int spinlock_iter_to_keep = 0;
 // Map from kernel name to spinlock instruction indices
 std::map<std::string, std::vector<uint32_t> *> spinlock_instr_map;
@@ -301,10 +304,10 @@ void nvbit_at_init() {
   GET_VAR_INT(xz_compress_trace, "TRACE_FILE_COMPRESS", 1,
               "Create xz-compressed trace"
               "file");
-  GET_VAR_INT(enable_spinlock_fast_forward, "ENABLE_SPINLOCK_FAST_FORWARD", 0,
-              "Enable spinlock fast forwarding");
+  GET_VAR_INT(spinlock_handling_mode, "SPINLOCK_HANDLING_MODE", 0,
+              "Spinlock handling mode: 0=none, 1=fast_forward, 2=mark_region");
   GET_VAR_INT(spinlock_iter_to_keep, "SPINLOCK_ITER_TO_KEEP", 1,
-              "Number of iterations to keep for spinlock fast forwarding");
+              "Number of iterations to keep for spinlock handling");
   GET_VAR_INT(enable_watchdog, "ENABLE_WATCHDOG", 1,
               "Enable the watchdog to skip instructions between "
               "WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
@@ -328,7 +331,7 @@ void nvbit_at_init() {
 
   // Read in the spinlock_instructions.txt and build a map from kernel name to
   // spinlock instruction indices
-  if (enable_spinlock_fast_forward) {
+  if (spinlock_handling_mode > SPINLOCK_MODE_NONE) {
     std::string spinlock_instr_file =
         user_folder + "/spinlock_detection/spinlock_instructions.txt";
     std::ifstream instr_fs(spinlock_instr_file);
@@ -1138,6 +1141,41 @@ parse_spinlock_instructions(const std::string &line) {
   return {kernel_name, indices};
 }
 
+/* Emit a REPLAY_START or REPLAY_END marker to the trace file */
+void emit_replay_marker(FILE *outfile, inst_trace_t *trace,
+                        const char *marker_opcode) {
+  // CTA ID
+  fprintf(outfile, "%d ", trace->cta_id_x);
+  fprintf(outfile, "%d ", trace->cta_id_y);
+  fprintf(outfile, "%d ", trace->cta_id_z);
+  fprintf(outfile, "%d ", trace->warpid_tb);
+  // Cluster info
+  fprintf(outfile, "%d ", trace->cluster_id_x);
+  fprintf(outfile, "%d ", trace->cluster_id_y);
+  fprintf(outfile, "%d ", trace->cluster_id_z);
+  fprintf(outfile, "%d ", trace->cluster_cta_id_x);
+  fprintf(outfile, "%d ", trace->cluster_cta_id_y);
+  fprintf(outfile, "%d ", trace->cluster_cta_id_z);
+  fprintf(outfile, "%d ", trace->cluster_rank);
+  // PC (use 0000 for markers)
+  fprintf(outfile, "0000 ");
+  // Mask (all active)
+  fprintf(outfile, "ffffffff ");
+  // dest_num = 0
+  fprintf(outfile, "0 ");
+  // Opcode
+  fprintf(outfile, "%s ", marker_opcode);
+  // src_num = 0, mem_width = 0, imm1 = 0, imm2 = 0
+  fprintf(outfile, "0 0 0 0\n");
+}
+
+/* Per-warp state for mark_region mode */
+struct warp_replay_state_t {
+  bool in_region;     // currently inside spinlock region
+  bool start_emitted; // REPLAY_START already written for this region
+  int iter_count;     // iterations recorded so far
+};
+
 void *recv_thread_fun(void *args) {
   CUcontext ctx = (CUcontext)args;
   char *recv_buffer = (char *)malloc(CHANNEL_SIZE);
@@ -1148,6 +1186,9 @@ void *recv_thread_fun(void *args) {
   // increment the counter) and end when a non-spinlock instruction is
   // encountered (clear the counter)
   std::map<warp_key_t, counter_t> warp_counter_map;
+
+  // Per-warp replay state for mark_region mode
+  std::map<warp_key_t, warp_replay_state_t> warp_replay_map;
 
   while (recv_thread_started) {
     uint32_t num_recv_bytes = 0;
@@ -1161,10 +1202,11 @@ void *recv_thread_fun(void *args) {
          */
         if (trace->cta_id_x == -1) {
           recv_thread_receiving = false;
-          if (enable_spinlock_fast_forward) {
-            // Clear the counter map for all warps as we are starting a new
-            // kernel
+          if (spinlock_handling_mode > SPINLOCK_MODE_NONE) {
+            // Clear the counter and replay maps for all warps as we are
+            // starting a new kernel
             warp_counter_map.clear();
+            warp_replay_map.clear();
           }
           break;
         }
@@ -1191,8 +1233,8 @@ void *recv_thread_fun(void *args) {
           dump_reg_val = true;
         }
 
-        /* Spinlock fast forwarding */
-        if (enable_spinlock_fast_forward) {
+        /* Spinlock handling (fast_forward or mark_region) */
+        if (spinlock_handling_mode > SPINLOCK_MODE_NONE) {
           // Check if this warp is in the warp_counter_map
           warp_key_t warp_key =
               std::make_tuple(trace->cta_id_x, trace->cta_id_y, trace->cta_id_z,
@@ -1204,27 +1246,73 @@ void *recv_thread_fun(void *args) {
             std::vector<uint32_t> &indices =
                 *(spinlock_instr_map[ctx_current_kernel_name[ctx]]);
             warp_counter_map[warp_key] = create_counter(indices);
+            if (spinlock_handling_mode == SPINLOCK_MODE_MARK_REGION) {
+              warp_replay_map[warp_key] = {false, false, 0};
+            }
           }
 
           // Get the counter map for this warp
           auto &counter = warp_counter_map[warp_key];
+          bool is_spinlock_instr =
+              (counter.find(trace->instr_idx) != counter.end());
 
-          // Now check if we should start spinlock fast forwarding for this warp
-          if (counter.find(trace->instr_idx) != counter.end()) {
-            // We are still in a spinlock loop, so we increment the counter
-            counter[trace->instr_idx]++;
-            if (counter[trace->instr_idx] > spinlock_iter_to_keep) {
-              // This spinlock instruction is executed more than the threshold
-              // so we fast forward it in the output trace
-              // Note we are only fast forwarding the innermost spinlock loop
-              num_processed_bytes += sizeof(inst_trace_t);
-              continue;
+          if (spinlock_handling_mode == SPINLOCK_MODE_FAST_FORWARD) {
+            // Fast-forward mode: skip instructions beyond threshold
+            if (is_spinlock_instr) {
+              counter[trace->instr_idx]++;
+              if (counter[trace->instr_idx] > spinlock_iter_to_keep) {
+                // This spinlock instruction is executed more than the threshold
+                // so we fast forward it in the output trace
+                // Note we are only fast forwarding the innermost spinlock loop
+                num_processed_bytes += sizeof(inst_trace_t);
+                continue;
+              }
+            } else {
+              // We are exiting the innermost spinlock loop, so we reset the
+              // counter map for this warp
+              for (auto &[instr_idx, count] : counter) {
+                count = 0;
+              }
             }
-          } else {
-            // We are exiting the innermost spinlock loop, so we reset the
-            // counter map for this warp
-            for (auto &[instr_idx, count] : counter) {
-              count = 0;
+          } else if (spinlock_handling_mode == SPINLOCK_MODE_MARK_REGION) {
+            // Mark-region mode: emit REPLAY_START/REPLAY_END markers
+            auto &replay_state = warp_replay_map[warp_key];
+
+            if (is_spinlock_instr) {
+              counter[trace->instr_idx]++;
+
+              // Entering spinlock region
+              if (!replay_state.in_region) {
+                replay_state.in_region = true;
+                replay_state.start_emitted = false;
+                replay_state.iter_count = 1;
+              }
+
+              // Emit REPLAY_START before first instruction in region
+              if (!replay_state.start_emitted) {
+                emit_replay_marker(ctx_resultsFile[ctx], trace, "REPLAY_START");
+                replay_state.start_emitted = true;
+              }
+
+              // Skip if beyond first iteration
+              if (counter[trace->instr_idx] > spinlock_iter_to_keep) {
+                num_processed_bytes += sizeof(inst_trace_t);
+                continue;
+              }
+              // else: fall through to emit the instruction
+            } else {
+              // Non-spinlock instruction
+              if (replay_state.in_region) {
+                // Exiting spinlock region - emit REPLAY_END
+                emit_replay_marker(ctx_resultsFile[ctx], trace, "REPLAY_END");
+                replay_state.in_region = false;
+                replay_state.start_emitted = false;
+                // Reset counters
+                for (auto &[instr_idx, count] : counter) {
+                  count = 0;
+                }
+              }
+              // else: fall through to emit the instruction
             }
           }
         }
