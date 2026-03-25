@@ -479,6 +479,23 @@ for idx, app_and_args in enumerate(apps_and_args):
 # if options.per_kernel and not options.kernel_instance:
 #    stats_yaml['collect'].append("k-count")
 
+# Merge CHIPLET_ACC stats into GLOBAL_ACC stats for correlation with hardware
+# Hardware doesn't distinguish between local and remote chiplet accesses
+for key in list(stat_map.keys()):
+    if "CHIPLET_ACC_R" in key:
+        global_key = key.replace("CHIPLET_ACC_R", "GLOBAL_ACC_R")
+        if global_key in stat_map:
+            try:
+                stat_map[global_key] = float(stat_map[global_key]) + float(stat_map[key])
+            except (ValueError, TypeError):
+                pass
+    elif "CHIPLET_ACC_W" in key:
+        global_key = key.replace("CHIPLET_ACC_W", "GLOBAL_ACC_W")
+        if global_key in stat_map:
+            try:
+                stat_map[global_key] = float(stat_map[global_key]) + float(stat_map[key])
+            except (ValueError, TypeError):
+                pass
 
 # Print any stats that do not make sense on a per-kernel basis ever (like GPGPU-Sim Build)
 all_kernels = {}

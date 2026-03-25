@@ -32,8 +32,10 @@ if(${CMAKE_BUILD_TYPE} STREQUAL "Debug" OR ${CMAKE_BUILD_TYPE} STREQUAL "RelWith
     # add_compile_options(-Wall -O0 -g3 -fPIC)
 else()
     add_compile_definitions(DEBUG=0)
-    add_compile_options(-g)
 endif()
+
+# Uncomment to enable debug symbols and frame pointers for profiling (perf, gdb, vtune)
+# add_compile_options(-g -fno-omit-frame-pointer)
 
 # run command
 execute_process(
