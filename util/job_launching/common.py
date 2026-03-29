@@ -42,8 +42,12 @@ defined_baseconfigs = {}
 defined_xtracfgs = {}
 
 
-def get_argfoldername(args):
-    if args == "" or args == None:
+def get_argfoldername(argpair: dict):
+    args = argpair.get("args", "")
+    name = argpair.get("name", "")
+    if name != "":
+        return name
+    elif args == "":
         return "NO_ARGS"
     else:
         foldername = re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())

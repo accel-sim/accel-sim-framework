@@ -174,7 +174,12 @@ for bench in benchmarks:
     edir, ddir, exe, argslist = bench
     for argpair in argslist:
         args = argpair["args"]
-        run_name = os.path.join(exe, common.get_argfoldername(args))
+        kernel_name_filter = argpair.get("kernel-name-filter", "") if isinstance(argpair, dict) else ""
+        kernel_filter_flag = (
+            f' --kernel-id "::regex:{kernel_name_filter}:" --kernel-name-base mangled'
+            if kernel_name_filter else ""
+        )
+        run_name = os.path.join(exe, common.get_argfoldername(argpair))
 
         this_run_dir = os.path.join(
             this_directory,
@@ -307,6 +312,7 @@ for bench in benchmarks:
                     " --csv --page raw --target-processes all -f "
                     + cuda_graph_flag
                     + kernel_number
+                    + kernel_filter_flag
                     + f" {options.ncu_flags} "
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_stats")
@@ -327,7 +333,7 @@ for bench in benchmarks:
                 
                 if options.set != "none":
                     sh_contents += (
-                        f"\nncu --set {options.set} {options.ncu_flags} -o {os.path.join(this_run_dir, f'ncu_set_{options.set}')} {exec_path} {str(args)}; "
+                        f"\nncu --set {options.set} {options.ncu_flags}{kernel_filter_flag} -o {os.path.join(this_run_dir, f'ncu_set_{options.set}')} {exec_path} {str(args)}; "
                     )
 
         for i in range(int(options.repeat_cycle)):
@@ -382,6 +388,7 @@ for bench in benchmarks:
                 profile_command = (
                     "ncu --target-processes all --metrics gpc__cycles_elapsed.avg --csv -f "
                     + kernel_number
+                    + kernel_filter_flag
                     + f" {options.ncu_flags} "
                     + " -o "
                     + os.path.join(this_run_dir, "ncu_cycles.{0}".format(i))

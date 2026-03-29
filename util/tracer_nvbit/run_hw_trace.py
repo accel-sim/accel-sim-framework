@@ -88,7 +88,8 @@ for bench in benchmarks:
     edir, ddir, exe, argslist = bench
     for argpair in argslist:
         args = argpair["args"]
-        run_name = os.path.join(exe, common.get_argfoldername(args))
+        kernel_name_filter = argpair.get("kernel-name-filter", "") if isinstance(argpair, dict) else ""
+        run_name = os.path.join(exe, common.get_argfoldername(argpair))
         this_run_dir = os.path.abspath(
             os.path.expandvars(
                 os.path.join(
@@ -144,7 +145,9 @@ for bench in benchmarks:
             else:
                 sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(50)+'"\n')
         else:
-            if options.kernel_number > 0:
+            if kernel_name_filter:
+                sh_contents +=  (f'\nexport DYNAMIC_KERNEL_RANGE="@{kernel_name_filter}"\n')
+            elif options.kernel_number > 0:
                 sh_contents +=  ('\nexport DYNAMIC_KERNEL_RANGE="0-'+str(options.kernel_number)+'"\n')
             else:
                 sh_contents +=  (f'\nexport DYNAMIC_KERNEL_RANGE="{os.environ.get("DYNAMIC_KERNEL_RANGE", "")}"\n')

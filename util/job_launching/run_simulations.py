@@ -106,7 +106,7 @@ class ConfigurationSpec:
             self.benchmark_args_subdirs = {}
             for argmap in self.command_line_args_list:
                 args = argmap["args"]
-                self.benchmark_args_subdirs[args] = common.get_argfoldername(args)
+                self.benchmark_args_subdirs[args] = common.get_argfoldername(argmap)
 
             for argmap in self.command_line_args_list:
                 args = argmap["args"]

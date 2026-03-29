@@ -89,7 +89,7 @@ for bench in benchmarks:
     edir, ddir, exe, argslist = bench
     for argpair in argslist:
         args = argpair["args"]
-        run_name = os.path.join(exe, common.get_argfoldername(args))
+        run_name = os.path.join(exe, common.get_argfoldername(argpair))
 
         this_run_dir = os.path.join(
             this_directory,

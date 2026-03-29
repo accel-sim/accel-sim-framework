@@ -192,7 +192,7 @@ if options.configs_list != "" and options.benchmark_list != "":
         a, b, exe_name, args_list = app
         for argpair in args_list:
             args = argpair["args"]
-            apps_and_args.append(os.path.join(exe_name, common.get_argfoldername(args)))
+            apps_and_args.append(os.path.join(exe_name, common.get_argfoldername(argpair)))
     for config, params, gpuconf_file in common.gen_configs_from_list(
         options.configs_list.split(",")
     ):
