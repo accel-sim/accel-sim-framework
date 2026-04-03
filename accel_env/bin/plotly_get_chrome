@@ -1,0 +1,6 @@
+#!/home/huynh/gpu_research/accel-sim-DWS/accel_env/bin/python3
+import sys
+from plotly.io._kaleido import plotly_get_chrome
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(plotly_get_chrome())

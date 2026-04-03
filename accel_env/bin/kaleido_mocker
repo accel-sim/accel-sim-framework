@@ -1,0 +1,6 @@
+#!/home/huynh/gpu_research/accel-sim-DWS/accel_env/bin/python3
+import sys
+from kaleido._mocker import build_mocks
+if __name__ == '__main__':
+    sys.argv[0] = sys.argv[0].removesuffix('.exe')
+    sys.exit(build_mocks())
