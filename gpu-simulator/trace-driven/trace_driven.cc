@@ -730,6 +730,7 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
     
     // DWS: set_next_pc now takes a split_id. We initialize Split 0 to start at trace index 0.
+    m_trace_warp->reset();
     m_trace_warp->set_next_pc(0, 0); 
     
     m_trace_warp->set_kernel(&trace_kernel);
