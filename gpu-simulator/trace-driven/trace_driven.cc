@@ -75,21 +75,18 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst(
 
     active_mask_t trace_native_mask = new_inst->get_active_mask();
 
-    // If the hardware trace mask has zero overlap with our split, this
-    // instruction is for a different path. Fast-forward!
+    // If the hardware trace mask has zero overlap with our split this instruction is for a different path
     if ((trace_native_mask & m_splits[split_id].active_threads).none()) {
       m_splits[split_id].pc++;
-      delete new_inst;  // Don't leak memory!
-      continue;         // Loop again to check the next instruction
+      delete new_inst; 
+      continue;     
     }
 
     // DWS DIVERGENCE DETECTION
     if ((trace_native_mask & m_splits[split_id].active_threads) !=
         m_splits[split_id].active_threads) {
-      active_mask_t taken_mask =
-          trace_native_mask & m_splits[split_id].active_threads;
-      active_mask_t not_taken_mask =
-          m_splits[split_id].active_threads ^ taken_mask;
+      active_mask_t taken_mask = trace_native_mask & m_splits[split_id].active_threads;
+      active_mask_t not_taken_mask = m_splits[split_id].active_threads ^ taken_mask;
 
       m_splits[split_id].active_threads = taken_mask;
 
@@ -106,11 +103,8 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst(
 
       while (scan_pc < warp_traces.size()) {
         // We need to decode the raw trace struct to see the mask
-        trace_warp_inst_t *dummy_inst =
-            new trace_warp_inst_t(get_shader()->get_config());
-        dummy_inst->parse_from_trace_struct(
-            warp_traces[scan_pc], m_kernel_info->OpcodeMap,
-            m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
+        trace_warp_inst_t *dummy_inst = new trace_warp_inst_t(get_shader()->get_config());
+        dummy_inst->parse_from_trace_struct(warp_traces[scan_pc], m_kernel_info->OpcodeMap, m_kernel_info->m_tconfig, m_kernel_info->m_kernel_trace_info);
 
         active_mask_t future_mask = dummy_inst->get_active_mask();
 
