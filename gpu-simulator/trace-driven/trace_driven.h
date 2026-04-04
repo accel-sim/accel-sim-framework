@@ -147,7 +147,7 @@ class trace_shd_warp_t : public shd_warp_t {
   }
 
   std::vector<inst_trace_t> warp_traces;
- const trace_warp_inst_t *get_next_trace_inst(unsigned split_id);
+  const trace_warp_inst_t *get_next_trace_inst(unsigned split_id);
   void clear();
   bool trace_done();
   address_type get_start_trace_pc();
@@ -216,15 +216,18 @@ class trace_shader_core_ctx : public shader_core_ctx {
   virtual void create_shd_warp();
 
   // DWS Synchronized Signatures
-  virtual const warp_inst_t *get_next_inst(unsigned warp_id, unsigned split_id, address_type pc);
-  
+  virtual const warp_inst_t *get_next_inst(unsigned warp_id, unsigned split_id,
+                                           address_type pc);
+
   virtual void updateSIMTStack(unsigned warpId, warp_inst_t *inst);
 
   // Added split_id to these two below:
-  virtual void get_pdom_stack_top_info(unsigned warp_id, unsigned split_id, const warp_inst_t *pI,
-                                       unsigned *pc, unsigned *rpc);
-                                       
-  virtual const active_mask_t &get_active_mask(unsigned warp_id, unsigned split_id,
+  virtual void get_pdom_stack_top_info(unsigned warp_id, unsigned split_id,
+                                       const warp_inst_t *pI, unsigned *pc,
+                                       unsigned *rpc);
+
+  virtual const active_mask_t &get_active_mask(unsigned warp_id,
+                                               unsigned split_id,
                                                const warp_inst_t *pI);
 
   virtual void issue_warp(register_set &warp, const warp_inst_t *pI,
