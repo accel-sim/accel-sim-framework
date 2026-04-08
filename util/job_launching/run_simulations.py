@@ -44,6 +44,23 @@ import yaml
 import common
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+
+
+def parse_kernelslist(kernelslist_path):
+    """Parse kernelslist.g and return list of kernel trace filenames.
+
+    Filters out MemcpyHtoD and other non-kernel commands, returning only
+    lines that start with 'kernel-'.
+    """
+    kernels = []
+    with open(kernelslist_path, "r") as f:
+        for line in f:
+            line = line.strip()
+            if line.startswith("kernel-"):
+                kernels.append(line)
+    return kernels
+
+
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_version(exec_path, simulator):
@@ -117,102 +134,164 @@ class ConfigurationSpec:
                 this_run_dir = os.path.join(
                     run_directory, appargs_run_subdir, self.run_subdir
                 )
-                self.setup_run_directory(
-                    full_data_dir, this_run_dir, data_dir, appargs_run_subdir
-                )
 
-                self.text_replace_torque_sim(
-                    full_data_dir,
-                    this_run_dir,
-                    benchmark,
-                    cuda_version,
-                    args,
-                    simdir,
-                    full_exec_dir,
-                    build_handle,
-                    mem_usage,
-                )
-                self.append_gpgpusim_config(
-                    benchmark, this_run_dir, appargs_run_subdir, self.config_file
-                )
+                # Handle per-kernel mode
+                if options.per_kernel and options.trace_dir != "":
+                    benchmark_trace_dir = self.find_benchmark_trace_dir(appargs_run_subdir)
+                    kernelslist_path = os.path.join(benchmark_trace_dir, "kernelslist.g")
+                    kernels = parse_kernelslist(kernelslist_path)
 
-                # Submit the job to torque and dump the output to a file
-                if not options.no_launch:
-                    torque_out_filename = this_directory + "torque_out.{0}.txt".format(
-                        os.getpid()
+                    for kernel_filename in kernels:
+                        # Extract kernel name (e.g., "kernel-1" from "kernel-1-ctx_xxx.traceg.xz")
+                        kernel_name = kernel_filename.split("-ctx_")[0]
+                        if "-ctx_" not in kernel_filename:
+                            # Fallback: use everything before .traceg
+                            kernel_name = kernel_filename.split(".traceg")[0]
+
+                        kernel_run_dir = os.path.join(this_run_dir, "per-kernel", kernel_name)
+                        self.setup_per_kernel_directory(kernel_run_dir, kernel_filename, benchmark_trace_dir)
+
+                        self.text_replace_torque_sim(
+                            full_data_dir,
+                            kernel_run_dir,
+                            benchmark,
+                            cuda_version,
+                            args,
+                            simdir,
+                            full_exec_dir,
+                            build_handle,
+                            mem_usage,
+                            kernel_name=kernel_name,
+                        )
+                        self.append_gpgpusim_config(
+                            benchmark, kernel_run_dir, appargs_run_subdir, self.config_file
+                        )
+
+                        # Submit the job
+                        self._submit_job(
+                            kernel_run_dir, benchmark, args, build_handle, kernel_name=kernel_name
+                        )
+                else:
+                    # Standard mode: run all kernels together
+                    self.setup_run_directory(
+                        full_data_dir, this_run_dir, data_dir, appargs_run_subdir
                     )
-                    torque_out_file = open(torque_out_filename, "w+")
-                    saved_dir = os.getcwd()
-                    os.chdir(this_run_dir)
-                    if (
-                        subprocess.call(
-                            [job_submit_call, os.path.join(this_run_dir, job_template)],
-                            stdout=torque_out_file,
-                        )
-                        < 0
-                    ):
-                        exit("Error Launching Job")
-                    else:
-                        # Parse the torque output for just the numeric ID
-                        torque_out_file.seek(0)
-                        torque_out = re.sub(
-                            r"[^\d]*(\d*).*", r"\1", torque_out_file.read().strip()
-                        )
-                        print(
-                            "Job "
-                            + torque_out
-                            + " queued ("
-                            + benchmark
-                            + "-"
-                            + self.benchmark_args_subdirs[args]
-                            + " "
-                            + self.run_subdir
-                            + ")"
-                        )
-                    torque_out_file.close()
-                    os.remove(torque_out_filename)
-                    os.chdir(saved_dir)
 
-                    if len(torque_out) > 0:
-                        # Dump the benchmark description to the logfile
-                        if not os.path.exists(this_directory + "logfiles/"):
-                            # In the very rare case that concurrent builds try to make the directory at the same time
-                            # (after the test to os.path.exists -- this has actually happened...)
-                            try:
-                                os.makedirs(this_directory + "logfiles/")
-                            except:
-                                pass
-                        now_time = datetime.datetime.now()
-                        day_string = now_time.strftime("%y.%m.%d-%A")
-                        time_string = now_time.strftime("%H:%M:%S")
-                        log_name = "sim_log.{0}".format(options.launch_name)
-                        logfile = open(
-                            this_directory
-                            + "logfiles/"
-                            + log_name
-                            + "."
-                            + day_string
-                            + ".txt",
-                            "a",
-                        )
-                        print(
-                            "%s %6s %-22s %-100s %-25s %s"
-                            % (
-                                time_string,
-                                torque_out,
-                                benchmark,
-                                self.benchmark_args_subdirs[args],
-                                self.run_subdir,
-                                build_handle,
-                            ),
-                            file=logfile,
-                        )
-                        logfile.close()
+                    self.text_replace_torque_sim(
+                        full_data_dir,
+                        this_run_dir,
+                        benchmark,
+                        cuda_version,
+                        args,
+                        simdir,
+                        full_exec_dir,
+                        build_handle,
+                        mem_usage,
+                    )
+                    self.append_gpgpusim_config(
+                        benchmark, this_run_dir, appargs_run_subdir, self.config_file
+                    )
+
+                    # Submit the job
+                    self._submit_job(this_run_dir, benchmark, args, build_handle)
             self.benchmark_args_subdirs.clear()
+
+    def _submit_job(self, run_dir, benchmark, args, build_handle, kernel_name=None):
+        """Submit a job to the scheduler and log it."""
+        if options.no_launch:
+            return
+
+        torque_out_filename = this_directory + "torque_out.{0}.txt".format(os.getpid())
+        torque_out_file = open(torque_out_filename, "w+")
+        saved_dir = os.getcwd()
+        os.chdir(run_dir)
+        if (
+            subprocess.call(
+                [job_submit_call, os.path.join(run_dir, job_template)],
+                stdout=torque_out_file,
+            )
+            < 0
+        ):
+            exit("Error Launching Job")
+        else:
+            # Parse the torque output for just the numeric ID
+            torque_out_file.seek(0)
+            torque_out = re.sub(
+                r"[^\d]*(\d*).*", r"\1", torque_out_file.read().strip()
+            )
+            job_desc = benchmark + "-" + self.benchmark_args_subdirs[args] + " " + self.run_subdir
+            if kernel_name:
+                job_desc += "/" + kernel_name
+            print("Job " + torque_out + " queued (" + job_desc + ")")
+        torque_out_file.close()
+        os.remove(torque_out_filename)
+        os.chdir(saved_dir)
+
+        if len(torque_out) > 0:
+            # Dump the benchmark description to the logfile
+            if not os.path.exists(this_directory + "logfiles/"):
+                try:
+                    os.makedirs(this_directory + "logfiles/")
+                except:
+                    pass
+            now_time = datetime.datetime.now()
+            day_string = now_time.strftime("%y.%m.%d-%A")
+            time_string = now_time.strftime("%H:%M:%S")
+            log_name = "sim_log.{0}".format(options.launch_name)
+            logfile = open(
+                this_directory + "logfiles/" + log_name + "." + day_string + ".txt",
+                "a",
+            )
+            log_entry = self.benchmark_args_subdirs[args]
+            if kernel_name:
+                log_entry += "/" + kernel_name
+            print(
+                "%s %6s %-22s %-100s %-25s %s"
+                % (
+                    time_string,
+                    torque_out,
+                    benchmark,
+                    log_entry,
+                    self.run_subdir,
+                    build_handle,
+                ),
+                file=logfile,
+            )
+            logfile.close()
 
     #########################################################################################
     # Internal utility methods
     #########################################################################################
+
+    def find_benchmark_trace_dir(self, appargs_subdir):
+        """Find the benchmark trace directory for the given appargs_subdir."""
+        benchmark_trace_dir = None
+        paths_to_try = (
+            [os.path.join(options.trace_dir, appargs_subdir, "traces")]
+            + glob.glob(
+                os.path.join(
+                    options.trace_dir, "**", "**", appargs_subdir, "traces"
+                )
+            )
+            + glob.glob(
+                os.path.join(options.trace_dir, "**", appargs_subdir, "traces")
+            )
+        )
+        for path in paths_to_try:
+            try:
+                benchmark_trace_dir = common.dir_option_test(
+                    path, "", this_directory
+                )
+                break
+            except common.PathMissing as e:
+                pass
+
+        if benchmark_trace_dir == None:
+            sys.exit(
+                "Cannot find traces in any of the paths: {0}".format(paths_to_try)
+            )
+        return os.path.abspath(benchmark_trace_dir)
+
     # copies and links the necessary files to the run directory
     def setup_run_directory(
         self, full_data_dir, this_run_dir, data_dir, appargs_subdir
@@ -246,35 +325,7 @@ class ConfigurationSpec:
 
         # link the traces directory
         if options.trace_dir != "":
-
-            ### This code handles the case where you pass a directory a few levels up from the
-            ### directory where the traces are laid out.
-            benchmark_trace_dir = None
-            paths_to_try = (
-                [os.path.join(options.trace_dir, appargs_subdir, "traces")]
-                + glob.glob(
-                    os.path.join(
-                        options.trace_dir, "**", "**", appargs_subdir, "traces"
-                    )
-                )
-                + glob.glob(
-                    os.path.join(options.trace_dir, "**", appargs_subdir, "traces")
-                )
-            )
-            for path in paths_to_try:
-                try:
-                    benchmark_trace_dir = common.dir_option_test(
-                        path, "", this_directory
-                    )
-                    break
-                except common.PathMissing as e:
-                    pass
-
-            if benchmark_trace_dir == None:
-                sys.exit(
-                    "Cannot find traces in any of the paths: {0}".format(paths_to_try)
-                )
-            benchmark_trace_dir = os.path.abspath(benchmark_trace_dir)
+            benchmark_trace_dir = self.find_benchmark_trace_dir(appargs_subdir)
             if os.path.isdir(benchmark_trace_dir):
                 if os.path.lexists(os.path.join(this_run_dir, "traces")):
                     os.remove(os.path.join(this_run_dir, "traces"))
@@ -285,6 +336,41 @@ class ConfigurationSpec:
             os.remove(all_data_link)
         if os.path.exists(os.path.join(this_directory, data_dir)):
             os.symlink(os.path.join(this_directory, data_dir), all_data_link)
+
+    def setup_per_kernel_directory(self, kernel_run_dir, kernel_filename, benchmark_trace_dir):
+        """Set up a per-kernel run directory with its own traces folder and kernelslist.g."""
+        # Create directory structure
+        if not os.path.isdir(kernel_run_dir):
+            os.makedirs(kernel_run_dir)
+
+        traces_dir = os.path.join(kernel_run_dir, "traces")
+        if not os.path.isdir(traces_dir):
+            os.makedirs(traces_dir)
+
+        # Write kernelslist.g with just this kernel
+        kernelslist_path = os.path.join(traces_dir, "kernelslist.g")
+        with open(kernelslist_path, "w") as f:
+            f.write(kernel_filename + "\n")
+
+        # Symlink the kernel trace file
+        src_trace = os.path.join(benchmark_trace_dir, kernel_filename)
+        dst_trace = os.path.join(traces_dir, kernel_filename)
+        if os.path.lexists(dst_trace):
+            os.remove(dst_trace)
+        if os.path.exists(src_trace):
+            os.symlink(src_trace, dst_trace)
+
+        # Copy config files (.icnt, .csv, .xml)
+        files_to_copy = (
+            glob.glob(os.path.dirname(self.config_file) + "/*.icnt")
+            + glob.glob(os.path.dirname(self.config_file) + "/*.csv")
+            + glob.glob(os.path.dirname(self.config_file) + "/*.xml")
+        )
+        for file_to_cp in files_to_copy:
+            new_file = os.path.join(kernel_run_dir, os.path.basename(file_to_cp))
+            if os.path.isfile(new_file):
+                os.remove(new_file)
+            shutil.copyfile(file_to_cp, new_file)
 
     # replaces all the "REAPLCE_*" strings in the .sim file
     def text_replace_torque_sim(
@@ -298,6 +384,7 @@ class ConfigurationSpec:
         exec_dir,
         gpgpusim_build_handle,
         mem_usage,
+        kernel_name=None,
     ):
         # get the pre-launch sh commands
         prelaunch_filename = full_run_dir + "benchmark_pre_launch_command_line.txt"
@@ -355,6 +442,8 @@ class ConfigurationSpec:
         # do the text replacement for the .sim file
         sim_name = benchmark + "-" + self.benchmark_args_subdirs[command_line_args] + "." +\
                                 gpgpusim_build_handle
+        if kernel_name:
+            sim_name += "." + kernel_name
         # Truncate long simulation file names
         sim_name = sim_name[:200]
         replacement_dict = {"NAME":sim_name,
@@ -476,7 +565,8 @@ if not os.path.exists(running_sim_dir):
     except:
         pass
 
-if not os.path.exists(os.path.join(running_sim_dir, os.path.basename(simulator_path))):
+cached_sim_path = os.path.join(running_sim_dir, os.path.basename(simulator_path))
+if not os.path.exists(cached_sim_path) or os.path.getmtime(simulator_path) > os.path.getmtime(cached_sim_path):
     shutil.copy(simulator_path, running_sim_dir)
 options.simulator_dir = running_sim_dir
 

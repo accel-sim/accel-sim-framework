@@ -328,6 +328,13 @@ def parse_run_simulations_options():
         action="store_true",
         help="Enable passing hw_perf_bench_name for accelwattch hw and hybrid runs to config file.",
     )
+    parser.add_option(
+        "--per-kernel",
+        dest="per_kernel",
+        action="store_true",
+        help="Run each kernel in a separate simulation instance. Creates per-kernel subdirectories "
+        "with individual kernelslist.g files, enabling parallel execution of all kernels.",
+    )
 
     (options, args) = parser.parse_args()
     # Parser seems to leave some whitespace on the options, getting rid of it

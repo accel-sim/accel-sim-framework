@@ -10,6 +10,7 @@ import common
 import math
 import yaml
 import time
+from concurrent.futures import ProcessPoolExecutor
 
 millnames = ["", " K", " M", " B", " T"]
 
@@ -30,6 +31,62 @@ def millify(n):
 
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
+
+
+def find_per_kernel_dirs(output_dir):
+    """Find per-kernel subdirectories created by run_simulations.py --per-kernel option."""
+    per_kernel_base = os.path.join(output_dir, "per-kernel")
+    if not os.path.isdir(per_kernel_base):
+        return []
+    kernel_dirs = []
+    for name in os.listdir(per_kernel_base):
+        kernel_path = os.path.join(per_kernel_base, name)
+        if os.path.isdir(kernel_path) and name.startswith("kernel-"):
+            kernel_dirs.append((name, kernel_path))
+    # Sort by kernel number for consistent ordering
+    kernel_dirs.sort(key=lambda x: int(x[0].replace("kernel-", "")) if x[0].replace("kernel-", "").isdigit() else 0)
+    return kernel_dirs
+
+
+def find_latest_outfile(directory):
+    """Find the most recent .o* output file in a directory."""
+    all_outfiles = [
+        os.path.join(directory, f)
+        for f in os.listdir(directory)
+        if re.match(r".*\.o[0-9]+", f)
+    ]
+    if len(all_outfiles) != 0:
+        return max(all_outfiles, key=os.path.getmtime)
+    return None
+
+
+def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
+    """Parse one per-kernel directory output file (reverse scan for final stats)."""
+    outfile = find_latest_outfile(kernel_dir)
+    if outfile is None:
+        return None, 0, 0
+    BYTES_TO_READ = int(250 * 1024 * 1024)
+    fsize = os.stat(outfile).st_size
+    local_bytes = min(fsize, BYTES_TO_READ)
+    with open(outfile) as f:
+        if fsize > BYTES_TO_READ:
+            f.seek(fsize - BYTES_TO_READ)
+        lines = f.readlines()
+    stat_entries = {}
+    stat_found = set()
+    for line in reversed(lines):
+        for stat_name, (token, statType) in stats_to_pull.items():
+            if stat_name in stat_found:
+                continue
+            m = token.search(line.rstrip())
+            if m is not None:
+                stat_found.add(stat_name)
+                stat_entries[stat_name] = m.group(1).strip()
+        if len(stat_found) == len(stats_to_pull):
+            break
+    del lines
+    return stat_entries, 1, local_bytes
+
 
 # *********************************************************--
 # main script start
@@ -128,6 +185,22 @@ parser.add_option(
     dest="configs_as_rows",
     action="store_true",
     help="instread of apps as rows in the csv, make configs as rows.",
+)
+parser.add_option(
+    "--per-kernel-dirs",
+    dest="per_kernel_dirs",
+    action="store_true",
+    help="Look for per-kernel subdirectories (per-kernel/kernel-N/) created by "
+    "run_simulations.py --per-kernel option. Each kernel directory is treated "
+    "as a separate simulation instance.",
+)
+parser.add_option(
+    "-j",
+    "--threads",
+    dest="num_threads",
+    type="int",
+    default=32,
+    help="Number of parallel workers for file parsing (default: 32)",
 )
 parser.add_option(
     "-I",
@@ -261,6 +334,9 @@ else:
                 specific_jobIds[config + app_and_args] = (jobId, jobname)
 
 all_named_kernels = {}
+# per-kernel-dirs work items: (kernel_name, kernel_dir, app_and_args, config)
+pkd_work = []
+# normal outfile work items: collected inline below
 for idx, app_and_args in enumerate(apps_and_args):
     all_named_kernels[app_and_args] = []
     for config in configs:
@@ -272,6 +348,19 @@ for idx, app_and_args in enumerate(apps_and_args):
                 file=sys.stderr,
             )
             continue
+
+        # Handle per-kernel directories mode — collect work items for parallel processing
+        if options.per_kernel_dirs:
+            kernel_dirs = find_per_kernel_dirs(output_dir)
+            if len(kernel_dirs) == 0:
+                print(
+                    "WARNING - No per-kernel directories found in " + output_dir,
+                    file=sys.stderr,
+                )
+                continue
+            for kernel_name, kernel_dir in kernel_dirs:
+                pkd_work.append((kernel_name, kernel_dir, app_and_args, config))
+            continue  # Skip normal processing for per-kernel-dirs mode
 
         if config + app_and_args in specific_jobIds:
             jobId, jobname = specific_jobIds[config + app_and_args]
@@ -479,23 +568,35 @@ for idx, app_and_args in enumerate(apps_and_args):
 # if options.per_kernel and not options.kernel_instance:
 #    stats_yaml['collect'].append("k-count")
 
-# Merge CHIPLET_ACC stats into GLOBAL_ACC stats for correlation with hardware
-# Hardware doesn't distinguish between local and remote chiplet accesses
-for key in list(stat_map.keys()):
-    if "CHIPLET_ACC_R" in key:
-        global_key = key.replace("CHIPLET_ACC_R", "GLOBAL_ACC_R")
-        if global_key in stat_map:
-            try:
-                stat_map[global_key] = float(stat_map[global_key]) + float(stat_map[key])
-            except (ValueError, TypeError):
-                pass
-    elif "CHIPLET_ACC_W" in key:
-        global_key = key.replace("CHIPLET_ACC_W", "GLOBAL_ACC_W")
-        if global_key in stat_map:
-            try:
-                stat_map[global_key] = float(stat_map[global_key]) + float(stat_map[key])
-            except (ValueError, TypeError):
-                pass
+# Phase 2: Process per-kernel-dirs work items in parallel
+if pkd_work:
+    num_threads = options.num_threads
+    print(
+        "Processing {0} per-kernel dirs with {1} workers...".format(len(pkd_work), num_threads),
+        file=sys.stderr,
+    )
+    with ProcessPoolExecutor(max_workers=num_threads) as executor:
+        futures = [
+            executor.submit(_worker_per_kernel_dir, kernel_dir, stats_to_pull)
+            for (_, kernel_dir, _, _) in pkd_work
+        ]
+        # Collect results in submission order (preserves kernel ordering)
+        for (kernel_name, kernel_dir, app_and_args, config), future in zip(pkd_work, futures):
+            stat_entries, fp, bp = future.result()
+            if stat_entries is None:
+                print(
+                    "WARNING - No output file found in " + kernel_dir,
+                    file=sys.stderr,
+                )
+                continue
+            if kernel_name not in all_named_kernels[app_and_args]:
+                all_named_kernels[app_and_args].append(kernel_name)
+            for stat_name, number in stat_entries.items():
+                stat_map[kernel_name + app_and_args + config + stat_name] = number
+            files_parsed += fp
+            bytes_parsed += bp
+
+# CHIPLET_ACC stats are NOT merged into GLOBAL_ACC — correlation uses GLOBAL only
 
 # Print any stats that do not make sense on a per-kernel basis ever (like GPGPU-Sim Build)
 all_kernels = {}
