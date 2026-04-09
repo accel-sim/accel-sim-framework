@@ -181,7 +181,7 @@ build_accelsim() {
 
     log_section "Building Accel-Sim (srun: $use_srun, jobs: $jobs)"
 
-    source ./gpu-simulator/setup_environment.sh
+    source ./gpu-simulator/setup_environment.sh release
     make clean -C gpu-simulator
 
     if [ "$use_srun" = "true" ]; then
