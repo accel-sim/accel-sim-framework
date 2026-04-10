@@ -88,7 +88,7 @@ stage_trace() {
     source ./gpu-app-collection/src/setup_environment
 
     rm -rf ./hw_run/
-    srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- \
+    srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- \
         ./util/tracer_nvbit/run_hw_trace.py -B "$BENCHMARKS" -D "$GPU_DEVICE"
 
     log_info "Traces generated successfully"
@@ -99,7 +99,7 @@ stage_hw_stats() {
     source ./env-setup/12.8_env_setup.sh
     source ./gpu-app-collection/src/setup_environment
 
-    srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx -- \
+    srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- \
         ./util/hw_stats/run_hw.py -B "$BENCHMARKS" -D "$GPU_DEVICE"
 
     log_info "HW stats generated successfully"

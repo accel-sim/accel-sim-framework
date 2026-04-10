@@ -76,6 +76,9 @@ def main():
     last_non_zero_inst = df["sm__inst_executed.sum"].ne(0)[::-1].idxmax()
     df = df.iloc[: last_non_zero_inst + 100].reset_index(drop=True)
 
+    # reset x to start from 0
+    df["accum_cycles"] = df["accum_cycles"] - df["accum_cycles"].iloc[0]
+
     # Other columns as y
     y_cols = [c for c in cols if c != cycles_col]
 

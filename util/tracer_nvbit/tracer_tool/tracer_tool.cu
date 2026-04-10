@@ -404,11 +404,9 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         continue;
       }
 
-#ifdef USE_PRIVATE_NVBIT
       if (skip_tma_mem && instr->isTMAMem()) {
         continue;
       }
-#endif
 
       if (lineinfo) {
         char *file_name, *dir_name;
@@ -501,24 +499,16 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
         nvbit_add_call_arg_const_val32(instr, (int)instr->getOffset());
 
         /* tma setup */
-#ifdef USE_PRIVATE_NVBIT
         if (instr->isTMAMem()) {
           // Set is_mem to true and add tma param handle
           nvbit_add_call_arg_const_val32(instr, 1);
-          nvbit_add_call_arg_tma_param_handle(instr, ctx);
+          nvbit_add_call_arg_tma_param_handle_and_size(instr, ctx);
         } else {
           // Dummy values for regular instructions
           nvbit_add_call_arg_const_val32(instr, 0);
           nvbit_add_call_arg_const_val64(instr, 0);
           nvbit_add_call_arg_const_val32(instr, 0);
         }
-#else
-        // If we are not using the private NVBit, we don't need to add the TMA
-        // args
-        nvbit_add_call_arg_const_val32(instr, 0);
-        nvbit_add_call_arg_const_val64(instr, 0);
-        nvbit_add_call_arg_const_val32(instr, 0);
-#endif
 
         /* mem addresses info */
         if (mem_oper_idx >= 0) {
@@ -1381,24 +1371,6 @@ void *recv_thread_fun(void *args) {
           fprintf(ctx_resultsFile[ctx], "%d ", trace->is_gmma_commit_group);
         }
 
-#ifndef USE_PRIVATE_NVBIT
-        // For public NVBit, TMA instructions are treated as regular instruction
-        // during instrumentation. To handle the trace generation for it
-        // properly, we have to manually set the flag for TMA instructions here.
-        const static std::string TMAMemOpcodes[] = {
-            "UBLKCP", "UBLKPF",   "UBLKRED", "UTMALDG",
-            "UTMAPF", "UTMAREDG", "UTMASTG"};
-
-        // Check if current inst contain the TMA opcode
-        for (auto tma_opcode : TMAMemOpcodes) {
-          if (id_to_opcode_map[trace->opcode_id].find(tma_opcode) !=
-              std::string::npos) {
-            trace->inst_type = TracerInstrType::INST_TMA;
-            break;
-          }
-        }
-#endif
-
         // print addresses
         std::bitset<32> mask(trace->active_mask & trace->predicate_mask);
         if (trace->inst_type == TracerInstrType::INST_REGULAR &&
@@ -1450,7 +1422,6 @@ void *recv_thread_fun(void *args) {
             }
           }
         } else if (trace->inst_type == TracerInstrType::INST_TMA) {
-#ifdef USE_PRIVATE_NVBIT
           // TMA instructions
           // Check if the bitmask is all 0, if so, dont parse the TMA
           // instruction
@@ -1502,38 +1473,36 @@ void *recv_thread_fun(void *args) {
               fprintf(ctx_resultsFile[ctx], "%ld ", 0);
             }
 
-            // Determine the global address
-            TMAElementAddress_t *raw_global_addrs = nullptr;
-            uint64_t *global_addrs = nullptr;
-            size_t global_count = 0, global_count_inbound = 0;
+            // Determine the global address using callback API
+            // Callback collects inbound (non-OOB) addresses
+            struct TMAAddrCollector {
+              std::vector<uint64_t> addrs;
+              static void callback(const TMAElementAddress_t *raw_addrs,
+                                   size_t count, void *user_data) {
+                auto *self = static_cast<TMAAddrCollector *>(user_data);
+                for (size_t i = 0; i < count; i++) {
+                  if (!raw_addrs[i].is_oob) {
+                    self->addrs.push_back(raw_addrs[i].address);
+                  }
+                }
+              }
+            };
+            TMAAddrCollector collector;
+
             if (info.src_memspace == InstrType::MemorySpace::GLOBAL) {
               nvbit_parse_tma_src_addrs(ctx, opcode_str,
                                         trace->inst.tma.tma_param_handle,
                                         trace->inst.tma.tma_param_handle_size,
-                                        &raw_global_addrs, &global_count);
+                                        TMAAddrCollector::callback, &collector);
             } else if (info.dst_memspace == InstrType::MemorySpace::GLOBAL) {
               nvbit_parse_tma_dst_addrs(ctx, opcode_str,
                                         trace->inst.tma.tma_param_handle,
                                         trace->inst.tma.tma_param_handle_size,
-                                        &raw_global_addrs, &global_count);
+                                        TMAAddrCollector::callback, &collector);
             }
 
-            // Count inbound global addresses
-            for (size_t i = 0; i < global_count; i++) {
-              if (!raw_global_addrs[i].is_oob) {
-                global_count_inbound++;
-              }
-            }
-
-            global_addrs =
-                (uint64_t *)malloc(global_count_inbound * sizeof(uint64_t));
-            size_t global_idx = 0;
-            for (size_t i = 0; i < global_count; i++) {
-              if (!raw_global_addrs[i].is_oob) {
-                global_addrs[global_idx] = raw_global_addrs[i].address;
-                global_idx++;
-              }
-            }
+            size_t global_count_inbound = collector.addrs.size();
+            uint64_t *global_addrs = collector.addrs.data();
 
             // Try to compress memory addresses
             uint64_t base_addr = 0;
@@ -1547,7 +1516,7 @@ void *recv_thread_fun(void *args) {
               fprintf(ctx_resultsFile[ctx], "%u 0x%lx ",
                       address_format::tma_base_delta, base_addr);
               fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
-              for (int s = 0; s < deltas.size(); s++) {
+              for (size_t s = 0; s < deltas.size(); s++) {
                 fprintf(ctx_resultsFile[ctx], "%lld ", deltas[s]);
               }
             } else {
@@ -1555,20 +1524,11 @@ void *recv_thread_fun(void *args) {
               fprintf(ctx_resultsFile[ctx], "%u ",
                       address_format::tma_list_all);
               fprintf(ctx_resultsFile[ctx], "%d ", info.transfer_count);
-              for (int s = 0; s < global_count_inbound; s++) {
+              for (size_t s = 0; s < global_count_inbound; s++) {
                 fprintf(ctx_resultsFile[ctx], "0x%016lx ", global_addrs[s]);
               }
             }
-
-            free(raw_global_addrs);
-            free(global_addrs);
           }
-#else
-          // Dummy values to NOP TMA instruction
-          // transfer_size mbar_addr is_multicast byte_count oob_byte_count
-          // tma_base_delta base_addr transfer_count
-          fprintf(ctx_resultsFile[ctx], "0 0x0 0 0 0 4 0x0 0 ");
-#endif
         } else {
           fprintf(ctx_resultsFile[ctx], "0 ");
         }

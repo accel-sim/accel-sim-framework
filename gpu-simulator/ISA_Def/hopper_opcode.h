@@ -289,11 +289,14 @@ static const std::unordered_map<std::string, OpcodeChar> Hopper_OpcodeMap = {
 static const std::unordered_map<unsigned, std::pair<unsigned, unsigned>>
     Hopper_GMMA_N_Latency_Initiation_Interval_Mapping = {
         {256, std::make_pair(128, 128)}, {224, std::make_pair(112, 112)},
-        {192, std::make_pair(96, 96)},   {160, std::make_pair(80, 80)},
-        {144, std::make_pair(72, 72)},   {128, std::make_pair(64, 64)},
-        {120, std::make_pair(60, 60)},   {112, std::make_pair(56, 56)},
-        {96, std::make_pair(48, 48)},    {64, std::make_pair(32, 32)},
-        {56, std::make_pair(56, 56)},    {32, std::make_pair(24, 24)},
+        {200, std::make_pair(100, 100)}, {192, std::make_pair(96, 96)},
+        {160, std::make_pair(80, 80)},   {144, std::make_pair(72, 72)},
+        {128, std::make_pair(64, 64)},   {120, std::make_pair(60, 60)},
+        {112, std::make_pair(56, 56)},   {104, std::make_pair(52, 52)},
+        {96, std::make_pair(48, 48)},    {88, std::make_pair(44, 44)},
+        {80, std::make_pair(40, 40)},    {64, std::make_pair(32, 32)},
+        {56, std::make_pair(56, 56)},    {40, std::make_pair(20, 20)},
+        {32, std::make_pair(24, 24)},    {24, std::make_pair(12, 12)},
         {16, std::make_pair(20, 20)},    {8, std::make_pair(18, 18)},
 };
 

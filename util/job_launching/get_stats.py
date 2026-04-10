@@ -64,7 +64,7 @@ def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
     """Parse one per-kernel directory output file (reverse scan for final stats)."""
     outfile = find_latest_outfile(kernel_dir)
     if outfile is None:
-        return None, 0, 0
+        return None, False, 0, 0
     BYTES_TO_READ = int(250 * 1024 * 1024)
     fsize = os.stat(outfile).st_size
     local_bytes = min(fsize, BYTES_TO_READ)
@@ -72,6 +72,20 @@ def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
         if fsize > BYTES_TO_READ:
             f.seek(fsize - BYTES_TO_READ)
         lines = f.readlines()
+
+    # Check for GPGPU-Sim exit string to detect incomplete simulations
+    SIM_EXIT_STRING = r"GPGPU-Sim: \*\*\* exit detected \*\*\*"
+    exit_success = False
+    MAX_LINES = 10000
+    count = 0
+    for line in reversed(lines):
+        count += 1
+        if count >= MAX_LINES:
+            break
+        if re.match(SIM_EXIT_STRING, line):
+            exit_success = True
+            break
+
     stat_entries = {}
     stat_found = set()
     for line in reversed(lines):
@@ -85,7 +99,7 @@ def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
         if len(stat_found) == len(stats_to_pull):
             break
     del lines
-    return stat_entries, 1, local_bytes
+    return stat_entries, exit_success, 1, local_bytes
 
 
 # *********************************************************--
@@ -582,13 +596,22 @@ if pkd_work:
         ]
         # Collect results in submission order (preserves kernel ordering)
         for (kernel_name, kernel_dir, app_and_args, config), future in zip(pkd_work, futures):
-            stat_entries, fp, bp = future.result()
+            stat_entries, exit_success, fp, bp = future.result()
             if stat_entries is None:
                 print(
                     "WARNING - No output file found in " + kernel_dir,
                     file=sys.stderr,
                 )
                 continue
+            if not exit_success:
+                print(
+                    "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(
+                        kernel_dir
+                    ),
+                    file=sys.stderr,
+                )
+                if not options.ignore_failures:
+                    continue
             if kernel_name not in all_named_kernels[app_and_args]:
                 all_named_kernels[app_and_args].append(kernel_name)
             for stat_name, number in stat_entries.items():

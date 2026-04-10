@@ -519,7 +519,7 @@ def get_sim_csv_data(filepath, logger):
                 state = "find-apps"
                 continue
             if state == "find-apps":
-                if first_stat:
+                if not klist:
                     last_appargs = ""
                     for item in row[1:]:
                         split = item.split("--")
@@ -543,7 +543,9 @@ def get_sim_csv_data(filepath, logger):
                                 all_kern_cfg[appargs] = []
                             all_kern_cfg[appargs].append({})
                             all_kern_cfg[appargs][-1]["Kernel"] = kname
-                if not kname == "all_kernels":
+                if not klist:
+                    state = "start"
+                else:
                     state = "process-cfgs"
                 continue
             if state == "process-cfgs":

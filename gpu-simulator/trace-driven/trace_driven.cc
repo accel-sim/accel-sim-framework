@@ -394,6 +394,12 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         space.set_type(local_space);
       else
         space.set_type(global_space);
+      // check the cache scope, if its strong GPU, then bypass L1
+      if ((trace.check_opcode_contain(opcode_tokens, "STRONG") &&
+           trace.check_opcode_contain(opcode_tokens, "GPU")) ||
+          trace.check_opcode_contain(opcode_tokens, "BYPASS")) {
+        cache_op = CACHE_GLOBAL;
+      }
       break;
     case OP_ATOMG:
     case OP_RED:

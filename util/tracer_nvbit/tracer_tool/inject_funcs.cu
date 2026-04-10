@@ -14,26 +14,8 @@
 /* contains definition of the inst_trace_t structure */
 #include "common.h"
 
-/* Additional cluster CTA functions not included in public NVBit API */
-#ifndef USE_PRIVATE_NVBIT
-// Get a thread's cluster CTA ID
-__device__ __forceinline__ int4 get_cluster_ctaid(void) {
-  int4 ret;
-  asm("mov.u32 %0, %cluster_ctaid.x;" : "=r"(ret.x));
-  asm("mov.u32 %0, %cluster_ctaid.y;" : "=r"(ret.y));
-  asm("mov.u32 %0, %cluster_ctaid.z;" : "=r"(ret.z));
-  return ret;
-}
-
-//  Get the number of CTA ids per cluster
-__device__ __forceinline__ int4 get_cluster_nctaid(void) {
-  int4 ret;
-  asm("mov.u32 %0, %cluster_nctaid.x;" : "=r"(ret.x));
-  asm("mov.u32 %0, %cluster_nctaid.y;" : "=r"(ret.y));
-  asm("mov.u32 %0, %cluster_nctaid.z;" : "=r"(ret.z));
-  return ret;
-}
-#endif
+/* get_cluster_ctaid and get_cluster_nctaid are now provided by NVBit v1.8
+ * utils.h */
 
 // Helper functions to get this CTA's cluster rank in a cluster
 // and its cluster id in the grid
