@@ -1,0 +1,112 @@
+name: Issue AI Triage
+
+on:
+  issues:
+    types: [opened]
+  workflow_dispatch:
+    inputs:
+      issue_number:
+        description: "Issue number to re-triage"
+        required: true
+        type: number
+
+permissions:
+  contents: read
+  issues: write
+
+concurrency:
+  group: issue-triage-${{ github.event.issue.number || inputs.issue_number }}
+  cancel-in-progress: true
+
+jobs:
+  triage:
+    runs-on: tgrogers-raid
+
+    env:
+      ISSUE_NUMBER: ${{ github.event.issue.number || inputs.issue_number }}
+      REPO: ${{ github.repository }}
+
+    steps:
+      - name: Checkout default branch (skills + project rules)
+        uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.repository.default_branch }}
+          clean: true
+
+      - name: Dump issue payload
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const num = Number(process.env.ISSUE_NUMBER);
+            const { data: issue } = await github.rest.issues.get({
+              ...context.repo, issue_number: num,
+            });
+            const slim = {
+              number: issue.number,
+              title: issue.title,
+              body: issue.body || '',
+              user: issue.user && issue.user.login,
+              labels: (issue.labels || []).map(l => typeof l === 'string' ? l : l.name),
+              created_at: issue.created_at,
+              html_url: issue.html_url,
+            };
+            fs.writeFileSync('issue.json', JSON.stringify(slim, null, 2));
+
+      - name: AI triage with opencode
+        env:
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: |
+          rm -f issue-triage.md issue-labels.txt
+          opencode run \
+            --dir "$GITHUB_WORKSPACE" \
+            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
+            "Follow .github/skills/issue-triage.md. The issue is at issue.json. Write issue-triage.md and issue-labels.txt to the workspace root as instructed." \
+            || true
+
+          if [ -s issue-triage.md ]; then
+            {
+              echo "## AI Issue Triage"
+              echo
+              cat issue-triage.md
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Post triage + apply labels
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const num = Number(process.env.ISSUE_NUMBER);
+            const { owner, repo } = context.repo;
+
+            const ALLOWED = new Set([
+              'bug', 'build', 'question', 'tracer', 'simulator',
+              'correlation', 'config', 'docs', 'needs-repro',
+              'good-first-issue', 'ai-triage',
+            ]);
+
+            let body = '';
+            try { body = fs.readFileSync('issue-triage.md', 'utf8'); } catch (_) {}
+
+            let labels = [];
+            try {
+              labels = fs.readFileSync('issue-labels.txt', 'utf8')
+                .split('\n').map(s => s.trim()).filter(Boolean);
+            } catch (_) {}
+
+            const filtered = [...new Set(labels.filter(l => ALLOWED.has(l)))];
+            if (!filtered.includes('ai-triage')) filtered.push('ai-triage');
+
+            const comment = body
+              ? `🤖 **AI Triage** (Qwen3.5-27B)\n\n${body}\n\n<sub>Automated. A maintainer will follow up.</sub>`
+              : `🤖 **AI Triage** — did not produce output. See the [workflow run](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}).`;
+
+            await github.rest.issues.createComment({ owner, repo, issue_number: num, body: comment });
+
+            if (filtered.length) {
+              await github.rest.issues.addLabels({ owner, repo, issue_number: num, labels: filtered });
+              core.info(`Applied labels: ${filtered.join(', ')}`);
+            }
+            const dropped = labels.filter(l => !ALLOWED.has(l));
+            if (dropped.length) core.warning(`Dropped non-allowlist labels: ${dropped.join(', ')}`);
