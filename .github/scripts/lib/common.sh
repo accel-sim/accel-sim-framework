@@ -182,13 +182,15 @@ build_accelsim() {
     log_section "Building Accel-Sim (srun: $use_srun, jobs: $jobs)"
 
     source ./gpu-simulator/setup_environment.sh release
-    make clean -C gpu-simulator
+    rm -rf ./gpu-simulator/build/release ./gpu-simulator/bin/release
+    cmake -S ./gpu-simulator/ -B ./gpu-simulator/build/release
 
     if [ "$use_srun" = "true" ]; then
-        srun --time=8:00:00 -c"$jobs" make -j"$jobs" -C gpu-simulator
+        srun --time=8:00:00 -c"$jobs" cmake --build ./gpu-simulator/build/release -j"$jobs"
     else
-        make -j"$jobs" -C gpu-simulator
+        cmake --build ./gpu-simulator/build/release -j"$jobs"
     fi
+    cmake --install ./gpu-simulator/build/release
 
     log_info "Build complete"
 }

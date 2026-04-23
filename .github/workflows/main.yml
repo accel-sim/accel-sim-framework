@@ -58,7 +58,7 @@ jobs:
         run: ./.github/scripts/main-sass.sh setup
 
       - name: Build Accel-Sim
-        run: ./.github/scripts/main-sass.sh build
+        run: ./.github/scripts/main-sass.sh build 2>&1 | tee build.log
 
       - name: Run SASS Simulations
         run: ./.github/scripts/main-sass.sh simulate
@@ -68,6 +68,50 @@ jobs:
 
       - name: Correlate Ubench
         run: ./.github/scripts/main-sass.sh correlate
+
+      - name: Analyze success with opencode
+        if: success()
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: |
+          rm -f ci-analysis-report.md
+          opencode run \
+            --dir "$GITHUB_WORKSPACE" \
+            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
+            "Follow the procedure in .github/skills/ci-analysis.md to analyze this successful CI run. Write your final report to ci-analysis-report.md as instructed." \
+            || true
+          if [ -s ci-analysis-report.md ]; then
+            cat ci-analysis-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## AI Simulation Analysis"
+              echo
+              echo "opencode did not produce \`ci-analysis-report.md\`. See the step log for details."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
+
+      - name: Analyze failure with opencode
+        if: failure()
+        env:
+          GITHUB_RUN_ID: ${{ github.run_id }}
+          GITHUB_WORKSPACE: ${{ github.workspace }}
+        run: |
+          rm -f ci-failure-report.md
+          opencode run \
+            --dir "$GITHUB_WORKSPACE" \
+            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
+            "Follow the procedure in .github/skills/ci-failure.md to analyze this failed CI run. Write your final report to ci-failure-report.md as instructed." \
+            || true
+          if [ -s ci-failure-report.md ]; then
+            cat ci-failure-report.md >> "$GITHUB_STEP_SUMMARY"
+          else
+            {
+              echo "## AI Failure Analysis"
+              echo
+              echo "opencode did not produce \`ci-failure-report.md\`. See the step log for details."
+            } >> "$GITHUB_STEP_SUMMARY"
+          fi
 
   PTX-Simulation:
     needs: [check-format]

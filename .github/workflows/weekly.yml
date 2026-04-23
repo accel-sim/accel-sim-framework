@@ -122,8 +122,10 @@ jobs:
           fi
 
           source ./gpu-simulator/setup_environment.sh
-          make clean -C gpu-simulator
-          make -j -C gpu-simulator
+          rm -rf ./gpu-simulator/build/release ./gpu-simulator/bin/release
+          cmake -S ./gpu-simulator/ -B ./gpu-simulator/build/release
+          cmake --build ./gpu-simulator/build/release -j
+          cmake --install ./gpu-simulator/build/release
       - name: run SASS
         run: |
           source ./env-setup/12.8_env_setup.sh
