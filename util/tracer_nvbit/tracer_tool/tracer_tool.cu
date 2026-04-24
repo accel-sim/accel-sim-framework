@@ -1351,24 +1351,47 @@ void *recv_thread_fun(void *args) {
             fprintf(ctx_resultsFile[ctx], "R%d ", reg_num);
           }
         };
-        if (trace->inst.regular.GPRDst >= 0) { // GPR dst
-          fprintf(ctx_resultsFile[ctx], "1 ");
-          print_reg(trace->inst.regular.GPRDst);
-        } else
+
+        // Only regular instructions have register information
+        // While TMA instruction also does, but they are all
+        // uniform register and we cannot obtain them from
+        // iterating instruction operands during instrumentation
+        // In future we might want to add those by parsing
+        // TMA instruction SASS string for uniform register
+        // dependency tracking
+
+        // Dump destination register information
+        if (trace->inst_type == TracerInstrType::INST_TMA) {
+          // No destination register for TMA instructions
           fprintf(ctx_resultsFile[ctx], "0 ");
+        } else {
+          if (trace->inst.regular.GPRDst >= 0) { // GPR dst
+            fprintf(ctx_resultsFile[ctx], "1 ");
+            print_reg(trace->inst.regular.GPRDst);
+          } else
+            fprintf(ctx_resultsFile[ctx], "0 ");
+        }
 
         // Print the opcode.
         fprintf(ctx_resultsFile[ctx], "%s ",
                 id_to_opcode_map[trace->opcode_id].c_str());
-        unsigned src_count = 0;
-        for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
-          if (trace->inst.regular.GPRSrcs[s] >= 0)
-            src_count++;
-        fprintf(ctx_resultsFile[ctx], "%d ", src_count);
 
-        for (int s = 0; s < MAX_SRC; s++) { // GPR srcs.
-          if (trace->inst.regular.GPRSrcs[s] >= 0) {
-            print_reg(trace->inst.regular.GPRSrcs[s]);
+        // Dump source registers information
+        if (trace->inst_type == TracerInstrType::INST_TMA) {
+          // No source registers for TMA instructions
+          fprintf(ctx_resultsFile[ctx], "0 ");
+        } else {
+          // Handle source registers for regular instructions
+          unsigned src_count = 0;
+          for (int s = 0; s < MAX_SRC; s++) // GPR srcs count.
+            if (trace->inst.regular.GPRSrcs[s] >= 0)
+              src_count++;
+          fprintf(ctx_resultsFile[ctx], "%d ", src_count);
+
+          for (int s = 0; s < MAX_SRC; s++) { // GPR srcs.
+            if (trace->inst.regular.GPRSrcs[s] >= 0) {
+              print_reg(trace->inst.regular.GPRSrcs[s]);
+            }
           }
         }
 
