@@ -192,7 +192,7 @@ stage_correlate() {
         log_info "Saving to lastSuccess: $success_dir"
         rm -rf "$success_dir"
         mkdir -p "$success_dir"
-        mv "$PWD"/* "$success_dir/" || true
+        rsync -a "$PWD"/ "$success_dir/" || true
         chmod -R 777 "$success_dir"
     fi
 }
