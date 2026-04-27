@@ -82,7 +82,8 @@ bool trace_shd_warp_t::handle_replay_region_exit() {
 }
 
 const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
-  if (trace_pc >= warp_traces.size()) {
+  unsigned total = trace_total_count();
+  if (trace_pc >= total) {
     // Handle missing REPLAY_END - trace ended while in replay region
     if (m_replay_active) {
       m_replay_active = false;
@@ -91,8 +92,11 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
     return NULL;
   }
 
+  // Access instruction via stream or warp_traces
+  auto &inst = m_stream ? m_stream->get(trace_pc) : warp_traces[trace_pc];
+
   // Check for replay markers (pseudo-opcodes for spinlock simulation)
-  const std::string &opcode = warp_traces[trace_pc].opcode;
+  const std::string &opcode = inst.opcode;
 
   if (opcode == "REPLAY_START") {
     m_replay_active = true;
@@ -113,9 +117,8 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
   // If EXIT is the last instruction and replay is active, force all threads to
   // exit instead of replaying. Override the active mask to include only threads
   // that are still active (haven't exited yet).
-  if (opcode == "EXIT" && m_replay_active &&
-      trace_pc == warp_traces.size() - 1) {
-    unsigned mask_before = warp_traces[trace_pc].mask;
+  if (opcode == "EXIT" && m_replay_active && trace_pc == total - 1) {
+    unsigned mask_before = inst.mask;
     // Only override if the trace's mask is not already all threads
     if (mask_before != 0xFFFFFFFF) {
       // Build mask from threads that are still active
@@ -128,9 +131,9 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
       printf(
           "WARNING: sid %u warp %u pc 0x%x EXIT in replay region - "
           "overriding mask 0x%08x -> 0x%08x\n",
-          get_shader()->get_sid(), get_warp_id(), warp_traces[trace_pc].m_pc,
-          mask_before, active_mask);
-      warp_traces[trace_pc].mask = active_mask;
+          get_shader()->get_sid(), get_warp_id(), inst.m_pc, mask_before,
+          active_mask);
+      inst.mask = active_mask;
     }
     m_replay_active = false;  // End replay region without looping
   }
@@ -138,32 +141,45 @@ const trace_warp_inst_t *trace_shd_warp_t::get_next_trace_inst() {
   // Normal instruction fetch
   trace_warp_inst_t *new_inst =
       new trace_warp_inst_t(get_shader()->get_config());
-  new_inst->parse_from_trace_struct(
-      warp_traces[trace_pc], m_kernel_info->OpcodeMap, m_kernel_info->m_tconfig,
-      m_kernel_info->m_kernel_trace_info);
+  new_inst->parse_from_trace_struct(inst, m_kernel_info->OpcodeMap,
+                                    m_kernel_info->m_tconfig,
+                                    m_kernel_info->m_kernel_trace_info);
   trace_pc++;
   return new_inst;
+}
+
+unsigned trace_shd_warp_t::trace_total_count() const {
+  if (m_stream) return m_stream->total_inst_count();
+  return (unsigned)warp_traces.size();
 }
 
 void trace_shd_warp_t::clear() {
   trace_pc = 0;
   warp_traces.clear();
+  delete m_stream;
+  m_stream = nullptr;
   m_replay_active = false;
   m_replay_start_trace_pc = 0;
   m_replay_iterations = 0;
 }
 
 // functional_done
-bool trace_shd_warp_t::trace_done() { return trace_pc == (warp_traces.size()); }
+bool trace_shd_warp_t::trace_done() { return trace_pc == trace_total_count(); }
 
 address_type trace_shd_warp_t::get_start_trace_pc() {
+  if (m_stream) {
+    assert(m_stream->total_inst_count() > 0);
+    return m_stream->first_inst_pc();
+  }
   assert(warp_traces.size() > 0);
   return warp_traces[0].m_pc;
 }
 
 address_type trace_shd_warp_t::get_pc() {
-  assert(warp_traces.size() > 0);
-  assert(trace_pc < warp_traces.size());
+  unsigned total = trace_total_count();
+  assert(total > 0);
+  assert(trace_pc < total);
+  if (m_stream) return m_stream->get(trace_pc).m_pc;
   return warp_traces[trace_pc].m_pc;
 }
 
@@ -204,6 +220,8 @@ trace_kernel_info_t::trace_kernel_info_t(dim3 gridDim, dim3 blockDim,
 
 void trace_kernel_info_t::get_next_threadblock_traces(
     std::vector<std::vector<inst_trace_t> *> threadblock_traces) {
+  // .tracez path is handled directly in init_traces via WarpTraceStream
+  assert(!m_kernel_trace_info->is_tracez);
   m_parser->get_next_threadblock_traces(
       threadblock_traces, m_kernel_trace_info->trace_verion,
       m_kernel_trace_info->enable_lineinfo, m_kernel_trace_info->pipeReader);
@@ -1017,45 +1035,92 @@ void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
   // No SIMT-stack in trace-driven  mode
 }
 
+// Helper: scan a warp's instructions for TMA/mbarrier metadata.
+// Works for both text path (warp_traces vector) and tracez path (stream).
+static void scan_warp_metadata(trace_shd_warp_t *warp, kernel_info_t &kernel) {
+  unsigned total = warp->trace_total_count();
+  bool has_tma = false;
+
+  for (unsigned j = 0; j < total; ++j) {
+    inst_trace_t &inst =
+        warp->m_stream ? warp->m_stream->get(j) : warp->warp_traces[j];
+
+    if (!has_tma && inst.opcode.find("UTMALDG") != std::string::npos) {
+      has_tma = true;
+    }
+
+    if (inst.opcode.find("SYNCS.ARRIVE") != std::string::npos) {
+      if (inst.memadd_info != nullptr) {
+        for (int t = 0; t < WARP_SIZE; t++) {
+          if (inst.mask & (1u << t)) {
+            uint32_t addr = inst.memadd_info->addrs[t];
+            kernel.register_used_mbarrier_addr(addr);
+          }
+        }
+      }
+    }
+  }
+  warp->set_is_tma_warp(has_tma);
+}
+
 void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
-  std::vector<std::vector<inst_trace_t> *> threadblock_traces;
-  for (unsigned i = start_warp; i < end_warp; ++i) {
-    trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
-    m_trace_warp->clear();
-    threadblock_traces.push_back(&(m_trace_warp->warp_traces));
-  }
   trace_kernel_info_t &trace_kernel =
       static_cast<trace_kernel_info_t &>(kernel);
-  trace_kernel.get_next_threadblock_traces(threadblock_traces);
+  kernel_trace_t *kt = trace_kernel.get_trace_info();
+
+  if (kt->is_tracez) {
+    // .tracez path: create per-warp WarpTraceStream with sliding window
+    TracezReader *reader = kt->tracez_reader;
+    const tb_index_t *tb_idx = reader->get_next_tb_index();
+    if (!tb_idx) return;
+
+    dim3 block_id(tb_idx->tb_id_x, tb_idx->tb_id_y, tb_idx->tb_id_z);
+    dim3 cluster_id(tb_idx->cluster_id_x, tb_idx->cluster_id_y,
+                    tb_idx->cluster_id_z);
+    dim3 cluster_cta_id(tb_idx->cluster_cta_id_x, tb_idx->cluster_cta_id_y,
+                        tb_idx->cluster_cta_id_z);
+    unsigned cluster_rank = tb_idx->cluster_rank;
+
+    std::cout << "thread block = " << block_id.x << "," << block_id.y << ","
+              << block_id.z << std::endl;
+
+    for (unsigned i = start_warp; i < end_warp; ++i) {
+      trace_shd_warp_t *m_trace_warp =
+          static_cast<trace_shd_warp_t *>(m_warp[i]);
+      m_trace_warp->clear();
+
+      unsigned warp_local = i - start_warp;
+      if (warp_local < tb_idx->warp_count) {
+        const warp_index_t &w_idx = tb_idx->warps[warp_local];
+        m_trace_warp->m_stream = new WarpTraceStream();
+        m_trace_warp->m_stream->init(reader->fd(), w_idx, reader->ddict(),
+                                     kt->trace_verion, kt->enable_lineinfo,
+                                     block_id, cluster_cta_id, cluster_id,
+                                     cluster_rank);
+      }
+    }
+  } else {
+    // Text path: bulk load via get_next_threadblock_traces
+    std::vector<std::vector<inst_trace_t> *> threadblock_traces;
+    for (unsigned i = start_warp; i < end_warp; ++i) {
+      trace_shd_warp_t *m_trace_warp =
+          static_cast<trace_shd_warp_t *>(m_warp[i]);
+      m_trace_warp->clear();
+      threadblock_traces.push_back(&(m_trace_warp->warp_traces));
+    }
+    trace_kernel.get_next_threadblock_traces(threadblock_traces);
+  }
 
   // set the pc from the traces and ignore the functional model
   for (unsigned i = start_warp; i < end_warp; ++i) {
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
 
-    // Check if any instruction is UTMALDG (TMA load)
-    bool has_tma = false;
-    for (const auto &trace : m_trace_warp->warp_traces) {
-      if (trace.opcode.find("UTMALDG") != std::string::npos) {
-        has_tma = true;
-        break;
-      }
-    }
-    m_trace_warp->set_is_tma_warp(has_tma);
+    if (m_trace_warp->trace_total_count() == 0) continue;
 
-    // Scan for SYNCS.ARRIVE to collect used mbarrier addresses
-    for (const auto &trace : m_trace_warp->warp_traces) {
-      if (trace.opcode.find("SYNCS.ARRIVE") != std::string::npos) {
-        if (trace.memadd_info != nullptr) {
-          for (int t = 0; t < WARP_SIZE; t++) {
-            if (trace.mask & (1u << t)) {
-              uint32_t addr = trace.memadd_info->addrs[t];
-              kernel.register_used_mbarrier_addr(addr);
-            }
-          }
-        }
-      }
-    }
+    // TODO: re-enable scan_warp_metadata once we have a lightweight metadata
+    // index in .tracez (avoids decompressing all sub-chunks at init time).
+    // scan_warp_metadata(m_trace_warp, kernel);
 
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
     m_trace_warp->set_kernel(&trace_kernel);

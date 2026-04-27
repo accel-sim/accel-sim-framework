@@ -1,7 +1,7 @@
 TARGET := post-traces-processing
 
 $(TARGET): post-traces-processing.cpp
-	g++ -std=c++17 -O3 -g -pthread -o $@ $^
+	g++ -std=c++17 -O3 -g -pthread -o $@ $^ -lzstd
 
 run: $(TARGET)
 	./$(TARGET)

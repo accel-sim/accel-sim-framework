@@ -18,6 +18,11 @@
 
 #include <filesystem>
 
+#include <zdict.h>
+#include <zstd.h>
+
+#include "../tracez_format.h"
+
 using namespace std;
 
 struct threadblock_info {
@@ -91,7 +96,7 @@ struct WarpInstLUT {
   }
 };
 
-void group_per_block(const string &filepath);
+void group_per_block(const string &filepath, bool use_tracez);
 void group_per_core(const char *filepath);
 
 // Mutex for thread-safe stderr output
@@ -106,9 +111,11 @@ class ThreadPool {
   std::condition_variable done_cv;
   bool stop = false;
   size_t in_flight = 0; // tasks being processed + tasks in queue
+  bool m_use_tracez = false;
 
 public:
-  explicit ThreadPool(size_t num_threads) {
+  explicit ThreadPool(size_t num_threads, bool use_tracez = false)
+      : m_use_tracez(use_tracez) {
     for (size_t i = 0; i < num_threads; ++i) {
       workers.emplace_back([this] {
         while (true) {
@@ -121,7 +128,7 @@ public:
             filepath = std::move(tasks.front());
             tasks.pop_front();
           }
-          group_per_block(filepath);
+          group_per_block(filepath, m_use_tracez);
           {
             std::lock_guard<std::mutex> lock(queue_mutex);
             --in_flight;
@@ -166,12 +173,15 @@ int main(int argc, char **argv) {
   string filepath;
   int max_threads = 8; // default thread limit
 
+  bool use_tracez = true;
+
   // Parse arguments
   if (argc == 1) {
-    cerr << "Usage: " << argv[0] << " <path> [-j N]\n";
+    cerr << "Usage: " << argv[0] << " <path> [-j N] [--text]\n";
     cerr << "  path: kernelslist file or directory containing kernelslist "
             "files\n";
     cerr << "  -j N: limit to N parallel threads (default: 8)\n";
+    cerr << "  --text: output .traceg (plain text) instead of .tracez\n";
     return 1;
   }
 
@@ -181,12 +191,18 @@ int main(int argc, char **argv) {
       max_threads = atoi(argv[++i]);
       if (max_threads < 1)
         max_threads = 1;
+    } else if (string(argv[i]) == "--text") {
+      use_tracez = false;
     }
   }
 
   // Initialize thread pool
-  ThreadPool pool(max_threads);
+  ThreadPool pool(max_threads, use_tracez);
   cerr << "Using " << max_threads << " parallel threads\n";
+  if (use_tracez)
+    cerr << "Output format: .tracez (zstd compressed)\n";
+  else
+    cerr << "Output format: .traceg (plain text)\n";
 
   ifstream ifs;
   ofstream ofs;
@@ -247,10 +263,19 @@ int main(int argc, char **argv) {
         kernel_filepaths.push_back(filepath);
 
         int _l = line.length();
-        if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
-          output_lines.push_back(line.substr(0, _l - 3) + "g.xz");
+        if (use_tracez) {
+          // .trace.xz or .trace -> .tracez
+          if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
+            output_lines.push_back(line.substr(0, _l - 3) + "z");
+          } else {
+            output_lines.push_back(line + "z");
+          }
         } else {
-          output_lines.push_back(line + "g");
+          if (_l > 3 && line.substr(_l - 3, 3) == ".xz") {
+            output_lines.push_back(line.substr(0, _l - 3) + "g.xz");
+          } else {
+            output_lines.push_back(line + "g");
+          }
         }
       } else {
         cerr << "Undefined command: " << line << endl;
@@ -291,27 +316,257 @@ static bool fgets_string(FILE *fp, string &out) {
   return !out.empty(); // return true if we got partial line at EOF
 }
 
+// Write helper for binary data
+static void fwrite_u32(FILE *fp, uint32_t v) { fwrite(&v, sizeof(v), 1, fp); }
+static void fwrite_u64(FILE *fp, uint64_t v) { fwrite(&v, sizeof(v), 1, fp); }
+
+// Extract opcode from an instruction text line.
+// Format: pc mask dest_count [dest_regs...] opcode ...
+static string extract_opcode(const string &line) {
+  stringstream ss(line);
+  string token;
+  // skip pc, mask
+  ss >> token >> token;
+  // read dest_count
+  unsigned dest_count;
+  ss >> dest_count;
+  // skip dest regs
+  for (unsigned i = 0; i < dest_count; i++)
+    ss >> token;
+  // opcode
+  ss >> token;
+  return token;
+}
+
+// Build replay-safe sub-chunk boundaries for a warp.
+// Returns a vector of (start, count) pairs. Replay regions are never split.
+static vector<pair<size_t, size_t>>
+build_subchunk_ranges(const deque<const string *> &warp, uint32_t sc_target) {
+  vector<pair<size_t, size_t>> ranges;
+  size_t total = warp.size();
+  if (total == 0)
+    return ranges;
+  if (sc_target == 0)
+    sc_target = (uint32_t)total; // whole warp
+
+  size_t pos = 0;
+  while (pos < total) {
+    size_t end = min(pos + sc_target, total);
+    // Check if we're splitting inside a replay region.
+    // Scan from pos to end for REPLAY_START without matching REPLAY_END.
+    int replay_depth = 0;
+    for (size_t k = pos; k < end; k++) {
+      string op = extract_opcode(*warp[k]);
+      if (op == "REPLAY_START")
+        replay_depth++;
+      else if (op == "REPLAY_END")
+        replay_depth--;
+    }
+    // If replay_depth > 0, we have unclosed REPLAY_START — extend until closed
+    while (replay_depth > 0 && end < total) {
+      string op = extract_opcode(*warp[end]);
+      if (op == "REPLAY_START")
+        replay_depth++;
+      else if (op == "REPLAY_END")
+        replay_depth--;
+      end++;
+    }
+    ranges.push_back({pos, end - pos});
+    pos = end;
+  }
+  return ranges;
+}
+
+// Collect instruction lines for a warp, joining with newlines
+static string join_warp_lines(const deque<const string *> &lines, size_t start,
+                              size_t count) {
+  string result;
+  for (size_t i = start; i < start + count && i < lines.size(); ++i) {
+    if (i > start)
+      result += '\n';
+    result += *lines[i];
+  }
+  return result;
+}
+
+// Write .tracez format output
+static void write_tracez(FILE *out_fp, const vector<string> &header_lines,
+                         const vector<threadblock_info> &insts) {
+  // Get subchunk size from environment (default: 2048)
+  uint32_t subchunk_insts = 2048;
+  const char *env = getenv("TRACEZ_SUBCHUNK_INSTS");
+  if (env)
+    subchunk_insts = (uint32_t)atoi(env);
+
+  // 1. Write kernel header as null-terminated text
+  for (const auto &hline : header_lines) {
+    fprintf(out_fp, "%s\n", hline.c_str());
+  }
+  fputc('\0', out_fp);
+
+  // 2. Collect samples for dictionary training
+  vector<string> samples;
+  size_t total_sample_bytes = 0;
+  const size_t MAX_SAMPLE_BYTES = 1024 * 1024; // 1MB of samples
+  for (unsigned i = 0;
+       i < insts.size() && total_sample_bytes < MAX_SAMPLE_BYTES; ++i) {
+    if (!insts[i].initialized)
+      continue;
+    for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
+      const auto &warp = insts[i].warp_insts_array[j];
+      // Sample every 8th instruction
+      for (size_t k = 0;
+           k < warp.size() && total_sample_bytes < MAX_SAMPLE_BYTES; k += 8) {
+        samples.push_back(*warp[k]);
+        total_sample_bytes += warp[k]->size();
+      }
+    }
+  }
+
+  // Train dictionary
+  vector<char> dict_buf(64 * 1024); // 64KB max dictionary
+  vector<size_t> sample_sizes;
+  string all_samples;
+  for (const auto &s : samples) {
+    sample_sizes.push_back(s.size());
+    all_samples += s;
+  }
+
+  size_t dict_size = 0;
+  if (!samples.empty()) {
+    dict_size = ZDICT_trainFromBuffer(dict_buf.data(), dict_buf.size(),
+                                      all_samples.data(), sample_sizes.data(),
+                                      (unsigned)sample_sizes.size());
+    if (ZDICT_isError(dict_size)) {
+      {
+        lock_guard<mutex> lock(stderr_mutex);
+        cerr << "Warning: Dictionary training failed: "
+             << ZDICT_getErrorName(dict_size) << ", proceeding without dict\n";
+      }
+      dict_size = 0;
+    }
+  }
+
+  // 3. Write compression header
+  fwrite_u32(out_fp, (uint32_t)dict_size);
+  fwrite_u32(out_fp, subchunk_insts);
+
+  // 4. Write dictionary
+  if (dict_size > 0) {
+    fwrite(dict_buf.data(), 1, dict_size, out_fp);
+  }
+
+  // Create compression dict and context
+  ZSTD_CDict *cdict = nullptr;
+  if (dict_size > 0) {
+    cdict = ZSTD_createCDict(dict_buf.data(), dict_size, 3);
+  }
+  ZSTD_CCtx *cctx = ZSTD_createCCtx();
+
+  // 5. Write per-TB per-warp compressed data, building index
+  vector<tracez::tb_index_t> index;
+
+  for (unsigned i = 0; i < insts.size(); ++i) {
+    if (!insts[i].initialized || insts[i].warp_insts_array.empty())
+      continue;
+
+    tracez::tb_index_t tb_idx;
+    tb_idx.tb_id_x = insts[i].tb_id_x;
+    tb_idx.tb_id_y = insts[i].tb_id_y;
+    tb_idx.tb_id_z = insts[i].tb_id_z;
+    tb_idx.cluster_id_x = insts[i].cluster_id_x;
+    tb_idx.cluster_id_y = insts[i].cluster_id_y;
+    tb_idx.cluster_id_z = insts[i].cluster_id_z;
+    tb_idx.cluster_cta_id_x = insts[i].cluster_cta_id_x;
+    tb_idx.cluster_cta_id_y = insts[i].cluster_cta_id_y;
+    tb_idx.cluster_cta_id_z = insts[i].cluster_cta_id_z;
+    tb_idx.cluster_rank = insts[i].cluster_rank;
+    tb_idx.warp_count = (uint32_t)insts[i].warp_insts_array.size();
+
+    for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
+      const auto &warp = insts[i].warp_insts_array[j];
+      uint32_t inst_count = (uint32_t)warp.size();
+
+      // Build replay-safe sub-chunk ranges
+      auto ranges = build_subchunk_ranges(warp, subchunk_insts);
+      uint32_t num_subchunks = (uint32_t)ranges.size();
+
+      tracez::warp_index_t w_idx;
+      w_idx.inst_count = inst_count;
+      w_idx.num_subchunks = num_subchunks;
+      w_idx.file_offset = (uint64_t)ftello(out_fp);
+
+      // Write warp header
+      fwrite_u32(out_fp, inst_count);
+      fwrite_u32(out_fp, num_subchunks);
+
+      // Write sub-chunks
+      for (uint32_t sc = 0; sc < num_subchunks; ++sc) {
+        size_t start = ranges[sc].first;
+        size_t count = ranges[sc].second;
+        w_idx.subchunk_inst_counts.push_back((uint32_t)count);
+
+        string text = join_warp_lines(warp, start, count);
+
+        size_t bound = ZSTD_compressBound(text.size());
+        vector<char> comp_buf(bound);
+        size_t comp_size;
+        if (cdict) {
+          comp_size = ZSTD_compress_usingCDict(cctx, comp_buf.data(), bound,
+                                               text.data(), text.size(), cdict);
+        } else {
+          comp_size = ZSTD_compressCCtx(cctx, comp_buf.data(), bound,
+                                        text.data(), text.size(), 3);
+        }
+        if (ZSTD_isError(comp_size)) {
+          lock_guard<mutex> lock(stderr_mutex);
+          cerr << "FATAL: zstd compression error: "
+               << ZSTD_getErrorName(comp_size) << "\n";
+          abort();
+        }
+
+        fwrite_u32(out_fp, (uint32_t)comp_size);
+        fwrite(comp_buf.data(), 1, comp_size, out_fp);
+      }
+
+      tb_idx.warps.push_back(w_idx);
+    }
+    index.push_back(tb_idx);
+  }
+
+  // 6. Write index
+  uint64_t index_offset = (uint64_t)ftello(out_fp);
+  tracez::write_index(out_fp, index, index_offset);
+
+  ZSTD_freeCCtx(cctx);
+  if (cdict)
+    ZSTD_freeCDict(cdict);
+}
+
 // Thread-safe function using popen/pclose for I/O instead of stdin/stdout
 // redirection. Each thread processes one kernel trace file independently.
-void group_per_block(const string &filepath) {
+void group_per_block(const string &filepath, bool use_tracez) {
   const string &filepath_str = filepath;
   WarpInstLUT warp_inst_lut;
 
   string trace_source_cmd;
-  string trace_sink_cmd;
   string output_filepath;
 
   int _l = filepath_str.length();
   if (_l > 3 && filepath_str.substr(_l - 3, 3) == ".xz") {
-    // kernel-1.trace.xz --(xz -dc)--> f --(xz -1 -T0)--> kernel-1.traceg.xz
-    output_filepath = filepath_str.substr(0, _l - 3) + "g.xz";
     trace_source_cmd = "xz -dc " + filepath_str;
-    trace_sink_cmd = "xz -1 -T0 > " + output_filepath;
+    if (use_tracez) {
+      output_filepath = filepath_str.substr(0, _l - 3) + "z";
+    } else {
+      output_filepath = filepath_str.substr(0, _l - 3) + "g.xz";
+    }
   } else if (_l > 6 && filepath_str.substr(_l - 6, 6) == ".trace") {
-    // kernel-2.trace --(cat)--> f --(cat)--> kernel-2.traceg
-    output_filepath = filepath_str + "g";
     trace_source_cmd = "cat " + filepath_str;
-    trace_sink_cmd = "cat > " + output_filepath;
+    if (use_tracez) {
+      output_filepath = filepath_str + "z";
+    } else {
+      output_filepath = filepath_str + "g";
+    }
   } else {
     lock_guard<mutex> lock(stderr_mutex);
     cerr << "Only support xz or raw text format. Unable to process - and "
@@ -320,19 +575,11 @@ void group_per_block(const string &filepath) {
     return;
   }
 
-  // Open pipes for reading input and writing output
+  // Open pipe for reading input
   FILE *source_fp = popen(trace_source_cmd.c_str(), "r");
   if (!source_fp) {
     lock_guard<mutex> lock(stderr_mutex);
     cerr << "Failed to open source pipe for " << filepath_str << endl;
-    return;
-  }
-
-  FILE *sink_fp = popen(trace_sink_cmd.c_str(), "w");
-  if (!sink_fp) {
-    lock_guard<mutex> lock(stderr_mutex);
-    cerr << "Failed to open sink pipe for " << filepath_str << endl;
-    pclose(source_fp);
     return;
   }
 
@@ -342,6 +589,7 @@ void group_per_block(const string &filepath) {
   }
 
   vector<threadblock_info> insts;
+  vector<string> header_lines; // collect header lines for tracez
   unsigned grid_dim_x, grid_dim_y, grid_dim_z, tb_dim_x, tb_dim_y, tb_dim_z;
   unsigned tb_id_x, tb_id_y, tb_id_z, tb_id, warpid_tb;
   // Cluster information
@@ -361,7 +609,7 @@ void group_per_block(const string &filepath) {
 
   while (fgets_string(source_fp, line)) {
     if (line.length() == 0 || line[0] == '#') {
-      fprintf(sink_fp, "%s\n", line.c_str());
+      header_lines.push_back(line);
       continue;
     }
 
@@ -400,7 +648,7 @@ void group_per_block(const string &filepath) {
           }
         }
       }
-      fprintf(sink_fp, "%s\n", line.c_str());
+      header_lines.push_back(line);
       continue;
     } else {
       ss.clear();
@@ -462,45 +710,75 @@ void group_per_block(const string &filepath) {
     }
   }
 
-  for (unsigned i = 0; i < insts.size(); ++i) {
-    if (insts[i].initialized && insts[i].warp_insts_array.size() > 0) {
-      fprintf(sink_fp, "\n#BEGIN_TB\n");
-      fprintf(sink_fp, "\nthread block = %u,%u,%u\n", insts[i].tb_id_x,
-              insts[i].tb_id_y, insts[i].tb_id_z);
-      fprintf(sink_fp, "cluster id = %u,%u,%u\n", insts[i].cluster_id_x,
-              insts[i].cluster_id_y, insts[i].cluster_id_z);
-      fprintf(sink_fp, "cluster cta = %u,%u,%u\n", insts[i].cluster_cta_id_x,
-              insts[i].cluster_cta_id_y, insts[i].cluster_cta_id_z);
-      fprintf(sink_fp, "cluster rank = %u\n", insts[i].cluster_rank);
-    } else {
-      lock_guard<mutex> lock(stderr_mutex);
-      cerr << "Warning: Thread block " << insts[i].tb_id_x << ","
-           << insts[i].tb_id_y << "," << insts[i].tb_id_z << " is empty"
-           << "\n";
-      continue;
-    }
-    for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
-      fprintf(sink_fp, "\nwarp = %u\n", j);
-      fprintf(sink_fp, "insts = %zu\n", insts[i].warp_insts_array[j].size());
-      if (insts[i].warp_insts_array[j].size() == 0) {
-        lock_guard<mutex> lock(stderr_mutex);
-        cerr << "Warning: Warp " << j << " in thread block" << insts[i].tb_id_x
-             << "," << insts[i].tb_id_y << "," << insts[i].tb_id_z
-             << " is empty"
-             << "\n";
-      }
-      for (auto it = insts[i].warp_insts_array[j].cbegin();
-           it != insts[i].warp_insts_array[j].cend(); ++it) {
-        // dereference once: const string*
-        // dereference twice: const string
-        fprintf(sink_fp, "%s\n", (*it)->c_str());
-      }
-    }
-    fprintf(sink_fp, "\n#END_TB\n");
-  }
-
   pclose(source_fp);
-  pclose(sink_fp);
+
+  if (use_tracez) {
+    // Write .tracez format
+    FILE *out_fp = fopen(output_filepath.c_str(), "wb");
+    if (!out_fp) {
+      lock_guard<mutex> lock(stderr_mutex);
+      cerr << "Failed to open output file " << output_filepath << endl;
+      return;
+    }
+    write_tracez(out_fp, header_lines, insts);
+    fclose(out_fp);
+  } else {
+    // Write .traceg format (original text path)
+    string trace_sink_cmd;
+    if (output_filepath.size() > 3 &&
+        output_filepath.substr(output_filepath.size() - 3) == ".xz") {
+      trace_sink_cmd = "xz -1 -T0 > " + output_filepath;
+    } else {
+      trace_sink_cmd = "cat > " + output_filepath;
+    }
+    FILE *sink_fp = popen(trace_sink_cmd.c_str(), "w");
+    if (!sink_fp) {
+      lock_guard<mutex> lock(stderr_mutex);
+      cerr << "Failed to open sink pipe for " << output_filepath << endl;
+      return;
+    }
+
+    // Write header
+    for (const auto &hline : header_lines) {
+      fprintf(sink_fp, "%s\n", hline.c_str());
+    }
+
+    for (unsigned i = 0; i < insts.size(); ++i) {
+      if (insts[i].initialized && insts[i].warp_insts_array.size() > 0) {
+        fprintf(sink_fp, "\n#BEGIN_TB\n");
+        fprintf(sink_fp, "\nthread block = %u,%u,%u\n", insts[i].tb_id_x,
+                insts[i].tb_id_y, insts[i].tb_id_z);
+        fprintf(sink_fp, "cluster id = %u,%u,%u\n", insts[i].cluster_id_x,
+                insts[i].cluster_id_y, insts[i].cluster_id_z);
+        fprintf(sink_fp, "cluster cta = %u,%u,%u\n", insts[i].cluster_cta_id_x,
+                insts[i].cluster_cta_id_y, insts[i].cluster_cta_id_z);
+        fprintf(sink_fp, "cluster rank = %u\n", insts[i].cluster_rank);
+      } else {
+        lock_guard<mutex> lock(stderr_mutex);
+        cerr << "Warning: Thread block " << insts[i].tb_id_x << ","
+             << insts[i].tb_id_y << "," << insts[i].tb_id_z << " is empty"
+             << "\n";
+        continue;
+      }
+      for (unsigned j = 0; j < insts[i].warp_insts_array.size(); ++j) {
+        fprintf(sink_fp, "\nwarp = %u\n", j);
+        fprintf(sink_fp, "insts = %zu\n", insts[i].warp_insts_array[j].size());
+        if (insts[i].warp_insts_array[j].size() == 0) {
+          lock_guard<mutex> lock(stderr_mutex);
+          cerr << "Warning: Warp " << j << " in thread block"
+               << insts[i].tb_id_x << "," << insts[i].tb_id_y << ","
+               << insts[i].tb_id_z << " is empty"
+               << "\n";
+        }
+        for (auto it = insts[i].warp_insts_array[j].cbegin();
+             it != insts[i].warp_insts_array[j].cend(); ++it) {
+          fprintf(sink_fp, "%s\n", (*it)->c_str());
+        }
+      }
+      fprintf(sink_fp, "\n#END_TB\n");
+    }
+    pclose(sink_fp);
+  }
 }
 
 void group_per_core(const char *filepath) {

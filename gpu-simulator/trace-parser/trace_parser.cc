@@ -16,6 +16,7 @@
 #include <unistd.h>
 
 #include "trace_parser.h"
+#include "warp_trace_stream.h"
 
 bool is_number(const std::string &s) {
   std::string::const_iterator it = s.begin();
@@ -112,14 +113,28 @@ unsigned inst_trace_t::get_datawidth_from_opcode(
   return 4;  // default is 4 bytes
 }
 
-kernel_trace_t::kernel_trace_t(const std::string &filePath)
-    : pipeReader(filePath) {
+static bool hasEnding(const std::string &s, const std::string &suffix) {
+  if (s.length() < suffix.length()) return false;
+  return s.compare(s.length() - suffix.length(), suffix.length(), suffix) == 0;
+}
+
+kernel_trace_t::kernel_trace_t(const std::string &filePath) {
   kernel_name = filePath;
   shmem_base_addr = 0;
   local_base_addr = 0;
   binary_verion = 0;
   trace_verion = 0;
+
+  if (hasEnding(filePath, ".tracez")) {
+    is_tracez = true;
+    // PipeReader left default-constructed (unused for .tracez)
+  } else {
+    is_tracez = false;
+    pipeReader = PipeReader(filePath);
+  }
 }
+
+kernel_trace_t::~kernel_trace_t() { delete tracez_reader; }
 
 void inst_memadd_info_t::base_stride_decompress(
     unsigned long long base_address, int stride,
@@ -464,71 +479,90 @@ void trace_parser::parse_memcpy_info(const std::string &memcpy_command,
   ss >> std::dec >> count;
 }
 
+// Parse a single kernel header line (shared between text and tracez paths)
+static void parse_kernel_header_line(const std::string &line,
+                                     kernel_trace_t *kernel_info) {
+  if (line.empty() || line[0] != '-') return;
+
+  std::stringstream ss;
+  std::string string1, string2;
+  ss.str(line);
+  ss.ignore();
+  ss >> string1 >> string2;
+
+  if (string1 == "kernel" && string2 == "name") {
+    const size_t equal_idx = line.find('=');
+    kernel_info->kernel_name = line.substr(equal_idx + 2);
+  } else if (string1 == "kernel" && string2 == "id") {
+    sscanf(line.c_str(), "-kernel id = %d", &kernel_info->kernel_id);
+  } else if (string1 == "grid" && string2 == "dim") {
+    sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &kernel_info->grid_dim_x,
+           &kernel_info->grid_dim_y, &kernel_info->grid_dim_z);
+  } else if (string1 == "block" && string2 == "dim") {
+    sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &kernel_info->tb_dim_x,
+           &kernel_info->tb_dim_y, &kernel_info->tb_dim_z);
+  } else if (string1 == "shmem" && string2 == "=") {
+    sscanf(line.c_str(), "-shmem = %d", &kernel_info->shmem);
+  } else if (string1 == "nregs") {
+    sscanf(line.c_str(), "-nregs = %d", &kernel_info->nregs);
+  } else if (string1 == "cuda" && string2 == "stream") {
+    sscanf(line.c_str(), "-cuda stream id = %llu",
+           &kernel_info->cuda_stream_id);
+  } else if (string1 == "binary" && string2 == "version") {
+    sscanf(line.c_str(), "-binary version = %d", &kernel_info->binary_verion);
+  } else if (string1 == "enable" && string2 == "lineinfo") {
+    sscanf(line.c_str(), "-enable lineinfo = %d",
+           &kernel_info->enable_lineinfo);
+  } else if (string1 == "nvbit" && string2 == "version") {
+    const size_t equal_idx = line.find('=');
+    kernel_info->nvbit_verion = line.substr(equal_idx + 1);
+  } else if (string1 == "accelsim" && string2 == "tracer") {
+    sscanf(line.c_str(), "-accelsim tracer version = %d",
+           &kernel_info->trace_verion);
+  } else if (string1 == "shmem" && string2 == "base_addr") {
+    const size_t equal_idx = line.find('=');
+    ss.str(line.substr(equal_idx + 1));
+    ss >> std::hex >> kernel_info->shmem_base_addr;
+  } else if (string1 == "local" && string2 == "mem") {
+    const size_t equal_idx = line.find('=');
+    ss.str(line.substr(equal_idx + 1));
+    ss >> std::hex >> kernel_info->local_base_addr;
+  }
+  std::cout << line << std::endl;
+}
+
 kernel_trace_t *trace_parser::parse_kernel_info(
     const std::string &kerneltraces_filepath) {
   std::cout << "Processing kernel " << kerneltraces_filepath << std::endl;
   kernel_trace_t *kernel_info = new kernel_trace_t(kerneltraces_filepath);
   kernel_info->enable_lineinfo = 0;  // default disabled
 
-  std::string line;
-  while (kernel_info->pipeReader.readLine(line)) {
-    if (line.length() == 0) {
-      continue;
-    } else if (line[0] == '#') {
-      // the trace format, ignore this and assume fixed format for now
-      break;  // the begin of the instruction stream
-    } else if (line[0] == '-') {
-      std::stringstream ss;
-      std::string string1, string2;
+  if (kernel_info->is_tracez) {
+    // .tracez path: use TracezReader to parse header and index
+    kernel_info->tracez_reader = new TracezReader();
+    std::string header_text =
+        kernel_info->tracez_reader->open(kerneltraces_filepath);
 
-      ss.str(line);
-      ss.ignore();
-      ss >> string1 >> string2;
-
-      if (string1 == "kernel" && string2 == "name") {
-        const size_t equal_idx = line.find('=');
-        kernel_info->kernel_name = line.substr(equal_idx + 2);
-      } else if (string1 == "kernel" && string2 == "id") {
-        sscanf(line.c_str(), "-kernel id = %d", &kernel_info->kernel_id);
-      } else if (string1 == "grid" && string2 == "dim") {
-        sscanf(line.c_str(), "-grid dim = (%d,%d,%d)", &kernel_info->grid_dim_x,
-               &kernel_info->grid_dim_y, &kernel_info->grid_dim_z);
-      } else if (string1 == "block" && string2 == "dim") {
-        sscanf(line.c_str(), "-block dim = (%d,%d,%d)", &kernel_info->tb_dim_x,
-               &kernel_info->tb_dim_y, &kernel_info->tb_dim_z);
-      } else if (string1 == "shmem" && string2 == "=") {
-        sscanf(line.c_str(), "-shmem = %d", &kernel_info->shmem);
-      } else if (string1 == "nregs") {
-        sscanf(line.c_str(), "-nregs = %d", &kernel_info->nregs);
-      } else if (string1 == "cuda" && string2 == "stream") {
-        sscanf(line.c_str(), "-cuda stream id = %llu",
-               &kernel_info->cuda_stream_id);
-      } else if (string1 == "binary" && string2 == "version") {
-        sscanf(line.c_str(), "-binary version = %d",
-               &kernel_info->binary_verion);
-      } else if (string1 == "enable" && string2 == "lineinfo") {
-        sscanf(line.c_str(), "-enable lineinfo = %d",
-               &kernel_info->enable_lineinfo);
-      } else if (string1 == "nvbit" && string2 == "version") {
-        const size_t equal_idx = line.find('=');
-        kernel_info->nvbit_verion = line.substr(equal_idx + 1);
-
-      } else if (string1 == "accelsim" && string2 == "tracer") {
-        sscanf(line.c_str(), "-accelsim tracer version = %d",
-               &kernel_info->trace_verion);
-
-      } else if (string1 == "shmem" && string2 == "base_addr") {
-        const size_t equal_idx = line.find('=');
-        ss.str(line.substr(equal_idx + 1));
-        ss >> std::hex >> kernel_info->shmem_base_addr;
-
-      } else if (string1 == "local" && string2 == "mem") {
-        const size_t equal_idx = line.find('=');
-        ss.str(line.substr(equal_idx + 1));
-        ss >> std::hex >> kernel_info->local_base_addr;
+    // Parse header lines from the header text
+    std::istringstream iss(header_text);
+    std::string line;
+    while (std::getline(iss, line)) {
+      if (line.empty()) continue;
+      if (line[0] == '#') break;
+      parse_kernel_header_line(line, kernel_info);
+    }
+  } else {
+    // Text path: use PipeReader
+    std::string line;
+    while (kernel_info->pipeReader.readLine(line)) {
+      if (line.length() == 0) {
+        continue;
+      } else if (line[0] == '#') {
+        break;
+      } else if (line[0] == '-') {
+        parse_kernel_header_line(line, kernel_info);
+        continue;
       }
-      std::cout << line << std::endl;
-      continue;
     }
   }
 

@@ -39,6 +39,7 @@
 
 #include "../ISA_Def/trace_opcode.h"
 #include "../trace-parser/trace_parser.h"
+#include "../trace-parser/warp_trace_stream.h"
 #include "abstract_hardware_model.h"
 #include "gpgpu-sim/shader.h"
 
@@ -156,12 +157,15 @@ class trace_shd_warp_t : public shd_warp_t {
     m_replay_active = false;
     m_replay_start_trace_pc = 0;
     m_replay_iterations = 0;
+    m_stream = nullptr;
   }
 
-  std::vector<inst_trace_t> warp_traces;
+  std::vector<inst_trace_t> warp_traces;  // used for text (.traceg) path
+  WarpTraceStream *m_stream;              // used for .tracez path (owned)
   const trace_warp_inst_t *get_next_trace_inst();
   void clear();
   bool trace_done();
+  unsigned trace_total_count() const;  // total instructions for this warp
   address_type get_start_trace_pc();
   virtual address_type get_pc();
   virtual kernel_info_t *get_kernel_info() const { return m_kernel_info; }

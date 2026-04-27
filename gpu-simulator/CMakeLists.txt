@@ -82,6 +82,7 @@ include_directories(${CMAKE_BINARY_DIR})
 include_directories(ISA_Def)
 include_directories(trace-driven)
 include_directories(trace-parser)
+include_directories(${CMAKE_CURRENT_SOURCE_DIR}/../util/tracer_nvbit/tracer_tool)
 
 
 add_executable(accel-sim.out accel-sim.cc main.cc)

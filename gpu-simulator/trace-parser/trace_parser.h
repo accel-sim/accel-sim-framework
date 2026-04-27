@@ -127,6 +127,7 @@ struct inst_trace_t {
 
 class PipeReader {
  public:
+  PipeReader() {}  // default: no file opened
   PipeReader(const std::string &filePath);
 
   // Destructor to close the pipe
@@ -159,8 +160,11 @@ class PipeReader {
   void OpenFile(const std::string &filePath);
 };
 
+class TracezReader;  // forward declaration
+
 struct kernel_trace_t {
   kernel_trace_t(const std::string &filePath);
+  ~kernel_trace_t();
 
   std::string kernel_name;
   unsigned kernel_id;
@@ -179,7 +183,13 @@ struct kernel_trace_t {
   std::string nvbit_verion;
   unsigned long long shmem_base_addr;
   unsigned long long local_base_addr;
+
+  // Text/pipe path (used for .traceg / .traceg.xz)
   PipeReader pipeReader;
+
+  // .tracez path
+  bool is_tracez = false;
+  TracezReader *tracez_reader = nullptr;  // owned, non-null when is_tracez
 };
 
 class trace_parser {
