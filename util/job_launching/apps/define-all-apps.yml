@@ -639,9 +639,9 @@ rodinia-3.1:
               accel-sim-mem: 1G
 #        - mummergpu-rodinia-3.1:
 #            - args:  ./data/NC_003997.fna ./data/NC_003997_q100bp.fna > NC_00399.out
-        - myocyte-rodinia-3.1:
-            - args:  100 1 0
-              accel-sim-mem: 4G
+        # - myocyte-rodinia-3.1:
+        #     - args:  100 1 0
+        #       accel-sim-mem: 4G
         - nn-rodinia-3.1:
             - args:  ./data/filelist_4 -r 5 -lat 30 -lng 90
               accel-sim-mem: 4G
