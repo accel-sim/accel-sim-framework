@@ -3,3 +3,4 @@ pandas
 plotly
 kaleido
 psutil
+tqdm

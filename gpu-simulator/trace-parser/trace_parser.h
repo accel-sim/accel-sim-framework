@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <array>
 #include <bitset>
+#include <memory>
 #include <string>
 #include <vector>
 
@@ -79,7 +80,10 @@ typedef struct {
 
 struct inst_trace_t {
   inst_trace_t();
-  inst_trace_t(const inst_trace_t &b);
+  inst_trace_t(const inst_trace_t &) = delete;
+  inst_trace_t &operator=(const inst_trace_t &) = delete;
+  inst_trace_t(inst_trace_t &&) = default;
+  inst_trace_t &operator=(inst_trace_t &&) = default;
 
   dim3 cta_id;
   dim3 cluster_cta_id;
@@ -99,8 +103,8 @@ struct inst_trace_t {
   uint64_t imm;
   // Optional second immediate value (used e.g. by Hopper BAR instructions)
   uint64_t imm2;
-  inst_memadd_info_t *memadd_info = nullptr;
-  tma_inst_memaddr_info_t *tma_memadd_info = nullptr;
+  std::unique_ptr<inst_memadd_info_t> memadd_info;
+  std::unique_ptr<tma_inst_memaddr_info_t> tma_memadd_info;
   bool tma_is_multicast = false;
   uint16_t tma_multicast_cta_mask = 0;
   uint32_t tma_mbar_addr = 0;

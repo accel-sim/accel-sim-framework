@@ -135,6 +135,14 @@ class ConfigurationSpec:
                     run_directory, appargs_run_subdir, self.run_subdir
                 )
 
+                # Determine profiling modes to run (always include a normal
+                # unprofiled run alongside any profiled runs)
+                profile_modes = [None]
+                if options.profile_perf:
+                    profile_modes.append("perf")
+                if options.profile_mem:
+                    profile_modes.append("mem")
+
                 # Handle per-kernel mode
                 if options.per_kernel and options.trace_dir != "":
                     benchmark_trace_dir = self.find_benchmark_trace_dir(appargs_run_subdir)
@@ -150,10 +158,42 @@ class ConfigurationSpec:
 
                         kernel_run_dir = os.path.join(this_run_dir, "per-kernel", kernel_name)
                         self.setup_per_kernel_directory(kernel_run_dir, kernel_filename, benchmark_trace_dir)
+                        self.append_gpgpusim_config(
+                            benchmark, kernel_run_dir, appargs_run_subdir, self.config_file
+                        )
 
-                        self.text_replace_torque_sim(
+                        for profile_mode in profile_modes:
+                            sim_tmpl = self.text_replace_torque_sim(
+                                full_data_dir,
+                                kernel_run_dir,
+                                benchmark,
+                                cuda_version,
+                                args,
+                                simdir,
+                                full_exec_dir,
+                                build_handle,
+                                mem_usage,
+                                kernel_name=kernel_name,
+                                profile_mode=profile_mode,
+                            )
+                            # Submit the job
+                            self._submit_job(
+                                kernel_run_dir, benchmark, args, build_handle,
+                                kernel_name=kernel_name, sim_template=sim_tmpl
+                            )
+                else:
+                    # Standard mode: run all kernels together
+                    self.setup_run_directory(
+                        full_data_dir, this_run_dir, data_dir, appargs_run_subdir
+                    )
+                    self.append_gpgpusim_config(
+                        benchmark, this_run_dir, appargs_run_subdir, self.config_file
+                    )
+
+                    for profile_mode in profile_modes:
+                        sim_tmpl = self.text_replace_torque_sim(
                             full_data_dir,
-                            kernel_run_dir,
+                            this_run_dir,
                             benchmark,
                             cuda_version,
                             args,
@@ -161,42 +201,14 @@ class ConfigurationSpec:
                             full_exec_dir,
                             build_handle,
                             mem_usage,
-                            kernel_name=kernel_name,
+                            profile_mode=profile_mode,
                         )
-                        self.append_gpgpusim_config(
-                            benchmark, kernel_run_dir, appargs_run_subdir, self.config_file
-                        )
-
                         # Submit the job
-                        self._submit_job(
-                            kernel_run_dir, benchmark, args, build_handle, kernel_name=kernel_name
-                        )
-                else:
-                    # Standard mode: run all kernels together
-                    self.setup_run_directory(
-                        full_data_dir, this_run_dir, data_dir, appargs_run_subdir
-                    )
-
-                    self.text_replace_torque_sim(
-                        full_data_dir,
-                        this_run_dir,
-                        benchmark,
-                        cuda_version,
-                        args,
-                        simdir,
-                        full_exec_dir,
-                        build_handle,
-                        mem_usage,
-                    )
-                    self.append_gpgpusim_config(
-                        benchmark, this_run_dir, appargs_run_subdir, self.config_file
-                    )
-
-                    # Submit the job
-                    self._submit_job(this_run_dir, benchmark, args, build_handle)
+                        self._submit_job(this_run_dir, benchmark, args, build_handle,
+                                         sim_template=sim_tmpl)
             self.benchmark_args_subdirs.clear()
 
-    def _submit_job(self, run_dir, benchmark, args, build_handle, kernel_name=None):
+    def _submit_job(self, run_dir, benchmark, args, build_handle, kernel_name=None, sim_template=None):
         """Submit a job to the scheduler and log it."""
         if options.no_launch:
             return
@@ -207,7 +219,7 @@ class ConfigurationSpec:
         os.chdir(run_dir)
         if (
             subprocess.call(
-                [job_submit_call, os.path.join(run_dir, job_template)],
+                [job_submit_call, os.path.join(run_dir, sim_template or job_template)],
                 stdout=torque_out_file,
             )
             < 0
@@ -385,6 +397,7 @@ class ConfigurationSpec:
         gpgpusim_build_handle,
         mem_usage,
         kernel_name=None,
+        profile_mode=None,
     ):
         # get the pre-launch sh commands
         prelaunch_filename = full_run_dir + "benchmark_pre_launch_command_line.txt"
@@ -410,6 +423,18 @@ class ConfigurationSpec:
                 options.benchmark_exec_prefix
                 + " "
                 + os.path.join(libpath, "accel-sim.out")
+            )
+
+        # Wrap with profiling tool based on profile_mode
+        if profile_mode == "perf":
+            perf_out = os.path.join(this_run_dir, common.PROFILE_PERF_DATA_FILE)
+            exec_name = "perf record -g -o {0} -- {1}".format(
+                perf_out, exec_name
+            )
+        elif profile_mode == "mem":
+            ht_out = os.path.join(this_run_dir, common.PROFILE_HEAPTRACK_FILE)
+            exec_name = "{0} --record-only -o {1} {2}".format(
+                options.heaptrack_bin, ht_out, exec_name
             )
 
         # Test the existance of required env variables
@@ -444,6 +469,9 @@ class ConfigurationSpec:
                                 gpgpusim_build_handle
         if kernel_name:
             sim_name += "." + kernel_name
+        # Add postfix for profiling runs so output files don't overwrite each other
+        if profile_mode:
+            sim_name += ".{0}".format(profile_mode)
         # Truncate long simulation file names
         sim_name = sim_name[:200]
         replacement_dict = {"NAME":sim_name,
@@ -464,12 +492,14 @@ class ConfigurationSpec:
             torque_text = re.sub(
                 "REPLACE_" + entry, str(replacement_dict[entry]), torque_text
             )
-        open(os.path.join(this_run_dir, job_template), "w").write(torque_text)
-        exec_line = torque_text.splitlines()[-1]
-        justrunfile = os.path.join(this_run_dir , "justrun.sh")
-        # open(justrunfile, 'w').write(exec_name + " " + txt_args + "\n")
+        # Use mode-specific filenames when profiling to avoid overwrites
+        suffix = ".{0}".format(profile_mode) if profile_mode else ""
+        sim_template = job_template.replace(".sim", suffix + ".sim") if suffix else job_template
+        open(os.path.join(this_run_dir, sim_template), "w").write(torque_text)
+        justrunfile = os.path.join(this_run_dir, "justrun{0}.sh".format(suffix))
         open(justrunfile, 'w').write(exec_name + " " + txt_args + " | tee gpgpu-sim-out_`date '+%b_%d_%H:%M.%S'`.txt")
         os.chmod(justrunfile, 0o744)
+        return sim_template
 
     # replaces all the "REPLACE_*" strings in the gpgpusim.config file
     def append_gpgpusim_config(

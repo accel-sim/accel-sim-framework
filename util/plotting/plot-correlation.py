@@ -158,6 +158,53 @@ def make_pretty_app_list(apps_included):
     return ret_str, kernel_str
 
 
+def plot_sim_rate(sim_data, output_dir):
+    """Plot per-kernel simulation rate (inst/sec) as a horizontal bar chart.
+
+    Computes rate from gpu_tot_sim_insn and gpgpu_simulation_time deltas
+    per kernel. Kernels with the lowest rates are the simulation bottlenecks.
+    """
+    os.makedirs(output_dir, exist_ok=True)
+    for cfg, apps in sim_data.items():
+        labels = []
+        rates = []
+        for appargs, kernels in apps.items():
+            for i, kdata in enumerate(kernels):
+                insn = kdata.get("gpu_tot_sim_insn", None)
+                sim_time = kdata.get("gpgpu_simulation_time", None)
+                kname = kdata.get("Kernel", "kernel-{0}".format(i))
+                label = "{0} / {1}".format(appargs.split("/")[-1], kname)
+                if insn is not None and sim_time is not None and sim_time > 0:
+                    labels.append(label)
+                    rates.append(insn / sim_time)
+        if not rates:
+            continue
+        # Sort by rate ascending (slowest at top)
+        paired = sorted(zip(rates, labels))
+        rates = [r for r, _ in paired]
+        labels = [l for _, l in paired]
+        fig = go.Figure(
+            data=[
+                go.Bar(
+                    x=rates,
+                    y=labels,
+                    orientation="h",
+                    marker_color="#0F8C79",
+                )
+            ]
+        )
+        fig.update_layout(
+            title="Simulation Rate per Kernel ({0})".format(cfg),
+            xaxis_title="inst/sec",
+            yaxis=dict(automargin=True),
+            height=max(400, len(labels) * 25 + 100),
+            margin=dict(l=300),
+        )
+        out_path = os.path.join(output_dir, "sim_rate_{0}.html".format(cfg))
+        fig.write_html(out_path)
+        print("Wrote {0}".format(out_path))
+
+
 def make_submission_quality_image(image_type, traces, hw_cfg, figs=None):
     kernel_data = []
     app_data = []
@@ -911,6 +958,15 @@ parser.add_option(
     default="",
     help='Turn on minimal logging. Right now "hwsummary" supported.',
 )
+parser.add_option(
+    "--sim-rate",
+    dest="sim_rate",
+    action="store_true",
+    default=False,
+    help="Plot per-kernel simulation rate (inst/sec) to identify "
+    "which kernels simulate slowest. Uses gpgpu_simulation_time and "
+    "gpu_tot_sim_insn from the CSV to compute rate per kernel.",
+)
 
 
 (options, args) = parser.parse_args()
@@ -1315,3 +1371,6 @@ with open(app_out_path, 'a') as f:
 
 print("Combined per-kernel output available at: file://{0}".format(kernel_out_path))
 print("Combined per-app output available at: file://{0}".format(app_out_path))
+
+if options.sim_rate:
+    plot_sim_rate(sim_data, correl_outdir)

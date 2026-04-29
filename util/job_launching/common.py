@@ -37,6 +37,10 @@ import hashlib
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
+# Profiling output file names (written to each sim_run directory)
+PROFILE_PERF_DATA_FILE = "profile_perf.data"
+PROFILE_HEAPTRACK_FILE = "profile_heaptrack"  # heaptrack appends .zst
+
 defined_apps = {}
 defined_baseconfigs = {}
 defined_xtracfgs = {}
@@ -334,6 +338,31 @@ def parse_run_simulations_options():
         action="store_true",
         help="Run each kernel in a separate simulation instance. Creates per-kernel subdirectories "
         "with individual kernelslist.g files, enabling parallel execution of all kernels.",
+    )
+    parser.add_option(
+        "--profile-perf",
+        dest="profile_perf",
+        action="store_true",
+        default=False,
+        help="Run simulation under perf record to collect function-level "
+        "CPU profiling data. Results saved to profile_perf.data in each "
+        "simulation directory. Use 'perf report' to analyze.",
+    )
+    parser.add_option(
+        "--profile-mem",
+        dest="profile_mem",
+        action="store_true",
+        default=False,
+        help="Run simulation under heaptrack to collect heap memory profiling "
+        "data. Results saved to profile_heaptrack.zst in each simulation "
+        "directory. Use heaptrack_print or heaptrack_gui to analyze.",
+    )
+    parser.add_option(
+        "--heaptrack-bin",
+        dest="heaptrack_bin",
+        default="heaptrack",
+        help="Path to heaptrack binary or AppImage (default: 'heaptrack' from PATH). "
+        "Use this on systems where heaptrack is installed as an AppImage.",
     )
 
     (options, args) = parser.parse_args()

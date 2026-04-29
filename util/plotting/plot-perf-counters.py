@@ -42,6 +42,12 @@ def get_to_plot(df: pd.DataFrame, normalize: bool = False) -> tuple[pd.Series, p
     # to_plot["Shader Idle"] = df.filter(regex=r'shader_cycle_distro_0_').diff()
     # to_plot["Shader Waiting for RAW"] = df.filter(regex=r'shader_cycle_distro_1_').diff()
     # to_plot["Shader Stalled"] = df.filter(regex=r'shader_cycle_distro_2_').diff()
+
+    # Simulation rate over time (requires wall_clock_ms column)
+    if 'wall_clock_ms' in df.columns:
+        wall_diff_sec = df['wall_clock_ms'].diff() / 1000.0
+        to_plot["Simulation Rate (inst/sec)"] = df.filter(regex=r'sim_insn$').sum(axis=1).diff() / wall_diff_sec
+        to_plot["Simulation Rate (cycle/sec)"] = df.filter(regex=r'sim_cycle$').sum(axis=1).diff() / wall_diff_sec
     # ---------------------------
 
     return global_cycles, to_plot

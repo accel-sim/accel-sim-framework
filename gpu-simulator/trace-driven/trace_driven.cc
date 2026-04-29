@@ -366,7 +366,7 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       set_tma_multicast(false);
       set_tma_multicast_cta_mask(0);
     }
-  } else if (trace.memadd_info != NULL) {
+  } else if (trace.memadd_info) {
     data_size = trace.memadd_info->width;
     for (unsigned i = 0; i < warp_size(); ++i)
       set_addr(i, trace.memadd_info->addrs[i]);

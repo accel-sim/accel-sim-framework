@@ -34,50 +34,11 @@ void split(const std::string &str, std::vector<std::string> &cont,
 }
 
 inst_trace_t::inst_trace_t() {
-  memadd_info = NULL;
   imm = 0;
   imm2 = 0;
 }
 
-inst_trace_t::~inst_trace_t() {
-  if (memadd_info != NULL) delete memadd_info;
-}
-
-inst_trace_t::inst_trace_t(const inst_trace_t &b) {
-  // Copy the basic information
-  cta_id = b.cta_id;
-  cluster_cta_id = b.cluster_cta_id;
-  cluster_id = b.cluster_id;
-  cluster_rank = b.cluster_rank;
-  line_num = b.line_num;
-  m_pc = b.m_pc;
-  mask = b.mask;
-  reg_dsts_num = b.reg_dsts_num;
-  memcpy(reg_dest, b.reg_dest, sizeof(reg_dest));
-  reg_dest_vals = b.reg_dest_vals;
-  opcode = b.opcode;
-  reg_srcs_num = b.reg_srcs_num;
-  memcpy(reg_src, b.reg_src, sizeof(reg_src));
-  reg_src_vals = b.reg_src_vals;
-  is_gmma_commit_group = b.is_gmma_commit_group;
-  imm = b.imm;
-  imm2 = b.imm2;
-
-  // Copy the memory address information
-  if (b.memadd_info != NULL) {
-    memadd_info = new inst_memadd_info_t(*b.memadd_info);
-  }
-  if (b.tma_memadd_info != NULL) {
-    tma_memadd_info = new tma_inst_memaddr_info_t(*b.tma_memadd_info);
-  }
-
-  // TMA specific information
-  tma_is_multicast = b.tma_is_multicast;
-  tma_multicast_cta_mask = b.tma_multicast_cta_mask;
-  tma_mbar_addr = b.tma_mbar_addr;
-  tma_byte_count = b.tma_byte_count;
-  tma_oob_byte_count = b.tma_oob_byte_count;
-}
+inst_trace_t::~inst_trace_t() {}
 
 bool inst_trace_t::check_opcode_contain(const std::vector<std::string> &opcode,
                                         std::string param) const {
@@ -275,7 +236,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
   }
 
   if (is_tma) {
-    tma_memadd_info = new tma_inst_memaddr_info_t();
+    tma_memadd_info = std::make_unique<tma_inst_memaddr_info_t>();
     tma_memadd_info->width = mem_width;
     ss >> std::hex >> tma_mbar_addr;
     ss >> std::dec >> tma_is_multicast;
@@ -316,7 +277,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
 
   if (!is_tma && mem_width > 0) {
     // then it is a memory inst
-    memadd_info = new inst_memadd_info_t();
+    memadd_info = std::make_unique<inst_memadd_info_t>();
 
     // read the memory width from the opcode, as nvbit can report it incorrectly
     std::vector<std::string> opcode_tokens = get_opcode_tokens();
