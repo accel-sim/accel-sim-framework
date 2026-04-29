@@ -1035,34 +1035,6 @@ void trace_shader_core_ctx::updateSIMTStack(unsigned warpId,
   // No SIMT-stack in trace-driven  mode
 }
 
-// Helper: scan a warp's instructions for TMA/mbarrier metadata.
-// Works for both text path (warp_traces vector) and tracez path (stream).
-static void scan_warp_metadata(trace_shd_warp_t *warp, kernel_info_t &kernel) {
-  unsigned total = warp->trace_total_count();
-  bool has_tma = false;
-
-  for (unsigned j = 0; j < total; ++j) {
-    inst_trace_t &inst =
-        warp->m_stream ? warp->m_stream->get(j) : warp->warp_traces[j];
-
-    if (!has_tma && inst.opcode.find("UTMALDG") != std::string::npos) {
-      has_tma = true;
-    }
-
-    if (inst.opcode.find("SYNCS.ARRIVE") != std::string::npos) {
-      if (inst.memadd_info != nullptr) {
-        for (int t = 0; t < WARP_SIZE; t++) {
-          if (inst.mask & (1u << t)) {
-            uint32_t addr = inst.memadd_info->addrs[t];
-            kernel.register_used_mbarrier_addr(addr);
-          }
-        }
-      }
-    }
-  }
-  warp->set_is_tma_warp(has_tma);
-}
-
 void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
                                         kernel_info_t &kernel) {
   trace_kernel_info_t &trace_kernel =
@@ -1117,10 +1089,6 @@ void trace_shader_core_ctx::init_traces(unsigned start_warp, unsigned end_warp,
     trace_shd_warp_t *m_trace_warp = static_cast<trace_shd_warp_t *>(m_warp[i]);
 
     if (m_trace_warp->trace_total_count() == 0) continue;
-
-    // TODO: re-enable scan_warp_metadata once we have a lightweight metadata
-    // index in .tracez (avoids decompressing all sub-chunks at init time).
-    // scan_warp_metadata(m_trace_warp, kernel);
 
     m_trace_warp->set_next_pc(m_trace_warp->get_start_trace_pc());
     m_trace_warp->set_kernel(&trace_kernel);
