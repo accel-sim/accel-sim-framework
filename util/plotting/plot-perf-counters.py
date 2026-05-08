@@ -25,8 +25,8 @@ def get_to_plot(df: pd.DataFrame, normalize: bool = False) -> tuple[pd.Series, p
     to_plot["L2 Read Misses"] = df.filter(regex=r'L2.*GLOBAL_ACC_R_MISS$').sum(axis=1).diff() / norm_factor
     to_plot["Accumulated L2 Read Misses"] = df.filter(regex=r'L2.*GLOBAL_ACC_R_MISS$').sum(axis=1)
     to_plot["Normalized IPC"] = df.filter(regex=r'sim_insn$').sum(axis=1).diff() / cycle_diff
-    to_plot["L2 Bandwidth - Replies in parallel"] = df.filter(regex=r'partiton_replys_in_parallel').sum(axis=1).diff() / norm_factor
-    to_plot["L2 Bandwidth - Reqs in parallel"] = df.filter(regex=r'partiton_reqs_in_parallel').sum(axis=1).diff() / norm_factor
+    to_plot["L2 Bandwidth - Replies in parallel"] = df.filter(regex=r'^partiton_replys_in_parallel$').sum(axis=1).diff() / norm_factor
+    to_plot["L2 Bandwidth - Reqs in parallel"] = df.filter(regex=r'^partiton_reqs_in_parallel$').sum(axis=1).diff() / norm_factor
     to_plot["SIMT to Mem"] = df.filter(regex=r'n_simt_to_mem_').sum(axis=1).diff() / norm_factor
     to_plot["Mem to SIMT"] = df.filter(regex=r'n_mem_to_simt_').sum(axis=1).diff() / norm_factor
     to_plot["L2 Writes"] = df.filter(regex=r'L2_bank_.*_GLOBAL_ACC_W_(HIT$|MISS|HIT_RESERVED|SECTOR_MISS)').sum(axis=1).diff() / norm_factor
