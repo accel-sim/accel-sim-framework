@@ -64,7 +64,7 @@ struct tma_inst_memaddr_info_t {
                              const std::bitset<WARP_SIZE> &mask);
 };
 
-typedef std::array<uint32_t, WARP_SIZE> reg_val_t;
+typedef std::array<uint64_t, WARP_SIZE> reg_val_t;
 typedef enum {
   REG = 0,
   UREG,

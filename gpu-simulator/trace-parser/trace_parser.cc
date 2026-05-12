@@ -349,7 +349,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
         ss >> std::dec >> distinct_values;
         if (distinct_values == 1) {
           // All the values are the same
-          uint32_t value;
+          uint64_t value;
           ss >> std::hex >> value;
           for (int j = 0; j < WARP_SIZE; j++) {
             reg_val[j] = value;

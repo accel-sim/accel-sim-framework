@@ -57,6 +57,9 @@ typedef struct {
       uint64_t imm2;
       uint32_t desRegVal[32];
       uint32_t srcRegVals[MAX_SRC][32];
+      // Opcode-defined extra per-lane value. Currently used by SYNCS.EXCH.64
+      // to carry the hi half (Rn+1) of its 64-bit src2 pair.
+      uint32_t auxRegVals[32];
     } regular;
     // For TMA instructions
     struct {

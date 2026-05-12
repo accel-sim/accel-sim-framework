@@ -648,14 +648,19 @@ bool trace_warp_inst_t::parse_from_trace_struct(
         int N = std::stoi(n_str);
         int K = std::stoi(k_str);
 
-        auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
-        if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
-          // Set the instruction latency based on N size
-          latency = iter->second.first;
-          initiation_interval = iter->second.second;
+        if (N >= 64) {
+          latency = N / 2;
+          initiation_interval = N / 2;
         } else {
-          std::cerr << "Unsupported GMMA N size: " << N << std::endl;
-          assert(0);
+          auto iter = Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.find(N);
+          if (iter != Hopper_GMMA_N_Latency_Initiation_Interval_Mapping.end()) {
+            // Set the instruction latency based on N size
+            latency = iter->second.first;
+            initiation_interval = iter->second.second;
+          } else {
+            std::cerr << "Unsupported GMMA N size: " << N << std::endl;
+            assert(0);
+          }
         }
       } else {
         std::cerr << "Failed to extract M, N, K values from: " << mxnxk
@@ -744,17 +749,32 @@ void trace_warp_inst_t::parseSASSInstruction(
       // prior to this instructions, so we need to undo this to get the actual
       // thread count
       // As the thread count is implemented as a roll-up counter
-      std::array<uint32_t, WARP_SIZE> thread_counts = trace.reg_src_vals[1];
       for (int i = 0; i < WARP_SIZE; i++) {
+        bool lane_active = (trace.mask >> i) & 1u;
+        uint32_t lower = trace.reg_src_vals[1][i] & 0xFFFFFFFF;
+        uint32_t upper = trace.reg_src_vals[1][i] >> 32;
+        // Sanity check: per issue #123 (private repo), the pending-thread-count
+        // field (bits [43:63]) should have its lower 20 bits mirror the
+        // expected-thread-count field (bits [1:21]) at init time. If this
+        // ever fires it's NOT necessarily a bug — it just means hardware
+        // produced an init pattern we haven't seen / modeled yet, and the
+        // code below needs to be extended to handle it.
+        uint32_t pending_lower20 = (upper >> 11) & 0xFFFFF;
+        uint32_t expected_lower20 = (lower >> 1) & 0xFFFFF;
+        assert((!lane_active || pending_lower20 == expected_lower20) &&
+               "SYNCS.EXCH.64: pending-thread-count lower 20 bits do not "
+               "mirror expected-thread-count field; unhandled mbarrier init "
+               "encoding (see **private** issue #123)");
         // First right shift by 1
-        thread_counts[i] >>= 1;
+        lower >>= 1;
         // Then substract by 0x100000
-        thread_counts[i] -= 0x100000;
+        lower -= 0x100000;
         // Finally, take the negation
-        thread_counts[i] = -thread_counts[i];
+        lower = -lower;
+
+        operand.u.init.count[i] = lower;
+        operand.init_as_one[i] = upper & (1 << 31);
       }
-      memcpy(operand.u.init.count, thread_counts.data(),
-             sizeof(operand.u.init.count));
     } else if (opcodeStr == "SYNCS.ARRIVE.TRANS64" ||
                opcodeStr ==
                    "SYNCS.ARRIVE.TRANS64.RED") {  // mbarrier.arrive.expect_tx
@@ -767,9 +787,9 @@ void trace_warp_inst_t::parseSASSInstruction(
       for (int i = 0; i < WARP_SIZE; i++) {
         // This instruction increase arrival count by 1
         operand.u.arrive.count[i] = 1;
+        operand.u.arrive.txCount[i] =
+            static_cast<uint32_t>(trace.reg_src_vals[1][i]);
       }
-      memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
-             sizeof(operand.u.arrive.txCount));
     } else if (opcodeStr.find("SYNCS.ARRIVE") !=
                std::string::npos) {  // mbarrier.arrive
       set_syncs_op(SYNCS_ARRIVE);
@@ -779,8 +799,10 @@ void trace_warp_inst_t::parseSASSInstruction(
       // Handle other variants
       if (opcodeStr.find("ART0") != std::string::npos) {
         // Arrival count is the register value in RD above
-        memcpy(operand.u.arrive.count, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.arrive.count));
+        for (int i = 0; i < WARP_SIZE; i++) {
+          operand.u.arrive.count[i] =
+              static_cast<uint32_t>(trace.reg_src_vals[1][i]);
+        }
       } else if (opcodeStr.find("A1T0") != std::string::npos) {
         // Arrival 1, transaction 0
         for (int i = 0; i < WARP_SIZE; i++) {
@@ -789,13 +811,17 @@ void trace_warp_inst_t::parseSASSInstruction(
         }
       } else if (opcodeStr.find("A0TR") != std::string::npos) {
         // Arrival 0, transaction count based on register value in RD
-        memcpy(operand.u.arrive.txCount, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.arrive.txCount));
+        for (int i = 0; i < WARP_SIZE; i++) {
+          operand.u.arrive.txCount[i] =
+              static_cast<uint32_t>(trace.reg_src_vals[1][i]);
+        }
       } else if (opcodeStr.find("A0TX") != std::string::npos) {
         // Arrival 0, complete transaction count based on register value in RD
         set_syncs_op(SYNCS_COMPELTE_TX);
-        memcpy(operand.u.complete_tx.txCount, trace.reg_src_vals[1].data(),
-               sizeof(operand.u.complete_tx.txCount));
+        for (int i = 0; i < WARP_SIZE; i++) {
+          operand.u.complete_tx.txCount[i] =
+              static_cast<uint32_t>(trace.reg_src_vals[1][i]);
+        }
       } else if (opcodeStr.find("A0T1") != std::string::npos) {
         // Arrival 0, transaction count 1
         for (int i = 0; i < WARP_SIZE; i++) {
@@ -817,8 +843,10 @@ void trace_warp_inst_t::parseSASSInstruction(
       // PA: predicate register
       // RB, URC: memory reference operand in NVBit, to the mbarrier
       // RD: prior phase of the mbarrier that it should wait for
-      memcpy(operand.u.wait.phase, trace.reg_src_vals[1].data(),
-             sizeof(operand.u.wait.phase));
+      for (int i = 0; i < WARP_SIZE; i++) {
+        operand.u.wait.phase[i] =
+            static_cast<uint32_t>(trace.reg_src_vals[1][i]);
+      }
     } else {
       printf(
           "Error: Unsupported SYNCS instruction: %s at PC: 0x%llx, exiting "

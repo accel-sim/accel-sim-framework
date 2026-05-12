@@ -3,8 +3,8 @@
 // human-readable format.
 //
 // Usage:
-//   traceDsm <file.tracez>              # output .traceg format (simulatable)
-//   traceDsm <file.tracez> --annotate   # output human-readable format
+//   traceDsm <file.tracez>              # writes <file>.traceg next to input
+//   traceDsm <file.tracez> --annotate   # human-readable format on stdout
 
 #include <zstd.h>
 #include <bitset>
@@ -150,8 +150,8 @@ int main(int argc, char *argv[]) {
   if (argc < 2 || argc > 3) {
     fprintf(stderr,
             "Usage: %s <file.tracez> [--annotate]\n"
-            "  Default: output simulator-compatible .traceg text format.\n"
-            "  --annotate: human-readable format with labeled fields.\n",
+            "  Default: write <file>.traceg next to the input.\n"
+            "  --annotate: human-readable format with labeled fields (stdout).\n",
             argv[0]);
     return 1;
   }
@@ -170,6 +170,29 @@ int main(int argc, char *argv[]) {
   if (!fp) {
     fprintf(stderr, "Error: cannot open %s\n", filepath.c_str());
     return 1;
+  }
+
+  // MODE_SIM writes the .traceg next to the input (input must end in .tracez).
+  // MODE_ANNOTATE stays on stdout.
+  FILE *out = stdout;
+  if (mode == MODE_SIM) {
+    const std::string ext = ".tracez";
+    if (filepath.size() <= ext.size() ||
+        filepath.compare(filepath.size() - ext.size(), ext.size(), ext) != 0) {
+      fprintf(stderr, "Error: input must have .tracez suffix: %s\n",
+              filepath.c_str());
+      fclose(fp);
+      return 1;
+    }
+    std::string out_path =
+        filepath.substr(0, filepath.size() - ext.size()) + ".traceg";
+    out = fopen(out_path.c_str(), "w");
+    if (!out) {
+      fprintf(stderr, "Error: cannot open %s for writing\n", out_path.c_str());
+      fclose(fp);
+      return 1;
+    }
+    fprintf(stderr, "Writing to %s\n", out_path.c_str());
   }
 
   std::string header = tracez::read_kernel_header(fp);
@@ -212,7 +235,7 @@ int main(int argc, char *argv[]) {
     std::istringstream hss(header);
     std::string line;
     while (std::getline(hss, line)) {
-      fprintf(stdout, "%s\n", line.c_str());
+      fprintf(out, "%s\n", line.c_str());
     }
   } else {
     fprintf(stdout, "=== Kernel Header ===\n%s\n\n", header.c_str());
@@ -223,14 +246,14 @@ int main(int argc, char *argv[]) {
     const auto &tb = tb_index[t];
 
     if (mode == MODE_SIM) {
-      fprintf(stdout, "\n#BEGIN_TB\n");
-      fprintf(stdout, "\nthread block = %u,%u,%u\n", tb.tb_id_x, tb.tb_id_y,
+      fprintf(out, "\n#BEGIN_TB\n");
+      fprintf(out, "\nthread block = %u,%u,%u\n", tb.tb_id_x, tb.tb_id_y,
               tb.tb_id_z);
-      fprintf(stdout, "cluster id = %u,%u,%u\n", tb.cluster_id_x,
+      fprintf(out, "cluster id = %u,%u,%u\n", tb.cluster_id_x,
               tb.cluster_id_y, tb.cluster_id_z);
-      fprintf(stdout, "cluster cta = %u,%u,%u\n", tb.cluster_cta_id_x,
+      fprintf(out, "cluster cta = %u,%u,%u\n", tb.cluster_cta_id_x,
               tb.cluster_cta_id_y, tb.cluster_cta_id_z);
-      fprintf(stdout, "cluster rank = %u\n", tb.cluster_rank);
+      fprintf(out, "cluster rank = %u\n", tb.cluster_rank);
     } else {
       fprintf(stdout, "=== TB %u,%u,%u (cluster=%u,%u,%u rank=%u) ===\n",
               tb.tb_id_x, tb.tb_id_y, tb.tb_id_z, tb.cluster_id_x,
@@ -292,10 +315,10 @@ int main(int argc, char *argv[]) {
       }
 
       if (mode == MODE_SIM) {
-        fprintf(stdout, "\nwarp = %u\n", w);
-        fprintf(stdout, "insts = %u\n", warp.inst_count);
+        fprintf(out, "\nwarp = %u\n", w);
+        fprintf(out, "insts = %u\n", warp.inst_count);
         for (const auto &line : lines) {
-          fprintf(stdout, "%s\n", line.c_str());
+          fprintf(out, "%s\n", line.c_str());
         }
       } else {
         fprintf(stdout, "  Warp %u: %u insts, %u subchunks\n", w,
@@ -307,12 +330,13 @@ int main(int argc, char *argv[]) {
     }
 
     if (mode == MODE_SIM) {
-      fprintf(stdout, "\n#END_TB\n");
+      fprintf(out, "\n#END_TB\n");
     }
   }
 
   ZSTD_freeDCtx(dctx);
   if (ddict) ZSTD_freeDDict(ddict);
   fclose(fp);
+  if (out != stdout) fclose(out);
   return 0;
 }

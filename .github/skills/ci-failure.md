@@ -8,6 +8,19 @@ investigation.** Read full log outputs, examine complete error files, trace thro
 code, check git history, and cross-reference. The goal is to give the developer a complete
 picture so they never need to open the raw CI logs.
 
+## Anchor on the real error first
+
+Before anything else, find the literal message that caused the step to exit non-zero. The
+last error/abort/`exit` line printed before `Process completed with exit code 1` is your
+anchor — every claim in your report must ground back to it.
+
+- If you cannot locate that string anywhere in the workspace or the runner step log, say
+  so explicitly in the report. **Do not invent one by grepping recent diffs for
+  error-shaped strings** — many sources contain `printf("Error: ...")` lines that never
+  fire on this run.
+- Before naming any source line as the cause, verify the exact error text appears in the
+  actual run output. If it doesn't appear, it isn't the cause.
+
 ## Where to look
 
 - **Simulation logfiles**: `util/job_launching/logfiles/` — the latest `sim_log.*.txt` and `failed_job_log_*.txt`
@@ -18,7 +31,10 @@ picture so they never need to open the raw CI logs.
 - **Git info**: `git log`, `git show`, `git diff` in the root repo and in `gpu-simulator/gpgpu-sim/` (separate repo)
 - **Build log**: `build.log` in workspace root (tee'd from the Build step) — full compiler/linker output when the build failed
 - **CMake build dir**: `gpu-simulator/build/` — `CMakeFiles/CMakeError.log`, `CMakeOutput.log`, etc.
-- **CI scripts**: `.github/scripts/hopper-weekly.sh` and `.github/scripts/lib/common.sh`
+- **CI scripts**: `.github/scripts/main-sass.sh`, `.github/scripts/main-tracer.sh`,
+  `.github/scripts/hopper-weekly.sh`, `.github/scripts/h200.sh`, and
+  `.github/scripts/lib/common.sh`. Failures often happen in post-simulation orchestration
+  (rsync, ln, git push, mv) rather than in the simulator itself.
 
 ## Analysis steps
 
@@ -64,6 +80,11 @@ picture so they never need to open the raw CI logs.
 
 ## Root-cause analysis
 
+0. **Confirm where the failure actually is.** Check which sub-steps in the failing job
+   succeeded (`Run SASS Simulations`, `Archive Stats`, `Correlate Ubench`, etc.). If the
+   simulation and archive steps both succeeded, the failure is in post-simulation
+   orchestration — look at the `.github/scripts/*.sh` stage that ran last, not at the
+   simulator source.
 1. **Identify the failing commit**: `git log -1 --oneline`
 2. **See what changed**:
    ```bash

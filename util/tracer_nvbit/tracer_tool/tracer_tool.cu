@@ -85,7 +85,7 @@ int exclude_pred_off = 1;
 int active_from_start = 1;
 int lineinfo = 0;
 bool skip_tma_mem = false;
-bool allow_reg_val_tracing = false;
+bool allow_reg_val_tracing = true;
 /* used to select region of interest when active from start is 0 */
 bool active_region = true;
 
@@ -326,7 +326,7 @@ void nvbit_at_init() {
               "WARPSYNC.COLLECTIVE and its target instruction (inclusive)");
   GET_VAR_INT(skip_tma_mem, "SKIP_TMA_MEM", 0,
               "Enable the skipping of TMA memory instructions");
-  GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 0,
+  GET_VAR_INT(allow_reg_val_tracing, "ALLOW_REG_VAL_TRACING", 1,
               "EXPERIMENTAL: Enable the tracing of register values. Trace "
               "format is not stable. Trace version is 6.");
   GET_VAR_INT(
@@ -589,6 +589,19 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
           // we are printing to files by checking src_oprd's reg number
           add_reg_val(0);
         }
+
+        // Opcode-defined generic aux register value (per-lane).
+        // Default: 0 (unused). Add opcode-specific cases below.
+        //   SYNCS.EXCH.64 — hi half (Rn+1) of src2, to be fused with
+        //   srcRegVals[1] into a 64-bit column by the writer.
+        int aux_reg = 0;
+        if (strcmp(instr->getOpcode(), "SYNCS.EXCH.64") == 0) {
+          assert(srcNum >= 2 && "SYNCS.EXCH.64 expected >= 2 src regs");
+          assert(src_oprd[1] != 255 && src_oprd[1] != 511 &&
+                 "SYNCS.EXCH.64 src2 is RZ/URZ; cannot form 64-bit pair");
+          aux_reg = src_oprd[1] + 1;
+        }
+        add_reg_val(aux_reg);
 
         // Add is_gmma_commit_group flag
         nvbit_add_call_arg_const_val32(instr, is_gmma_commit_group);
@@ -1591,22 +1604,40 @@ void *recv_thread_fun(void *args) {
                 fprintf(ctx_resultsFile[ctx], "%08x ", *minmax_pair.first);
               }
             }
-            // For 0<=s<MAX_SRC, dump source register values if GPRSrcs[s] >= 0
+            // Build the per-src hi pointer: nullptr means emit lo as 32-bit;
+            // non-null means fuse (hi << 32) | lo into 64-bit. Opcode-specific
+            // wiring of auxRegVals lives here and nowhere else below.
+            const uint32_t *src_hi[MAX_SRC] = {nullptr};
+            if (opcode == "SYNCS.EXCH.64") {
+              // SYNCS.EXCH.64's 64-bit src2: srcRegVals[1] lo + auxRegVals hi.
+              src_hi[1] = trace->inst.regular.auxRegVals;
+            }
+
             for (int s = 0; s < MAX_SRC; s++) {
-              if (trace->inst.regular.GPRSrcs[s] >= 0) {
-                auto minmax_pair = std::minmax_element(
-                    std::begin(trace->inst.regular.srcRegVals[s]),
-                    std::end(trace->inst.regular.srcRegVals[s]));
-                bool is_all_same = (*minmax_pair.first == *minmax_pair.second);
-                if (!is_all_same) {
+              if (trace->inst.regular.GPRSrcs[s] < 0)
+                continue;
+              const uint32_t *lo = trace->inst.regular.srcRegVals[s];
+              const uint32_t *hi = src_hi[s];
+              if (hi != nullptr) {
+                uint64_t v64[32];
+                for (int tid = 0; tid < 32; tid++)
+                  v64[tid] = ((uint64_t)hi[tid] << 32) | (uint64_t)lo[tid];
+                auto mm = std::minmax_element(std::begin(v64), std::end(v64));
+                if (*mm.first != *mm.second) {
                   fprintf(ctx_resultsFile[ctx], "32 ");
-                  for (int tid = 0; tid < 32; tid++) {
-                    fprintf(ctx_resultsFile[ctx], "%08x ",
-                            trace->inst.regular.srcRegVals[s][tid]);
-                  }
+                  for (int tid = 0; tid < 32; tid++)
+                    fprintf(ctx_resultsFile[ctx], "%016lx ", v64[tid]);
                 } else {
-                  fprintf(ctx_resultsFile[ctx], "1 ");
-                  fprintf(ctx_resultsFile[ctx], "%08x ", *minmax_pair.first);
+                  fprintf(ctx_resultsFile[ctx], "1 %016lx ", *mm.first);
+                }
+              } else {
+                auto mm = std::minmax_element(lo, lo + 32);
+                if (*mm.first != *mm.second) {
+                  fprintf(ctx_resultsFile[ctx], "32 ");
+                  for (int tid = 0; tid < 32; tid++)
+                    fprintf(ctx_resultsFile[ctx], "%08x ", lo[tid]);
+                } else {
+                  fprintf(ctx_resultsFile[ctx], "1 %08x ", *mm.first);
                 }
               }
             }

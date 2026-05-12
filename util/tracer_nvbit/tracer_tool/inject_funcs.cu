@@ -37,17 +37,19 @@ __device__ __forceinline__ int4 get_clusterid(void) {
  *  extern "C" __device__ __noinline__
  *    To prevent "dead"-code elimination by the compiler.
  */
-extern "C" __device__ __noinline__ void instrument_inst(
-    int pred, int opcode_id, int32_t vpc, bool is_tma,
-    uint64_t tma_param_handle, uint32_t tma_param_handle_size, bool is_mem,
-    uint64_t addr, int32_t width, int32_t desReg, int32_t srcReg1,
-    int32_t srcReg2, int32_t srcReg3, int32_t srcReg4, int32_t srcReg5,
-    int32_t srcNum, uint64_t immediate, uint64_t immediate2,
-    uint64_t pchannel_dev, uint64_t ptotal_dynamic_instr_counter,
-    uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
-    uint32_t line_num, uint32_t instr_idx, uint32_t desRegVal,
-    uint32_t srcReg1Val, uint32_t srcReg2Val, uint32_t srcReg3Val,
-    uint32_t srcReg4Val, uint32_t srcReg5Val, bool is_gmma_commit_group) {
+extern "C" __device__ __noinline__ void
+instrument_inst(int pred, int opcode_id, int32_t vpc, bool is_tma,
+                uint64_t tma_param_handle, uint32_t tma_param_handle_size,
+                bool is_mem, uint64_t addr, int32_t width, int32_t desReg,
+                int32_t srcReg1, int32_t srcReg2, int32_t srcReg3,
+                int32_t srcReg4, int32_t srcReg5, int32_t srcNum,
+                uint64_t immediate, uint64_t immediate2, uint64_t pchannel_dev,
+                uint64_t ptotal_dynamic_instr_counter,
+                uint64_t preported_dynamic_instr_counter, uint64_t pstop_report,
+                uint32_t line_num, uint32_t instr_idx, uint32_t desRegVal,
+                uint32_t srcReg1Val, uint32_t srcReg2Val, uint32_t srcReg3Val,
+                uint32_t srcReg4Val, uint32_t srcReg5Val, uint32_t auxRegVal,
+                bool is_gmma_commit_group) {
   const int active_mask = __ballot_sync(__activemask(), 1);
   const int predicate_mask = __ballot_sync(__activemask(), pred);
   const int laneid = get_laneid();
@@ -132,6 +134,8 @@ extern "C" __device__ __noinline__ void instrument_inst(
           __shfl_sync(active_mask, srcReg4Val, tid);
       trace.inst.regular.srcRegVals[4][tid] =
           __shfl_sync(active_mask, srcReg5Val, tid);
+      trace.inst.regular.auxRegVals[tid] =
+          __shfl_sync(active_mask, auxRegVal, tid);
     }
   } else {
     // For TMA instructions
