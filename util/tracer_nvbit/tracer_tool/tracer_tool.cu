@@ -37,6 +37,9 @@
 /* contains definition of the WarpsyncCollectiveWatchdog structure */
 #include "watchdog.h"
 
+/* for general utils functions */
+#include "utils.h"
+
 #define TRACER_VERSION "5"
 #define TRACER_VERSION_ALLOW_REG_VAL "6"
 
@@ -358,8 +361,13 @@ void nvbit_at_init() {
   warpsync_collective_watchdog = WatchdogFactory::create(enable_watchdog);
 }
 
-/* Set used to avoid re-instrumenting the same functions multiple times */
-std::unordered_set<CUfunction> already_instrumented;
+/* Set used to avoid re-instrumenting the same functions multiple times.
+ * Keyed on the CUfunction handle, the function's PC address, and its mangled
+ * name, since a single program (e.g. cuFFT LTO) can reuse a handle or a PC
+ * address for a different kernel across launches. */
+std::unordered_set<std::tuple<CUfunction, uint64_t, std::string>,
+                   accelsimUtils::TupleHash>
+    already_instrumented;
 
 /* instrument each memory instruction adding a call to the above instrumentation
  * function */
@@ -374,7 +382,10 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
   for (auto f : related_functions) {
     /* "recording" function was instrumented, if set insertion failed
      * we have already encountered this function */
-    if (!already_instrumented.insert(f).second) {
+    uint64_t func_addr = nvbit_get_func_addr(ctx, f);
+    std::string func_name = nvbit_get_func_name(ctx, f, true);
+    if (!already_instrumented.insert(std::make_tuple(f, func_addr, func_name))
+             .second) {
       continue;
     }
 

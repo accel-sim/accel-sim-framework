@@ -49,7 +49,8 @@ MAXRREGCOUNT_FLAG=
 endif
 
 NVBIT_PATH=../../nvbit_release/core
-INCLUDES=-I$(NVBIT_PATH)
+ACCEL_SIM_TRACER_PATH=../..
+INCLUDES=-I$(NVBIT_PATH) -I$(ACCEL_SIM_TRACER_PATH)/include
 
 LIBS=-L$(NVBIT_PATH) -lnvbit
 NVCC_PATH=-L $(subst bin/nvcc,lib64,$(shell which nvcc | tr -s /))

@@ -47,6 +47,7 @@
  */
 
 #include <assert.h>
+#include <cstdint>
 #include <pthread.h>
 #include <stdint.h>
 #include <stdio.h>
@@ -70,6 +71,9 @@
 
 /* contains definition of the mem_access_t structure */
 #include "common.h"
+
+/* for utils functions */
+#include "utils.h"
 
 #define HEX(x)                                                            \
     "0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)x \
@@ -406,7 +410,12 @@ void nvbit_at_term() {
 }
 
 /* Set used to avoid re-instrumenting the same functions multiple times */
-std::unordered_set<CUfunction> already_instrumented;
+// Use the CUFunction handle, actual PC address, and mangled name of the kernel,
+// as these can be decoupled with some programs (e.g. cuFFT LTO may reuse a
+// handle or a PC address for a different kernel across launches)
+std::unordered_set<std::tuple<CUfunction, uint64_t, std::string>,
+                   accelsimUtils::TupleHash>
+    already_instrumented;
 
 void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     assert(ctx_state_map.find(ctx) != ctx_state_map.end());
@@ -424,7 +433,11 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
     for (auto f : related_functions) {
         /* "recording" function was instrumented, if set insertion failed
          * we have already encountered this function */
-        if (!already_instrumented.insert(f).second) {
+        uint64_t func_addr = nvbit_get_func_addr(ctx, f);
+        std::string func_name = nvbit_get_func_name(ctx, f, true);
+        if (!already_instrumented
+                 .insert(std::make_tuple(f, func_addr, func_name))
+                 .second) {
             continue;
         }
 
