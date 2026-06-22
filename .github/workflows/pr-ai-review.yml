@@ -33,7 +33,7 @@ jobs:
       GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
     steps:
-      - name: Checkout default branch (skills + project rules)
+      - name: Checkout default branch (project rules + diff context)
         uses: actions/checkout@v4
         with:
           ref: ${{ github.event.repository.default_branch }}
@@ -52,13 +52,55 @@ jobs:
       - name: AI review with opencode
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
+          # Optional override; defaults to the conventional runner checkout below.
+          AALP_PLUGINS_DIR: ${{ vars.AALP_PLUGINS_DIR }}
         run: |
-          rm -f pr-review.md pr-verdict.txt
+          set -o pipefail
+          rm -f pr-review.md pr-verdict.txt pr-review-skill.md opencode.out opencode.clean
+
+          # The review skill + reviewer agent live in the shared AALP plugins repo,
+          # kept checked out on the runner (no per-run clone) — one source of truth
+          # for every consuming repo instead of a copy in each repo/branch.
+          PLUGIN_DIR="${AALP_PLUGINS_DIR:-$HOME/AALP-claude-plugins}/plugins/pr-review"
+          SKILL="$PLUGIN_DIR/skills/pr-review/SKILL.md"
+          if [ ! -f "$SKILL" ]; then
+            {
+              echo "## AI Preliminary Review"
+              echo "pr-review plugin not found at \`$PLUGIN_DIR\`."
+              echo "Check out purdue-aalp/AALP-claude-plugins at \`\$HOME/AALP-claude-plugins\` on the runner, or set the \`AALP_PLUGINS_DIR\` repo variable."
+            } >> "$GITHUB_STEP_SUMMARY"
+            exit 1
+          fi
+
+          # opencode refuses to read outside --dir in headless mode, so copy the skill
+          # and the reviewer agent INTO the workspace. Pin the model via config.
+          cp "$SKILL" ./pr-review-skill.md
+          mkdir -p .opencode/agent
+          cp "$PLUGIN_DIR"/opencode/agent/pr-review.md .opencode/agent/
+          printf '%s\n' '{ "$schema": "https://opencode.ai/config.json", "model": "local-llamacpp/Qwen3.5-27B-Q8_0.gguf" }' > opencode.json
+
+          # The reviewer PRINTS the review ending in a VERDICT line; we extract the two
+          # output files from that printed output below. The model never calls a write
+          # tool, so it cannot "forget" to — the root cause of the past empty-output runs.
           opencode run \
+            --agent pr-review \
             --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow .github/skills/pr-review.md. The PR diff is at pr.diff. Write pr-review.md and pr-verdict.txt to the workspace root as instructed." \
-            || true
+            "Review ./pr.diff following ./pr-review-skill.md. Output the review in the skill's format, ending with a line 'VERDICT: PASS' or 'VERDICT: CONCERNS'." \
+            2>&1 | tee opencode.out || true
+
+          # Deterministically extract pr-review.md / pr-verdict.txt from the printed review.
+          sed -E 's/\x1b\[[0-9;]*[a-zA-Z]//g' opencode.out > opencode.clean
+          verdict=$(grep -oE 'VERDICT:[[:space:]]*(PASS|CONCERNS)' opencode.clean | grep -oE 'PASS|CONCERNS' | tail -1 || true)
+          if [ -z "$verdict" ]; then verdict=$(grep -oE '\b(PASS|CONCERNS)\b' opencode.clean | tail -1 || true); fi
+          if [ -z "$verdict" ]; then verdict=CONCERNS; fi
+          printf '%s\n' "$verdict" > pr-verdict.txt
+          if grep -qE '^#+[[:space:]]*Summary' opencode.clean; then
+            awk '/^#+[[:space:]]*Summary/{f=1} f' opencode.clean \
+              | sed -E '/^VERDICT:[[:space:]]*(PASS|CONCERNS)[[:space:]]*$/d' > pr-review.md
+          else
+            sed -E '/^VERDICT:[[:space:]]*(PASS|CONCERNS)[[:space:]]*$/d' opencode.clean | tail -n 120 > pr-review.md
+          fi
+          if [ ! -s pr-review.md ]; then echo "_The AI reviewer produced no usable output. See the run log._" > pr-review.md; fi
 
           if [ -s pr-review.md ]; then
             {
