@@ -277,6 +277,40 @@ merge_stats() {
         | tee "$output_csv" && mv "$output_csv" "./statistics-archive/ubench/"
 }
 
+# Collect sim stats for one GPU, fold them into the archive's cumulative history,
+# and emit the merged-with-latest CSV that correlation consumes.
+# Args:
+#   $1 - GPU prefix (e.g. "hopper-h100", "ampere-a100", "v100")
+#   $2 - Benchmark list
+#   $3 - Config name (e.g. "H200-SASS")
+# Produces: ./statistics-archive/ubench/${prefix}-ubench-sass.csv (history),
+#           ./statistics-archive/ubench/${prefix}-ubench-sass-latest.csv (this run),
+#           ./${prefix}-ubench-sass-latest2.csv (latest + this run, for correlation)
+archive_config_stats() {
+    local prefix="$1"
+    local benchmarks="$2"
+    local config="$3"
+    local local_csv="${prefix}-ubench-sass-local.csv"
+    local latest_csv="${prefix}-ubench-sass-latest.csv"
+
+    log_section "Collecting stats for $prefix ($config)"
+
+    ./util/job_launching/get_stats.py -k -K -R \
+        -B "$benchmarks" -C "$config" -A \
+        | tee "$local_csv"
+
+    # Fold into cumulative history
+    merge_stats "${prefix}-ubench-sass.csv" "$local_csv"
+
+    # Merge the previous latest with this run for correlation
+    ./util/plotting/merge-stats.py -R \
+        -c "./statistics-archive/ubench/${latest_csv},${local_csv}" \
+        | tee "${prefix}-ubench-sass-latest2.csv"
+
+    # Save this run's stats as the new latest
+    mv "$local_csv" "./statistics-archive/ubench/${latest_csv}"
+}
+
 # Commit and push statistics-archive
 # Args:
 #   $1 - Commit message prefix
@@ -395,15 +429,24 @@ remote_sync() {
 
     local ssh_opts="ssh -o 'ProxyCommand=nc -X 5 -x 127.0.0.1:$SOCKS_PORT %h %p'"
 
+    # The transfer rides a userspace SOCKS5 proxy over the VPN, which drops the
+    # connection on long single transfers (broken pipe / socket IO errors).
+    # Keep it resilient: exclude the repo's .git history (the remote only builds
+    # the tracer and never runs git on the synced tree), keep partial files so a
+    # dropped connection resumes, time out stalled sockets, and retry.
+    local rsync_opts=(-az --partial --timeout=120 --exclude='.git')
+    local from to
     case "$mode" in
         push)
             log_info "Syncing $src to $REMOTE_USER@$REMOTE_HOST:$dest"
-            rsync -az -e "$ssh_opts" "$src/" "$REMOTE_USER@$REMOTE_HOST:$dest/"
+            from="$src/"
+            to="$REMOTE_USER@$REMOTE_HOST:$dest/"
             ;;
         pull)
             log_info "Syncing $REMOTE_USER@$REMOTE_HOST:$src to $dest"
             mkdir -p "$dest"
-            rsync -az -e "$ssh_opts" "$REMOTE_USER@$REMOTE_HOST:$src/" "$dest/"
+            from="$REMOTE_USER@$REMOTE_HOST:$src/"
+            to="$dest/"
             ;;
         *)
             log_error "Unknown mode: $mode (expected 'push' or 'pull')"
@@ -411,7 +454,18 @@ remote_sync() {
             ;;
     esac
 
-    log_info "Sync complete"
+    local attempt max_attempts=5
+    for attempt in $(seq 1 "$max_attempts"); do
+        if rsync "${rsync_opts[@]}" -e "$ssh_opts" "$from" "$to"; then
+            log_info "Sync complete"
+            return 0
+        fi
+        log_error "rsync attempt $attempt/$max_attempts failed; retrying after backoff..."
+        sleep $((attempt * 10))
+    done
+
+    log_error "rsync failed after $max_attempts attempts"
+    return 1
 }
 
 # Execute command on remote host via SOCKS proxy

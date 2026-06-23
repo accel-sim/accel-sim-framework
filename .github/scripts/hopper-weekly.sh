@@ -58,6 +58,8 @@ TRACE_PATH_H100="$TRACE_DEPOT/hw_run/traces/"
 TRACE_PATH_QV100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/traces/"
 TRACE_PATH_A100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/traces/"
 HW_RUN_H100="$TRACE_DEPOT/hw_run/"
+HW_RUN_QV100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/"
+HW_RUN_A100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/"
 
 # Statistics archive settings
 STATS_BRANCH_PREFIX="hopper-weekly"
@@ -156,29 +158,25 @@ stage_sass_archive() {
     local stats_branch="$STATS_BRANCH_PREFIX/$BRANCH_NAME"
     setup_stats_archive "$stats_branch"
 
-    # Collect stats
-    ./util/job_launching/get_stats.py -k -K -R \
-        -B "$BENCHMARKS,$BENCHMARKS_TMA" \
-        -C "$CONFIG_H200" -A \
-        | tee hopper-h100-ubench-sass-local.csv
-
-    # Merge with archive
-    merge_stats "hopper-h100-ubench-sass.csv" "hopper-h100-ubench-sass-local.csv"
-
-    # Merge latest for correlation
-    ./util/plotting/merge-stats.py -R \
-        -c "./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv,hopper-h100-ubench-sass-local.csv" \
-        | tee hopper-h100-ubench-sass-latest2.csv
-
-    # Save local as new latest
-    mv hopper-h100-ubench-sass-local.csv ./statistics-archive/ubench/hopper-h100-ubench-sass-latest.csv
+    # Collect and archive stats for every correlated GPU
+    archive_config_stats "hopper-h100" "$BENCHMARKS,$BENCHMARKS_TMA" "$CONFIG_H200"
+    archive_config_stats "ampere-a100" "$BENCHMARKS_REGRESSION" "$CONFIG_A100"
+    archive_config_stats "v100" "$BENCHMARKS_REGRESSION" "$CONFIG_QV100"
 }
 
 stage_sass_correlate() {
     log_section "Running Correlation Analysis"
     source ./env-setup/12.8_env_setup.sh
 
-    run_correlation "hopper-h100" "hopper-h100-ubench-sass-latest2.csv" "$HW_RUN_H100"
+    # Correlate each GPU independently; a failure for one must not drop the
+    # others' plots or block the archive push.
+    run_correlation "hopper-h100" "hopper-h100-ubench-sass-latest2.csv" "$HW_RUN_H100" \
+        || log_error "hopper-h100 correlation failed"
+    run_correlation "ampere-a100" "ampere-a100-ubench-sass-latest2.csv" "$HW_RUN_A100" \
+        || log_error "ampere-a100 correlation failed"
+    run_correlation "v100" "v100-ubench-sass-latest2.csv" "$HW_RUN_QV100" \
+        || log_error "v100 correlation failed"
+
     push_stats_archive "Hopper Weekly" "$STATS_BRANCH_PREFIX/$BRANCH_NAME"
 }
 
