@@ -47,10 +47,14 @@ To build on local machine, install the following packages with CUDA toolkit:
 ```bash
 # Assuming running on Ubuntu 24.04 and installing CUDA 12.8
 sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
-      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
-      libxml2-dev vim python-setuptools build-essential python3-pip
+      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev \
+      vim python3-setuptools python3-pip python3-venv
 
-pip3 install pyyaml plotly psutil
+# On Ubuntu 24.04 (PEP 668) system-wide pip installs are blocked, so use a venv.
+# Re-run "source ~/accel-sim-env/bin/activate" in any shell before building/running accel-sim.
+python3 -m venv ~/accel-sim-env
+source ~/accel-sim-env/bin/activate
+pip install pyyaml plotly psutil
 wget https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda_12.8.1_570.124.06_linux.run
 sh cuda_12.8.1_570.124.06_linux.run --silent --toolkit
 rm cuda_12.8.1_570.124.06_linux.run
