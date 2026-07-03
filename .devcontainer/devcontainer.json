@@ -1,4 +1,13 @@
 {
-    "name": "CUDA 12.8",
-    "image": "ghcr.io/accel-sim/accel-sim-framework:Ubuntu-24.04-cuda-12.8"
+  "name": "accel-sim",
+  "image": "accelsim/ubuntu-18.04_cuda-11:latest",
+  "containerEnv": {
+    "CUDA_INSTALL_PATH": "/usr/local/cuda-11.0"
+  },
+  "postCreateCommand": "pip3 install pyyaml plotly psutil || true",
+  "customizations": {
+    "vscode": {
+      "extensions": ["ms-vscode.cpptools"]
+    }
+  }
 }
