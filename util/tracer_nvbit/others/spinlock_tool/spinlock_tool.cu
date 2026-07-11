@@ -72,8 +72,11 @@
 /* contains definition of the mem_access_t structure */
 #include "common.h"
 
-/* for utils functions */
+/* for general utils functions */
 #include "utils.h"
+
+/* generic basic-block pattern matcher (NVBit-aware, domain-agnostic) */
+#include "bb_pattern_matcher.h"
 
 #define HEX(x)                                                            \
     "0x" << std::setfill('0') << std::setw(16) << std::hex << (uint64_t)x \
@@ -106,6 +109,11 @@ struct CTXstate {
 
     // Kernel instruction histogram
     KernelInstructionHistogram* instr_histogram = nullptr;
+
+    // Per-function basic-block layout, captured from NVBit's CFG at
+    // first-instrumentation time. Keyed by CUfunction so we capture once
+    // per related function (kernels + device functions they call).
+    std::map<CUfunction, KernelBBLayout> func_layouts;
 };
 
 /* lock */
@@ -151,6 +159,34 @@ extern "C" {
     void disable_nvbit_instrumentation() {
         nvbit_instrumentation_enabled = 0;
     }
+}
+
+/* Static-pattern matcher for whole-BB spinlock flagging. Patterns are
+ * registered from register_spinlock_patterns() at init time; the matcher
+ * library itself is domain-agnostic. */
+BBPatternMatcher g_pattern_matcher;
+
+/* All spinlock-specific patterns are registered here. Adding a new
+ * spinlock idiom = appending one block. The matcher library is untouched. */
+static void register_spinlock_patterns(BBPatternMatcher& m) {
+    /* Hopper / SM 9.0 NANOSLEEP-based wait loop, e.g. the FA3 reproducer
+     * from issue #127:
+     *
+     *       SYNCS.PHASECHK.TRANS64.TRYWAIT P0, [...], R3
+     *   @!P0 NANOSLEEP.SYNCS 0x989680
+     *   @!P0 SYNCS.PHASECHK.TRANS64 P0, [...], R3
+     *   @!P0 BRA <back-edge>
+     *
+     * BB qualifies if it contains a TRYWAIT, a NANOSLEEP, and a back-edge BRA. */
+    m.addPattern("hopper_nanosleep_phasechk_wait",
+        [](const std::vector<Instr*>& bb) {
+            if (!bb_has_opcode_substring(bb, "TRYWAIT")) return false;
+            if (!bb_has_opcode_substring(bb, "NANOSLEEP")) return false;
+            for (Instr* i : bb) {
+                if (opcode_short_equals(i, "BRA")) return true;
+            }
+            return false;
+        });
 }
 
 /* Spinlock phase */
@@ -319,6 +355,9 @@ void nvbit_at_init() {
 
     // Parse the kernel ranges
     parse_kernel_ranges_from_env();
+
+    // Register the static spinlock patterns once.
+    register_spinlock_patterns(g_pattern_matcher);
 }
 
 /**
@@ -329,14 +368,17 @@ void nvbit_at_init() {
  * is not guaranteed.
  */
 void nvbit_at_term() {
-    // Read the spinlock_run_PHASE dir under ctx_<ctx_id> and for each unique kernel name, 
+    // Read the spinlock_run_PHASE dir under ctx_<ctx_id> and for each unique kernel name,
     // we will have a vector of kernel histograms
     printf("Spinlock: Start to merge histograms from %s\n", spinlock_run_dir.c_str());
     using HistogramMapByName = std::map<std::string, std::vector<KernelInstructionHistogram*>>;
+    using BBLayoutMapByName = std::map<std::string, std::vector<KernelBBLayout*>>;
     HistogramMapByName map;
+    BBLayoutMapByName bb_map;
 
-    // Build the histogram map by reading the spinlock_run_PHASE dir under ctx_<ctx_id>
-    // iterate the ctx_<ctx_id> dir under spinlock_detection folder
+    // Build the histogram + BB-layout maps by reading the spinlock_run_PHASE
+    // dir under ctx_<ctx_id>; iterate the ctx_<ctx_id> dirs under
+    // spinlock_detection folder
     for (auto& folder : std::filesystem::directory_iterator(spinlock_run_dir + "spinlock_detection")) {
         // If the folder is not a ctx_<ctx_id> dir, skip
         if (folder.path().filename().string().find("ctx_") == std::string::npos) {
@@ -353,6 +395,13 @@ void nvbit_at_term() {
                 KernelInstructionHistogram* histogram = new KernelInstructionHistogram();
                 histogram->loadFromFile(file.path().string());
                 map[histogram->name].push_back(histogram);
+            } else if (file.path().extension() == ".bbs") {
+                KernelBBLayout* layout = new KernelBBLayout();
+                if (layout->loadFromFile(file.path().string())) {
+                    bb_map[layout->name].push_back(layout);
+                } else {
+                    delete layout;
+                }
             }
         }
 
@@ -392,6 +441,35 @@ void nvbit_at_term() {
         histogram->saveToFile(merged_run_dir + "/kernel-" + std::to_string(histogram->id) + ".histogram");
     }
 
+    // Consolidate BB layouts: every loaded layout for a given kernel name
+    // must be structurally identical (same SASS → same CFG). Warn on any
+    // mismatch and fall back to the first one. Save the consensus next to
+    // the merged histograms using the same id so filenames pair up.
+    DPRINTF("Spinlock: Start to consolidate BB layouts\n");
+    for (auto& histogram : merged_histograms) {
+        auto bb_it = bb_map.find(histogram->name);
+        if (bb_it == bb_map.end() || bb_it->second.empty()) {
+            continue;
+        }
+        KernelBBLayout* consensus = bb_it->second[0];
+        for (size_t i = 1; i < bb_it->second.size(); i++) {
+            if (!consensus->equivalent(*bb_it->second[i])) {
+                printf("Spinlock warning: BB layout mismatch for kernel %s "
+                       "across launches/contexts "
+                       "(consensus has %zu BBs, divergent copy has %zu BBs); "
+                       "using first encountered.\n",
+                       histogram->name.c_str(),
+                       consensus->bbs.size(),
+                       bb_it->second[i]->bbs.size());
+                break;
+            }
+        }
+        consensus->id = histogram->id;
+        consensus->name = histogram->name;
+        consensus->saveToFile(merged_run_dir + "/kernel-" +
+                              std::to_string(consensus->id) + ".bbs");
+    }
+
     // Clean up
     for (auto& histogram : merged_histograms) {
         delete histogram;
@@ -399,6 +477,11 @@ void nvbit_at_term() {
     for (auto& [name, histograms] : map) {
         for (auto& histogram : histograms) {
             delete histogram;
+        }
+    }
+    for (auto& [name, layouts] : bb_map) {
+        for (auto* layout : layouts) {
+            delete layout;
         }
     }
 
@@ -448,6 +531,37 @@ void instrument_function_if_needed(CUcontext ctx, CUfunction func) {
             "Spinlock: CTX %p, Inspecting CUfunction %p name %s at address "
             "0x%lx\n",
             ctx, f, nvbit_get_func_name(ctx, f), nvbit_get_func_addr(ctx, f));
+
+        /* capture the static CFG for this function so spinlock_check can
+         * promote per-instruction count diffs to whole basic blocks */
+        const CFG_t& cfg = nvbit_get_CFG(ctx, f);
+        KernelBBLayout layout;
+        layout.is_degenerate = cfg.is_degenerate;
+        if (cfg.is_degenerate) {
+            // instrument_function_if_needed walks both kernels and the
+            // device functions they call, so this can fire for a callee
+            // rather than the entry kernel itself.
+            printf("Spinlock warning: function %s has degenerate CFG; "
+                   "BB-promotion disabled for this function.\n",
+                   nvbit_get_func_name(ctx, f));
+        }
+        layout.bbs.reserve(cfg.bbs.size());
+        for (auto* bb : cfg.bbs) {
+            std::vector<uint32_t> idxs;
+            idxs.reserve(bb->instrs.size());
+            for (auto* instr : bb->instrs) {
+                idxs.push_back(instr->getIdx());
+            }
+            layout.bbs.push_back(std::move(idxs));
+        }
+        // Apply registered static patterns; matchCFG returns empty on
+        // degenerate CFGs, so no extra guard needed.
+        auto pattern_hits = g_pattern_matcher.matchCFG(cfg);
+        for (auto& [bb_id, names] : pattern_hits) {
+            layout.static_pattern_bbs.insert(bb_id);
+            layout.bb_pattern_names[bb_id] = std::move(names);
+        }
+        ctx_state->func_layouts[f] = std::move(layout);
 
         uint32_t cnt = 0;
         /* iterate on all the static instructions in the function */
@@ -600,7 +714,8 @@ static void enter_kernel_launch(CUcontext ctx, CUfunction func,
 }
 
 // the function is only called for non cuda graph launch cases.
-static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
+static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id,
+                                CUfunction func) {
     // make sure user kernel finishes to avoid deadlock
     cudaDeviceSynchronize();
     /* push a flush channel kernel */
@@ -638,6 +753,19 @@ static void leave_kernel_launch(CTXstate *ctx_state, uint64_t &grid_launch_id) {
     if (enable_save) {
         bool success = ctx_state->instr_histogram->saveToFile( folder_name + "/" + "kernel-" + std::to_string(kernel_id) + ".histogram");
         assert(success);
+
+        // Save the BB layout sidecar alongside the histogram. Tagged with
+        // the same kernel_id and name so the merge step can pair them.
+        auto layout_it = ctx_state->func_layouts.find(func);
+        if (layout_it != ctx_state->func_layouts.end()) {
+            KernelBBLayout& layout = layout_it->second;
+            layout.id = kernel_id;
+            layout.name = ctx_state->instr_histogram->name;
+            bool bbs_success = layout.saveToFile(
+                folder_name + "/" + "kernel-" +
+                std::to_string(kernel_id) + ".bbs");
+            assert(bbs_success);
+        }
     }
 }
 
@@ -667,7 +795,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                     enter_kernel_launch(ctx, func, global_grid_launch_id, cbid,
                                         params);
                 } else {
-                    leave_kernel_launch(ctx_state, global_grid_launch_id);
+                    leave_kernel_launch(ctx_state, global_grid_launch_id, func);
                 }
             } break;
         // To support kernel launched by cuda graph (in addition to existing kernel
@@ -744,7 +872,7 @@ void nvbit_at_cuda_event(CUcontext ctx, int is_exit, nvbit_api_cuda_t cbid,
                         if (verbose >= 1) {
                             printf("kernel %s not captured by cuda graph\n", nvbit_get_func_name(ctx, func));
                         }
-                        leave_kernel_launch(ctx_state, global_grid_launch_id);
+                        leave_kernel_launch(ctx_state, global_grid_launch_id, func);
                     } else {
                         if (verbose >= 1) {
                             printf("kernel %s captured by cuda graph\n", nvbit_get_func_name(ctx, func));
@@ -921,7 +1049,7 @@ void spinlock_check() {
             }
         }
     }
-    DPRINTF("Spinlock: Loaded %d histograms from %s and %d histograms from %s\n", spinlock_run0_histograms.size(), spinlock_run0_folder.c_str(), spinlock_run1_histograms.size(), spinlock_run1_folder.c_str());
+    DPRINTF("Spinlock: Loaded %zu histograms from %s and %zu histograms from %s\n", spinlock_run0_histograms.size(), spinlock_run0_folder.c_str(), spinlock_run1_histograms.size(), spinlock_run1_folder.c_str());
     // Check if the kernel count are the same
     assert(spinlock_run0_histograms.size() == spinlock_run1_histograms.size());
 
@@ -935,10 +1063,100 @@ void spinlock_check() {
         DPRINTF("Spinlock: Comparing histogram %d %s\n", run0_histogram->id, kernel_name.c_str());
         auto run1_histogram = spinlock_run1_histograms.at(kernel_name);
         auto spinlock_instructions = run0_histogram->findSpinlock(*run1_histogram);
-        DPRINTF("Spinlock: Found %d spinlock instructions\n", spinlock_instructions.size());
+        DPRINTF("Spinlock: Found %zu count-differing instructions\n", spinlock_instructions.size());
+
+        // CFG-based promotion: any BB containing at least one count-differing
+        // instruction contributes all of its instructions. Falls back to the
+        // raw count-diff set when the BB layout is missing or degenerate.
+        KernelBBLayout layout;
+        std::string bbs_path = spinlock_run1_folder + "/kernel-" +
+            std::to_string(run0_histogram->id) + ".bbs";
+        std::set<uint32_t> output_set;
+        bool layout_loaded = false;
+        if (std::filesystem::exists(bbs_path) && layout.loadFromFile(bbs_path)) {
+            // All the instructions in any BB with at least one count-differing instruction get promoted to the output set.
+            output_set = layout.promoteFromDiffs(spinlock_instructions);
+            layout_loaded = true;
+            DPRINTF("Spinlock: After BB promotion: %zu instructions\n",
+                    output_set.size());
+        } else {
+            DPRINTF("Spinlock: No BB layout for %s; emitting raw diff set\n",
+                    kernel_name.c_str());
+            for (auto& [instr_idx, counts] : spinlock_instructions) {
+                output_set.insert(instr_idx);
+            }
+        }
+
+        // Static-pattern fallback: any BB the matcher flagged at
+        // instrumentation time gets unioned in regardless of count-diff.
+        // Warn for any pattern-flagged BB whose instructions are entirely
+        // absent from the count-diff promoted set — counting silently
+        // missed it and the static matcher is the sole reason we caught it.
+        if (layout_loaded && !layout.static_pattern_bbs.empty()) {
+            // Get all instructions flagged by static spinlock pattern
+            std::set<uint32_t> pattern_set = layout.staticPatternFlagged();
+            for (size_t bb_id : layout.static_pattern_bbs) {
+                if (bb_id >= layout.bbs.size()) continue;
+                bool any_in_output = false;
+                // Check for the static pattern matched bb whether
+                // any instruction in it occurs in a count-diff promoted set.
+                // If yes: spinlock tool detected run-time non-determinism and continue to next bb
+                // If no: print a warning stating this statically detected pattern does not have run-time non-determinism
+                for (uint32_t idx : layout.bbs[bb_id]) {
+                    if (output_set.count(idx)) {
+                        any_in_output = true;
+                        break;
+                    }
+                }
+                if (!any_in_output) {
+                    // Construct a string of all pattern names of this matched bb
+                    std::string names;
+                    auto names_it = layout.bb_pattern_names.find(bb_id);
+                    if (names_it != layout.bb_pattern_names.end()) {
+                        for (const std::string& n : names_it->second) {
+                            if (!names.empty()) names += " ";
+                            names += n;
+                        }
+                    }
+                    // Construct a string of all instruction indices in this bb
+                    std::string instr_indices;
+                    for (uint32_t idx : layout.bbs[bb_id]) {
+                        if (!instr_indices.empty()) instr_indices += " ";
+                        instr_indices += std::to_string(idx);
+                    }
+                    // Build the warning once, then emit twice: to stdout
+                    // verbatim, and to the output file as comment lines
+                    // (each line prefixed with '# ' so the tracer-tool
+                    // parser can ignore them).
+                    char warn_buf[1024];
+                    snprintf(warn_buf, sizeof(warn_buf),
+                             "Spinlock warning: mismatch between static pattern match and runtime detection of spinlock section\n"
+                             "kernel: %s\n"
+                             "BB: %zu matched static pattern(s) [%s] but count-diff flagged 0 "
+                             "instructions in it - non-determinism may have been missed.\n"
+                             "Instruction indices: %s\n",
+                             kernel_name.c_str(), bb_id, names.c_str(),
+                             instr_indices.c_str());
+                    std::string warn_msg(warn_buf);
+                    printf("%s", warn_msg.c_str());
+                    std::stringstream warn_ss(warn_msg);
+                    std::string warn_line;
+                    output_file_stream << "#\n";
+                    while (std::getline(warn_ss, warn_line)) {
+                        output_file_stream << "# " << warn_line << "\n";
+                    }
+                    output_file_stream << "#\n";
+                }
+            }
+
+            // Insert all static detected instructions into output set
+            output_set.insert(pattern_set.begin(), pattern_set.end());
+            DPRINTF("Spinlock: After static pattern union: %zu instructions\n",
+                    output_set.size());
+        }
+
         output_file_stream << run0_histogram->id << ", " << kernel_name << ": ";
-        for (auto [instr_idx, counts] : spinlock_instructions) {
-            // Write to output file
+        for (uint32_t instr_idx : output_set) {
             output_file_stream << instr_idx << " ";
         }
         output_file_stream << "\n";

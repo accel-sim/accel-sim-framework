@@ -353,6 +353,9 @@ void nvbit_at_init() {
     std::ifstream instr_fs(spinlock_instr_file);
     std::string line;
     while (std::getline(instr_fs, line)) {
+      // Skip blank lines and comment lines emitted by the spinlock tool
+      if (line.empty() || line[0] == '#')
+        continue;
       auto [kernel_name, indices] = parse_spinlock_instructions(line);
       spinlock_instr_map[kernel_name] = new std::vector<uint32_t>(indices);
     }
