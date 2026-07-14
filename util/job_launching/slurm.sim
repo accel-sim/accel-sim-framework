@@ -42,7 +42,7 @@ export OPENCL_REMOTE_GPU_HOST=REPLACE_REMOTE_HOST
 echo "doing REPLACE_BENCHMARK_SPECIFIC_COMMAND"
 REPLACE_BENCHMARK_SPECIFIC_COMMAND
 echo "doing: export PATH=REPLACE_PATH"
-export PATH=REPLACE_PATH
+export PATH="REPLACE_PATH"
 
 # Uncomment to force blocking torque launches
 # this needs to be commented for concurrent kernel ptx mode
