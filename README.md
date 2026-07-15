@@ -234,11 +234,11 @@ To run the correlator - do the following:
 ```
 
 The script may take a few minutes to run (primarily because it is parsing a large amount of hardware data for >150 apps).
-Stdout will print the summary of counters error, correlation, etc. and a set of correlation plots will be generated
-in:
+Stdout will print the summary of counters error, correlation, etc. By default it writes one offline dashboard:
 ```
-./util/plotting/correl-html/
+./util/plotting/correl-html/dashboard.html
 ```
+Use `--individual` for the old per-stat HTML files, or `--all-html` for both.
 
 Here you will find interactive HTML plots, csvs and textual summaries of how well the simulator correlated against hardware on both a per-kernel and per-app basis.
 Note that the simple tests we ran in this tutorial are short running and not generally representative of scaled GPU apps and are just meant to quickly validate you can get Accel-Sim working.

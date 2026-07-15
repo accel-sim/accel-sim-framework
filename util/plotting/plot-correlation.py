@@ -32,6 +32,8 @@ import datetime
 import time
 import math
 
+from correl_dashboard import write_correl_dashboard
+
 
 def getAppData(kernels, x, y, xaxis_title, correlmap):
     count = 0
@@ -439,22 +441,24 @@ def make_submission_quality_image(image_type, traces, hw_cfg, figs=None):
     # Create the figures
     kernel_fig = Figure(data=kernel_data, layout=png_layout)
     app_fig = Figure(data=app_data, layout=app_layout)
-    
-    # Always generate individual HTML files
-    plotly.offline.plot(
-        kernel_fig,
-        filename=plotname + ".per-kernel.html",
-        auto_open=False,
-    )
 
-    plotly.offline.plot(
-        app_fig,
-        filename=plotname + ".per-app.html",
-        auto_open=False,
-    )
-    
+    # Per-stat HTML files only when --individual / --all-html is set.
+    # Default path writes the single offline dashboard instead.
+    if getattr(options, "write_individual_html", False):
+        plotly.offline.plot(
+            kernel_fig,
+            filename=plotname + ".per-kernel.html",
+            auto_open=False,
+        )
+
+        plotly.offline.plot(
+            app_fig,
+            filename=plotname + ".per-app.html",
+            auto_open=False,
+        )
+
     if figs is not None:
-        # Store figures for combining later
+        # Store figures for the dashboard
         figs["kernel"][f"{plotname}_kernel"] = kernel_fig
         figs["app"][f"{plotname}_app"] = app_fig
 
@@ -800,7 +804,24 @@ parser.add_option(
     help="A serialized version of the hw_data dictionary. If used - it will skip -H arguments.",
     default=None,
 )
-parser.add_option("-c", "--csv_file", dest="csv_file", help="File to parse", default="")
+parser.add_option(
+    "-c", "--csv_file", dest="csv_file", help="File to parse", default=""
+)
+parser.add_option(
+    "-I",
+    "--individual",
+    dest="individual",
+    action="store_true",
+    default=False,
+    help="Write per-stat per-app/per-kernel HTML files only (no dashboard).",
+)
+parser.add_option(
+    "--all-html",
+    dest="all_html",
+    action="store_true",
+    default=False,
+    help="Write both the single dashboard and individual per-stat HTML files.",
+)
 parser.add_option(
     "-d",
     "--data_mappings",
@@ -912,6 +933,9 @@ parser.add_option(
 
 
 (options, args) = parser.parse_args()
+# Default: dashboard only. --individual = per-stat HTML only. --all-html = both.
+options.write_individual_html = bool(options.individual or options.all_html)
+options.write_dashboard = bool(options.all_html or not options.individual)
 common.load_defined_yamls()
 
 benchmarks = []
@@ -1262,22 +1286,11 @@ figs = {"kernel": {}, "app": {}}
 for (plotfile, hw_cfg), traces in fig_data.items():
     make_submission_quality_image(options.image_type, traces, hw_cfg, figs=figs)
 
-# Write combined HTML files
-# Combined per-kernel plots
-kernel_out_path = os.path.join(correl_outdir, "combined_per_kernel.html")
-with open(kernel_out_path, 'w') as f:
-    f.write('')
-with open(kernel_out_path, 'a') as f:
-    for fig in figs["kernel"].values():
-        f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-
-# Combined per-app plots
-app_out_path = os.path.join(correl_outdir, "combined_per_app.html")
-with open(app_out_path, 'w') as f:
-    f.write('')
-with open(app_out_path, 'a') as f:
-    for fig in figs["app"].values():
-        f.write(fig.to_html(full_html=False, include_plotlyjs='cdn'))
-
-print("Combined per-kernel output available at: file://{0}".format(kernel_out_path))
-print("Combined per-app output available at: file://{0}".format(app_out_path))
+if options.write_dashboard:
+    dash_title = options.plotname if options.plotname else "Correlation"
+    dash_path = write_correl_dashboard(correl_outdir, figs, title=dash_title)
+    if dash_path:
+        print("Dashboard written to: {0}".format(dash_path))
+        print("Open it in any browser (no internet required).")
+elif options.write_individual_html:
+    print("Individual per-stat HTML files written under: {0}".format(correl_outdir))
