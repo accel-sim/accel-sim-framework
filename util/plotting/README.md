@@ -23,6 +23,31 @@
 All stats collected by the `get_stats.py` file will be plotted and placed in ./htmls/.
 [An example for the IPC is here](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/example.plot.rodinia_2.0-ft.html).
 
+# Single-page dashboard (all stats in one HTML)
+
+`./plot-get-stats.py` writes one HTML file per stat (~25 files). If you'd rather
+review everything in one place, use `./plot-get-stats-dashboard.py`, which reads
+the exact same CSV and produces a single, self-contained `dashboard.html` with a
+searchable sidebar. Only one stat's chart is shown at a time; click a stat in the
+sidebar to switch. Stat names are cleaned up from the collection regexes (e.g.
+`gpgpu_simulation_time\s*=.*\(([0-9]+) sec\).*` becomes `gpgpu_simulation_time (sec)`),
+and Plotly is embedded so the file opens in any browser with no internet.
+
+```bash
+# Collect the stats (same as above):
+../job_launching/get_stats.py -R -C QV100-SASS,QV100-PTX -B rodinia_2.0-ft | tee per-app-stats.csv
+
+# Build the dashboard:
+./plot-get-stats-dashboard.py -c per-app-stats.csv
+# open ./htmls/dashboard.html
+```
+
+Options:
+* `-c/--csv_file`  the get_stats.py CSV to plot (required)
+* `-o/--output`    output HTML path (default `./htmls/dashboard.html`)
+* `-n/--basename`  dashboard title
+* `-s/--stats_yml` stats yml used to group the sidebar into categories (defaults to `../job_launching/stats/example_stats.yml`)
+
 # Instructions on plotting correlation graphs
 
 * Make sure CUDA\_INSTALL\_PATH is set and bin/lib directories are in PATH and LD\_LIBRARY\_PATH
@@ -40,11 +65,18 @@ All stats collected by the `get_stats.py` file will be plotted and placed in ./h
     ../job_launching/get_stats.py -R -K -k -C <Your config name> -B <simulator apps> > correl.stats.csv
     # An example: ../job_launching/get_stats.py -R -K -k -C QV100-SASS,QV100-PTX -B rodinia_2.0-ft > correl.stats.csv
     ./plot-correlation.py -c correl.stats.csv
-    # stdout will print summary statistics and html files will be generated in ./correl-html/
+    # Default: one offline dashboard at ./correl-html/dashboard.html
+    #   (sidebar + Per-app/Per-kernel toggle; no per-stat HTML spam)
+    # Per-stat HTML files only (old behavior, no dashboard):
+    #   ./plot-correlation.py -c correl.stats.csv -H ... --individual
+    # Both dashboard and per-stat HTML:
+    #   ./plot-correlation.py -c correl.stats.csv -H ... --all-html
     # You can generate pdf files instead using
     ./plot-correlation.py -c correl.stats.csv -H ../../hw_run/QUADRO-V100/9.1/
     # You can also generate pdf files for the correaltions using "-i pdf"
     ```
+For day-to-day review, prefer the default `./correl-html/dashboard.html`. Use `--individual`
+only when you need the separate per-app / per-kernel HTML files for archival or sharing.
 [Here is an example correlation plot for the simple rodinia tests aggregated per-app](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/gv100-cycles.QV100-PTX.QV100-SASS.per-app.html).
 [And per-kernel](https://engineering.purdue.edu/tgrogers/accel-sim/example-plots/gv100-cycles.QV100-PTX.QV100-SASS.per-kernel.html).
 Note again - that these short-running tests are not representative of longer running GPU apps and the correlation on these applications should
