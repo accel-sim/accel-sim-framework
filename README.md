@@ -182,6 +182,17 @@ After the jobs finish - you can collect all the stats using:
 ./util/job_launching/get_stats.py -N myTest | tee stats.csv
 ```
 
+To plot them, either write one HTML file per stat:
+```bash
+./util/plotting/plot-get-stats.py -c stats.csv
+# outputs under ./util/plotting/htmls/
+```
+or build a single offline dashboard (searchable sidebar, one chart at a time):
+```bash
+./util/plotting/plot-get-stats-dashboard.py -c stats.csv
+# open ./util/plotting/htmls/dashboard.html
+```
+
 If you want to run the accel-sim.out executable command itself for specific workload, you can use:
 ```bash
 /gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
@@ -230,11 +241,11 @@ To run the correlator - do the following:
 ```
 
 The script may take a few minutes to run (primarily because it is parsing a large amount of hardware data for >150 apps).
-Stdout will print the summary of counters error, correlation, etc. and a set of correlation plots will be generated
-in:
+Stdout will print the summary of counters error, correlation, etc. By default it writes one offline dashboard:
 ```
-./util/plotting/correl-html/
+./util/plotting/correl-html/dashboard.html
 ```
+Use `--individual` for the old per-stat HTML files, or `--all-html` for both.
 
 Here you will find interactive HTML plots, csvs and textual summaries of how well the simulator correlated against hardware on both a per-kernel and per-app basis.
 Note that the simple tests we ran in this tutorial are short running and not generally representative of scaled GPU apps and are just meant to quickly validate you can get Accel-Sim working.

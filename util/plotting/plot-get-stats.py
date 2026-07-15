@@ -100,6 +100,17 @@ options.csv_file = common.file_option_test(options.csv_file, "", this_directory)
 
 all_stats = get_csv_data(options.csv_file)
 
+outdir = os.path.join(this_directory, "htmls")
+if not os.path.exists(outdir):
+    os.makedirs(outdir)
+
+if not all_stats:
+    print(
+        "No plottable stats found in {0} "
+        "(empty file, or all values were non-numeric like NA).".format(options.csv_file)
+    )
+    sys.exit(1)
+
 colors = [
     "#0F8C79",
     "#BD2D28",
@@ -141,9 +152,6 @@ for stat, value in all_stats.items():
     fig = Figure(data=data, layout=layout)
     figure_name = re.sub("[^0-9a-zA-Z]+", "_", stat) + "_" + options.plotname
     print("plotting: " + figure_name)
-    outdir = os.path.join(this_directory, "htmls")
-    if not os.path.exists(outdir):
-        os.makedirs(outdir)
     plotly.offline.plot(
         fig, filename=os.path.join(outdir, figure_name + ".html"), auto_open=False
     )
