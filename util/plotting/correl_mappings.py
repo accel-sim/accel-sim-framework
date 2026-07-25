@@ -12,6 +12,7 @@ config_maps = {
     "GV100": set("Quadro GV100"),
     "RTX2060": set("GeForce RTX 2060"),
     "RTX3070": set("GeForce RTX 3070"),
+    "RTX3060M": set(["NVIDIA GeForce RTX 3060 Laptop GPU"]),
     "A100": set("NVIDIA A100 80GB"),
     "H100" : set("NVIDIA H100 80GB HBM3"),
 }
@@ -412,12 +413,24 @@ correl_list = [
         plottype="log",
         stattype="counter",
     ),
+    # NOTE: L2 write-hit comparability is a WORKLOAD property, not a metric defect.
+    # For read-modify-write workloads (e.g. rodinia hotspot/srad/lud) HW and sim agree
+    # closely — validated on hotspot: sim HIT=1962 == HW HIT=1962 (~100% both sides).
+    # It is only meaningless for pure STREAMING-write microbenchmarks, where writes
+    # target never-read lines: GPGPU-Sim (write-allocate=lazy-fetch-on-read) reports
+    # ~0% while NVIDIA's sector metric reports ~100% (and can exceed 100%). So keep
+    # this enabled; just disregard it on streaming-write ubenchs. See
+    # tutorial/RTX3060_CORRELATION_RESULTS.md "L2 write-hit comparability".
     CorrelStat(
         chart_name="L2 Write Hits",
         plotfile="l2-write-hits",
         hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum"])',
         hw_error=None,
-        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])',
+        # NVIDIA-comparable write hits = strict HIT + WRITE_ALLOCATE (writes absorbed
+        # into L2 via write-allocate, which NVIDIA counts as hits). WRITE_ALLOCATE is 0
+        # for NO_WRITE_ALLOCATE configs, so this reduces to strict HIT there.
+        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"])',
         hw_name="all",
         drophwnumbelow=0,
         plottype="log",
@@ -446,12 +459,16 @@ correl_list = [
         plottype="linear",
         stattype="rate",
     ),
+    # See the L2-Write-Hits note above: valid for read-modify-write workloads,
+    # meaningless only for pure streaming-write microbenchmarks. Kept enabled.
     CorrelStat(
         chart_name="L2 Write Hit Rate",
         plotfile="l2-write-hitrate",
         hw_eval='np.average(hw["lts__t_sector_op_write_hit_rate.pct"])',
         hw_error=None,
-        sim_eval='100*float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])/'
+        # NVIDIA-comparable rate = 100*(HIT + WRITE_ALLOCATE)/TOTAL_ACCESS.
+        sim_eval='100*(float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"]))/'
         + 'float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])',
         hw_name="all",
         drophwnumbelow=0,
