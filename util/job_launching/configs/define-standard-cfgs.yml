@@ -15,6 +15,10 @@ TITANK:
 RTX3070:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM86_RTX3070/gpgpusim.config"
 
+#Ampere RTX 3060 Laptop
+RTX3060M:
+    base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM86_RTX3060_MOBILE/gpgpusim.config"
+
 #Turing
 RTX2060:
     base_file: "$GPGPUSIM_ROOT/configs/tested-cfgs/SM75_RTX2060/gpgpusim.config"
