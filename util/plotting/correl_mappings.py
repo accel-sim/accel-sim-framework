@@ -12,6 +12,7 @@ config_maps = {
     "GV100": set("Quadro GV100"),
     "RTX2060": set("GeForce RTX 2060"),
     "RTX3070": set("GeForce RTX 3070"),
+    "RTX3060M": set(["NVIDIA GeForce RTX 3060 Laptop GPU"]),
     "A100": set("NVIDIA A100 80GB"),
     "H100" : set("NVIDIA H100 80GB HBM3"),
 }
@@ -406,7 +407,10 @@ correl_list = [
         plotfile="l2-write-transactions",
         hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write.sum"])',
         hw_error=None,
-        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])',
+        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[MISS\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[SECTOR_MISS\]\s*=\s*(.*)"])',
         hw_name="all",
         drophwnumbelow=0,
         plottype="log",
@@ -417,7 +421,10 @@ correl_list = [
         plotfile="l2-write-hits",
         hw_eval='np.average(hw["lts__t_sectors_srcunit_tex_op_write_lookup_hit.sum"])',
         hw_error=None,
-        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])',
+        sim_eval='float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"])',
         hw_name="all",
         drophwnumbelow=0,
         plottype="log",
@@ -451,8 +458,14 @@ correl_list = [
         plotfile="l2-write-hitrate",
         hw_eval='np.average(hw["lts__t_sector_op_write_hit_rate.pct"])',
         hw_error=None,
-        sim_eval='100*float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])/'
-        + 'float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])',
+        sim_eval='100*(float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)"]))/'
+        + '(float(sim["\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[HIT\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[MISS\]\s*=\s*(.*)"])'
+        + ' + float(sim["\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[SECTOR_MISS\]\s*=\s*(.*)"]))',
         hw_name="all",
         drophwnumbelow=0,
         plottype="linear",

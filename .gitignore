@@ -15,4 +15,10 @@ gpu-simulator/accel_sim.pyi
 compile_commands.json
 .cache
 .cursorrules
+.cursor
 CLAUDE.md
+tutorial
+# RTX3060 bring-up working artifacts (not for PR)
+util/tuner/stats.txt
+util/tuner/gpu-app-collection-partial/
+util/plotting/correl-html/

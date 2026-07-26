@@ -14,7 +14,17 @@ collect_aggregate:
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
+    - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)'
     - '\s+L2_cache_stats_breakdown\[GLOBAL_ACC_W\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
+    # Local-memory writes also traverse L1 -> L2, and NVIDIA's
+    # lts__t_sectors_srcunit_tex_op_write* counters are all-source, so the L2 write
+    # correlations must add these. Collected as HIT/MISS/SECTOR_MISS rather than
+    # TOTAL_ACCESS because GPGPU-Sim only emits a TOTAL_ACCESS line for access types
+    # with non-zero traffic, whereas these three are always printed (as 0).
+    - '\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
+    - '\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[MISS\]\s*=\s*(.*)'
+    - '\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[SECTOR_MISS\]\s*=\s*(.*)'
+    - '\s+L2_cache_stats_breakdown\[LOCAL_ACC_W\]\[WRITE_ALLOCATED\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[TOTAL_ACCESS\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_R\]\[HIT\]\s*=\s*(.*)'
     - '\s+Total_core_cache_stats_breakdown\[GLOBAL_ACC_W\]\[HIT\]\s*=\s*(.*)'
