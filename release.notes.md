@@ -1,7 +1,7 @@
 
 # Release v2.0.0 — Accel-Sim 2.0 (full Hopper support)
 
-_TBD 2026._
+_Aug 25, 2026._
 
 Accel-Sim 2.0 brings **full NVIDIA Hopper (H100 / H200) support** to the trace-driven
 simulator, modeling the asynchronous, warp-specialized, persistent execution style of
