@@ -111,8 +111,8 @@ These are **in addition to** the base papers above, not instead of them.
 
 ```bibtex
 @inproceedings{accelwattch2021,
-  author    = {Vijay Kandiah and Scott Peverelle and Mahmoud Khairy and Amogh Manjunath and
-               Junrui Pan and Timothy G. Rogers and Tor M. Aamodt and Nikos Hardavellas},
+  author    = {Vijay Kandiah and Scott Peverelle and Mahmoud Khairy and Junrui Pan and
+               Amogh Manjunath and Timothy G. Rogers and Tor M. Aamodt and Nikos Hardavellas},
   title     = {AccelWattch: A Power Modeling Framework for Modern {GPU}s},
   booktitle = {MICRO},
   year      = {2021},
