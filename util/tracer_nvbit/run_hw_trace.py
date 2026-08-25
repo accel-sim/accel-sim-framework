@@ -57,8 +57,8 @@ parser.add_option(
     "--spinlock_handling",
     dest="spinlock_handling",
     choices=["none", "fast_forward", "mark_region"],
-    default="none",
-    help="How to handle spinlock instructions: none, fast_forward, or mark_region",
+    default="mark_region",
+    help="How to handle spinlock instructions: none, fast_forward, or mark_region (default: mark_region)",
 )
 parser.add_option(
     "--spinlock_fast_forward_iterations",

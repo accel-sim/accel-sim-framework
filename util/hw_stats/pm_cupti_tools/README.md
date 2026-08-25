@@ -85,10 +85,15 @@ Each sampling session produces a CSV file named `output_N.csv` containing:
 - Metric values for each sample
 - Start and end timestamps
 
-Use `plot.py` to visualize:
+Use `plot.py` to visualize (writes an interactive Plotly HTML):
 ```bash
 python plot.py output_0.csv
 ```
+
+Example output — L2 (`lts__t_sectors`), DRAM (`dram__sectors`), and SM instruction
+throughput (`sm__inst_executed`) sampled per cycle across a kernel's execution:
+
+![Cycle-level PM sampling time series](../../../docs/img/pm_sampling_example.png)
 
 ## Troubleshooting
 

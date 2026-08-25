@@ -1,0 +1,156 @@
+# Citation metadata for Accel-Sim. Drives GitHub's "Cite this repository" widget.
+# Format: https://citation-file-format.github.io/
+#
+# NOTE: Accel-Sim should be cited CUMULATIVELY -- see the "How to Cite" section of
+# README.md. GitHub's widget only exports `preferred-citation` (Accel-Sim 2.0); the
+# full cumulative set is listed under `references:` below and in CITATION.bib.
+cff-version: 1.2.0
+title: Accel-Sim
+abstract: >-
+  An extensible, validated framework for cycle-level GPU simulation. Accel-Sim traces real
+  SASS execution from NVIDIA hardware with NVBit and replays it on a detailed performance
+  model (GPGPU-Sim 4.x), together with the AccelWattch power model. Version 2.0 adds full
+  NVIDIA Hopper support.
+keywords:
+  - GPU
+  - simulation
+  - computer architecture
+  - GPGPU-Sim
+  - CUDA
+  - Hopper
+message: >-
+  If you use this software, please cite it cumulatively using the metadata in
+  CITATION.bib (or the "How to Cite" section of README.md): Accel-Sim 1.0, Accel-Sim 2.0
+  and GPGPU-Sim are always required; add AccelWattch and GPUWattch if you use the power
+  model.
+type: software
+url: "https://accel-sim.github.io/"
+repository-code: "https://github.com/accel-sim/accel-sim-framework"
+version: "2.0"
+# CFF requires a top-level `authors` key, so Accel-Sim is credited here as a single
+# entity rather than an enumerated list -- the project has many contributors beyond any
+# one paper's author list. See the GitHub contributors page for individual credit.
+# Note: because `preferred-citation` is set below, GitHub's "Cite this repository" button
+# exports THAT paper's author list, not this one.
+authors:
+  - name: The Accel-Sim Contributors
+    website: "https://github.com/accel-sim/accel-sim-framework/graphs/contributors"
+
+# Update this entry if/when the paper is published at a venue.
+preferred-citation:
+  type: article
+  title: >-
+    Architecting the Next Generation of Asynchronous, Distributed GPUs for the AI Era
+  year: 2026
+  journal: arXiv
+  doi: 10.48550/arXiv.2608.22602
+  url: "https://arxiv.org/abs/2608.22602"
+  identifiers:
+    - type: other
+      value: "arXiv:2608.22602"
+  authors:
+    - given-names: Junrui
+      family-names: Pan
+    - given-names: Weili
+      family-names: An
+    - given-names: Cesar
+      family-names: Avalos Baddouh
+    - given-names: Christin David
+      family-names: Bose
+    - given-names: Ni
+      family-names: Kang
+    - given-names: Aaron
+      family-names: Barnes
+    - given-names: Ahmad
+      family-names: Alawneh
+    - given-names: Fangjia
+      family-names: Shen
+    - given-names: Yechen
+      family-names: Liu
+    - given-names: Anusuya
+      family-names: Nallathambi
+    - given-names: Atthin
+      family-names: Chandrashekar
+    - given-names: Timothy G.
+      family-names: Rogers
+
+references:
+  # ---- Base: cite for any use of Accel-Sim ----
+  - type: conference-paper
+    title: "Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling"
+    collection-title: >-
+      Proceedings of the 47th Annual International Symposium on Computer Architecture (ISCA)
+    year: 2020
+    doi: 10.1109/ISCA45697.2020.00047
+    authors:
+      - given-names: Mahmoud
+        family-names: Khairy
+      - given-names: Zhesheng
+        family-names: Shen
+      - given-names: Tor M.
+        family-names: Aamodt
+      - given-names: Timothy G.
+        family-names: Rogers
+  - type: conference-paper
+    title: "Analyzing CUDA Workloads Using a Detailed GPU Simulator"
+    collection-title: >-
+      Proceedings of the IEEE International Symposium on Performance Analysis of Systems
+      and Software (ISPASS)
+    year: 2009
+    doi: 10.1109/ISPASS.2009.4919648
+    authors:
+      - given-names: Ali
+        family-names: Bakhoda
+      - given-names: George L.
+        family-names: Yuan
+      - given-names: Wilson W. L.
+        family-names: Fung
+      - given-names: Henry
+        family-names: Wong
+      - given-names: Tor M.
+        family-names: Aamodt
+  # ---- Add if you use the power model ----
+  - type: conference-paper
+    title: "AccelWattch: A Power Modeling Framework for Modern GPUs"
+    collection-title: >-
+      Proceedings of the 54th Annual IEEE/ACM International Symposium on Microarchitecture
+      (MICRO)
+    year: 2021
+    authors:
+      - given-names: Vijay
+        family-names: Kandiah
+      - given-names: Scott
+        family-names: Peverelle
+      - given-names: Mahmoud
+        family-names: Khairy
+      - given-names: Amogh
+        family-names: Manjunath
+      - given-names: Junrui
+        family-names: Pan
+      - given-names: Timothy G.
+        family-names: Rogers
+      - given-names: Tor M.
+        family-names: Aamodt
+      - given-names: Nikos
+        family-names: Hardavellas
+  - type: conference-paper
+    title: "GPUWattch: Enabling Energy Optimizations in GPGPUs"
+    collection-title: >-
+      Proceedings of the 40th Annual International Symposium on Computer Architecture (ISCA)
+    year: 2013
+    doi: 10.1145/2485922.2485964
+    authors:
+      - given-names: Jingwen
+        family-names: Leng
+      - given-names: Tayler
+        family-names: Hetherington
+      - given-names: Ahmed
+        family-names: ElTantawy
+      - given-names: Syed
+        family-names: Gilani
+      - given-names: Nam Sung
+        family-names: Kim
+      - given-names: Tor M.
+        family-names: Aamodt
+      - given-names: Vijay Janapa
+        family-names: Reddi

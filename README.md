@@ -1,331 +1,573 @@
-# Welcome to the top-level repo of Accel-Sim and AccelWattch
-[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/accel-sim/accel-sim-framework)  
-[![CI Runs](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml/badge.svg?branch=dev&event=push)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml)
-[![Weekly Tests](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml/badge.svg)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/weekly.yml)
-- [Welcome to the top-level repo of Accel-Sim and AccelWattch](#welcome-to-the-top-level-repo-of-accel-sim-and-accelwattch)
-  - [Dependencies](#dependencies)
-  - [Overview](#overview)
-  - [Accel-Sim Components](#accel-sim-components)
-    - [Accel-Sim Tracer](#accel-sim-tracer)
-      - [A simple example](#a-simple-example)
-      - [Spinlock handling](#spinlock-handling)
-      - [Pre-traced applications](#pre-traced-applications)
-    - [Accel-Sim SASS Frontend and Simulation Engine](#accel-sim-sass-frontend-and-simulation-engine)
-    - [Accel-Sim Correlator](#accel-sim-correlator)
-    - [Accel-Sim Tuner](#accel-sim-tuner)
-    - [How do I quickly just run what GitHub action runs?](#how-do-i-quickly-just-run-what-github-action-runs)
-  - [AccelWattch Overview](#accelwattch-overview)
+# Accel-Sim 2.0 — Validated GPU Simulation with full Hopper support
 
+[![Open in GitHub Codespaces](https://github.com/codespaces/badge.svg)](https://codespaces.new/accel-sim/accel-sim-framework) [![CI Runs](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml/badge.svg?branch=dev&event=push)](https://github.com/accel-sim/accel-sim-framework/actions/workflows/main.yml)
 
-The [ISCA 2020 paper](https://conferences.computer.org/isca/pdfs/ISCA2020-4QlDegUf3fKiwUXfV0KdCm/466100a473/466100a473.pdf)
-describes the goals of Accel-Sim and introduces the tool. This readme is meant to provide tutorial-like details on how to use the Accel-Sim
-framework. If you use any component of Accel-Sim, please cite:
+Accel-Sim is an extensible, **validated** framework for cycle-level GPU simulation.
+It traces real SASS execution from NVIDIA hardware with NVBit and replays it on a detailed performance model (GPGPU-Sim 4.x), together with the AccelWattch power model.
 
+**Accel-Sim 2.0** adds **full NVIDIA Hopper (H100 / H200) support**: the Tensor Memory Accelerator (TMA), asynchronous Warp Group MMA (WGMMA), `mbarrier` producer/consumer synchronization, threadblock clusters, a chiplet / uGPU partitioned memory subsystem, a rebuilt tracer (compressed traces + PyTorch per-layer hooks), and **GPUVision** for cycle-level hardware correlation.
+See the full changelog and **Table 1** in [release.notes.md](release.notes.md).
+
+> ### 🚀 Simulate contemporary LLM inference and training, end to end
+> Accel-Sim 2.0 **fully supports vLLM inference and PyTorch training** — grab any model from
+> Hugging Face, trace inference or a full training step (forward + backward + optimizer) with
+> a few lines of Python, and run it on a cycle-level model of an H100. No hand-written
+> kernels, no unsupported-op workarounds: modern async Hopper kernels (FlashAttention-3,
+> cuBLAS/CUTLASS, NCCL) run out of the box.
+>
+> **And it's accurate.**
+> Validated across **34,000+ kernel instances** from **22 benchmark suites**, Accel-Sim 2.0 achieves a **99% Pearson correlation** and just **13.4% mean absolute cycle error** against real NVIDIA H100 silicon.
+>
+> → Jump to [**Tracing LLMs with vLLM**](#tracing-llms-with-vllm).
+
+![Accel-Sim 2.0 vs. NVIDIA H100 correlation](./docs/img/h100_correlation.png)
+
+*Simulated vs. real H100 across 34,000+ kernels — GPC cycles, warp instructions, and L1/L2 accesses & misses.
+Each panel shows the Pearson correlation and mean absolute percentage error (MAPE) for that metric.*
+
+> **Roadmap:** experimental **Blackwell (B200 / RTX 5090)** and **multi-GPU / NVLink** support are incoming shortly.
+
+## Contents
+- [How to Cite](#how-to-cite)
+- [Dependencies](#dependencies)
+- [Quick Start](#quick-start)
+- [Full Hopper Support](#full-hopper-support)
+- [**Tracing with vLLM**](#tracing-llms-with-vllm)
+- [Core Components](#core-components)
+  - [Tracer](#tracer)
+  - [SASS Frontend and Simulation Engine](#sass-frontend-and-simulation-engine)
+  - [Correlator](#correlator)
+  - [Tuner](#tuner)
+- [New in 2.0 — Feature Guides](#new-in-20--feature-guides)
+  - [GPUVision — cycle-level CUPTI profiling](#gpuvision--cycle-level-cupti-profiling)
+  - [Compressed traces (.tracez) and traceDsm](#compressed-traces-tracez-and-tracedsm)
+  - [Parallel tracing and simulation](#parallel-tracing-and-simulation)
+- [AccelWattch Power Model](#accelwattch-power-model)
+
+---
+
+## How to Cite
+
+Cite Accel-Sim **cumulatively**.
+If you use anything in this repo, cite the **base** papers;
+add the **power** papers on top only if you use AccelWattch or GPUWattch.
+
+The [Accel-Sim 2.0 paper](https://arxiv.org/abs/2608.22602) introduces full Hopper support and the 2.0 framework;
+the [ISCA 2020 paper](https://people.ece.ubc.ca/~aamodt/publications/papers/accelsim.isca2020.pdf) introduces Accel-Sim;
+the [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) introduces AccelWattch (see the [AccelWattch MICRO'21 Artifact Manual](./AccelWattch.md)).
+
+Ready-to-use metadata ships with the repo: [`CITATION.bib`](./CITATION.bib) (every entry below, copy-pasteable) and [`CITATION.cff`](./CITATION.cff) (machine-readable; drives GitHub's **"Cite this repository"** button in the sidebar).
+Note that GitHub's button exports only the Accel-Sim 2.0 entry — use `CITATION.bib` for the full cumulative set.
+
+### 1. Base — always cite these
+
+Required for **any** use of Accel-Sim: the tracer, the trace-driven frontend, the tuner, the correlator, the Hopper model — anything.
+
+> **Accel-Sim 2.0 (2026)** **＋** **Accel-Sim 1.0 (ISCA'20)** **＋** **GPGPU-Sim (ISPASS'09)**
+
+<details>
+<summary><b>BibTeX — base</b></summary>
+
+```bibtex
+@misc{accelsim2_2026,
+  author        = {Junrui Pan and Weili An and Cesar Avalos Baddouh and Christin David Bose and
+                   Ni Kang and Aaron Barnes and Ahmad Alawneh and Fangjia Shen and Yechen Liu and
+                   Anusuya Nallathambi and Atthin Chandrashekar and Timothy G. Rogers},
+  title         = {Architecting the Next Generation of Asynchronous, Distributed {GPUs} for the {AI} Era},
+  year          = {2026},
+  eprint        = {2608.22602},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AR},
+  doi           = {10.48550/arXiv.2608.22602},
+  url           = {https://arxiv.org/abs/2608.22602}
+}
+
+@inproceedings{accelsim2020,
+  author    = {Mahmoud Khairy and Zhesheng Shen and Tor M. Aamodt and Timothy G. Rogers},
+  title     = {Accel-Sim: An Extensible Simulation Framework for Validated {GPU} Modeling},
+  booktitle = {ISCA},
+  year      = {2020},
+  doi       = {10.1109/ISCA45697.2020.00047}
+}
+
+@inproceedings{gpgpusim2009,
+  author    = {Ali Bakhoda and George L. Yuan and Wilson W. L. Fung and Henry Wong and Tor M. Aamodt},
+  title     = {Analyzing {CUDA} Workloads Using a Detailed {GPU} Simulator},
+  booktitle = {ISPASS},
+  year      = {2009},
+  doi       = {10.1109/ISPASS.2009.4919648}
+}
 ```
-Mahmoud Khairy, Zhensheng Shen, Tor M. Aamodt, Timothy G. Rogers,
-Accel-Sim: An Extensible Simulation Framework for Validated GPU Modeling,
-in 2020 ACM/IEEE 47th Annual International Symposium on Computer Architecture (ISCA)
-```
+</details>
 
-This repository also includes AccelWattch: A Power Modeling Framework for Modern GPUs. The [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) introduces AccelWattch. Please look at our [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md) for detailed information on various AccelWattch components. For information on just running AccelWattch, please look at the [AccelWattch Overview](https://github.com/accel-sim/accel-sim-framework/blob/release/README.md#accelwattch-overview) section in this read-me.
-If you use any component of AccelWattch, please cite:
+### 2. Power modeling — add these if you use AccelWattch or GPUWattch
 
-```
-Vijay Kandiah, Scott Peverelle, Mahmoud Khairy, Amogh Manjunath, Junrui Pan, Timothy G. Rogers, Tor Aamodt, Nikos Hardavellas,
-AccelWattch: A Power Modeling Framework for Modern GPUs,
-in 2021 IEEE/ACM International Symposium on Microarchitecture (MICRO)
-```
+These are **in addition to** the base papers above, not instead of them.
 
+> **＋ AccelWattch (MICRO'21)** **＋** **GPUWattch (ISCA'13)**
+
+<details>
+<summary><b>BibTeX — power model</b></summary>
+
+```bibtex
+@inproceedings{accelwattch2021,
+  author    = {Vijay Kandiah and Scott Peverelle and Mahmoud Khairy and Amogh Manjunath and
+               Junrui Pan and Timothy G. Rogers and Tor M. Aamodt and Nikos Hardavellas},
+  title     = {AccelWattch: A Power Modeling Framework for Modern {GPU}s},
+  booktitle = {MICRO},
+  year      = {2021},
+  doi       = {10.1145/3466752.3480063}
+}
+
+@inproceedings{gpuwattch2013,
+  author    = {Jingwen Leng and Tayler Hetherington and Ahmed ElTantawy and Syed Gilani and
+               Nam Sung Kim and Tor M. Aamodt and Vijay Janapa Reddi},
+  title     = {GPUWattch: Enabling Energy Optimizations in {GPGPU}s},
+  booktitle = {ISCA},
+  year      = {2013},
+  doi       = {10.1145/2485922.2485964}
+}
+```
+</details>
+
+---
 
 ## Dependencies
 
-This package is meant to be run on a modern linux distro.
-A docker image that works with this repo can be found [here](https://github.com/accel-sim/Dockerfile/pkgs/container/accel-sim-framework).
-The dockerfile used to build this image can be found [here](https://github.com/accel-sim/Dockerfile), which built on top of `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04`.
+This package runs on a modern Linux distro.
+A prebuilt Docker image is available [here](https://github.com/accel-sim/Dockerfile/pkgs/container/accel-sim-framework) (built on `nvidia/cuda:12.8.0-cudnn-devel-ubuntu24.04`; Dockerfile [here](https://github.com/accel-sim/Dockerfile)).
 
-To build on local machine, install the following packages with CUDA toolkit:
+To build on a local machine (example: Ubuntu 24.04 + CUDA 12.8):
 ```bash
-# Assuming running on Ubuntu 24.04 and installing CUDA 12.8
-sudo apt-get install  -y wget build-essential xutils-dev bison zlib1g-dev flex \
-      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev git g++ \
-      libxml2-dev vim python-setuptools build-essential python3-pip
+sudo apt-get install -y wget build-essential xutils-dev bison zlib1g-dev flex \
+      libglu1-mesa-dev git g++ libssl-dev libxml2-dev libboost-all-dev \
+      libzstd-dev vim python3-setuptools python3-pip
 
 pip3 install pyyaml plotly psutil
+
 wget https://developer.download.nvidia.com/compute/cuda/12.8.1/local_installers/cuda_12.8.1_570.124.06_linux.run
 sh cuda_12.8.1_570.124.06_linux.run --silent --toolkit
 rm cuda_12.8.1_570.124.06_linux.run
 ```
+> `libzstd-dev` is required for the compressed `.tracez` trace format.
 
-## Overview
+Accel-Sim 2.0 uses the [GPGPU-Sim 4.x](./gpu-simulator/gpgpu-sim4.md) performance model, pulled automatically at build time along with the AccelWattch power model.
+A companion [GPU App Collection](https://github.com/accel-sim/gpu-app-collection) provides common benchmarks with build infrastructure for different CUDA versions.
 
-The code for the Accel-Sim and AccelWattch frameworks are in this repo. Accel-Sim 1.0 uses the
-[GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md) performance model, which was released as part of the original
-Accel-Sim paper. Building the trace-based Accel-Sim will pull the right version of
-GPGPU-Sim 4.0 and the AccelWattch power model to use in Accel-Sim. AccelWattch replaces the GPUWattch power model in GPGPU-Sim 4.0.
+---
 
-There is an additional repo where we have collected a set of common GPU applications and a common infrastructure for building
-them with different versions of CUDA. If you use/extend this app framework, it makes Accel-Sim easily usable
-with a few simple command lines. The instructions in this README will take you through how to use Accel-Sim with
-the apps in from this collection as well as just on your own, with your own apps.
+## Quick Start
 
-[GPU App Collection](https://github.com/accel-sim/gpu-app-collection)
+End-to-end: build the simulator, trace an app on real hardware, and simulate it.
+Every Python script below accepts `--help` for full options.
 
-AccelWattch microbenchmarks and AccelWattch validation set benchmarks are also included. For more information on these benchmarks, please look at our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) and [AccelWattch MICRO'21 Artifact Manual](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md).
+**1. Build the simulator**
+```bash
+pip3 install -r requirements.txt
+source ./gpu-simulator/setup_environment.sh
 
-## Accel-Sim Components
+cmake -S ./gpu-simulator/ -B ./gpu-simulator/build
+cmake --build ./gpu-simulator/build -j8
+cmake --install ./gpu-simulator/build
+# Executable: ./gpu-simulator/bin/release/accel-sim.out
+```
+
+**2. Get and build some apps**
+```bash
+git clone https://github.com/accel-sim/gpu-app-collection
+source ./gpu-app-collection/src/setup_environment
+make -j -C ./gpu-app-collection/src rodinia_2.0-ft
+make    -C ./gpu-app-collection/src data
+```
+
+**3. Trace them on a real GPU** (produces compressed `.tracez` traces)
+```bash
+export CUDA_INSTALL_PATH=<your_cuda>
+export PATH=$CUDA_INSTALL_PATH/bin:$PATH
+./util/tracer_nvbit/install_nvbit.sh
+make -C ./util/tracer_nvbit/
+
+./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <device-num>
+# Traces land in ./hw_run/traces/
+```
+
+`run_hw_trace.py` traces benchmarks declared in the [app YAMLs](./util/job_launching/apps/).
+To trace **any other command** — your own binary, a Python script, a serving framework — use the `run.sh` wrapper instead: it sets up the NVBit tracing environment and then `exec`s whatever you hand it.
+```bash
+NVBIT_INSTRUMENTATION_ENABLED=1 TRACES_FOLDER=./my_traces \
+    ./util/tracer_nvbit/others/torch_hook/run.sh ./your_cuda_app [args...]
+
+# then post-process the raw traces into .tracez
+./util/tracer_nvbit/tracer_tool/traces-processing/post-traces-processing ./my_traces -j 8
+```
+> The wrapper sets `NVBIT_INSTRUMENTATION_ENABLED=0` so PyTorch hooks can switch tracing on for one layer at a time — override it to `1` as above when you want to trace a whole app.
+> `TRACES_FOLDER` defaults to `./traces`.
+
+**4. Simulate.**
+Pick a config: `H100-SASS` / `H200-SASS` for Hopper, or `QV100-SASS`, `A100-SASS`, etc. (see [`define-standard-cfgs.yml`](./util/job_launching/configs/define-standard-cfgs.yml)).
+```bash
+./util/job_launching/run_simulations.py \
+    -B rodinia_2.0-ft -C H100-SASS \
+    -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+
+# Monitor, then collect stats
+./util/job_launching/monitor_func_test.py -v -N myTest
+./util/job_launching/get_stats.py -N myTest | tee stats.csv
+```
+
+To run a single trace directly (bypassing the launch manager):
+```bash
+./gpu-simulator/bin/release/accel-sim.out \
+  -trace ./hw_run/traces/device-<n>/<cuda>/<app>/<args>/traces/kernelslist.g \
+  -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM90_H100/gpgpusim.config \
+  -config ./gpu-simulator/configs/tested-cfgs/SM90_H100/trace.config
+```
+We recommend the `run_simulations.py` launch manager for anything beyond a single run.
+
+For **PTX execution-driven** mode (no traces required), drop `-T` and use a `*-PTX` config:
+```bash
+./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
+```
+
+---
+
+## Full Hopper Support
+
+Accel-Sim 2.0 models the asynchronous, warp-specialized, persistent execution style of modern Hopper kernels (FlashAttention-3, cuBLAS/CUTLASS GEMMs, NCCL).
+**These features are enabled automatically by the `H100-SASS` / `H200-SASS` configs — you just trace and run.**
+
+- **TMA (Tensor Memory Accelerator):** hardware-orchestrated bulk tensor data movement, including bulk/store groups and CGA shared-memory multicast.
+- **WGMMA (async Warp Group MMA):** warpgroup commit/wait semantics and variable MMA latency that scales with the `N` tile dimension.
+- **`mbarrier` synchronization:** producer/consumer coordination with async-proxy fences, remote arrive, and dynamic `try_wait` / spinloop modeling (see [spinloop handling](#tracer)).
+- **Threadblock clusters (Cooperative Groups):** cluster-aware CTA scheduling and distributed shared memory.
+- **Memory subsystem:** HBM3 / HBM3e timing, the L2 Request Coalescer (LRC), IPOLY+MODULO L2 hashing, and a chiplet / uGPU partitioned L2.
+
+See **Table 1** in [release.notes.md](release.notes.md) for the complete baseline-vs-2.0 feature map.
+
+---
+
+## Tracing LLMs with vLLM
+
+Large language models are the primary workload Accel-Sim 2.0 is built for — and they can't be traced the old way.
+Modern LLMs run inside serving frameworks (vLLM, Hugging Face) rather than as a standalone CUDA binary you can `LD_PRELOAD`, and a single trace of a full model would be enormous and redundant.
+Instead, Accel-Sim 2.0 attaches NVBit to the **live PyTorch process** and traces only the layers you select.
+Because an LLM is a stack of identical transformer blocks, **tracing one representative layer is enough to extrapolate end-to-end performance.**
+
+The tool is [`./util/tracer_nvbit/others/torch_hook/`](./util/tracer_nvbit/others/torch_hook/): a hook module that toggles NVBit instrumentation on and off around the forward pass of a named layer, tagging the resulting trace with that layer's name.
+
+### 1. Build the tracer and install vLLM
+
+```bash
+export CUDA_INSTALL_PATH=<your_cuda>
+export PATH=$CUDA_INSTALL_PATH/bin:$PATH
+./util/tracer_nvbit/install_nvbit.sh
+make -C ./util/tracer_nvbit/       # builds tracer_tool.so used by the hook
+
+pip install vllm                   # in your inference environment
+```
+
+### 2. Instrument your vLLM script
+
+Attach the hook to the model inside each vLLM worker via `collective_rpc`, **before** generating.
+Enable instrumentation only for the layer(s) you care about.
+This is the core of the bundled, runnable [`vllm_example.py`](./util/tracer_nvbit/others/torch_hook/vllm_example.py):
+
+```python
+from vllm import LLM, SamplingParams
+from torch_hook import TorchModelHookWrapper, hook_nvbit_to_layer
+import torch
+
+llm = LLM(model="facebook/opt-125m", enforce_eager=True)
+
+def print_layer_names(model: torch.nn.Module):
+    for name, module in model.named_modules():
+        print(f"  {name}: {module.__class__.__name__}")
+
+def apply_nvbit_hook(model: torch.nn.Module, layers_to_trace: list[str]):
+    hook_wrapper = TorchModelHookWrapper(model)
+    for layer in layers_to_trace:
+        hook_nvbit_to_layer(hook_wrapper, layer)   # NVBit on only during this layer
+
+# (optional) discover the exact layer names first:
+llm.collective_rpc(lambda self: print_layer_names(self.model_runner.model))
+
+# instrument one attention layer, then run inference
+layers_to_trace = ["model.decoder.layers.10.self_attn"]
+llm.collective_rpc(lambda self: apply_nvbit_hook(self.model_runner.model, layers_to_trace))
+outputs = llm.generate(["Hello, my name is"],
+                       SamplingParams(temperature=0.8, top_p=0.95))
+```
+
+> `enforce_eager=True` is recommended (disables CUDA Graph).
+
+### 3. Run it through the wrapper
+
+The `run.sh` wrapper sets up the NVBit tracing environment and execs the command you give it.
+It works for **any** Python or CUDA workload — it just also sets two vLLM variables, which are harmless elsewhere:
+
+```bash
+./util/tracer_nvbit/others/torch_hook/run.sh python3 \
+    util/tracer_nvbit/others/torch_hook/vllm_example.py
+```
+
+It sets, among others:
+
+| Variable | Value | Purpose |
+|----------|-------|---------|
+| `CUDA_INJECTION64_PATH` | `tracer_tool.so` | Loads the NVBit tracer into the process |
+| `NVBIT_INSTRUMENTATION_ENABLED` | `0` | Off by default — the hook turns it on per layer |
+| `ALLOW_REG_VAL_TRACING` | `1` | Trace register values (tensor descriptors, `mbarrier`) |
+| `SPINLOCK_HANDLING_MODE` | `2` | `mbarrier` spinloops via `mark_region` |
+| `VLLM_ENABLE_V1_MULTIPROCESSING` | `0` | Single process, required for tracing |
+| `VLLM_ALLOW_INSECURE_SERIALIZATION` | `1` | Allows the `collective_rpc` lambda |
+
+### 4. Post-process and simulate on H100
+
+The tracer writes per-layer traces (tagged by layer name) to its output folder.
+Post-process them into the compressed `.tracez` format, then simulate with a Hopper config:
+
+```bash
+# Compress/finalize the raw traces (see Compressed traces section)
+./util/tracer_nvbit/tracer_tool/traces-processing/post-traces-processing <traces-folder> -j 8
+
+# Simulate the traced layer on H100 (point -trace at kernelslist.g in the traces folder)
+./gpu-simulator/bin/release/accel-sim.out \
+  -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM90_H100/gpgpusim.config \
+  -config ./gpu-simulator/configs/tested-cfgs/SM90_H100/trace.config \
+  -trace <traces-folder>/kernelslist.g
+```
+
+### Selecting which layers to trace
+
+- Use `print_layer_names(...)` (above) to list every module name, then pass the ones you want to `layers_to_trace`.
+  A layer name like `model.decoder.layers.10.self_attn` matches the module path in `model.named_modules()`.
+- For **prefill vs. decode** studies, trace the same layer under each phase separately — the kernel mix differs (e.g. FlashAttention-3 `LDGSTS`-heavy decode vs. compute-bound prefill).
+- Tracing one middle layer is usually representative;
+  trace a few (early / middle / late) if you want to confirm uniformity.
+
+### Any LLM framework or PyTorch model
+
+vLLM is just the example used here — the hook works with **any LLM framework and any Python module**.
+For any `torch.nn.Module` you have direct access to, apply the same hook API without `collective_rpc`:
+
+```python
+from torch_hook import TorchModelHookWrapper, hook_nvbit_to_layer
+
+hook_wrapper = TorchModelHookWrapper(model)
+hook_nvbit_to_layer(hook_wrapper, "layer_name_to_trace")
+```
+Full API reference (pre/post hooks, NVTX markers, per-name registration) is in the [torch_hook README](./util/tracer_nvbit/others/torch_hook/README.md).
+
+---
+
+## Core Components
 
 ![Accel-Sim Overview](https://accel-sim.github.io/assets/img/accel-sim-crop.svg)
 
-> Note, that all the python scripts in the following sections have more detailed options explanations when run with `--help`
+> All Python scripts below accept `--help` for detailed options.
 
-### Accel-Sim Tracer
+### Tracer
 
-An NVBit tool for generating SASS traces from CUDA applications. Code for the tool lives in `./util/tracer_nvbit/`. To make the tool:
-
+An NVBit tool that generates SASS traces from CUDA applications on real hardware.
+Source lives in [`./util/tracer_nvbit/`](./util/tracer_nvbit/).
+Build it:
 ```bash
 export CUDA_INSTALL_PATH=<your_cuda>
 export PATH=$CUDA_INSTALL_PATH/bin:$PATH
 ./util/tracer_nvbit/install_nvbit.sh
 make -C ./util/tracer_nvbit/
 ```
-#### A simple example
 
-The following example demonstrates how to trace the simple rodinia functional tests
-that get run in our travis regressions:
-
+Trace apps (see [Quick Start](#quick-start) for the full flow):
 ```bash
-# Make sure CUDA_INSTALL_PATH is set, and PATH includes nvcc
-# Get the applications, their data files and build them:
-git clone https://github.com/accel-sim/gpu-app-collection
-source ./gpu-app-collection/src/setup_environment
-make -j -C ./gpu-app-collection/src rodinia_2.0-ft
-make -C ./gpu-app-collection/src data
-
-# Run the applications with the tracer (remember you need a real GPU for this):
-./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on>
+./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <device-num>
 ```
+Traces are written to `./hw_run/traces/` in the compressed `.tracez` format (see [Compressed traces](#compressed-traces-tracez-and-tracedsm)).
+For tracer internals, read the [tracer README](./util/tracer_nvbit/README.md).
 
-That's it. The traces for the short-running rodinia tests will be generated in:
+**Spinlock handling.**
+Hopper kernels poll `mbarrier` phase bits in software spinloops.
+Capturing every polling iteration would bake an unrepresentative count into the trace, so `run_hw_trace.py` runs a spinlock-detection pass and marks these regions **by default** (`--spinlock_handling mark_region`);
+the simulator then re-evaluates the wait dynamically.
+To disable it entirely, pass `--spinlock_handling none`:
 ```bash
-./hw_run/traces/
+./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <device-num> --spinlock_handling none
 ```
+The detection tool lives in [`./util/tracer_nvbit/others/spinlock_tool/`](./util/tracer_nvbit/others/spinlock_tool/).
 
-To extend the tracer, use other apps and understand what, exactly is going on, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tracer_nvbit/README.md).
-
-#### Spinlock handling
-
-If your application contains spinlock instructions, you can handle them with the tracer by using the following command:
-
-```bash
-./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft -D <gpu-device-num-to-run-on> --spinlock_handling fast_forward
-```
-
-This will fast forward the spinlock instructions and keep the spinlock instructions for the number of iterations specified in the `--spinlock_fast_forward_iterations` arg option.
-
-The tool for spinlock detection is in `./util/tracer_nvbit/others/spinlock_tool/`.
-
-#### Pre-traced applications
-For convience, we have included a repository of pre-traced applications - to get all those traces, simply run:
+**Pre-traced applications.**
+To fetch a repository of pre-collected traces:
 ```bash
 ./get-accel-sim-traces.py
 ```
-and follow the instructions.
 
-### Accel-Sim SASS Frontend and Simulation Engine
+### SASS Frontend and Simulation Engine
 
-A simulator frontend that consumes SASS traces and feeds them into a performance model. The intial release of Accel-Sim coincides with the release of [GPGPU-Sim 4.0](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/gpgpu-sim4.md), which acts as the detailed performance model. To build the Accel-Sim simulator that uses the traces, do the following:
+The frontend consumes SASS traces and drives the GPGPU-Sim 4.x performance model.
+Build and run as shown in [Quick Start](#quick-start).
+To understand running the simulator in isolation, read the [job_launching README](./util/job_launching/README.md) and the [gpu-simulator README](./gpu-simulator/README.md).
 
-```bash
-pip3 install -r requirements.txt
-source ./gpu-simulator/setup_environment.sh
+### Correlator
 
-# Build with make
-make -j -C ./gpu-simulator/
-
-# Build with CMake
-cmake -S ./gpu-simulator/ -B ./gpu-simulator/build
-cmake --build ./gpu-simulator/build -j8
-cmake --install ./gpu-simulator/build
-```
-
-This will produce an executable in:
-```bash
-./gpu-simulator/bin/release/accel-sim.out
-```
-
-Running the [simple example](#a-simple-example) in the [tracer section](#accel-sim-tracer):
-
-```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-SASS -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
-```
-
-The above command will run the workloads in Accel-Sim's SASS traces-driven mode. You can also run the workloads in PTX mode using:
-
-```txt
-PTX mode usage: ./util/job_launching/run_simulations.py -B <benchmark> -C <gpu_config> -N <run_identifier>
-Optional:
-[-B benchmark]              (From the gpu-app-collection compiled in Step 1)
-[-C gpu_config]             (List of supported configs: accel-sim-framework/util/job_launching/configs/define-standard-cfgs.yml)
-```
-Eg:
-```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C QV100-PTX -N myTest-PTX
-```
-
-
-You can monitor the tests using:
-```bash
-./util/job_launching/monitor_func_test.py -v -N myTest
-```
-After the jobs finish - you can collect all the stats using:
-```bash
-./util/job_launching/get_stats.py -N myTest | tee stats.csv
-```
-
-If you want to run the accel-sim.out executable command itself for specific workload, you can use:
-```bash
-/gpu-simulator/bin/release/accel-sim.out -trace ./hw_run/rodinia_2.0-ft/9.1/backprop-rodinia-2.0-ft/4096___data_result_4096_txt/traces/kernelslist.g -config ./gpu-simulator/gpgpu-sim/configs/tested-cfgs/SM7_QV100/gpgpusim.config -config ./gpu-simulator/configs/tested-cfgs/SM7_QV100/trace.config
-```
-However, we encourage you to use our workload launch manager 'run_simulations' script as shown above, which will greatly simplify the simulation process and increase productivity.
-
-To understand what is going on and how to just run the simulator in isolation without the framework, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/job_launching/README.md).
-
-To better undersatnd the Accel-Sim front-end and the interface with GPGPU-Sim, read [this](https://github.com/accel-sim/accel-sim-framework/blob/dev/gpu-simulator/README.md).
-
-### Accel-Sim Correlator
-A tool that matches, plots and correlates statistics from the performance model with real hardware statistics generated by profiling tools. To use the correlator, you must first generate hardware output and simulation statistics. To generate output from the GPU, use the scripts in [./util/hw_stats](./util/hw_stats).
-For example, to generate the profiler numbers for the short-running apps in our running example, do the following:
-
-> Note: this step assumes you have already built the apps using the instructions from [simple example](#a-simple-example) in the [tracer section](#accel-sim-tracer).
+Matches, plots, and correlates simulator statistics against real-hardware statistics from profiling tools.
+First generate hardware output with the scripts in [`./util/hw_stats`](./util/hw_stats):
 ```bash
 ./util/hw_stats/run_hw.py -B rodinia_2.0-ft
+# Newer cards: add --nsight_profiler --disable_nvprof
 ```
-
-> Note: Different cards support different profilers. By default - this script will use nvprof. However, you can use nsight-cli instead using:
-```bash
-./util/hw_stats/run_hw.py -B rodinia_2.0-ft --nsight_profiler --disable_nvprof
-```
-
-All the stats will be output in:
-```bash
-./hw_run/...
-```
-
-> Note: that in order to correlate our running example with your local machine - you need to have a QV100 card.
-
-However - we also provide a comprehensive suite of hardware profiling results, which can be obtained by running:
-```bash
-./util/hw_stats/get_hw_data.sh
-```
-
-Now you can use the statistics from the simulation run you did in (2) to correlate with these results.
-To generate stats that can be correlated - do the following:
+A comprehensive hardware profiling suite is available via `./util/hw_stats/get_hw_data.sh`.
+Generate correlatable per-kernel stats, then plot:
 ```bash
 ./util/job_launching/get_stats.py -R -k -K -B rodinia_2.0-ft -C QV100-SASS | tee per.kernel.stats.csv
-```
-
-To run the correlator - do the following:
-```
 ./util/plotting/plot-correlation.py -c per.kernel.stats.csv -H ./hw_run/QUADRO-V100/device-0/9.1/
 ```
+Interactive HTML plots, CSVs, and textual summaries appear under `./util/plotting/correl-html/`.
+For **cycle-level** correlation (rather than per-kernel aggregates), see [GPUVision](#gpuvision--cycle-level-cupti-profiling).
 
-The script may take a few minutes to run (primarily because it is parsing a large amount of hardware data for >150 apps).
-Stdout will print the summary of counters error, correlation, etc. and a set of correlation plots will be generated
-in:
-```
-./util/plotting/correl-html/
-```
+### Tuner
 
-Here you will find interactive HTML plots, csvs and textual summaries of how well the simulator correlated against hardware on both a per-kernel and per-app basis.
-Note that the simple tests we ran in this tutorial are short running and not generally representative of scaled GPU apps and are just meant to quickly validate you can get Accel-Sim working.
-For a true validation, you should attempt correlating the fully-scaled set of apps used in the paper.
-**These will take hours to run (even on a cluster), and some consume significant memory**, but can be run using:
-
+Automates configuration-file generation from a microbenchmark suite.
+Fetch the microbenchmarks, provide an `hw_def` header describing the target hardware, then run them and the tuner:
 ```bash
-./util/job_launching/run_simulations.py -B rodinia-3.1,GPU_Microbenchmark,sdk-4.2-scaled,parboil,polybench,cutlass_5_trace,Deepbench_nvidia -C QV100-SASS -T ~/../common/accel-sim/traces/tesla-v100/latest/ -N all-apps -M 70G
-
-# Once complete, collect the stats and plot
-./util/job_launching/get_stats.py -k -K -R -N all-apps | tee all-apps.csv
-./util/plotting/plot-correlation.py -c all-apps.csv -H ./hw_run/QUADRO-V100/device-0/9.1/
-```
-
-### Accel-Sim Tuner
-
-An automated tuner that automates configuration file generation from a detailed microbenchmark suite. You need to provide a C header file `hw_def` that contains minimal information about the hardware model. This file is used to configure and tune the microbenchmarks for the unduerline hardware. See an example of Ampere RTX 3060 card [here](https://github.com/accel-sim/accel-sim-framework/blob/dev/util/tuner/GPU_Microbenchmark/hw_def/ampere_RTX3070_hw_def.h). Then, compile and run the microbenchmarks and the tuner:
-
-```bash
-# Make sure PATH includes nvcc
-# If your hardware has new compute capability, ensure to add it in the /GPU_Microbenchmark/common/common.mk
-# Compile microbenchmarks
-make -C ./util/tuner/GPU_Microbenchmark/
-
-# Set the device id that you want to tune to
-# If you do not know the device id, run ./tuner/GPU_Microbenchmark/bin/list_devices
+./util/tuner/get_ubench.sh            # pull the microbenchmark suite
+# add/edit an hw_def header for your card, then build & run the ubench:
 export CUDA_VISIBLE_DEVICES=0
-
-# Run the ubench and save output in stats.txt
-./util/tuner/GPU_Microbenchmark/run_all.sh | tee stats.txt
-# Run the tuner with the stats.txt from the previous step
+./util/tuner/run_all.sh | tee stats.txt
 ./util/tuner/tuner.py -s stats.txt
 ```
+This generates a folder (named after the device) with GPGPU-Sim and Accel-Sim configs that model the hardware.
+Full steps (including the `hw_def` format) are in the [tuner README](./util/tuner/README.md).
 
-The tuner.py script will parse the microbenchmarks output and generate a folder with the same device name (e.g. "RTX_3060"). The folder will contain the config files for GPGPU-Sim performance model and Accel-Sim trace-driven front-end that matche and model the underline hardware as much as possible. For more detilas about the Accel-Sim tuner and the microbemcakring suite, read [this](https://github.com/accel-sim/accel-sim-framework/tree/dev/util/tuner#readme).
+---
 
+## New in 2.0 — Feature Guides
 
-### How do I quickly just run what GitHub action runs?
+These features introduce **new workflows**.
+(Hopper modeling itself — TMA/WGMMA/`mbarrier` — needs no special steps; see [Full Hopper Support](#full-hopper-support).
+For LLM / PyTorch tracing, see [Tracing LLMs with vLLM](#tracing-llms-with-vllm).)
 
-Install docker, then simply run:
+### GPUVision — cycle-level CUPTI profiling
+
+GPUVision samples hardware performance counters as a **cycle-level time series** (not a single per-kernel aggregate), enabling cycle-level correlation against the simulator.
+It exposes the Nsight Compute metric set via CUPTI's PM Sampling API and can hook arbitrary CUDA API calls.
+Tool: [`./util/hw_stats/pm_cupti_tools/`](./util/hw_stats/pm_cupti_tools/).
 
 ```bash
-docker run -v `pwd`:/accel-sim:rw ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8 /bin/bash short-tests.sh
+# Build
+cd util/hw_stats/pm_cupti_tools && mkdir build && cd build && cmake .. && make && cd ../../../..
+
+# Profile any CUDA app (base metrics only)
+./util/hw_stats/pm_cupti_tools/cupti.sh ./your_cuda_app [args...]
+
+# Add metric groups with -m (repeatable): gpc, fbp, hub, dram, nvlink
+./util/hw_stats/pm_cupti_tools/cupti.sh -m nvlink -m dram ./your_cuda_app [args...]
+
+# Or profile a benchmark suite with custom metrics
+./util/hw_stats/pm_cupti_tools/run_cupti.py -B rodinia_2.0-ft \
+    -M "sm__cycles_elapsed.avg,dram__bytes.sum" -K 1
+```
+`cupti.sh` exports the PM-sampling configuration, points `CUDA_INJECTION64_PATH` at the injection library, and then `exec`s the command you gave it — so it profiles any CUDA program without recompiling it.
+It always samples a base set — `sm__cycles_elapsed.avg`, `sm__inst_executed.sum`, `sm__pipe_tensor_cycles_active_realtime.sum` — and each `-m` appends a group on top:
+
+| `-m` group | Adds |
+|---|---|
+| `gpc` / `fbp` / `hub` | `lts__t_sectors.sum` plus the L2 srcnode read/write percentages for that source |
+| `dram` | DRAM read / write / total sectors |
+| `nvlink` | NVLink RX and TX bytes, plus the DRAM sectors |
+
+With no `-m`, the script prints its usage blurb and profiles with the base metrics only.
+It also sets:
+
+| Variable | `cupti.sh` value | Tool default | Purpose |
+|---|---|---|---|
+| `CUDA_INJECTION64_PATH` | `build/libpmsampling_injection.so` | — | Loads the PM-sampling injection library (build it first) |
+| `INJECTION_METRICS` | base metrics + any `-m` groups | `sm__cycles_elapsed.avg` | Metrics to sample |
+| `INJECTION_KERNEL_COUNT` | `20` | `10` | Kernels per sampling session before flush |
+| `PM_SAMPLING_INTERVAL_SYSCLK` | `3000` | `200000` | Sysclk ticks between samples — this is the cycle-level resolution |
+| `PM_SAMPLING_MAX_SAMPLES` | `160000` | `16384` | Max samples per session |
+| `PM_SAMPLING_HW_BUFFER_BYTES` | `9388608000` (~9.4 GB) | `1048576` | Device-side sampling buffer |
+
+Those five are unconditional `export`s, so setting them in the environment does **not** work — the script overwrites whatever you pass in.
+Change them by editing the script (or a copy of it); `-m` is the only knob exposed on the command line.
+The ~9.4 GB hardware buffer in particular needs a large-memory GPU and should be cut down on smaller cards.
+`PM_SAMPLING_CSV_PATH` is the exception: it is commented out in the script, so an environment value does survive and chooses where samples are written.
+```bash
+PM_SAMPLING_CSV_PATH=$PWD/pm_samples.csv \
+    ./util/hw_stats/pm_cupti_tools/cupti.sh -m dram ./my_gemm 4096
 ```
 
-If something is dying and you want to debug it - you can always run it in interactive mode:
+Output CSVs (per-sample metric values + timestamps) go to `hw_run/cupti/device-X/...`;
+visualize with the bundled `plot.py` (see an [example cycle-level plot](./util/hw_stats/pm_cupti_tools/README.md#output)).
+Discover supported metrics on your GPU via `gen_metrics.py`.
+Requires CUDA 12.8+ with CUPTI and compute capability ≥ 7.5.
+See the [pm_cupti_tools README](./util/hw_stats/pm_cupti_tools/README.md).
+
+### Compressed traces (.tracez) and traceDsm
+
+Post-processing emits **per-warp zstd-compressed `.tracez`** traces by default (large disk and I/O savings), and the simulator loads them page-by-page so runtime memory stays bounded (~4 GB) regardless of kernel size.
 
 ```bash
-docker run -it -v `pwd`:/accel-sim:rw ghcr.io/accel-sim/accel-sim-framework:ubuntu-24.04-cuda-12.8 /bin/bash
+# Post-process a kernelslist directory (called automatically by run_hw_trace.py):
+./util/tracer_nvbit/tracer_tool/traces-processing/post-traces-processing <path> [-j N] [--text]
+#   default: .tracez  |  --text: legacy plain .traceg  |  -j N: parallel threads
 ```
 
-Then from within the docker run:
+Decode / inspect a `.tracez` with **traceDsm**:
 ```bash
-./short-tests.sh
+make -C ./util/tracer_nvbit/others/traceDsm_tool/
+
+# Convert to simulator-compatible .traceg (written next to the input)
+./util/tracer_nvbit/others/traceDsm_tool/traceDsm kernel-1.tracez
+
+# Human-readable, field-annotated dump on stdout
+./util/tracer_nvbit/others/traceDsm_tool/traceDsm kernel-1.tracez --annotate
 ```
 
-You can also play around and do stuff inside the image (even debug the
-simulator) - if you want to do this, installing gdb will help:
-```bash
-apt-get install gdb
+### Parallel tracing and simulation
+
+- **Parallel trace post-processing:** pass `-j N` to `post-traces-processing` (above).
+- **Parallel per-kernel simulation:** `run_simulations.py --per-kernel` splits a benchmark into one run directory per kernel so kernels simulate concurrently:
+  ```bash
+  ./util/job_launching/run_simulations.py -B <bench> -C H100-SASS -T <trace-path> \
+      -N myTest --per-kernel
+  ```
+- **Kernel filtering:** set a `kernel-name-filter` key in an app's YAML entry (see [`apps/`](./util/job_launching/apps/)) to trace/simulate only matching kernels.
+
+---
+
+## AccelWattch Power Model
+
+![AccelWattch Overview](./docs/img/accelwattch-flowchart.svg)
+
+Enable power modeling in a config with:
 ```
-
-Don't want to install docker?
-Just use a linux distro with the packages detailed in dependencies, set
-`CUDA_INSTALL_PATH`./short-tests.sh, the run `./short-tests.sh`.
-
-
-## AccelWattch Overview
-
-![AccelWattch Overview](https://github.com/VijayKandiah/accel-sim.github.io/blob/master/assets/img/accelwattch-flowchart.svg)
-
-1. **Running AccelWattch SASS SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch SASS SIM* model,
-```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_SASS_SIM -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+-power_simulation_enabled 1
+-power_simulation_mode 0   # 0 = SASS_SIM/PTX_SIM, 1 = HW, 2 = HYBRID
+-accelwattch_xml_file <filename>.xml
 ```
-This will use the *AccelWattch SASS SIM* xml configuration file for the power model. The configuration files for the AccelWattch power model presented in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) can be found [here](https://github.com/accel-sim/gpgpu-sim_distribution/tree/release-accelwattch/configs/tested-cfgs/SM7_QV100). Please look at `./util/job_launching/configs/define-standard-cfgs.yml` for a list of provided AccelWattch configurations. The *AccelWattch HYBRID* configuration provided there uses activity factors for L2 and NOC from Accel-Sim and the rest from hardware performance counters. You can create your own *AccelWattch HYBRID* configuration in this file with a different mix of AccelWattch activity factors from Accel-Sim and hardware execution.
-Upon completion of simulations, AccelWattch power estimations are stored in a *accelwattch_power_report.log* in a per-kernel format in the run directory.
+Reports are written to `accelwattch_power_report.log` (per-kernel) in the run directory.
+See the [AccelWattch MICRO'21 Artifact Manual](./AccelWattch.md) for full details.
 
-2. **Running AccelWattch HW or AccelWattch HYBRID:** To run *the simple example from bullet 1* with *AccelWattch HW* or *AccelWattch HYBRID* configurations,
-```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a -C <GV100-Accelwattch_SASS_HW or GV100-Accelwattch_SASS_HYBRID> -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
-```
-Note that *AccelWattch HW* and *AccelWattch HYBRID* configurations require hardware performance counter information for the target application stored in a *hw_perf.csv* file in the run directory. A sample *hw_perf.csv* file with performance counter information collected from a GV100 card for validation suite benchmarks used in our [MICRO 2021 paper](http://paragon.cs.northwestern.edu/papers/2021-MICRO-AccelWattch-Kandiah.pdf) is copied over to the run directory by default with the above *run_simulations.py* command. The *-a* argument for *run_simulations.py* is used to feed the application name to AccelWattch. Please make sure that there is a hardware performance counter information entry with the same application name in *hw_perf.csv* for AccelWattch to obtain activity factors from. Please look at example entries in the provided `./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`.
+1. **AccelWattch SASS SIM:**
+   ```bash
+   ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_SASS_SIM \
+       -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+   ```
+2. **AccelWattch HW / HYBRID:** require per-app hardware counters in a `hw_perf.csv` in the run directory;
+   pass `-a` to feed the app name to AccelWattch:
+   ```bash
+   ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -a \
+       -C GV100-Accelwattch_SASS_HYBRID \
+       -T ./hw_run/traces/device-<device-num>/<cuda-version>/ -N myTest
+   ```
+A sample GV100 `hw_perf.csv` is provided at [`./util/accelwattch/accelwattch_hw_profiler/hw_perf.csv`](./util/accelwattch/accelwattch_hw_profiler/).
+3. **AccelWattch PTX SIM:**
+   ```bash
+   ./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_PTX_SIM -N myTest
+   ```
+4. **Hardware profiler:** scripts in [`./util/accelwattch/accelwattch_hw_profiler/`](./util/accelwattch/accelwattch_hw_profiler/).
+5. **Microbenchmarks & QP solver:** ubench in the [gpu-app-collection](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch);
+   the MATLAB solver is at `./util/accelwattch/quadprog_solver.m`.
+6. **SASS→power mapping:** `gpu-simulator/ISA_Def/accelwattch_component_mapping.h`, extendable for new SASS instructions.
 
-3. **Running AccelWattch PTX SIM**: To run *the simple example from bullet 1* with AccelWattch power estimations enabled using the *AccelWattch PTX SIM* model,
-```bash
-./util/job_launching/run_simulations.py -B rodinia_2.0-ft -C GV100-Accelwattch_PTX_SIM -N myTest
-```
-
-4. **Hardware Power and Performance Profiler**: The AccelWattch hardware profiler scripts are located at `./util/accelwattch/accelwattch_hw_profiler/` in this repository. For more information on how to use them, please look at [this](https://github.com/accel-sim/accel-sim-framework/blob/release/AccelWattch.md#hardware-profiling-for-accelwattch-validation) section in our MICRO'21 Artifact Manual.
-
-5. **Microbenchmarks and Quadratic Optimization Solver**: The source code for the microbenchmarks used for AccelWattch dynamic power modeling are located [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch/src/cuda/accelwattch-ubench) and can be compiled by following the README [here](https://github.com/accel-sim/gpu-app-collection/tree/release-accelwattch). The Quadratic Optimization Solver MATLAB script is located at `./util/accelwattch/quadprog_solver.m`.
-
-6. **SASS to Power Component Mapping**: The header file `gpu-simulator/ISA_Def/accelwattch_component_mapping.h` contains the Accel-Sim instruction opcode to AccelWattch power component mapping and can be extended to support new SASS instructions for future architectures. Please look at the *opcode.h* files for respective GPU Architectures in the same directory `gpu-simulator/ISA_Def/` for SASS instruction to Accel-Sim opcode mapping.
+Provided AccelWattch configs are listed in [`define-standard-cfgs.yml`](./util/job_launching/configs/define-standard-cfgs.yml).

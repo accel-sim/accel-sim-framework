@@ -1,0 +1,59 @@
+% BibTeX metadata for Accel-Sim.
+%
+% Cite Accel-Sim CUMULATIVELY, based on which parts of the framework you use:
+%
+%   Always ────────────►  Accel-Sim 2.0 (2026)  +  Accel-Sim 1.0 (ISCA'20)  +  GPGPU-Sim (ISPASS'09)
+%     └ + Power model ──►  AccelWattch (MICRO'21)  +  GPUWattch (ISCA'13)
+%
+% See the "How to Cite" section of README.md. Machine-readable metadata for GitHub's
+% "Cite this repository" widget lives in CITATION.cff -- keep the two in sync.
+
+% ---- Base: cite for any use of Accel-Sim ----
+% NOTE: update this entry if the paper is accepted at a venue.
+@misc{accelsim2_2026,
+  author        = {Junrui Pan and Weili An and Cesar Avalos Baddouh and Christin David Bose and
+                   Ni Kang and Aaron Barnes and Ahmad Alawneh and Fangjia Shen and Yechen Liu and
+                   Anusuya Nallathambi and Atthin Chandrashekar and Timothy G. Rogers},
+  title         = {Architecting the Next Generation of Asynchronous, Distributed {GPUs} for the {AI} Era},
+  year          = {2026},
+  eprint        = {2608.22602},
+  archivePrefix = {arXiv},
+  primaryClass  = {cs.AR},
+  doi           = {10.48550/arXiv.2608.22602},
+  url           = {https://arxiv.org/abs/2608.22602}
+}
+
+@inproceedings{accelsim2020,
+  author    = {Mahmoud Khairy and Zhesheng Shen and Tor M. Aamodt and Timothy G. Rogers},
+  title     = {Accel-Sim: An Extensible Simulation Framework for Validated {GPU} Modeling},
+  booktitle = {ISCA},
+  year      = {2020},
+  doi       = {10.1109/ISCA45697.2020.00047}
+}
+
+@inproceedings{gpgpusim2009,
+  author    = {Ali Bakhoda and George L. Yuan and Wilson W. L. Fung and Henry Wong and Tor M. Aamodt},
+  title     = {Analyzing {CUDA} Workloads Using a Detailed {GPU} Simulator},
+  booktitle = {ISPASS},
+  year      = {2009},
+  doi       = {10.1109/ISPASS.2009.4919648}
+}
+
+% ---- Add if you use the power model ----
+@inproceedings{accelwattch2021,
+  author    = {Vijay Kandiah and Scott Peverelle and Mahmoud Khairy and Amogh Manjunath and
+               Junrui Pan and Timothy G. Rogers and Tor M. Aamodt and Nikos Hardavellas},
+  title     = {AccelWattch: A Power Modeling Framework for Modern {GPU}s},
+  booktitle = {MICRO},
+  year      = {2021},
+  doi       = {10.1145/3466752.3480063}
+}
+
+@inproceedings{gpuwattch2013,
+  author    = {Jingwen Leng and Tayler Hetherington and Ahmed ElTantawy and Syed Gilani and
+               Nam Sung Kim and Tor M. Aamodt and Vijay Janapa Reddi},
+  title     = {GPUWattch: Enabling Energy Optimizations in {GPGPU}s},
+  booktitle = {ISCA},
+  year      = {2013},
+  doi       = {10.1145/2485922.2485964}
+}
