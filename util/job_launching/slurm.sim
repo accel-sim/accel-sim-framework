@@ -8,50 +8,18 @@
 #SBATCH -p REPLACE_QUEUE_NAME
 #SBATCH --mail-type=END,FAIL
 #SBATCH --export=ALL
-#SBATCH --output=/dev/null
-#SBATCH --error=/dev/null
-
-NFS_DIR=REPLACE_SUBDIR
-TMP_DIR=/tmp/${SLURM_JOB_ID}_REPLACE_NAME
-mkdir -p "$TMP_DIR"
-
-# Redirect stdout/stderr into TMP_DIR so they get synced with everything else
-exec > "$TMP_DIR/REPLACE_NAME.o$SLURM_JOB_ID" 2> "$TMP_DIR/REPLACE_NAME.e$SLURM_JOB_ID"
-
-# Periodic sync: copy tmp workdir back to NFS every 5 minutes
-sync_to_nfs() {
-    rsync -a --update "$TMP_DIR/" "$NFS_DIR/"
-}
-
-# Background sync loop — self-terminates if the Slurm job no longer exists
-# (e.g. OOM kill, scancel, node failure). squeue is the authoritative source.
-(
-    while squeue -j $SLURM_JOB_ID &>/dev/null; do
-        sleep 300
-        sync_to_nfs
-    done
-    # Job is gone (OOM/scancel/etc) — final sync and clean up
-    sync_to_nfs && rm -rf "$TMP_DIR"
-) &
-SYNC_PID=$!
+#SBATCH --output=/tmp/REPLACE_NAME.o%j
+#SBATCH --error=/tmp/REPLACE_NAME.e%j
 
 copy_output() {
-    # Kill the background sync loop
-    kill $SYNC_PID 2>/dev/null || true
-    wait $SYNC_PID 2>/dev/null || true
-    # Final sync of all working files (including logs) from tmp to NFS
-    sync_to_nfs
-    # Clean up tmp dir
-    rm -rf "$TMP_DIR"
+    mv /tmp/REPLACE_NAME.e$SLURM_JOB_ID ./REPLACE_NAME.e$SLURM_JOB_ID
+    mv /tmp/REPLACE_NAME.o$SLURM_JOB_ID ./REPLACE_NAME.o$SLURM_JOB_ID
 }
 
-# Convert signals into exits so the EXIT trap handles everything in one place.
-# Do NOT trap cleanup on signals directly — that causes double execution
-# (signal handler runs, then EXIT handler runs again).
-trap 'exit 1' SIGTERM SIGINT
-trap copy_output EXIT
+trap copy_output ERR
 
-# -e: exit on error, -E: ERR traps inherited by functions/subshells
+#citing https://stackoverflow.com/questions/35800082/how-to-trap-err-when-using-set-e-in-bash
+#Setting -E alongside -e makes any trap on ERR inherited by shell funcs, command substitutions and commands executed in a subshell environment
 set -eE
 
 if [ "$GPGPUSIM_SETUP_ENVIRONMENT_WAS_RUN" != "1" ]; then
@@ -65,10 +33,8 @@ echo "doing: export -n PTX_SIM_USE_PTX_FILE"
 export -n PTX_SIM_USE_PTX_FILE
 echo "doing: export LD_LIBRARY_PATH=REPLACE_LIBPATH:$LD_LIBRARY_PATH"
 export LD_LIBRARY_PATH=REPLACE_LIBPATH:$LD_LIBRARY_PATH
-# Copy NFS workdir contents (configs, symlinks, etc.) into tmp, then cd there
-rsync -a "$NFS_DIR/" "$TMP_DIR/"
-echo "doing: cd $TMP_DIR (local tmp, NFS dir: $NFS_DIR)"
-cd "$TMP_DIR"
+echo "doing: cd REPLACE_SUBDIR"
+cd REPLACE_SUBDIR
 echo "doing: export OPENCL_CURRENT_TEST_PATH=REPLACE_SUBDIR"
 export OPENCL_CURRENT_TEST_PATH=REPLACE_SUBDIR
 echo "doing: export OPENCL_REMOTE_GPU_HOST=REPLACE_REMOTE_HOST"
@@ -86,3 +52,4 @@ export CUDA_LAUNCH_BLOCKING=1
 
 echo "doing: REPLACE_EXEC_NAME REPLACE_COMMAND_LINE"
 REPLACE_EXEC_NAME REPLACE_COMMAND_LINE
+copy_output
