@@ -53,26 +53,158 @@ jobs:
             };
             fs.writeFileSync('issue.json', JSON.stringify(slim, null, 2));
 
+      # gpgpu-sim is not a submodule of this repo — it is cloned at build time.
+      # Triage needs it too: most issues are about the simulator core, and
+      # without the tree the model can only say "I can't see that code."
+      - name: Clone gpgpu-sim for grounding
+        env:
+          BRANCH_NAME: ${{ github.event.repository.default_branch }}
+        run: |
+          GPGPUSIM_DIR=./gpu-simulator/gpgpu-sim
+          if ./.github/scripts/clone-gpgpusim.sh -d "$GPGPUSIM_DIR" -f dev; then
+            ref="$(git -C "$GPGPUSIM_DIR" rev-parse --abbrev-ref HEAD)@$(git -C "$GPGPUSIM_DIR" rev-parse --short HEAD)"
+            echo "GPGPUSIM_REF=$ref" >> "$GITHUB_ENV"
+            echo "gpgpu-sim available for triage at $ref"
+          else
+            echo "GPGPUSIM_REF=" >> "$GITHUB_ENV"
+            echo "::warning::gpgpu-sim clone failed; triage runs against the framework tree only"
+          fi
+
       - name: AI triage with opencode
         env:
           GITHUB_WORKSPACE: ${{ github.workspace }}
+          # Model pin and, optionally, a second llama.cpp server on other GPUs
+          # so the two researchers run concurrently instead of queueing on one.
+          OPENCODE_MODEL: ${{ vars.OPENCODE_MODEL }}
+          # Name shown in the posted comment. The model id above is only a
+          # routing label — llama.cpp serves whichever GGUF it was started with,
+          # so this is what keeps the credit line honest when the server changes.
+          OPENCODE_MODEL_LABEL: ${{ vars.OPENCODE_MODEL_LABEL }}
+          LLAMACPP_B_URL: ${{ vars.LLAMACPP_B_URL }}
         run: |
-          rm -f issue-triage.md issue-labels.txt
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow .github/skills/issue-triage.md. The issue is at issue.json. Write issue-triage.md and issue-labels.txt to the workspace root as instructed." \
-            || true
+          set -o pipefail
+          rm -f issue-triage.md issue-labels.txt issue-triage-skill.md \
+                research-1.md research-2.md opencode.*.out classify.txt
 
-          if [ -s issue-triage.md ]; then
-            {
-              echo "## AI Issue Triage"
-              echo
-              cat issue-triage.md
-            } >> "$GITHUB_STEP_SUMMARY"
+          # opencode refuses to read outside --dir in headless mode, so copy the skill
+          # and the agents INTO the workspace. Pin the model via config.
+          cp .github/skills/issue-triage.md ./issue-triage-skill.md
+          mkdir -p .opencode/agent
+          cp .github/opencode/agent/issue-*.md .opencode/agent/
+
+          MODEL_A="${OPENCODE_MODEL:-local-llamacpp/Qwen3.5-27B-Q8_0.gguf}"
+          echo "MODEL_LABEL=${OPENCODE_MODEL_LABEL:-Qwopus3.8-27B-Flash}" >> "$GITHUB_ENV"
+          MODEL_B="$MODEL_A"
+          if [ -n "$LLAMACPP_B_URL" ]; then
+            # A second server on other GPUs lets the two researchers run truly
+            # concurrently instead of queueing on one llama.cpp instance.
+            MODEL_B="local-llamacpp-b/Qwen3.5-27B-Q8_0.gguf"
+            jq -n --arg url "$LLAMACPP_B_URL" --arg m "$MODEL_A" '{
+              "$schema": "https://opencode.ai/config.json",
+              model: $m,
+              provider: { "local-llamacpp-b": {
+                npm: "@ai-sdk/openai-compatible",
+                name: "llama.cpp Server B",
+                options: { baseURL: $url, apiKey: "dummy" },
+                models: { "Qwen3.5-27B-Q8_0.gguf": { name: "Qwen 3.5 27B (server B)" } } } } }' \
+              > opencode.json
+          else
+            printf '%s\n' '{ "$schema": "https://opencode.ai/config.json", "model": "'"$MODEL_A"'" }' > opencode.json
           fi
 
+          if [ -n "$GPGPUSIM_REF" ]; then
+            SRC_NOTE="The GPGPU-Sim simulator source is checked out at ./gpu-simulator/gpgpu-sim ($GPGPUSIM_REF) — read and grep it directly for anything about the simulator core."
+          else
+            SRC_NOTE="The gpgpu-sim clone FAILED this run, so ./gpu-simulator/gpgpu-sim is absent. Say so in one line if the issue depends on simulator-core code, and work from the framework tree alone."
+          fi
+
+          # opencode reads stdin for piped prompt context; without </dev/null it
+          # blocks forever on an inherited pipe before ever calling the model.
+          oc() {  # oc <agent> <model> <outfile> <prompt>
+            opencode run --agent "$1" --model "$2" --dir "$GITHUB_WORKSPACE" "$4" \
+              < /dev/null > "$3" 2>&1 || true
+            sed -i -E 's/\x1b\[[0-9;]*[a-zA-Z]//g' "$3"
+          }
+
+          # --- Stage 1: classify -------------------------------------------------
+          oc issue-classify "$MODEL_A" opencode.classify.out \
+            "Classify ./issue.json following ./issue-triage-skill.md. $SRC_NOTE Print only the KIND/ANGLE1/ANGLE2 block."
+          KIND=$(grep -oE '^[[:space:]]*KIND:[[:space:]]*(bug|question|other)' opencode.classify.out \
+                 | grep -oE '(bug|question|other)' | tail -1 || true)
+          [ -n "$KIND" ] || KIND=bug   # unreadable classification: fall back to defect triage
+          echo "KIND=$KIND" >> "$GITHUB_ENV"
+          echo "Classified as: $KIND"
+
+          if [ "$KIND" = question ]; then
+            ANGLE1=$(grep -oE '^[[:space:]]*ANGLE1:.*' opencode.classify.out | tail -1 | sed -E 's/^[[:space:]]*ANGLE1:[[:space:]]*//')
+            ANGLE2=$(grep -oE '^[[:space:]]*ANGLE2:.*' opencode.classify.out | tail -1 | sed -E 's/^[[:space:]]*ANGLE2:[[:space:]]*//')
+            [ -n "$ANGLE1" ] && [ "$ANGLE1" != none ] || ANGLE1="Find the functions, data structures and control flow that implement what the issue asks about."
+            [ -n "$ANGLE2" ] && [ "$ANGLE2" != none ] || ANGLE2="Find the config flags that control it, their registered defaults, and the hardcoded assumptions or unmodeled behavior that limit it."
+            echo "Angle 1: $ANGLE1"
+            echo "Angle 2: $ANGLE2"
+
+            # --- Stage 2: two researchers, in parallel --------------------------
+            # opencode's own task tool hangs against the local provider, so the
+            # fan-out is done here, as separate processes, and joined with wait.
+            oc issue-research "$MODEL_A" opencode.r1.out \
+              "Research this angle for ./issue.json: $ANGLE1 $SRC_NOTE Print findings only." &
+            pid1=$!
+            oc issue-research "$MODEL_B" opencode.r2.out \
+              "Research this angle for ./issue.json: $ANGLE2 $SRC_NOTE Print findings only." &
+            pid2=$!
+            wait $pid1 $pid2
+
+            for n in 1 2; do
+              src="opencode.r$n.out"
+              if grep -qE '^#+[[:space:]]*Findings' "$src"; then
+                awk '/^#+[[:space:]]*Findings/{f=1} f' "$src" > "research-$n.md"
+              else
+                tail -n 80 "$src" > "research-$n.md"
+              fi
+              echo "research-$n.md: $(wc -l < "research-$n.md") lines"
+            done
+
+            # --- Stage 3: compose the public answer -----------------------------
+            oc issue-answer "$MODEL_A" opencode.out \
+              "Answer ./issue.json following Path A of ./issue-triage-skill.md, using ./research-1.md and ./research-2.md as leads you must verify against the source. $SRC_NOTE End with the LABELS line."
+            HEAD_RE='^#+[[:space:]]*Answer'
+          else
+            oc issue-triage "$MODEL_A" opencode.out \
+              "Triage ./issue.json following Path B of ./issue-triage-skill.md. $SRC_NOTE End with the LABELS line."
+            HEAD_RE='^#+[[:space:]]*AI Triage'
+          fi
+
+          # --- Extract the two output files from the printed reply ---------------
+          cp opencode.out opencode.clean
+          grep -oE '^[[:space:]]*LABELS:.*' opencode.clean | tail -1 \
+            | sed -E 's/^[[:space:]]*LABELS:[[:space:]]*//' \
+            | tr ',' '\n' | sed -E 's/^[[:space:]`*]+//; s/[[:space:]`*]+$//' \
+            | grep -v '^$' > issue-labels.txt || true
+
+          if grep -qE "$HEAD_RE" opencode.clean; then
+            awk -v re="$HEAD_RE" '$0 ~ re {f=1} f' opencode.clean \
+              | sed -E '/^[[:space:]]*LABELS:/d' > issue-triage.md
+          else
+            sed -E '/^[[:space:]]*LABELS:/d' opencode.clean | tail -n 120 > issue-triage.md
+          fi
+
+          {
+            echo "## AI Issue Triage"
+            echo
+            echo "- kind: \`$KIND\`"
+            echo "- gpgpu-sim: \`${GPGPUSIM_REF:-<clone failed>}\`"
+            echo
+            if [ -s issue-triage.md ]; then
+              cat issue-triage.md
+              echo
+              echo "**Labels:** $(tr '\n' ' ' < issue-labels.txt)"
+            else
+              echo "opencode did not produce output. See step log."
+            fi
+          } >> "$GITHUB_STEP_SUMMARY"
+
       - name: Post triage + apply labels
+        if: ${{ !cancelled() }}
         uses: actions/github-script@v7
         with:
           script: |
@@ -87,7 +219,7 @@ jobs:
             ]);
 
             let body = '';
-            try { body = fs.readFileSync('issue-triage.md', 'utf8'); } catch (_) {}
+            try { body = fs.readFileSync('issue-triage.md', 'utf8').trim(); } catch (_) {}
 
             let labels = [];
             try {
@@ -98,9 +230,26 @@ jobs:
             const filtered = [...new Set(labels.filter(l => ALLOWED.has(l)))];
             if (!filtered.includes('ai-triage')) filtered.push('ai-triage');
 
+            const ref = process.env.GPGPUSIM_REF;
+            const kind = process.env.KIND || 'bug';
+            const grounding = ref
+              ? `Grounded against accel-sim-framework@${context.payload.repository.default_branch} and gpgpu-sim@${ref}.`
+              : `Grounded against accel-sim-framework@${context.payload.repository.default_branch} only — the gpgpu-sim clone failed this run.`;
+
+            // A question gets answered for the reporter; anything else is a
+            // maintainer-facing triage note. Headers and footers say which.
+            const isAnswer = kind === 'question';
+            const model = process.env.MODEL_LABEL || 'local model';
+            const header = isAnswer
+              ? `🤖 **AI Answer** (${model})`
+              : `🤖 **AI Triage** (${model})`;
+            const footer = isAnswer
+              ? `${grounding} Automated answer — a maintainer will confirm or correct it.`
+              : `${grounding} Automated — a maintainer will follow up.`;
+
             const comment = body
-              ? `🤖 **AI Triage** (Qwen3.5-27B)\n\n${body}\n\n<sub>Automated. A maintainer will follow up.</sub>`
-              : `🤖 **AI Triage** — did not produce output. See the [workflow run](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}).`;
+              ? `${header}\n\n${body}\n\n<sub>${footer}</sub>`
+              : `${header} — did not produce output. See the [workflow run](${context.serverUrl}/${owner}/${repo}/actions/runs/${context.runId}).`;
 
             await github.rest.issues.createComment({ owner, repo, issue_number: num, body: comment });
 
