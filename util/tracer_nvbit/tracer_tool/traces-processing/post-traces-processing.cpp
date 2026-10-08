@@ -23,6 +23,7 @@
 #include <zstd.h>
 
 #include "../tracez_format.h"
+#include "decode.h"
 
 using namespace std;
 
@@ -600,43 +601,9 @@ static mbar_inst_info classify_mbar_inst(const string &line,
   } else {
     unsigned addr_mode;
     ss >> dec >> addr_mode;
-    int first_lane = -1;
-    for (int s = 0; s < 32 && first_lane < 0; s++)
-      if ((mask >> s) & 1u)
-        first_lane = s;
-    if (first_lane < 0)
-      return r;
-    if (addr_mode == 0) { // list_all: one address per active lane
-      for (int s = first_lane; s < 32; s++) {
-        if (!((mask >> s) & 1u))
-          continue;
-        uint64_t addr = 0;
-        ss >> hex >> addr;
-        addrs.push_back(addr);
-      }
-    } else if (addr_mode == 1) { // base_stride: one contiguous run of lanes
-      uint64_t base = 0;
-      long long stride = 0;
-      ss >> hex >> base;
-      ss >> dec >> stride;
-      uint64_t addr = base;
-      for (int s = first_lane; s < 32 && ((mask >> s) & 1u); s++) {
-        addrs.push_back(addr);
-        addr += stride;
-      }
-    } else if (addr_mode == 2) { // base_delta: delta from the previous lane
-      uint64_t addr = 0;
-      ss >> hex >> addr;
-      addrs.push_back(addr);
-      for (int s = first_lane + 1; s < 32; s++) {
-        if (!((mask >> s) & 1u))
-          continue;
-        long long delta = 0;
-        ss >> dec >> delta;
-        addr += delta;
-        addrs.push_back(addr);
-      }
-    } else {
+    try {
+      addrs = decode(addr_mode, ss, mask);
+    } catch (const std::exception&) {
       return r;
     }
   }

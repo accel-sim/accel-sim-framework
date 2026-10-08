@@ -39,6 +39,7 @@
 
 /* for general utils functions */
 #include "utils.h"
+#include "decode.h"
 
 #define TRACER_VERSION "5"
 #define TRACER_VERSION_ALLOW_REG_VAL "6"
@@ -251,14 +252,6 @@ bool should_trace_kernel(uint64_t kernel_id, const std::string &kernel_name) {
   }
   return false;
 }
-
-enum address_format {
-  list_all = 0,
-  base_stride = 1,
-  base_delta = 2,
-  tma_list_all = 3,
-  tma_base_delta = 4
-};
 
 /* File pointers for the kernels, and stats files */
 static FILE *kernelsFile = NULL;

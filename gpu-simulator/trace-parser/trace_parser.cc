@@ -97,47 +97,6 @@ kernel_trace_t::kernel_trace_t(const std::string &filePath) {
 
 kernel_trace_t::~kernel_trace_t() { delete tracez_reader; }
 
-void inst_memadd_info_t::base_stride_decompress(
-    unsigned long long base_address, int stride,
-    const std::bitset<WARP_SIZE> &mask) {
-  bool first_bit1_found = false;
-  bool last_bit1_found = false;
-  unsigned long long addra = base_address;
-  for (int s = 0; s < WARP_SIZE; s++) {
-    if (mask.test(s) && !first_bit1_found) {
-      first_bit1_found = true;
-      addrs[s] = base_address;
-    } else if (first_bit1_found && !last_bit1_found) {
-      if (mask.test(s)) {
-        addra += stride;
-        addrs[s] = addra;
-      } else
-        last_bit1_found = true;
-    } else
-      addrs[s] = 0;
-  }
-}
-
-void inst_memadd_info_t::base_delta_decompress(
-    unsigned long long base_address, const std::vector<long long> &deltas,
-    const std::bitset<WARP_SIZE> &mask) {
-  bool first_bit1_found = false;
-  long long last_address = 0;
-  unsigned delta_index = 0;
-  for (int s = 0; s < 32; s++) {
-    if (mask.test(s) && !first_bit1_found) {
-      addrs[s] = base_address;
-      first_bit1_found = true;
-      last_address = base_address;
-    } else if (mask.test(s) && first_bit1_found) {
-      assert(delta_index < deltas.size());
-      addrs[s] = last_address + deltas[delta_index++];
-      last_address = addrs[s];
-    } else
-      addrs[s] = 0;
-  }
-}
-
 void tma_inst_memaddr_info_t::base_delta_decompress(
     unsigned long long base_address, const std::vector<long long> &deltas,
     const std::bitset<WARP_SIZE> &mask) {
@@ -284,46 +243,8 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     memadd_info->width = get_datawidth_from_opcode(opcode_tokens);
 
     ss >> std::dec >> address_mode;
-    if (address_mode == address_format::list_all) {
-      // read addresses one by one from the file
-      for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s))
-          ss >> std::hex >> memadd_info->addrs[s];
-        else
-          memadd_info->addrs[s] = 0;
-      }
-    } else if (address_mode == address_format::base_stride) {
-      // read addresses as base address and stride
-      unsigned long long base_address = 0;
-      int stride = 0;
-      ss >> std::hex >> base_address;
-      ss >> std::dec >> stride;
-      memadd_info->base_stride_decompress(base_address, stride, mask_bits);
-    } else if (address_mode == address_format::base_delta) {
-      unsigned long long base_address = 0;
-      std::vector<long long> deltas;
-      // read addresses as base address and deltas
-      ss >> std::hex >> base_address;
-      // No delta will be pushed if there is only one bit set in the mask
-      // Find the first bit set
-      int first_bit_set = -1;
-      for (int s = 0; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s)) {
-          first_bit_set = s;
-          break;
-        }
-      }
-      for (int s = first_bit_set + 1; s < WARP_SIZE; s++) {
-        if (mask_bits.test(s)) {
-          long long delta = 0;
-          ss >> std::dec >> delta;
-          deltas.push_back(delta);
-        }
-      }
-      memadd_info->base_delta_decompress(base_address, deltas, mask_bits);
-    } else {
-      assert(0 && "Unsupported address mode");
-    }
+    std::vector<uint64_t> addrs = decode(address_mode, ss, mask_bits); //TODO: JUST MAKE SURE THIS GETS IMPORTED
+    std::memcpy(memadd_info->addrs, addrs.data(), WARP_SIZE * sizeof(uint64_t));
   }
 
   ss >> imm;
