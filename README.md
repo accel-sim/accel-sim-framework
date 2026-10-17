@@ -396,10 +396,16 @@ To disable it entirely, pass `--spinlock_handling none`:
 The detection tool lives in [`./util/tracer_nvbit/others/spinlock_tool/`](./util/tracer_nvbit/others/spinlock_tool/).
 
 **Pre-traced applications.**
-To fetch a repository of pre-collected traces:
+Pre-collected traces are published as GitHub release assets, one tar per GPU / workload / argument set, split into parts under 2 GB with SHA-256 checksums in the release's `manifest.json`.
+To list, download, verify and extract them into `./hw_run/traces/<GPU>/<workload>/<args>/`:
 ```bash
-./get-accel-sim-traces.py
+./get-accel-sim-traces.py -l                                   # list what is available
+./get-accel-sim-traces.py -a H200/inference_bert.sh/32_256     # one argument set
+./get-accel-sim-traces.py -a H200/inference_sdxl.sh,H200/all   # GPU[/workload[/args]], 'all' at any level
 ```
+Each set also carries the matching Nsight Compute CSVs under `ncu/`.
+Pass `-T ./hw_run/traces/<GPU>` to `run_simulations.py`.
+Downloading from a private repository needs `GITHUB_TOKEN` or a `gh auth login` session.
 
 ### SASS Frontend and Simulation Engine
 
