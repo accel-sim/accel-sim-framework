@@ -19,8 +19,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -80,8 +78,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -153,8 +149,6 @@ jobs:
     needs: [Tracer-Weekly, SASS-Weekly]
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
       - name: Notify Failure
         run: |
           # Setup envs
