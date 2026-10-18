@@ -216,9 +216,10 @@ jobs:
           tag="gh-run:${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
           jobs=$(squeue -h -u "$USER" -o '%i %k' | awk -v t="$tag" '$2 == t {print $1}')
           # run_simulations.py names each job after the accel-sim commit it
-          # built (this run's github.sha). The logfiles below are gone: the
-          # checkout above cleaned the workspace, so they never match.
-          sims=$(squeue -h -u "$USER" -o '%i %j' | awk -v c="accelsim-commit-${GITHUB_SHA:0:7}" 'index($2, c) {print $1}')
+          # built (accelsim-commit-<HEAD of the job's checkout>; this checkout
+          # has the same ref). The logfiles below are gone: the checkout above
+          # cleaned the workspace, so they never match.
+          sims=$(squeue -h -u "$USER" -o '%i %j' | awk -v c="accelsim-commit-$(git rev-parse --short=7 HEAD)" 'index($2, c) {print $1}')
           echo "cancelling: ${jobs:-} ${sims:-}"
           [ -z "$jobs$sims" ] || scancel $jobs $sims
           ./.github/scripts/cancel-slurm-jobs.sh "sass-short-${{ github.run_number }}_${{ github.run_attempt }}"
