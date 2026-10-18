@@ -75,56 +75,18 @@ jobs:
         if: always()
         run: ./.github/scripts/hopper-weekly.sh sass-correlate
 
-      - name: Ensure the LLM server is up
-        if: ${{ !cancelled() }}
-        continue-on-error: true
-        env:
-          AALP_CI_DIR: ${{ vars.AALP_CI_DIR }}
-        run: ./.github/scripts/ensure-llm-server.sh
-
-      - name: Analyze success with opencode
+      - name: AI analysis of the results
         if: success()
+        continue-on-error: true # the analysis never changes the CI result
         env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-analysis-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-analysis.md to analyze this successful CI run. Write your final report to ci-analysis-report.md as instructed." \
-            || true
-          if [ -s ci-analysis-report.md ]; then
-            cat ci-analysis-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Simulation Analysis"
-              echo
-              echo "opencode did not produce \`ci-analysis-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Analyze failure with opencode
-        if: failure()
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-failure-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-failure.md to analyze this failed CI run. Write your final report to ci-failure-report.md as instructed." \
-            || true
-          if [ -s ci-failure-report.md ]; then
-            cat ci-failure-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Failure Analysis"
-              echo
-              echo "opencode did not produce \`ci-failure-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # plot-correlation stdout per config; per-kernel CSVs of the last config
+          CI_ANALYSIS_FILES: "*-ubench-correl.txt util/plotting/correl-html/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
 
   failures:
     if: failure()
@@ -157,3 +119,28 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
           python3 .github/scripts/send_ci_email.py -t success
+
+  ai-failure-review:
+    # failure() misses a needed job cancelled by its timeout or by no runner;
+    # !cancelled() still skips a run cancelled by a newer push.
+    if: ${{ !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
+    needs: [Tracer-Hopper, SASS-Hopper, failures, success]
+    runs-on: tgrogers-raid
+    continue-on-error: true # the analysis never changes the CI result
+    permissions:
+      contents: read
+      actions: read
+      pull-requests: write
+      issues: write
+    env:
+      AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.run_id }}
+      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.pull_request.head.sha || github.sha }}
+          fetch-depth: 20
+      - run: $AI/ci-failure.sh
