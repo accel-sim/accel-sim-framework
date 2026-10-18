@@ -119,28 +119,3 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
           python3 .github/scripts/send_ci_email.py -t success
-
-  ai-failure-review:
-    # failure() misses a needed job cancelled by its timeout or by no runner;
-    # !cancelled() still skips a run cancelled by a newer push.
-    if: ${{ !cancelled() && (contains(needs.*.result, 'failure') || contains(needs.*.result, 'cancelled')) }}
-    needs: [Tracer-Hopper, SASS-Hopper, failures, success]
-    runs-on: tgrogers-raid
-    continue-on-error: true # the analysis never changes the CI result
-    permissions:
-      contents: read
-      actions: read
-      pull-requests: write
-      issues: write
-    env:
-      AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
-      REPO: ${{ github.repository }}
-      RUN_ID: ${{ github.run_id }}
-      HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-    steps:
-      - uses: actions/checkout@v7
-        with:
-          ref: ${{ github.event.pull_request.head.sha || github.sha }}
-          fetch-depth: 20
-      - run: $AI/ci-failure.sh
