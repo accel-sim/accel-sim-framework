@@ -3,8 +3,12 @@
 # passes the PR and the per-repo settings.
 name: PR AI Preliminary Review
 
+# pull_request_target: a fork's PR (every PR here) gets a token that can
+# comment and label. Safe because nothing from the PR runs: the workflow file
+# is the base branch's, the review is $AI/pr-review.sh from the runner host,
+# and the PR checkout below is only read (no token left in it).
 on:
-  pull_request:
+  pull_request_target:
     types: [labeled]
   workflow_dispatch:
     inputs:
@@ -26,7 +30,7 @@ jobs:
   ai-review:
     if: >
       github.event_name == 'workflow_dispatch' ||
-      (github.event_name == 'pull_request' && github.event.label.name == 'ready')
+      (github.event_name == 'pull_request_target' && github.event.label.name == 'ready')
     runs-on: tgrogers-raid
     env:
       AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
@@ -50,6 +54,7 @@ jobs:
         with:
           ref: ${{ github.event.pull_request.head.sha || format('refs/pull/{0}/head', inputs.pr_number) }}
           clean: true
+          persist-credentials: false
       - run: $AI/pr-review.sh
       - if: failure()
         run: $AI/pr-review.sh --notify-failure
