@@ -139,12 +139,16 @@ jobs:
         run: ./.github/scripts/main-tracer.sh test
 
   SASS-Simulation-Docker:
+    # short-tests.sh in the accel-sim-framework image, as a SIF on a Slurm
+    # node (.github/scripts/on-cluster.sh); the runner has no container runtime
     needs: [check-format]
-    runs-on: tgrogers-pc01
+    runs-on: tgrogers-raid
+    env:
+      IMAGE_TAG: ubuntu-24.04-cuda-12.8-minimal
     steps:
       - uses: actions/checkout@v6
       - name: Run Simulation
-        run: echo "Docker-based CI tests are currently disabled."
+        run: .github/scripts/on-cluster.sh -t 04:00:00 -- /bin/bash short-tests.sh
 
   CI-Success:
     env:
@@ -190,11 +194,15 @@ jobs:
   cleanup-on-cancel:
     if: cancelled()
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - uses: actions/checkout@v6
       - name: Cancel Slurm jobs
         run: |
+          # on-cluster.sh tags its jobs with the run
+          tag="gh-run:${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
+          jobs=$(squeue -h -u "$USER" -o '%i %k' | awk -v t="$tag" '$2 == t {print $1}')
+          [ -z "$jobs" ] || scancel $jobs
           ./.github/scripts/cancel-slurm-jobs.sh "sass-short-${{ github.run_number }}_${{ github.run_attempt }}"
           ./.github/scripts/cancel-slurm-jobs.sh "short-ptx-${{ github.run_number }}_${{ github.run_attempt }}"
           ./.github/scripts/cancel-slurm-jobs.sh "rodinia_2.0-ft-$$"
