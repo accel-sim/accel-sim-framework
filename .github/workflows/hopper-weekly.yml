@@ -16,6 +16,8 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_RUN_NUMBER: ${{ github.run_number }}
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+  # run_simulations.py puts this in its Slurm jobs' comment, for cleanup-slurm
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
 
 jobs:
   Tracer-Hopper:
@@ -68,11 +70,11 @@ jobs:
         run: ./.github/scripts/hopper-weekly.sh sass-simulate
 
       - name: Archive Stats
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./.github/scripts/hopper-weekly.sh sass-archive
 
       - name: Correlate Ubench
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./.github/scripts/hopper-weekly.sh sass-correlate
 
       - name: AI analysis of the results
@@ -119,3 +121,15 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
           python3 .github/scripts/send_ci_email.py -t success
+
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
+    runs-on: tgrogers-raid
+    needs: [SASS-Hopper]
+    steps:
+      - name: Cancel this run's Slurm jobs
+        run: |
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

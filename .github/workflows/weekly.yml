@@ -7,6 +7,8 @@ on:
     - cron: '0 20 * * FRI'  # 8:00 PM every Friday
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  # run_simulations.py puts this in its Slurm jobs' comment, for cleanup-slurm
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
 jobs:
   Tracer-Weekly:
     timeout-minutes: 720
@@ -151,6 +153,8 @@ jobs:
     needs: [Tracer-Weekly, SASS-Weekly]
     steps:
       - uses: actions/checkout@v6
+        with:
+          ref: dev
       - name: Notify Failure
         run: |
           # Setup envs
@@ -158,3 +162,15 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Weekly Tests"
           python3 .github/scripts/send_ci_email.py -t failure
+
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
+    runs-on: tgrogers-raid
+    needs: [Tracer-Weekly, SASS-Weekly]
+    steps:
+      - name: Cancel this run's Slurm jobs
+        run: |
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

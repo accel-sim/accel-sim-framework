@@ -8,7 +8,7 @@
 # SIF built once into CI_WORK and then only read. The command runs in
 # $GITHUB_WORKSPACE (on /scratch, so any node can reach it) with /tmp in
 # $GITHUB_WORKSPACE/tmp. The Slurm job carries the run in its comment, which
-# cleanup-on-cancel uses to scancel it when the run is cancelled.
+# cleanup-slurm uses to scancel it when the run ends.
 #
 # Env: IMAGE_TAG (default ubuntu-24.04-cuda-12.8-minimal), PASS_ENV (names of
 # variables to pass into the image), CI_WORK (where the SIFs live).
@@ -27,7 +27,7 @@ SIF=$CI_WORK/$IMAGE_TAG.sif
 # the gpgpu-sim CI keeps this image there already
 [ "$IMAGE_TAG" != ubuntu-24.04-cuda-12.8-minimal ] || SIF=$CI_WORK/regress.sif
 ws=${GITHUB_WORKSPACE:-$PWD}
-tag=(--comment="gh-run:${GITHUB_RUN_ID:-local}.${GITHUB_RUN_ATTEMPT:-1}")
+tag=(--comment="${ACCELSIM_SLURM_COMMENT:-gh-run:local}")
 mkdir -p "$CI_WORK"
 
 (

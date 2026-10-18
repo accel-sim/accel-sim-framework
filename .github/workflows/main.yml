@@ -19,6 +19,8 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_RUN_NUMBER: ${{ github.run_number }}
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+  # run_simulations.py and on-cluster.sh put this in their Slurm jobs' comment
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
 
 # A new push cancels its branch's older run, except on the default branch.
 concurrency:
@@ -204,24 +206,14 @@ jobs:
             python3 .github/scripts/send_ci_email.py -t failure -u
           fi
 
-  cleanup-on-cancel:
-    if: cancelled()
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
     runs-on: tgrogers-raid
     needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
-      - uses: actions/checkout@v6
-      - name: Cancel Slurm jobs
+      - name: Cancel this run's Slurm jobs
         run: |
-          # on-cluster.sh tags its jobs with the run
-          tag="gh-run:${GITHUB_RUN_ID}.${GITHUB_RUN_ATTEMPT}"
-          jobs=$(squeue -h -u "$USER" -o '%i %k' | awk -v t="$tag" '$2 == t {print $1}')
-          # run_simulations.py names each job after the accel-sim commit it
-          # built (accelsim-commit-<HEAD of the job's checkout>; this checkout
-          # has the same ref). The logfiles below are gone: the checkout above
-          # cleaned the workspace, so they never match.
-          sims=$(squeue -h -u "$USER" -o '%i %j' | awk -v c="accelsim-commit-$(git rev-parse --short=7 HEAD)" 'index($2, c) {print $1}')
-          echo "cancelling: ${jobs:-} ${sims:-}"
-          [ -z "$jobs$sims" ] || scancel $jobs $sims
-          ./.github/scripts/cancel-slurm-jobs.sh "sass-short-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "short-ptx-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "rodinia_2.0-ft-$$"
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs
