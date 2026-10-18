@@ -37,6 +37,11 @@ jobs:
       # requested on PASS (empty: none).
       REVIEW_STANCE: ""
       REQUEST_TEAM: aalp-grad
+      # A deeper review: every C++/CUDA/Python file is code (split per
+      # function), and each code unit also sees the callers and callees of what
+      # it changes in other files. No .github/ci-coverage.yml: no test check.
+      REVIEW_CODE_RE: '\.(cc|cpp|c|h|hpp|cu|cuh|py)$'
+      REVIEW_XREF: "1"
       APP_ID: ${{ secrets.AALP_APP_ID }}
       APP_PEM: ${{ secrets.AALP_APP_PEM_PATH }}
     steps:
