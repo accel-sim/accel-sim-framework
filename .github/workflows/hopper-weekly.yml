@@ -23,39 +23,22 @@ jobs:
   Tracer-Hopper:
     if: ${{ !inputs.skip_tracer }}
     runs-on: tgrogers-raid
-    timeout-minutes: 1440 # +720: waiting for the hopper-weekly lock
-    concurrency:
-      group: sk-h200-remote
-      cancel-in-progress: false
+    timeout-minutes: 1440 # 720 for the tracer, 720 for another repo's to finish
     steps:
       - uses: actions/checkout@v6
 
-      # One run at a time across the accel-sim and purdue-aalp repos, held for
-      # the whole run (the sims read the trace depot); cleanup-slurm releases it
-      - name: Wait for the hopper-weekly lock
-        run: ./.github/scripts/slurm-lock.sh hopper-weekly-lock 26:00:00
-
-      - name: Connect to VPN
-        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-connect
-
-      - name: Clean remote directory
-        run: ./.github/scripts/hopper-weekly.sh tracer-clean-remote
-
-      - name: Sync repository to remote
-        run: ./.github/scripts/hopper-weekly.sh tracer-sync-push
-
+      # All tracer stages (VPN, remote clean, sync, trace, sync back) as one
+      # Slurm job on gpu01. The singleton name is the lock: every repo's runs
+      # submit as the CI user, so only one tracer uses the remote dir, VPN and
+      # SOCKS port at a time. Its comment carries the run tag for cleanup-slurm.
       - name: Generate traces on H200
-        run: ./.github/scripts/hopper-weekly.sh tracer-run
-
-      - name: Sync traces back from remote
-        run: ./.github/scripts/hopper-weekly.sh tracer-sync-pull
-
-      - name: Cleanup VPN
-        if: always()
-        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-cleanup
+        run: |
+          srun -p tgrogers-dgx -J hopper-weekly-tracer --dependency=singleton \
+            --time=12:00:00 -c 4 --comment="$ACCELSIM_SLURM_COMMENT" \
+            ./.github/scripts/hopper-weekly.sh tracer
 
   SASS-Hopper:
-    timeout-minutes: 1440 # +720: waiting for the hopper-weekly lock
+    timeout-minutes: 720
     needs: [Tracer-Hopper]
     if: ${{ !cancelled() && (needs.Tracer-Hopper.result == 'success' || needs.Tracer-Hopper.result == 'skipped') }}
     runs-on: tgrogers-raid
@@ -64,11 +47,6 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-
-      # One run at a time across the accel-sim and purdue-aalp repos, held for
-      # the whole run (the sims read the trace depot); cleanup-slurm releases it
-      - name: Wait for the hopper-weekly lock
-        run: ./.github/scripts/slurm-lock.sh hopper-weekly-lock 26:00:00
 
       - name: Setup Environment
         run: ./.github/scripts/hopper-weekly.sh sass-setup
@@ -120,7 +98,8 @@ jobs:
     if: ${{ !cancelled() && !failure() }}
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.head_ref || github.ref_name }}/ubench/"
+      # the stats branch hopper-weekly.sh pushes: hopper-weekly/[<repo>/]<branch>
+      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.repository != 'accel-sim/accel-sim-framework' && format('{0}/', github.repository) || '' }}${{ github.head_ref || github.ref_name }}/ubench/"
     runs-on: tgrogers-raid
     needs: [Tracer-Hopper, SASS-Hopper]
     steps:

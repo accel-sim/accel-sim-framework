@@ -384,12 +384,17 @@ vpn_connect() {
         fi
     done
 
-    # A listener already there would pass the check below as ours. The caller
-    # holds the slurm-lock.sh lock, so a tunnel of this user to VPN_HOST is one
-    # a killed run left: stop it; anything else on the port is an error.
+    # A listener already there would pass the check below as ours. Only one
+    # tracer runs at a time (hopper-weekly.sh), so a tunnel of this user to
+    # VPN_HOST is one a killed run left: stop it; anything else is an error.
     if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
         log_info "SOCKS port $SOCKS_PORT in use: stopping a leftover VPN to $VPN_HOST"
-        pkill -u "$(id -un)" -f "$OPENCONNECT_PATH .*$VPN_HOST" || true
+        local pid
+        for pid in $(pgrep -u "$(id -un)" -x openconnect || true); do
+            if tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -qF "$VPN_HOST"; then
+                kill "$pid" 2>/dev/null || true
+            fi
+        done
         sleep 3
         if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
             log_error "SOCKS port $SOCKS_PORT is in use by something else"
