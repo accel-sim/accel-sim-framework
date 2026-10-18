@@ -29,6 +29,10 @@ concurrency:
 
 jobs:
   check-format:
+    # Branches live in the purdue-aalp fork and are tested by their PR's run:
+    # a push run there would repeat it and race it on the stats branch. Every
+    # other job needs this one, so all of them skip with it.
+    if: github.event_name != 'push' || github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-raid
     steps:
       - uses: actions/checkout@v6
@@ -210,9 +214,9 @@ jobs:
 
   # Also on failure or timeout: a monitor that gives up leaves its sims queued
   cleanup-slurm:
-    if: always()
+    if: always() && needs.check-format.result != 'skipped'
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
+    needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
       - name: Cancel this run's Slurm jobs
         run: |
