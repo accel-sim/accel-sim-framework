@@ -88,8 +88,9 @@ stage_trace() {
     source ./gpu-app-collection/src/setup_environment
 
     rm -rf ./hw_run/
+    # nvbit-trace.sh also removes NVBit's /tmp files on the GPU node
     srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- \
-        ./util/tracer_nvbit/run_hw_trace.py -B "$BENCHMARKS" -D "$GPU_DEVICE"
+        "$SCRIPT_DIR/nvbit-trace.sh" -B "$BENCHMARKS" -D "$GPU_DEVICE"
 
     log_info "Traces generated successfully"
 }
