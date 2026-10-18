@@ -100,10 +100,15 @@ clone_gpgpusim() {
         return 1
     fi
 
-    # Derive gpgpu-sim repo name from accel-sim-framework
-    local framework_repo gpgpusim_repo
-    if [ -n "$GITHUB_REPOSITORY" ]; then
-        framework_repo=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
+    # Derive gpgpu-sim repo name from the accel-sim-framework repo the code
+    # comes from: the PR's head repo (a fork such as accel-sim-framework-public
+    # pairs with gpgpu-sim_distribution-public), else this repo
+    local framework_repo gpgpusim_repo source_repo="$GITHUB_REPOSITORY"
+    if [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ -n "$PR_HEAD_REPO_FULL_NAME" ]; then
+        source_repo="$PR_HEAD_REPO_FULL_NAME"
+    fi
+    if [ -n "$source_repo" ]; then
+        framework_repo=$(echo "$source_repo" | cut -d'/' -f2)
         gpgpusim_repo=$(echo "$framework_repo" | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
     else
         gpgpusim_repo="gpgpu-sim_distribution"
