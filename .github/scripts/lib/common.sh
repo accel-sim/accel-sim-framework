@@ -384,9 +384,23 @@ vpn_connect() {
         fi
     done
 
+    # A listener already there would pass the check below as ours. The caller
+    # holds the ci-lock.sh lock, so a tunnel of this user to VPN_HOST is one
+    # a killed run left: stop it; anything else on the port is an error.
+    if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
+        log_info "SOCKS port $SOCKS_PORT in use: stopping a leftover VPN to $VPN_HOST"
+        pkill -u "$(id -un)" -f "$OPENCONNECT_PATH .*$VPN_HOST" || true
+        sleep 3
+        if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
+            log_error "SOCKS port $SOCKS_PORT is in use by something else"
+            return 1
+        fi
+    fi
+
     log_info "Starting VPN connection to $VPN_HOST..."
 
     cat "$HOME/sk_password" | "$OPENCONNECT_PATH" \
+        --pid-file="$(vpn_pid_file)" \
         --script-tun \
         --script "$OCPROXY_PATH -L 2222:unix-host:22 -D $SOCKS_PORT" \
         --protocol=gp \
@@ -412,12 +426,25 @@ vpn_connect() {
     done
 }
 
-# Cleanup VPN connection
-# Required env vars: VPN_HOST
+# Where vpn_connect leaves openconnect's PID for vpn_cleanup (a later step
+# of the same job)
+vpn_pid_file() {
+    echo "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/openconnect-${GITHUB_RUN_ID:-local}.pid"
+}
+
+# Cleanup the VPN connection this job started, and no other
 vpn_cleanup() {
     log_section "Cleaning up VPN connection"
-    pkill -f "openconnect.*$VPN_HOST" || true
-    log_info "VPN cleanup complete"
+    local pid_file pid
+    pid_file=$(vpn_pid_file)
+    pid=$(cat "$pid_file" 2>/dev/null || true)
+    if [ -n "$pid" ]; then
+        kill "$pid" 2>/dev/null || true
+        rm -f "$pid_file"
+        log_info "VPN cleanup complete (openconnect pid $pid)"
+    else
+        log_info "No VPN started by this job ($pid_file missing)"
+    fi
 }
 
 # Sync files to/from remote via SOCKS proxy

@@ -23,12 +23,18 @@ jobs:
   Tracer-Hopper:
     if: ${{ !inputs.skip_tracer }}
     runs-on: tgrogers-raid
-    timeout-minutes: 720
+    timeout-minutes: 1440 # +720: waiting for the hopper-weekly lock
     concurrency:
       group: sk-h200-remote
       cancel-in-progress: false
     steps:
       - uses: actions/checkout@v6
+
+      # one run at a time across the accel-sim and purdue-aalp repos
+      - name: Acquire the hopper-weekly lock
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/ci-lock.sh acquire hopper-weekly 720
 
       - name: Connect to VPN
         run: ./.github/scripts/hopper-weekly.sh tracer-vpn-connect
@@ -50,7 +56,7 @@ jobs:
         run: ./.github/scripts/hopper-weekly.sh tracer-vpn-cleanup
 
   SASS-Hopper:
-    timeout-minutes: 720
+    timeout-minutes: 1440 # +720: waiting for the hopper-weekly lock
     needs: [Tracer-Hopper]
     if: ${{ !cancelled() && (needs.Tracer-Hopper.result == 'success' || needs.Tracer-Hopper.result == 'skipped') }}
     runs-on: tgrogers-raid
@@ -59,6 +65,12 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
+
+      # one run at a time across the accel-sim and purdue-aalp repos
+      - name: Acquire the hopper-weekly lock
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/ci-lock.sh acquire hopper-weekly 720
 
       - name: Setup Environment
         run: ./.github/scripts/hopper-weekly.sh sass-setup
@@ -126,10 +138,15 @@ jobs:
   cleanup-slurm:
     if: always()
     runs-on: tgrogers-raid
-    needs: [SASS-Hopper]
+    needs: [Tracer-Hopper, SASS-Hopper]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/scripts
       - name: Cancel this run's Slurm jobs
         run: |
           jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
           echo "cancelling: ${jobs:-none}"
           [ -z "$jobs" ] || scancel $jobs
+      - name: Release the hopper-weekly lock
+        run: ./.github/scripts/ci-lock.sh release hopper-weekly

@@ -11,7 +11,7 @@ env:
   ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
 jobs:
   Tracer-Weekly:
-    timeout-minutes: 720
+    timeout-minutes: 1440 # +720: waiting for the weekly-tests lock
     # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-gpu01
     defaults:
@@ -19,6 +19,13 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
+
+      # one run at a time across the accel-sim and purdue-aalp repos
+      - name: Acquire the weekly-tests lock
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/ci-lock.sh acquire weekly-tests 720
+
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -69,7 +76,7 @@ jobs:
           srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
           mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
   SASS-Weekly:
-    timeout-minutes: 900
+    timeout-minutes: 1620 # +720: waiting for the weekly-tests lock
     needs: [Tracer-Weekly]
     # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
     runs-on: tgrogers-raid 
@@ -78,6 +85,13 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
+
+      # one run at a time across the accel-sim and purdue-aalp repos
+      - name: Acquire the weekly-tests lock
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: ./.github/scripts/ci-lock.sh acquire weekly-tests 720
+
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -163,8 +177,13 @@ jobs:
     runs-on: tgrogers-raid
     needs: [Tracer-Weekly, SASS-Weekly]
     steps:
+      - uses: actions/checkout@v6
+        with:
+          sparse-checkout: .github/scripts
       - name: Cancel this run's Slurm jobs
         run: |
           jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
           echo "cancelling: ${jobs:-none}"
           [ -z "$jobs" ] || scancel $jobs
+      - name: Release the weekly-tests lock
+        run: ./.github/scripts/ci-lock.sh release weekly-tests
