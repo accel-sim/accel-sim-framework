@@ -19,7 +19,7 @@
 #   GITHUB_RUN_NUMBER       - CI run number
 #   GITHUB_RUN_ATTEMPT      - CI run attempt
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
@@ -125,8 +125,8 @@ stage_archive() {
         # Merge with archive (cumulative)
         ./util/plotting/merge-stats.py -R \
             -c "./statistics-archive/ubench/${prefix}-ubench-sass.csv,${prefix}-ubench-sass-local.csv" \
-            | tee "${prefix}-ubench-sass.csv" \
-            && mv "${prefix}-ubench-sass.csv" ./statistics-archive/ubench/
+            | tee "${prefix}-ubench-sass.csv"
+        mv "${prefix}-ubench-sass.csv" ./statistics-archive/ubench/
 
         # Merge latest (for correlation) and save as new latest
         ./util/plotting/merge-stats.py -R \

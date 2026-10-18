@@ -1,0 +1,39 @@
+# AI analysis of every failed run of the CI workflows below, from one place.
+# The logic lives in purdue-aalp/github-ci ai/ci-failure.sh on the runner
+# host. workflow_run fires only from this file on the default branch, so it
+# takes effect once merged there.
+name: CI Failure Review
+
+on:
+  workflow_run:
+    workflows: ["CI Runs", "Hopper Weekly", "Weekly Tests"]
+    types: [completed]
+
+permissions:
+  contents: read
+  actions: read
+  pull-requests: write
+  issues: write
+
+jobs:
+  ai-failure-review:
+    # cancelled: a job timed out or got no runner, or the run was superseded;
+    # ci-failure.sh tells them apart from the jobs' annotations
+    if: contains(fromJSON('["failure", "timed_out", "cancelled"]'), github.event.workflow_run.conclusion)
+    runs-on: tgrogers-raid
+    continue-on-error: true # advisory: never a red check
+    env:
+      AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+      REPO: ${{ github.repository }}
+      RUN_ID: ${{ github.event.workflow_run.id }}
+      HEAD_SHA: ${{ github.event.workflow_run.head_sha }}
+      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+    steps:
+      # The failing commit, for its history; may be a fork's. Nothing from it
+      # is run, and the token is not left in it.
+      - uses: actions/checkout@v7
+        with:
+          ref: ${{ github.event.workflow_run.head_sha }}
+          fetch-depth: 20
+          persist-credentials: false
+      - run: $AI/ci-failure.sh

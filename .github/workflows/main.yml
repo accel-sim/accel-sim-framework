@@ -19,9 +19,20 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_RUN_NUMBER: ${{ github.run_number }}
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+  # run_simulations.py and on-cluster.sh put this in their Slurm jobs' comment
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
+
+# A new push cancels its branch's older run, except on the default branch.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 jobs:
   check-format:
+    # Branches live in the purdue-aalp fork and are tested by their PR's run:
+    # a push run there would repeat it and race it on the stats branch. Every
+    # other job needs this one, so all of them skip with it.
+    if: github.event_name != 'push' || github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-raid
     steps:
       - uses: actions/checkout@v6
@@ -72,49 +83,18 @@ jobs:
       - name: Correlate Ubench
         run: ./.github/scripts/main-sass.sh correlate
 
-      - name: Analyze success with opencode
+      - name: AI analysis of the results
         if: success()
+        continue-on-error: true # the analysis never changes the CI result
         env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-analysis-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-analysis.md to analyze this successful CI run. Write your final report to ci-analysis-report.md as instructed." \
-            || true
-          if [ -s ci-analysis-report.md ]; then
-            cat ci-analysis-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Simulation Analysis"
-              echo
-              echo "opencode did not produce \`ci-analysis-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Analyze failure with opencode
-        if: failure()
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-failure-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-failure.md to analyze this failed CI run. Write your final report to ci-failure-report.md as instructed." \
-            || true
-          if [ -s ci-failure-report.md ]; then
-            cat ci-failure-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Failure Analysis"
-              echo
-              echo "opencode did not produce \`ci-failure-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # plot-correlation stdout per config; per-kernel CSVs of the last config
+          CI_ANALYSIS_FILES: "*-ubench-correl.txt util/plotting/correl-html/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
 
   PTX-Simulation:
     needs: [check-format]
@@ -170,12 +150,24 @@ jobs:
         run: ./.github/scripts/main-tracer.sh test
 
   SASS-Simulation-Docker:
+    # The short QV100 SASS regression built and run in the accel-sim-framework
+    # image, under apptainer on a Slurm node (.github/scripts/main-docker.sh)
     needs: [check-format]
-    runs-on: tgrogers-pc01
+    runs-on: tgrogers-raid
+    timeout-minutes: 360
+    env:
+      IMAGE_TAG: ubuntu-24.04-cuda-12.8-minimal
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
-      - name: Run Simulation
-        run: echo "Docker-based CI tests are currently disabled."
+
+      - name: Setup Environment
+        run: ./.github/scripts/main-docker.sh setup
+
+      - name: Build and Run in the Image
+        run: ./.github/scripts/main-docker.sh run
 
   CI-Success:
     env:
@@ -196,6 +188,8 @@ jobs:
           source ./env-setup/common/common_inc.sh
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
             export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$PR_HEAD_REPO_FULL_NAME/$BRANCH_NAME/ubench/"
+            # the prefixes main-sass.sh STAT_PREFIXES writes
+            export CORREL_GPUS="v100:V100 ampere-a100:A100 hopper-h200:H200"
             python3 .github/scripts/send_ci_email.py -t success
           fi
 
@@ -218,14 +212,14 @@ jobs:
             python3 .github/scripts/send_ci_email.py -t failure -u
           fi
 
-  cleanup-on-cancel:
-    if: cancelled()
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always() && needs.check-format.result != 'skipped'
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+    needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
-      - uses: actions/checkout@v6
-      - name: Cancel Slurm jobs
+      - name: Cancel this run's Slurm jobs
         run: |
-          ./.github/scripts/cancel-slurm-jobs.sh "sass-short-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "short-ptx-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "rodinia_2.0-ft-$$"
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

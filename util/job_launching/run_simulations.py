@@ -217,9 +217,13 @@ class ConfigurationSpec:
         torque_out_file = open(torque_out_filename, "w+")
         saved_dir = os.getcwd()
         os.chdir(run_dir)
+        submit_cmd = [job_submit_call]
+        # CI tags its jobs so a cancelled run can scancel them by comment
+        if job_submit_call == "sbatch" and os.getenv("ACCELSIM_SLURM_COMMENT"):
+            submit_cmd.append("--comment=" + os.getenv("ACCELSIM_SLURM_COMMENT"))
         if (
             subprocess.call(
-                [job_submit_call, os.path.join(run_dir, sim_template or job_template)],
+                submit_cmd + [os.path.join(run_dir, sim_template or job_template)],
                 stdout=torque_out_file,
             )
             < 0

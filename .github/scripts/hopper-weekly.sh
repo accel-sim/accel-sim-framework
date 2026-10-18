@@ -25,7 +25,7 @@
 #   GITHUB_RUN_NUMBER    - CI run number (for job naming)
 #   GITHUB_RUN_ATTEMPT   - CI run attempt number
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
@@ -44,8 +44,10 @@ export REMOTE_HOST="172.20.40.191"
 export REMOTE_USER="tgrghci"
 REMOTE_WORK_DIR="/purdue/tgrghci/accel-sim-framework-ci"
 
-# Trace depot location
-TRACE_DEPOT="/scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200"
+# Trace depot, one per repo: each repo's SASS sims read only the traces its
+# own tracer wrote (both repos run this workflow)
+REPO_TAG=${GITHUB_REPOSITORY:-local}
+TRACE_DEPOT="/scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-h200/${REPO_TAG//\//_}"
 
 # SASS simulation settings
 BENCHMARKS="rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark"
@@ -61,8 +63,13 @@ HW_RUN_H100="$TRACE_DEPOT/hw_run/"
 HW_RUN_QV100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/QV100/hw_run/"
 HW_RUN_A100="/scratch/tgrogers-disk01/a/common/for-sharing/accel-sim/A100/hw_run/"
 
-# Statistics archive settings
-STATS_BRANCH_PREFIX="hopper-weekly"
+# Statistics archive branch, one per repo; accel-sim's keeps its old name
+# (hopper-weekly.yml's REPORT_URL follows the same rule)
+if [ "$REPO_TAG" = accel-sim/accel-sim-framework ]; then
+    STATS_BRANCH="hopper-weekly/$BRANCH_NAME"
+else
+    STATS_BRANCH="hopper-weekly/$REPO_TAG/$BRANCH_NAME"
+fi
 USE_SRUN=false
 
 # Job naming
@@ -107,14 +114,16 @@ stage_tracer_vpn_cleanup() {
     vpn_cleanup
 }
 
-# Run all tracer stages
+# Run all tracer stages. CI runs this as one Slurm job on gpu01 whose
+# singleton name keeps every repo's tracer off the remote at once; the VPN
+# goes down however it exits (a cancel kills the whole job anyway).
 stage_tracer() {
+    trap stage_tracer_vpn_cleanup EXIT
     stage_tracer_vpn_connect
     stage_tracer_clean_remote
     stage_tracer_sync_push
     stage_tracer_run
     stage_tracer_sync_pull
-    stage_tracer_vpn_cleanup
 }
 
 #==============================================================================
@@ -155,8 +164,7 @@ stage_sass_archive() {
     log_section "Archiving Statistics"
     source ./env-setup/12.8_env_setup.sh
 
-    local stats_branch="$STATS_BRANCH_PREFIX/$BRANCH_NAME"
-    setup_stats_archive "$stats_branch"
+    setup_stats_archive "$STATS_BRANCH"
 
     # Collect and archive stats for every correlated GPU
     archive_config_stats "hopper-h100" "$BENCHMARKS,$BENCHMARKS_TMA" "$CONFIG_H200"
@@ -177,7 +185,7 @@ stage_sass_correlate() {
     run_correlation "v100" "v100-ubench-sass-latest2.csv" "$HW_RUN_QV100" \
         || log_error "v100 correlation failed"
 
-    push_stats_archive "Hopper Weekly" "$STATS_BRANCH_PREFIX/$BRANCH_NAME"
+    push_stats_archive "Hopper Weekly" "$STATS_BRANCH"
 }
 
 # Run all sass stages

@@ -7,18 +7,22 @@ on:
     - cron: '0 20 * * FRI'  # 8:00 PM every Friday
 env:
   BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  # run_simulations.py puts this in its Slurm jobs' comment, for cleanup-slurm
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
+  # the traces Tracer-Weekly writes and SASS-Weekly reads, one dir per repo
+  NIGHTLY_REPO: ${{ github.repository_owner }}_${{ github.event.repository.name }}
 jobs:
   Tracer-Weekly:
     timeout-minutes: 720
     # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
-    runs-on: tgrogers-gpu01
+    # the GPU work goes to gpu01 through the gpu-lock Slurm singleton
+    runs-on: tgrogers-raid
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
+
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -47,15 +51,16 @@ jobs:
           # make -j8 -C ./gpu-app-collection/src polybench
           # make -j8 -C ./gpu-app-collection/src cutlass
       - name: generate traces
+        # nvbit-trace.sh runs run_hw_trace.py and removes NVBit's /tmp files
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./.github/scripts/nvbit-trace.sh -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
           srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/hw_stats/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
-          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run
+          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO
+          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO
+          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run
           # ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
       - name: generate-spinlock-traces-spinlock_handling
         run: |
@@ -63,11 +68,11 @@ jobs:
           source ./gpu-app-collection/src/setup_environment
           rm -rf ./hw_run/
           mkdir -p ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./.github/scripts/nvbit-trace.sh -B Spinlock -D 7 --spinlock_handling fast_forward
+          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run_fast_forward
           mkdir -p ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
+          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./.github/scripts/nvbit-trace.sh -B Spinlock -D 7 --spinlock_handling none
+          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run_none
   SASS-Weekly:
     timeout-minutes: 900
     needs: [Tracer-Weekly]
@@ -78,8 +83,7 @@ jobs:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
+
       - name: Setup Environment
         run: |
           rm -rf env-setup
@@ -130,7 +134,7 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
-          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run ./hw_run
+          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run ./hw_run
           ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
           ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s weekly-stats-per-app.csv -N weekly-$$
       - name: test-new-traces-spinlock_handling
@@ -138,9 +142,9 @@ jobs:
         run: |
           source ./env-setup/12.8_env_setup.sh
           source ./gpu-simulator/setup_environment.sh
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
+          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
           ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
-          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
+          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/$NIGHTLY_REPO/hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
           # ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
   failures:
     if: failure()
@@ -158,3 +162,15 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Weekly Tests"
           python3 .github/scripts/send_ci_email.py -t failure
+
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
+    runs-on: tgrogers-raid
+    needs: [Tracer-Weekly, SASS-Weekly]
+    steps:
+      - name: Cancel this run's Slurm jobs
+        run: |
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

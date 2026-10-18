@@ -16,36 +16,26 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_RUN_NUMBER: ${{ github.run_number }}
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+  # run_simulations.py puts this in its Slurm jobs' comment, for cleanup-slurm
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
 
 jobs:
   Tracer-Hopper:
     if: ${{ !inputs.skip_tracer }}
     runs-on: tgrogers-raid
-    timeout-minutes: 720
-    concurrency:
-      group: sk-h200-remote
-      cancel-in-progress: false
+    timeout-minutes: 1440 # 720 for the tracer, 720 for another repo's to finish
     steps:
       - uses: actions/checkout@v6
 
-      - name: Connect to VPN
-        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-connect
-
-      - name: Clean remote directory
-        run: ./.github/scripts/hopper-weekly.sh tracer-clean-remote
-
-      - name: Sync repository to remote
-        run: ./.github/scripts/hopper-weekly.sh tracer-sync-push
-
+      # All tracer stages (VPN, remote clean, sync, trace, sync back) as one
+      # Slurm job on gpu01. The singleton name is the lock: every repo's runs
+      # submit as the CI user, so only one tracer uses the remote dir, VPN and
+      # SOCKS port at a time. Its comment carries the run tag for cleanup-slurm.
       - name: Generate traces on H200
-        run: ./.github/scripts/hopper-weekly.sh tracer-run
-
-      - name: Sync traces back from remote
-        run: ./.github/scripts/hopper-weekly.sh tracer-sync-pull
-
-      - name: Cleanup VPN
-        if: always()
-        run: ./.github/scripts/hopper-weekly.sh tracer-vpn-cleanup
+        run: |
+          srun -p tgrogers-dgx -J hopper-weekly-tracer --dependency=singleton \
+            --time=12:00:00 -c 4 --comment="$ACCELSIM_SLURM_COMMENT" \
+            ./.github/scripts/hopper-weekly.sh tracer
 
   SASS-Hopper:
     timeout-minutes: 720
@@ -68,56 +58,25 @@ jobs:
         run: ./.github/scripts/hopper-weekly.sh sass-simulate
 
       - name: Archive Stats
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./.github/scripts/hopper-weekly.sh sass-archive
 
       - name: Correlate Ubench
-        if: always()
+        if: ${{ !cancelled() }}
         run: ./.github/scripts/hopper-weekly.sh sass-correlate
 
-      - name: Analyze success with opencode
+      - name: AI analysis of the results
         if: success()
+        continue-on-error: true # the analysis never changes the CI result
         env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-analysis-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-analysis.md to analyze this successful CI run. Write your final report to ci-analysis-report.md as instructed." \
-            || true
-          if [ -s ci-analysis-report.md ]; then
-            cat ci-analysis-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Simulation Analysis"
-              echo
-              echo "opencode did not produce \`ci-analysis-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
-
-      - name: Analyze failure with opencode
-        if: failure()
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-failure-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-failure.md to analyze this failed CI run. Write your final report to ci-failure-report.md as instructed." \
-            || true
-          if [ -s ci-failure-report.md ]; then
-            cat ci-failure-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Failure Analysis"
-              echo
-              echo "opencode did not produce \`ci-failure-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # plot-correlation stdout per config; per-kernel CSVs of the last config
+          CI_ANALYSIS_FILES: "*-ubench-correl.txt util/plotting/correl-html/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
 
   failures:
     if: failure()
@@ -139,7 +98,8 @@ jobs:
     if: ${{ !cancelled() && !failure() }}
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.head_ref || github.ref_name }}/ubench/"
+      # the stats branch hopper-weekly.sh pushes: hopper-weekly/[<repo>/]<branch>
+      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/hopper-weekly/${{ github.repository != 'accel-sim/accel-sim-framework' && format('{0}/', github.repository) || '' }}${{ github.head_ref || github.ref_name }}/ubench/"
     runs-on: tgrogers-raid
     needs: [Tracer-Hopper, SASS-Hopper]
     steps:
@@ -150,3 +110,15 @@ jobs:
           source ./env-setup/common/common_inc.sh
           export BRANCH_NAME="Hopper Weekly"
           python3 .github/scripts/send_ci_email.py -t success
+
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
+    runs-on: tgrogers-raid
+    needs: [Tracer-Hopper, SASS-Hopper]
+    steps:
+      - name: Cancel this run's Slurm jobs
+        run: |
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

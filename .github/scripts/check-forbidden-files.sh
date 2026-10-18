@@ -38,6 +38,17 @@ else
     HEAD_REF="${GITHUB_SHA:-HEAD}"
 fi
 
+# A missing ref would make the git log below list nothing, and the check pass
+if ! git rev-parse --verify -q "$BASE_REF^{commit}" >/dev/null && [[ "$BASE_REF" == origin/* ]]; then
+    git fetch -q origin "+refs/heads/${BASE_REF#origin/}:refs/remotes/$BASE_REF" || true
+fi
+for ref in "$BASE_REF" "$HEAD_REF"; do
+    if ! git rev-parse --verify -q "$ref^{commit}" >/dev/null; then
+        echo "ERROR: ref '$ref' not found: fetch it (actions/checkout fetch-depth: 0) or pass BASE HEAD"
+        exit 1
+    fi
+done
+
 echo "Checking for forbidden files in commits: $BASE_REF..$HEAD_REF"
 
 # Forbidden patterns - files that should never be committed
