@@ -19,7 +19,7 @@
 #   GITHUB_EVENT_NAME       - Event type (push, pull_request)
 #   PR_HEAD_REPO_FULL_NAME  - For PRs: head repo in owner/repo format
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"

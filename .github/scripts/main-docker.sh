@@ -19,7 +19,7 @@
 #   PR_HEAD_REPO_FULL_NAME  - For PRs: head repo in owner/repo format
 #   IMAGE_TAG               - accel-sim-framework image tag
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"

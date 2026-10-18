@@ -15,7 +15,7 @@
 #   GITHUB_RUN_NUMBER       - CI run number (for unique job names)
 #   GITHUB_RUN_ATTEMPT      - CI run attempt number
 
-set -e
+set -eo pipefail
 
 # Get script directory for relative path resolution
 COMMON_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -143,7 +143,7 @@ clone_gpgpusim() {
             else
                 # Branch not found in fork, try fork's default branch
                 local default_branch
-                default_branch=$(git -C "$dest_dir" remote show fork-owner 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}')
+                default_branch=$(git -C "$dest_dir" remote show fork-owner 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}' || true)
                 if [ -n "$default_branch" ]; then
                     log_info "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$fork_owner/$gpgpusim_repo'"
                     git -C "$dest_dir" checkout -B "$default_branch" "fork-owner/$default_branch"
@@ -279,7 +279,8 @@ merge_stats() {
     output_csv=$(basename "$archive_csv")
 
     ./util/plotting/merge-stats.py -R -c "./statistics-archive/ubench/$archive_csv,$local_csv" \
-        | tee "$output_csv" && mv "$output_csv" "./statistics-archive/ubench/"
+        | tee "$output_csv"
+    mv "$output_csv" "./statistics-archive/ubench/"
 }
 
 # Collect sim stats for one GPU, fold them into the archive's cumulative history,
