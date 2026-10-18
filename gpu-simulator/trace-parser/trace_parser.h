@@ -13,7 +13,7 @@
 #include <string>
 #include <vector>
 
-#include "decode.h"
+#include "../../util/tracer_nvbit/tracer_tool/decode.h"
 
 #define MAX_DST 1
 #define MAX_SRC 4

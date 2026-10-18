@@ -5,8 +5,9 @@
 #include <cstdint>
 #include <sstream>
 #include <stdexcept>
+#include <cassert>
 
-constexpr int WARP_SIZE = 32
+constexpr int WARP_SIZE = 32;
 
 inline std::vector<uint64_t> decode_list_all(
   std::stringstream &ss,
@@ -19,9 +20,10 @@ inline std::vector<uint64_t> decode_list_all(
   for (int s = 0; s < WARP_SIZE; s++) {
     if (mask_bits.test(s)) {
       ss >> std::hex >> addr;
-      assert(!ss.fail())
+      assert(!ss.fail());
       addrs.push_back(addr);
-    } else addrs.push_back(0);
+    } else
+      addrs.push_back(0);
   }
 
   return addrs;
@@ -38,10 +40,10 @@ inline std::vector<uint64_t> decode_base_stride(
   int stride = 0;
   ss >> std::hex >> addr;
   ss >> std::dec >> stride;
-  assert(!ss.fail())
+  assert(!ss.fail());
   bool first_bit1_found = false;
   bool last_bit1_found = false;
-  
+
   for (int s = 0; s < WARP_SIZE; s++) {
     if (!first_bit1_found && mask_bits.test(s)) {
       first_bit1_found = true;
@@ -52,7 +54,8 @@ inline std::vector<uint64_t> decode_base_stride(
         addrs.push_back(addr);
       } else
         last_bit1_found = true;
-    } else addrs.push_back(0);
+    } else
+      addrs.push_back(0);
   }
 
   return addrs;
@@ -68,18 +71,19 @@ inline std::vector<uint64_t> decode_base_delta(
 
   // read addresses as base address and deltas
   ss >> std::hex >> addr;
-  assert(!ss.fail())
+  assert(!ss.fail());
   bool first_bit1_found = false;
-  for(int s = 0; s < WARP_SIZE; s++) {
-    if(!first_bit1_found && mask_bits.test(s)) {
+  for (int s = 0; s < WARP_SIZE; s++) {
+    if (!first_bit1_found && mask_bits.test(s)) {
       first_bit1_found = true;
       addrs.push_back(addr);
-    } else if(first_bit1_found && mask_bits.test(s)) {
+    } else if (first_bit1_found && mask_bits.test(s)) {
       ss >> std::dec >> delta;
-      assert(!ss.fail())
+      assert(!ss.fail());
       addr += delta;
       addrs.push_back(addr);
-    } else addrs.push_back(0);
+    } else
+      addrs.push_back(0);
   }
 
   return addrs;

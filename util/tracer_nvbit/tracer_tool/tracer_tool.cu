@@ -38,8 +38,8 @@
 #include "watchdog.h"
 
 /* for general utils functions */
-#include "utils.h"
 #include "decode.h"
+#include "utils.h"
 
 #define TRACER_VERSION "5"
 #define TRACER_VERSION_ALLOW_REG_VAL "6"

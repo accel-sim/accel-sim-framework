@@ -601,7 +601,7 @@ static mbar_inst_info classify_mbar_inst(const string &line,
   } else {
     unsigned addr_mode;
     ss >> dec >> addr_mode;
-    try {fprintf(stderr, "Warning: %s (mode %u), classifying as OTHER\n", e.what(), addr_mode);
+    try {
       addrs = decode(addr_mode, ss, mask);
     } catch (const std::exception &e) {
       fprintf(stderr, "Warning: %s (mode %u), classifying as OTHER\n", e.what(), addr_mode);
