@@ -139,16 +139,24 @@ jobs:
         run: ./.github/scripts/main-tracer.sh test
 
   SASS-Simulation-Docker:
-    # short-tests.sh in the accel-sim-framework image, as a SIF on a Slurm
-    # node (.github/scripts/on-cluster.sh); the runner has no container runtime
+    # The short QV100 SASS regression built and run in the accel-sim-framework
+    # image, under apptainer on a Slurm node (.github/scripts/main-docker.sh)
     needs: [check-format]
     runs-on: tgrogers-raid
+    timeout-minutes: 360
     env:
       IMAGE_TAG: ubuntu-24.04-cuda-12.8-minimal
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
-      - name: Run Simulation
-        run: .github/scripts/on-cluster.sh -t 04:00:00 -- /bin/bash short-tests.sh
+
+      - name: Setup Environment
+        run: ./.github/scripts/main-docker.sh setup
+
+      - name: Build and Run in the Image
+        run: ./.github/scripts/main-docker.sh run
 
   CI-Success:
     env:
