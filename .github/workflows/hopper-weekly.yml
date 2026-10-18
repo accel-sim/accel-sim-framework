@@ -30,11 +30,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # one run at a time across the accel-sim and purdue-aalp repos
-      - name: Acquire the hopper-weekly lock
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/ci-lock.sh acquire hopper-weekly 720
+      # One run at a time across the accel-sim and purdue-aalp repos, held for
+      # the whole run (the sims read the trace depot); cleanup-slurm releases it
+      - name: Wait for the hopper-weekly lock
+        run: ./.github/scripts/slurm-lock.sh hopper-weekly-lock 26:00:00
 
       - name: Connect to VPN
         run: ./.github/scripts/hopper-weekly.sh tracer-vpn-connect
@@ -66,11 +65,10 @@ jobs:
     steps:
       - uses: actions/checkout@v6
 
-      # one run at a time across the accel-sim and purdue-aalp repos
-      - name: Acquire the hopper-weekly lock
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: ./.github/scripts/ci-lock.sh acquire hopper-weekly 720
+      # One run at a time across the accel-sim and purdue-aalp repos, held for
+      # the whole run (the sims read the trace depot); cleanup-slurm releases it
+      - name: Wait for the hopper-weekly lock
+        run: ./.github/scripts/slurm-lock.sh hopper-weekly-lock 26:00:00
 
       - name: Setup Environment
         run: ./.github/scripts/hopper-weekly.sh sass-setup
@@ -140,13 +138,8 @@ jobs:
     runs-on: tgrogers-raid
     needs: [Tracer-Hopper, SASS-Hopper]
     steps:
-      - uses: actions/checkout@v6
-        with:
-          sparse-checkout: .github/scripts
       - name: Cancel this run's Slurm jobs
         run: |
           jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
           echo "cancelling: ${jobs:-none}"
           [ -z "$jobs" ] || scancel $jobs
-      - name: Release the hopper-weekly lock
-        run: ./.github/scripts/ci-lock.sh release hopper-weekly

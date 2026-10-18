@@ -385,7 +385,7 @@ vpn_connect() {
     done
 
     # A listener already there would pass the check below as ours. The caller
-    # holds the ci-lock.sh lock, so a tunnel of this user to VPN_HOST is one
+    # holds the slurm-lock.sh lock, so a tunnel of this user to VPN_HOST is one
     # a killed run left: stop it; anything else on the port is an error.
     if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
         log_info "SOCKS port $SOCKS_PORT in use: stopping a leftover VPN to $VPN_HOST"
