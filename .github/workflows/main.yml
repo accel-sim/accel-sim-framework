@@ -184,6 +184,8 @@ jobs:
           source ./env-setup/common/common_inc.sh
           if [[ ${{ github.event_name }} == 'pull_request' ]]; then
             export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$PR_HEAD_REPO_FULL_NAME/$BRANCH_NAME/ubench/"
+            # the prefixes main-sass.sh STAT_PREFIXES writes
+            export CORREL_GPUS="v100:V100 ampere-a100:A100 hopper-h200:H200"
             python3 .github/scripts/send_ci_email.py -t success
           fi
 

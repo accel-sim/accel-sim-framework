@@ -43,22 +43,18 @@ if EMAIL_TYPE == "success":
     # Build correlation plot links if REPORT_URL provided
     plots_html = ""
     if REPORT_URL:
-        v100_kernel = os.path.join(REPORT_URL, "v100-combined_per_kernel.html")
-        v100_app = os.path.join(REPORT_URL, "v100-combined_per_app.html")
-        a100_kernel = os.path.join(REPORT_URL, "ampere-a100-combined_per_kernel.html")
-        a100_app = os.path.join(REPORT_URL, "ampere-a100-combined_per_app.html")
-        h100_kernel = os.path.join(REPORT_URL, "hopper-h100-combined_per_kernel.html")
-        h100_app = os.path.join(REPORT_URL, "hopper-h100-combined_per_app.html")
+        # CORREL_GPUS: "prefix:Label" pairs of the *-combined_per_*.html the run wrote
+        gpus = (os.getenv("CORREL_GPUS") or "v100:V100 ampere-a100:A100 hopper-h100:H100").split()
+        links = ""
+        for gpu in gpus:
+            prefix, label = gpu.split(":")
+            for kind, name in (("kernel", "Per Kernel"), ("app", "Per App")):
+                url = os.path.join(REPORT_URL, f"{prefix}-combined_per_{kind}.html")
+                links += f'    <li><a href="{url}">{label} - {name}</a></li>\n'
         plots_html = f"""
   <h3>Correlation Plots</h3>
   <ul>
-    <li><a href=\"{v100_kernel}\">V100 - Per Kernel</a></li>
-    <li><a href=\"{v100_app}\">V100 - Per App</a></li>
-    <li><a href=\"{a100_kernel}\">A100 - Per Kernel</a></li>
-    <li><a href=\"{a100_app}\">A100 - Per App</a></li>
-    <li><a href=\"{h100_kernel}\">H100 - Per Kernel</a></li>
-    <li><a href=\"{h100_app}\">H100 - Per App</a></li>
-  </ul>
+{links}  </ul>
 """
     html_body = f"""
 <html>
