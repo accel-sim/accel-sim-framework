@@ -67,6 +67,26 @@ parser.add_option(
     default=1,
     help="Number of iterations to keep for spinlock fast forwarding. Only used if spinlock_handling is fast_forward",
 )
+parser.add_option(
+    "--output_name",
+    dest="output_name",
+    default="hw_run",
+    help="Name of the output directory to save the traces",
+)
+parser.add_option(
+    "-j",
+    "--nproc",
+    dest="nproc",
+    default=8,
+    help="Number of processes to use for post-processing traces",
+)
+parser.add_option(
+    "--text",
+    dest="text_traces",
+    action="store_true",
+    default=False,
+    help="Post-process into the old text based trace (.traceg) instead of the default .tracez",
+)
 
 (options, args) = parser.parse_args()
 
@@ -96,7 +116,7 @@ for bench in benchmarks:
                     this_directory,
                     "..",
                     "..",
-                    "hw_run",
+                    options.output_name,
                     "traces",
                     "device-" + options.device_num,
                     cuda_version,
@@ -153,7 +173,7 @@ for bench in benchmarks:
                 sh_contents +=  (f'\nexport DYNAMIC_KERNEL_RANGE="{os.environ.get("DYNAMIC_KERNEL_RANGE", "")}"\n')
 
         # first we generate the traces (.trace and kernelslist files)
-        # then, we do post-processing for the traces and generate (.traceg and kernelslist.g files)
+        # then, we do post-processing for the traces and generate (.tracez by default, or .traceg with --text, and kernelslist.g files)
         # then, we delete the intermediate files ((.trace and kernelslist files files)
         sh_contents += (
             '\nexport CUDA_VERSION="'
@@ -183,6 +203,9 @@ for bench in benchmarks:
             )
             + " "
             + this_trace_folder
+            + " -j "
+            + str(options.nproc)
+            + (" --text" if options.text_traces else "")
             + " ; rm -f "
             + this_trace_folder
             + "/*.trace ; rm -f "
