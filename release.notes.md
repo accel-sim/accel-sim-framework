@@ -4,8 +4,7 @@
 _October 2026._
 
 A maintenance release on top of 2.0.0: pre-collected traces move from the FTP server to
-GitHub release assets, a trace post-processing fix for multi-lane `mbarrier` instructions,
-and a reworked CI.
+GitHub release assets, trace post-processing and parsing fixes, and a reworked CI.
 
 > **Requires the matching GPGPU-Sim:** `gpgpu-sim_distribution` tag `v2.0.1`.
 
@@ -31,6 +30,11 @@ and a reworked CI.
   lines, so a `TRYWAIT` on an `mbarrier` reached only through another lane could be dropped
   and the kernel could deadlock (#561).
 
+## Trace parsing
+- Opening a `.tracez` file checks every `fread`, so a truncated file fails with an error
+  instead of filling the thread-block index with garbage. This also removes the framework's
+  remaining build warnings (#565).
+
 ## Job launching
 - `slurm.sim` is back to the pre-2.0 template (#556).
 
@@ -40,6 +44,10 @@ and a reworked CI.
   (#566).
 - Issue triage and PR review automation moved to `purdue-aalp/github-ci`, with Slurm
   cleanup and fork-aware fixes (#559).
+- CI also runs on pushes to the purdue-aalp forks (#569).
+- Every SASS CI run launches per kernel, as Slurm arrays at 10 GB, so one long kernel no
+  longer serialises the rest of its application. The Weekly H200 ML job reads its traces
+  from the static H200 CI depot.
 
 ## GPGPU-Sim v2.0.1
 - Fixes 47 build warnings and two statistics that read uninitialized memory (#147).
