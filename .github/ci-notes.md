@@ -2,7 +2,8 @@
 
 - `main.yml`: check-format, then SASS-Simulation, PTX-Simulation (`TITANV`,
   `QV100`, `RTX2060`, `RTX3070`, `TITANV-LOCALXBAR`), Tracer-Tool (build the
-  NVBit tracer, trace, test the new traces), SASS-Simulation-Docker.
+  NVBit tracer, trace, trace again on GPUs 3,7 with run_hw_trace.py's worker
+  pools and compare (`compare-traces.py`), test the new traces), SASS-Simulation-Docker.
   SASS-Simulation has two tiers (`CI_TIER`, `main-sass.sh`): smoke on PRs
   (`GPU_Microbenchmark_CI`, `rodinia_2.0-ft` on `QV100-SASS` and `H200-SASS`,
   `GPU_Microbenchmark_TMA_CI`, `cutlass_tma_CI`, `hopper_features_CI` on

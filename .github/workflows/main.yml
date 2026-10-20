@@ -149,6 +149,9 @@ jobs:
       - name: Generate Traces
         run: ./.github/scripts/main-tracer.sh trace
 
+      - name: Test Multi-GPU Tracing
+        run: ./.github/scripts/main-tracer.sh trace-parallel
+
       - name: Generate HW Stats
         run: ./.github/scripts/main-tracer.sh hw-stats
 
