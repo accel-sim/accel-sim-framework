@@ -243,7 +243,7 @@ bool inst_trace_t::parse_from_string(std::string trace, unsigned trace_version,
     memadd_info->width = get_datawidth_from_opcode(opcode_tokens);
 
     ss >> std::dec >> address_mode;
-    std::vector<uint64_t> addrs = decode(address_mode, ss, mask_bits); //TODO: JUST MAKE SURE THIS GETS IMPORTED
+    std::vector<uint64_t> addrs = decode(address_mode, ss, mask_bits);
     std::memcpy(memadd_info->addrs, addrs.data(), WARP_SIZE * sizeof(uint64_t));
   }
 
