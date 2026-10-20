@@ -403,8 +403,9 @@ To list, download, verify and extract them into `./hw_run/traces/<GPU>/<workload
 ./get-accel-sim-traces.py -a H200/inference_bert.sh/32_256     # one argument set
 ./get-accel-sim-traces.py -a H200/inference_sdxl.sh,H200/all   # GPU[/workload[/args]], 'all' at any level
 ```
-Each set also carries the matching Nsight Compute CSVs under `ncu/`.
-Pass `-T ./hw_run/traces/<GPU>` to `run_simulations.py`.
+Each set also carries the matching Nsight Compute CSV, `ncu_stats.csv`, next to its `traces/`.
+Pass `-T ./hw_run/traces/<GPU>` to `run_simulations.py` and `-H ./hw_run/traces/<GPU>` to `plot-correlation.py`.
+Maintainers publish new trace sets with `./util/tracer_nvbit/publish-trace-release.py`.
 Downloading from a private repository needs `GITHUB_TOKEN` or a `gh auth login` session.
 
 ### SASS Frontend and Simulation Engine
