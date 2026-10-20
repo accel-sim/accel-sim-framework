@@ -18,7 +18,7 @@
 #   GITHUB_RUN_NUMBER       - CI run number
 #   GITHUB_RUN_ATTEMPT      - CI run attempt
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"

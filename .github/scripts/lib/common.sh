@@ -15,7 +15,7 @@
 #   GITHUB_RUN_NUMBER       - CI run number (for unique job names)
 #   GITHUB_RUN_ATTEMPT      - CI run attempt number
 
-set -e
+set -eo pipefail
 
 # Get script directory for relative path resolution
 COMMON_SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -100,10 +100,15 @@ clone_gpgpusim() {
         return 1
     fi
 
-    # Derive gpgpu-sim repo name from accel-sim-framework
-    local framework_repo gpgpusim_repo
-    if [ -n "$GITHUB_REPOSITORY" ]; then
-        framework_repo=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
+    # Derive gpgpu-sim repo name from the accel-sim-framework repo the code
+    # comes from: the PR's head repo (a fork such as accel-sim-framework-public
+    # pairs with gpgpu-sim_distribution-public), else this repo
+    local framework_repo gpgpusim_repo source_repo="$GITHUB_REPOSITORY"
+    if [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ -n "$PR_HEAD_REPO_FULL_NAME" ]; then
+        source_repo="$PR_HEAD_REPO_FULL_NAME"
+    fi
+    if [ -n "$source_repo" ]; then
+        framework_repo=$(echo "$source_repo" | cut -d'/' -f2)
         gpgpusim_repo=$(echo "$framework_repo" | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
     else
         gpgpusim_repo="gpgpu-sim_distribution"
@@ -138,7 +143,7 @@ clone_gpgpusim() {
             else
                 # Branch not found in fork, try fork's default branch
                 local default_branch
-                default_branch=$(git -C "$dest_dir" remote show fork-owner 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}')
+                default_branch=$(git -C "$dest_dir" remote show fork-owner 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}' || true)
                 if [ -n "$default_branch" ]; then
                     log_info "Branch '$BRANCH_NAME' not found, using default branch '$default_branch' from '$fork_owner/$gpgpusim_repo'"
                     git -C "$dest_dir" checkout -B "$default_branch" "fork-owner/$default_branch"
@@ -274,7 +279,8 @@ merge_stats() {
     output_csv=$(basename "$archive_csv")
 
     ./util/plotting/merge-stats.py -R -c "./statistics-archive/ubench/$archive_csv,$local_csv" \
-        | tee "$output_csv" && mv "$output_csv" "./statistics-archive/ubench/"
+        | tee "$output_csv"
+    mv "$output_csv" "./statistics-archive/ubench/"
 }
 
 # Collect sim stats for one GPU, fold them into the archive's cumulative history,
@@ -378,9 +384,28 @@ vpn_connect() {
         fi
     done
 
+    # A listener already there would pass the check below as ours. Only one
+    # tracer runs at a time (hopper-weekly.sh), so a tunnel of this user to
+    # VPN_HOST is one a killed run left: stop it; anything else is an error.
+    if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
+        log_info "SOCKS port $SOCKS_PORT in use: stopping a leftover VPN to $VPN_HOST"
+        local pid
+        for pid in $(pgrep -u "$(id -un)" -x openconnect || true); do
+            if tr '\0' ' ' < "/proc/$pid/cmdline" 2>/dev/null | grep -qF "$VPN_HOST"; then
+                kill "$pid" 2>/dev/null || true
+            fi
+        done
+        sleep 3
+        if nc -z 127.0.0.1 "$SOCKS_PORT" 2>/dev/null; then
+            log_error "SOCKS port $SOCKS_PORT is in use by something else"
+            return 1
+        fi
+    fi
+
     log_info "Starting VPN connection to $VPN_HOST..."
 
     cat "$HOME/sk_password" | "$OPENCONNECT_PATH" \
+        --pid-file="$(vpn_pid_file)" \
         --script-tun \
         --script "$OCPROXY_PATH -L 2222:unix-host:22 -D $SOCKS_PORT" \
         --protocol=gp \
@@ -406,12 +431,25 @@ vpn_connect() {
     done
 }
 
-# Cleanup VPN connection
-# Required env vars: VPN_HOST
+# Where vpn_connect leaves openconnect's PID for vpn_cleanup (a later step
+# of the same job)
+vpn_pid_file() {
+    echo "${RUNNER_TEMP:-${TMPDIR:-/tmp}}/openconnect-${GITHUB_RUN_ID:-local}.pid"
+}
+
+# Cleanup the VPN connection this job started, and no other
 vpn_cleanup() {
     log_section "Cleaning up VPN connection"
-    pkill -f "openconnect.*$VPN_HOST" || true
-    log_info "VPN cleanup complete"
+    local pid_file pid
+    pid_file=$(vpn_pid_file)
+    pid=$(cat "$pid_file" 2>/dev/null || true)
+    if [ -n "$pid" ]; then
+        kill "$pid" 2>/dev/null || true
+        rm -f "$pid_file"
+        log_info "VPN cleanup complete (openconnect pid $pid)"
+    else
+        log_info "No VPN started by this job ($pid_file missing)"
+    fi
 }
 
 # Sync files to/from remote via SOCKS proxy

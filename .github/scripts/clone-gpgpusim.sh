@@ -112,9 +112,15 @@ if [ -z "$FORK_OWNER" ]; then
     fi
 fi
 
-# Derive gpgpu-sim repo name from accel-sim-framework
-if [ -n "$GITHUB_REPOSITORY" ]; then
-    FRAMEWORK_REPO=$(echo "$GITHUB_REPOSITORY" | cut -d'/' -f2)
+# Derive gpgpu-sim repo name from the accel-sim-framework repo the code comes
+# from: the PR's head repo (a fork such as accel-sim-framework-public pairs with
+# gpgpu-sim_distribution-public), else this repo
+SOURCE_REPO="$GITHUB_REPOSITORY"
+if [ "$GITHUB_EVENT_NAME" = "pull_request" ] && [ -n "$PR_HEAD_REPO_FULL_NAME" ]; then
+    SOURCE_REPO="$PR_HEAD_REPO_FULL_NAME"
+fi
+if [ -n "$SOURCE_REPO" ]; then
+    FRAMEWORK_REPO=$(echo "$SOURCE_REPO" | cut -d'/' -f2)
     GPGPUSIM_REPO=$(echo "$FRAMEWORK_REPO" | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
 else
     GPGPUSIM_REPO="gpgpu-sim_distribution"

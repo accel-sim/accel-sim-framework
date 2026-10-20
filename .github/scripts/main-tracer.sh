@@ -19,7 +19,7 @@
 #   GITHUB_EVENT_NAME       - Event type (push, pull_request)
 #   PR_HEAD_REPO_FULL_NAME  - For PRs: head repo in owner/repo format
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
@@ -88,8 +88,9 @@ stage_trace() {
     source ./gpu-app-collection/src/setup_environment
 
     rm -rf ./hw_run/
+    # nvbit-trace.sh also removes NVBit's /tmp files on the GPU node
     srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- \
-        ./util/tracer_nvbit/run_hw_trace.py -B "$BENCHMARKS" -D "$GPU_DEVICE"
+        "$SCRIPT_DIR/nvbit-trace.sh" -B "$BENCHMARKS" -D "$GPU_DEVICE"
 
     log_info "Traces generated successfully"
 }
