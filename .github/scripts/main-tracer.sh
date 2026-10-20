@@ -117,7 +117,7 @@ stage_test() {
         -T ./hw_run/traces/ \
         -N "$JOB_NAME"
 
-    monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv"
+    monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv" -v
 }
 
 # Run all stages
