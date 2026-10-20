@@ -46,6 +46,49 @@ import common
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
 
+# Wrapper of one job array: task i runs the job script of line i+1 of {tasks}
+# ("<kernel dir>\t<job script>\t<job name>"), with its usual output names
+ARRAY_WRAPPER = """#! /bin/bash
+{directives}
+#SBATCH -J {name}
+#SBATCH --open-mode=append
+#SBATCH --output={log}
+#SBATCH --error={log}
+set -eo pipefail
+export ACCELSIM_JOB_ID="${{SLURM_ARRAY_JOB_ID}}_${{SLURM_ARRAY_TASK_ID}}"
+IFS=$'\\t' read -r dir sim name < <(sed -n "$((SLURM_ARRAY_TASK_ID + 1))p" {tasks})
+cd "$dir"
+exec bash "$sim" > "/tmp/$name.o$ACCELSIM_JOB_ID" 2> "/tmp/$name.e$ACCELSIM_JOB_ID"
+"""
+
+
+def sbatch_directives(script):
+    """The #SBATCH lines of a job script, without its name and output files."""
+    keep = []
+    for line in open(script):
+        if line.startswith("#SBATCH") and not re.match(r"#SBATCH\s+(-J|--output|--error)\b", line):
+            keep.append(line.rstrip("\n"))
+    return "\n".join(keep)
+
+
+def sbatch_value(script, flag):
+    """The value of #SBATCH <flag> in a job script; it must be there."""
+    for line in open(script):
+        m = re.match(r"#SBATCH\s+" + re.escape(flag) + r"\s+(\S+)", line)
+        if m:
+            return m.group(1)
+    exit("{0} has no #SBATCH {1}".format(script, flag))
+
+
+def slurm_max_array_size():
+    """Tasks per job array: the cluster's MaxArraySize (task ids 0..MaxArraySize-1)."""
+    out = subprocess.check_output(["scontrol", "show", "config"]).decode()
+    m = re.search(r"^MaxArraySize\s*=\s*(\d+)", out, re.M)
+    if m is None:
+        exit("scontrol show config has no MaxArraySize")
+    return int(m.group(1))
+
+
 def parse_kernelslist(kernelslist_path):
     """Parse kernelslist.g and return list of kernel trace filenames.
 
@@ -148,6 +191,7 @@ class ConfigurationSpec:
                     benchmark_trace_dir = self.find_benchmark_trace_dir(appargs_run_subdir)
                     kernelslist_path = os.path.join(benchmark_trace_dir, "kernelslist.g")
                     kernels = parse_kernelslist(kernelslist_path)
+                    array_tasks = []
 
                     for kernel_filename in kernels:
                         # Extract kernel name (e.g., "kernel-1" from "kernel-1-ctx_xxx.traceg.xz")
@@ -176,11 +220,15 @@ class ConfigurationSpec:
                                 kernel_name=kernel_name,
                                 profile_mode=profile_mode,
                             )
-                            # Submit the job
-                            self._submit_job(
-                                kernel_run_dir, benchmark, args, build_handle,
-                                kernel_name=kernel_name, sim_template=sim_tmpl
-                            )
+                            if options.array:
+                                array_tasks.append((kernel_run_dir, sim_tmpl, kernel_name))
+                            else:
+                                self._submit_job(
+                                    kernel_run_dir, benchmark, args, build_handle,
+                                    kernel_name=kernel_name, sim_template=sim_tmpl
+                                )
+                    if array_tasks:
+                        self._submit_arrays(this_run_dir, benchmark, args, build_handle, array_tasks)
                 else:
                     # Standard mode: run all kernels together
                     self.setup_run_directory(
@@ -244,36 +292,73 @@ class ConfigurationSpec:
         os.chdir(saved_dir)
 
         if len(torque_out) > 0:
-            # Dump the benchmark description to the logfile
-            if not os.path.exists(this_directory + "logfiles/"):
-                try:
-                    os.makedirs(this_directory + "logfiles/")
-                except:
-                    pass
-            now_time = datetime.datetime.now()
-            day_string = now_time.strftime("%y.%m.%d-%A")
-            time_string = now_time.strftime("%H:%M:%S")
-            log_name = "sim_log.{0}".format(options.launch_name)
-            logfile = open(
-                this_directory + "logfiles/" + log_name + "." + day_string + ".txt",
-                "a",
-            )
-            log_entry = self.benchmark_args_subdirs[args]
-            if kernel_name:
-                log_entry += "/" + kernel_name
-            print(
-                "%s %6s %-22s %-100s %-25s %s"
-                % (
-                    time_string,
-                    torque_out,
-                    benchmark,
-                    log_entry,
-                    self.run_subdir,
-                    build_handle,
-                ),
-                file=logfile,
-            )
-            logfile.close()
+            self._log_job(torque_out, benchmark, args, build_handle, kernel_name)
+
+    def _submit_arrays(self, run_dir, benchmark, args, build_handle, tasks):
+        """Submit (kernel dir, job script, kernel name) tasks as Slurm job arrays."""
+        if options.no_launch:
+            return
+        size = slurm_max_array_size()
+        app = benchmark + "-" + self.benchmark_args_subdirs[args]
+        for start in range(0, len(tasks), size):
+            chunk = tasks[start : start + size]
+            stem = os.path.join(run_dir, "per-kernel", "array-{0}".format(start // size))
+            with open(stem + ".tsv", "w") as f:
+                for kernel_dir, sim, _ in chunk:
+                    script = os.path.join(kernel_dir, sim)
+                    f.write("{0}\t{1}\t{2}\n".format(kernel_dir, sim, sbatch_value(script, "-J")))
+            with open(stem + ".sh", "w") as f:
+                f.write(
+                    ARRAY_WRAPPER.format(
+                        directives=sbatch_directives(os.path.join(chunk[0][0], chunk[0][1])),
+                        name=app,
+                        log=stem + ".log",
+                        tasks=stem + ".tsv",
+                    )
+                )
+            cmd = ["sbatch", "--array=0-{0}".format(len(chunk) - 1)]
+            if os.getenv("ACCELSIM_SLURM_COMMENT"):
+                cmd.append("--comment=" + os.getenv("ACCELSIM_SLURM_COMMENT"))
+            out = subprocess.check_output(cmd + [stem + ".sh"]).decode()
+            m = re.search(r"Submitted batch job (\d+)", out)
+            if m is None:
+                exit("Unexpected sbatch output for {0}: {1}".format(stem + ".sh", out))
+            for i, (_, _, kernel_name) in enumerate(chunk):
+                self._log_job("{0}_{1}".format(m.group(1), i), benchmark, args, build_handle, kernel_name)
+            print("Array {0} queued ({1} kernels of {2} {3})".format(m.group(1), len(chunk), app, self.run_subdir))
+
+    def _log_job(self, torque_out, benchmark, args, build_handle, kernel_name=None):
+        """Append one job (or job array task) to this launch's logfile."""
+        # Dump the benchmark description to the logfile
+        if not os.path.exists(this_directory + "logfiles/"):
+            try:
+                os.makedirs(this_directory + "logfiles/")
+            except:
+                pass
+        now_time = datetime.datetime.now()
+        day_string = now_time.strftime("%y.%m.%d-%A")
+        time_string = now_time.strftime("%H:%M:%S")
+        log_name = "sim_log.{0}".format(options.launch_name)
+        logfile = open(
+            this_directory + "logfiles/" + log_name + "." + day_string + ".txt",
+            "a",
+        )
+        log_entry = self.benchmark_args_subdirs[args]
+        if kernel_name:
+            log_entry += "/" + kernel_name
+        print(
+            "%s %6s %-22s %-100s %-25s %s"
+            % (
+                time_string,
+                torque_out,
+                benchmark,
+                log_entry,
+                self.run_subdir,
+                build_handle,
+            ),
+            file=logfile,
+        )
+        logfile.close()
 
     #########################################################################################
     # Internal utility methods
@@ -675,6 +760,9 @@ for config in configurations:
         cuda_version,
         options.simulator_dir,
     )
+
+if options.array and (not options.per_kernel or job_submit_call != "sbatch"):
+    exit("--array needs --per-kernel and the sbatch launcher (have {0})".format(job_submit_call))
 
 if "procman" in job_submit_call and not options.no_launch:
     if options.cores == None:

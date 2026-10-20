@@ -38,7 +38,7 @@ CONFIGS="QV100-PTX,A100-PTX,H200-PTX"
 BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark"
 
 # Job naming
-JOB_NAME="short-ptx-$(ci_job_name "")"
+JOB_NAME="short-ptx-$(ci_job_name)"
 
 #==============================================================================
 # STAGES
@@ -88,7 +88,7 @@ stage_simulate() {
         -C "$CONFIGS" \
         -N "$JOB_NAME"
 
-    monitor_simulations "$JOB_NAME" 12 300 "stats-per-app-ptx.csv"
+    monitor_simulations "$JOB_NAME" 12 300 "stats-per-app-ptx.csv" -v
 }
 
 # Run all stages

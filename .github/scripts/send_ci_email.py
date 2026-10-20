@@ -43,13 +43,15 @@ if EMAIL_TYPE == "success":
     # Build correlation plot links if REPORT_URL provided
     plots_html = ""
     if REPORT_URL:
-        # CORREL_GPUS: "prefix:Label" pairs of the *-combined_per_*.html the run wrote
-        gpus = (os.getenv("CORREL_GPUS") or "v100:V100 ampere-a100:A100 hopper-h100:H100").split()
+        # CORREL_GPUS: "<dir>:Label" pairs, the dirs under REPORT_URL holding combined_per_*.html
+        if not os.getenv("CORREL_GPUS"):
+            sys.exit("REPORT_URL is set but CORREL_GPUS is not")
+        gpus = os.getenv("CORREL_GPUS").split()
         links = ""
         for gpu in gpus:
             prefix, label = gpu.split(":")
             for kind, name in (("kernel", "Per Kernel"), ("app", "Per App")):
-                url = os.path.join(REPORT_URL, f"{prefix}-combined_per_{kind}.html")
+                url = os.path.join(REPORT_URL, prefix, f"combined_per_{kind}.html")
                 links += f'    <li><a href="{url}">{label} - {name}</a></li>\n'
         plots_html = f"""
   <h3>Correlation Plots</h3>

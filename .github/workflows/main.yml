@@ -21,10 +21,16 @@ env:
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
   # run_simulations.py and on-cluster.sh put this in their Slurm jobs' comment
   ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
+  # SASS suites: full (archived, correlated) on dev, smoke elsewhere (main-sass.sh)
+  CI_TIER: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'dev' && 'full' || 'smoke' }}
+  # the <GPU>-<config> dirs of statistics-archive the emails link to
+  CORREL_GPUS: "QV100-SASS:V100 H200-SASS:H200"
 
 # A new push cancels its branch's older run, except on the default branch.
+# dev: one group per commit, so every dev commit runs and is correlated (a
+# shared group would drop all but the newest pending run). Elsewhere: newest wins.
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.sha || github.ref }}
   cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 jobs:
@@ -74,14 +80,18 @@ jobs:
       - name: Build Accel-Sim
         run: ./.github/scripts/main-sass.sh build 2>&1 | tee build.log
 
+      # Fails when any simulation has no valid output (get_stats --strict)
       - name: Run SASS Simulations
         run: ./.github/scripts/main-sass.sh simulate
 
-      - name: Archive Stats
-        run: ./.github/scripts/main-sass.sh archive
-
-      - name: Correlate Ubench
+      - name: Correlate with Hardware
+        if: env.CI_TIER == 'full'
         run: ./.github/scripts/main-sass.sh correlate
+
+      # Only after every step above succeeded, so a failed run is never archived
+      - name: Archive Stats
+        if: env.CI_TIER == 'full' && github.event_name == 'push'
+        run: ./.github/scripts/main-sass.sh archive
 
       - name: AI analysis of the results
         if: success()
@@ -93,7 +103,7 @@ jobs:
           HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           # plot-correlation stdout per config; per-kernel CSVs of the last config
-          CI_ANALYSIS_FILES: "*-ubench-correl.txt util/plotting/correl-html/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+          CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
         run: $AI/ci-analysis.sh
 
   PTX-Simulation:
@@ -184,17 +194,17 @@ jobs:
           echo "Tracer-Tool: OK"
           echo "SASS-Simulation-Docker: OK"
 
-          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
-          source ./env-setup/common/common_inc.sh
-          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$PR_HEAD_REPO_FULL_NAME/$BRANCH_NAME/ubench/"
-            # the prefixes main-sass.sh STAT_PREFIXES writes
-            export CORREL_GPUS="v100:V100 ampere-a100:A100 hopper-h200:H200"
+          # Email only for dev pushes (full suite + correlation); PRs get none
+          if [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
+            git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
+            source ./env-setup/common/common_inc.sh
+            export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$GITHUB_REPOSITORY/$BRANCH_NAME/ubench/"
             python3 .github/scripts/send_ci_email.py -t success
           fi
 
+  # PRs get no email; see CI-Success
   failures:
-    if: failure()
+    if: failure() && github.event_name == 'push' && github.ref_name == 'dev'
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       REPORT_URL: ""
@@ -206,11 +216,7 @@ jobs:
         run: |
           git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
           source ./env-setup/common/common_inc.sh
-          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            python3 .github/scripts/send_ci_email.py -t failure
-          elif [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
-            python3 .github/scripts/send_ci_email.py -t failure -u
-          fi
+          python3 .github/scripts/send_ci_email.py -t failure -u
 
   # Also on failure or timeout: a monitor that gives up leaves its sims queued
   cleanup-slurm:

@@ -1,20 +1,21 @@
 # This file is eval'd inside the plot-correlation.py file
 
-# This maps the named GPGPU-Sim config to the card name reported in the nvprof file.
+# This maps the named GPGPU-Sim config to the exact card names (device__attribute_display_name
+#   or the nvprof Device column, without a trailing " (N)") of its hardware data.
 #   Every time you want to correlate a new configuration, you need to map it here.
 config_maps = {
-    "TITANX": set("TITAN X (Pascal)"),
-    "P100_HBM": set("Tesla P100"),
-    "GTX480": set("GeForce GTX 480"),
-    "GTX1080Ti": set("GeForce GTX 1080 Ti"),
-    "TITANK": set("GeForce GTX TITAN"),
-    "QV100": set(["TITAN V", "Tesla V100-SXM2-32GB"]),
-    "GV100": set("Quadro GV100"),
-    "RTX2060": set("GeForce RTX 2060"),
-    "RTX3070": set("GeForce RTX 3070"),
-    "A100": set("NVIDIA A100 80GB"),
-    "H100" : set("NVIDIA H100 80GB HBM3"),
-    "H200": set("NVIDIA H200 80GB HBM3"),
+    "TITANX": {"TITAN X (Pascal)"},
+    "P100_HBM": {"Tesla P100"},
+    "GTX480": {"GeForce GTX 480"},
+    "GTX1080Ti": {"GeForce GTX 1080 Ti"},
+    "TITANK": {"GeForce GTX TITAN"},
+    "QV100": {"TITAN V", "Tesla V100-SXM2-32GB"},
+    "GV100": {"Quadro GV100"},
+    "RTX2060": {"GeForce RTX 2060"},
+    "RTX3070": {"GeForce RTX 3070"},
+    "A100": {"NVIDIA A100 80GB PCIe"},
+    "H100": {"NVIDIA H100 80GB HBM3"},
+    "H200": {"NVIDIA H200"},
 }
 
 

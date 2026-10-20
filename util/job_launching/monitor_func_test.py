@@ -76,9 +76,27 @@ def print_statsfile(options, this_directory):
     get_stats_out_file.close()
 
 
+def only_oom_failures(job_ids):
+    """--allow-oom: True if Slurm shows every failed job was killed for memory
+    (common.oom_killed); one sacct call for the failed jobs only."""
+    outcomes = common.slurm_outcomes(job_ids)
+    if outcomes is None:
+        print("--allow-oom: no sacct (not Slurm); failures stand")
+        return False
+    oom = [j for j in job_ids if common.oom_killed(outcomes.get(j))]
+    other = [j for j in job_ids if j not in oom]
+    if oom:
+        print("OOM-killed, not a failure ({0}): {1}".format(len(oom), " ".join(oom)))
+    if other:
+        print("Failed, not OOM ({0}): {1}".format(len(other), " ".join(other)))
+    return not other
+
+
 def handle_exit(jobstatus_out_filename):
     os.remove(jobstatus_out_filename)
-    if num_error == 0 or options.ignore_failures:
+    if num_error == 0 or options.ignore_failures or (
+        options.allow_oom and only_oom_failures(failed_job_ids)
+    ):
         if options.verbose and options.statsfile:
             print_statsfile(options, this_directory)
         exit(0)
@@ -162,6 +180,13 @@ parser.add_option(
     help="Kill all the jobs still running if the monitor times out.",
 )
 parser.add_option(
+    "--allow-oom",
+    dest="allow_oom",
+    action="store_true",
+    help="With Slurm: at the end, if every failed job was killed for memory "
+    "(common.oom_killed on sacct's state, exit code and MaxRSS), exit 0",
+)
+parser.add_option(
     "-j",
     "--job_manager",
     dest="job_manager",
@@ -233,6 +258,7 @@ while True:
         num_waiting = 0
         num_error = 0
         num_no_err = 0
+        failed_job_ids = []
         for line in jobstatus_out_file.readlines():
             if options.verbose:
                 print(line.strip())
@@ -255,6 +281,7 @@ while True:
                         num_waiting += 1
                     else:
                         num_error += 1
+                        failed_job_ids.append(tokens[0].strip())
 
         jobstatus_out_file.close()
 

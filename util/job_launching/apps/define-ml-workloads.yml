@@ -1,0 +1,162 @@
+# Llama 3.1 8B with selective layer tracing via torch_hook.
+# Traces only layers 0, 15, 31 (attention + MLP). prompt_tokens + gen_tokens is
+# a power of two so the prefill/decode totals line up with clean GEMM shapes.
+llama_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_llama_3.1_8b.sh:
+            - args: 256 255 1
+              accel-sim-mem: 90G
+            - args: 1024 1023 1
+              accel-sim-mem: 90G
+
+# Llama 3.1 8B at 2048 total tokens (2046 prefill + 1 decode step).
+llama_inference_2048:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_llama_3.1_8b.sh:
+            # H200_ml_traces hosts the 2048 2046 2 capture (not 2050 2047 2)
+            - args: 2048 2046 2
+              accel-sim-mem: 90G
+
+# ResNet-50 with selective layer tracing via torch_hook
+# Traces layers 1.0, 1.2 (early), 3.0, 3.5 (middle), 4.0, 4.2 (late)
+resnet_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_resnet50.sh:
+            # batch_size=32, image_size=224 (ImageNet)
+            - args: 32 224
+              accel-sim-mem: 20G
+            # batch_size=128, image_size=224 (larger batch)
+            - args: 128 224
+              accel-sim-mem: 30G
+
+# BERT-base with selective layer tracing via torch_hook
+# Traces encoder layers 0, 5, 11 (attention + output sublayers)
+# Note: BERT is encoder-only, single forward pass (no prefill/decode)
+bert_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_bert.sh:
+            # batch_size=32, seq_len=256
+            - args: 32 256
+              accel-sim-mem: 20G
+            # batch_size=32, seq_len=512 (BERT max)
+            - args: 32 512
+              accel-sim-mem: 20G
+
+# DLRMv2 with torchrec (MLPerf config)
+# Traces dense_arch, sparse_arch, inter_arch, over_arch
+dlrmv2_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_dlrmv2.sh:
+            # batch_size=256
+            - args: 256
+              accel-sim-mem: 30G
+
+# 3D-UNet (MONAI) for medical image segmentation
+# Traces encoder, bottleneck, and decoder blocks
+unet3d_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_unet3d.sh:
+            # batch_size=1, input_size=128
+            - args: 1 128
+              accel-sim-mem: 30G
+
+# RetinaNet (ResNet50-FPN v2) for object detection
+# Traces backbone, FPN, and detection heads
+retinanet_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_retinanet.sh:
+            # batch_size=4, image_size=800
+            - args: 4 800
+              accel-sim-mem: 30G
+
+# Stable Diffusion XL - diffusion model with UNet + cross-attention
+# Traces UNet down/mid/up blocks and time embedding
+sdxl_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_sdxl.sh:
+            # num_steps=1, image_size=1024 (1 step sufficient - UNet is identical each step)
+            - args: 1 1024
+              accel-sim-mem: 60G
+
+# Mixtral 8x7B - Mixture of Experts LLM
+# Traces self_attn + block_sparse_moe (MoE routing + expert MLPs)
+mixtral_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_mixtral_8x7b.sh:
+            - args: 256 255 1
+              accel-sim-mem: 90G
+            - args: 1024 1023 1
+              accel-sim-mem: 90G
+
+# DeepSeek R1 (Distill-Llama-8B) - reasoning model
+# Traces self_attn + mlp layers
+deepseek_r1_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_deepseek_r1.sh:
+            - args: 256 255 1
+              accel-sim-mem: 90G
+            - args: 1024 1023 1
+              accel-sim-mem: 90G
+
+# Whisper Large V3 - speech recognition (encoder-decoder)
+# Traces encoder and decoder layers
+whisper_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_whisper_v3.sh:
+            # audio_len=30 (seconds)
+            - args: 30
+              accel-sim-mem: 30G
+
+# Qwen2.5-7B - different hidden dims produce different nvjet tile sizes
+# hidden_size=3584, intermediate_size=18944, 28 layers
+qwen25_inference:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_qwen25_7b.sh:
+            - args: 256 255 1
+              accel-sim-mem: 90G
+            - args: 1024 1023 1
+              accel-sim-mem: 90G
+
+qwen25_inference_2048:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - inference_qwen25_7b.sh:
+            # H200_ml_traces hosts the 2048 2046 2 capture (not 2050 2047 2)
+            - args: 2048 2046 2
+              accel-sim-mem: 90G
+
+# Llama 3.1 8B Training (fine-tuning) - captures forward + backward pass
+# Uses HuggingFace transformers (not vLLM)
+llama_training:
+    exec_dir: "$ACCELSIM_ROOT/util/workloads"
+    data_dirs: ""
+    execs:
+        - training_llama_3.1_8b.sh:
+            # batch_size=1, seq_len=256, num_steps=1
+            - args: 1 256 1
+              accel-sim-mem: 90G

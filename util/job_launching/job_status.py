@@ -11,6 +11,7 @@ import math
 import json
 from procman import ProcMan, Job
 import pickle
+from time import sleep
 
 
 def get_procman_status(jobId, node_details):
@@ -119,69 +120,61 @@ def get_slurm_memsize(state, jobId):
         return "UNKOWN"
 
 
+# One bulk squeue listing per invocation (jobId -> state, nodes, time): one
+# squeue per job per poll does not scale to --per-kernel launches.
+_squeue_jobs = None
+
+
+def _load_squeue_jobs():
+    out = subprocess.check_output(
+        # -r: one line per job array task (A_i), as run_simulations.py --array logs them
+        ["squeue", "-h", "-r", "-t", "all", "-o", "%i,%t,%N,%M"]
+    ).decode()
+    jobs = {}
+    for line in out.splitlines():
+        parts = line.strip().split(",")
+        if len(parts) >= 4:
+            # %N (node list) can itself contain commas; state is 2nd, time is last
+            jobs[parts[0]] = (parts[1], ",".join(parts[2:-1]), parts[-1])
+    return jobs
+
+
+def _squeue_state_to_status(state):
+    if state == "R" or state == "CG":
+        return "RUNNING"
+    elif state == "CD":
+        return "COMPLETE_NO_OTHER_INFO"
+    elif state == "PD":
+        return "WAITING_TO_RUN"
+    return state
+
+
 # uses squeue to determine job status
 def get_squeue_status(jobId, node_details):
+    global _squeue_jobs
     job_status = {
         "state": "UNKNOWN",
         "exec_host": "UNKNOWN",
         "running_time": "UNKNOWN",
         "mem_used": "UNKNOWN",
     }
-    trace_out_filename = os.path.join(
-        this_directory, "trace_out-{0}.txt".format(os.getpid())
-    )
-    trace_out_file = open(trace_out_filename, "w+")
-    if (
-        subprocess.call(
-            ["squeue", "-o", "%t,%N,%M", "-j", jobId],
-            stdout=trace_out_file,
-            stderr=trace_out_file,
-        )
-        < 0
-    ):
-        exit("Error Launching squeue")
-    else:
-        # Parse the squeue output
-        trace_out_file.seek(0)
-        trace_out = trace_out_file.readlines()
-        if len(trace_out) > 1:
-            trace_out = trace_out[1]
-            state_match = re.search("(.*),(.*),(.*)", trace_out)
-            if state_match != None:
-                if state_match.group(1) == "R" or state_match.group(1) == "CG":
-                    job_status["state"] = "RUNNING"
-                elif state_match.group(1) == "CD":
-                    job_status["state"] = "COMPLETE_NO_OTHER_INFO"
-                elif state_match.group(1) == "PD":
-                    job_status["state"] = "WAITING_TO_RUN"
-                else:
-                    job_status["state"] = state_match.group(1)
-
-                job_status["mem_used"] = get_slurm_memsize(job_status["state"], jobId)
-                job_status["exec_host"] = state_match.group(2)
-                job_status["running_time"] = state_match.group(3)
-                node_details[jobId] = (
-                    job_status["exec_host"],
-                    job_status["mem_used"],
-                    job_status["running_time"],
-                )
-        else:
-            # no squeue output
-            out, err = Popen(
-                ["sacct", "--format", "Elapsed", "-j", jobId], stdout=PIPE
-            ).communicate()
-            outlines = str(out).split("\n")
-            if len(outlines) > 2:
-                job_status["running_time"] = outlines[2].strip()
-            if jobId in node_details:
-                (
-                    job_status["exec_host"],
-                    job_status["mem_used"],
-                    timeStamp,
-                ) = node_details[jobId]
-
-    trace_out_file.close()
-    os.remove(trace_out_filename)
+    if _squeue_jobs is None:
+        _squeue_jobs = _load_squeue_jobs()
+    entry = _squeue_jobs.get(jobId)
+    if entry is not None:
+        state, nodes, runtime = entry
+        job_status["state"] = _squeue_state_to_status(state)
+        job_status["mem_used"] = get_slurm_memsize(job_status["state"], jobId)
+        job_status["exec_host"] = nodes
+        job_status["running_time"] = runtime
+        node_details[jobId] = (nodes, job_status["mem_used"], runtime)
+    elif jobId in node_details:
+        # done: report what the last poll saw
+        (
+            job_status["exec_host"],
+            job_status["mem_used"],
+            job_status["running_time"],
+        ) = node_details[jobId]
     return job_status
 
 
@@ -378,7 +371,7 @@ stats_to_pull = {
 }
 
 ROW_STRING = (
-    "{jobId:<10.10}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t"
+    "{jobId:<16.16}\t{exec_node:<30.30}\t{app:<20.20}\t{args:<20.20}\t"
     + "{version:20.20}\t{config:10.10}\t{running_time:15}\t{mem_used:6}\t{status:30.30}\t"
     + "{stat:50}\t"
 )
@@ -432,10 +425,31 @@ for logfile in parsed_logfiles:
                 )
                 continue
 
+            # Jobs launched with run_simulations.py --per-kernel are logged with
+            # args "<argfolder>/<kernel-N>", run in
+            # <app>/<argfolder>/<config>/per-kernel/<kernel-N>/ and have the
+            # kernel name appended to their job/output file name. (Argument
+            # folder names never contain "/", so this is unambiguous.)
+            kernel_name = None
+            base_args = args
+            pk_match = re.match(r"(.*)/(kernel-[^/]+)$", args)
+            if pk_match:
+                base_args, kernel_name = pk_match.group(1), pk_match.group(2)
+
             # now get the right logfile
-            output_dir = os.path.join(
-                options.run_dir, app.replace("/", "_"), args, config
-            )
+            if kernel_name:
+                output_dir = os.path.join(
+                    options.run_dir,
+                    app.replace("/", "_"),
+                    base_args,
+                    config,
+                    "per-kernel",
+                    kernel_name,
+                )
+            else:
+                output_dir = os.path.join(
+                    options.run_dir, app.replace("/", "_"), args, config
+                )
             if not os.path.isdir(output_dir):
                 print("WARNING the outputdir " + output_dir + " does not exist")
                 continue
@@ -444,7 +458,11 @@ for logfile in parsed_logfiles:
             torquefile_base = re.sub(
                 r".*\.([^\s]*-commit-.*-commit-.*)", r"\1", jobname
             )
-            common_name = os.path.basename(app) + "-" + args + "." + torquefile_base
+            common_name = (
+                os.path.basename(app) + "-" + base_args + "." + torquefile_base
+            )
+            if kernel_name:
+                common_name += "." + kernel_name
             common_name = common_name[:200]  # truncate excessively long names
             errfile = os.path.join(output_dir, common_name + "." + "e" + jobId)
             outfile = os.path.join(output_dir, common_name + "." + "o" + jobId)
@@ -555,12 +573,12 @@ for logfile in parsed_logfiles:
                 and "COMPLETE_NO_OTHER_INFO" not in status_string
             ):
 
-                # We need ro spin here to make sure the output files exist...
-                # Sometimes torque can tell us the job is complete, but the file is not actually on the file system yet.
-                while not os.path.exists(outfile):
-                    pass
-                while not os.path.exists(errfile):
-                    pass
+                # The scheduler can report a job done before its output files
+                # show up; a killed job may never have them
+                for _ in range(5):
+                    if os.path.exists(outfile) and os.path.exists(errfile):
+                        break
+                    sleep(1)
 
                 failed_jobs_summary += job_summary + "\n"
                 failed_job_text += (
@@ -574,7 +592,7 @@ for logfile in parsed_logfiles:
                 )
                 failed_job_text += "------------------\n"
                 count = 0
-                for line in reversed(open(outfile).readlines()):
+                for line in reversed(open(outfile).readlines() if os.path.exists(outfile) else ["(missing)"]):
                     failed_job_text += line.rstrip() + "\n"
                     count += 1
                     if count == int(options.num_lines):
@@ -582,7 +600,7 @@ for logfile in parsed_logfiles:
                 failed_job_text += "------------------\n"
                 failed_job_text += "\nContents of " + errfile + "\n"
                 failed_job_text += "------------------\n"
-                failed_job_text += open(errfile).read() + "\n"
+                failed_job_text += (open(errfile).read() if os.path.exists(errfile) else "(missing)") + "\n"
                 failed_job_text += "------------------\n"
                 failed_job_text += (
                     "**********************************************************\n"

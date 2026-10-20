@@ -33,7 +33,7 @@ CONFIG="QV100-SASS"
 BENCHMARKS="rodinia_2.0-ft"
 TRACES_URL="https://engineering.purdue.edu/tgrogers/accel-sim/traces/tesla-v100/latest/rodinia_2.0-ft.tgz"
 TRACE_PATH="./hw_run/rodinia_2.0-ft/9.1"
-JOB_NAME="docker-short-$(ci_job_name "")"
+JOB_NAME="docker-short-$(ci_job_name)"
 
 #==============================================================================
 # STAGES
@@ -64,7 +64,7 @@ stage_in_image() {
     build_accelsim false "$BUILD_JOBS"
     source ./gpu-simulator/setup_environment.sh release
     run_simulations "$BENCHMARKS" "$CONFIG" "$TRACE_PATH" "$JOB_NAME"
-    monitor_simulations "$JOB_NAME" 4 60 "stats-per-app-docker.csv"
+    monitor_simulations "$JOB_NAME" 4 60 "stats-per-app-docker.csv" -v
 }
 
 #==============================================================================
