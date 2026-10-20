@@ -1,18 +1,16 @@
 #pragma once
 
-#include <vector>
 #include <bitset>
+#include <cassert>
 #include <cstdint>
 #include <sstream>
 #include <stdexcept>
-#include <cassert>
+#include <vector>
 
 constexpr int WARP_SIZE = 32;
 
-inline std::vector<uint64_t> decode_list_all(
-  std::stringstream &ss,
-  std::bitset<WARP_SIZE> mask_bits
-) {
+inline std::vector<uint64_t> decode_list_all(std::stringstream &ss,
+                                             std::bitset<WARP_SIZE> mask_bits) {
   std::vector<uint64_t> addrs;
   uint64_t addr = 0;
 
@@ -29,10 +27,8 @@ inline std::vector<uint64_t> decode_list_all(
   return addrs;
 }
 
-inline std::vector<uint64_t> decode_base_stride(
-  std::stringstream &ss,
-  std::bitset<WARP_SIZE> mask_bits
-) {
+inline std::vector<uint64_t>
+decode_base_stride(std::stringstream &ss, std::bitset<WARP_SIZE> mask_bits) {
   std::vector<uint64_t> addrs;
   uint64_t addr = 0;
 
@@ -61,10 +57,8 @@ inline std::vector<uint64_t> decode_base_stride(
   return addrs;
 }
 
-inline std::vector<uint64_t> decode_base_delta(
-  std::stringstream &ss,
-  std::bitset<WARP_SIZE> mask_bits
-) {
+inline std::vector<uint64_t>
+decode_base_delta(std::stringstream &ss, std::bitset<WARP_SIZE> mask_bits) {
   std::vector<uint64_t> addrs;
   uint64_t addr = 0;
   int64_t delta = 0;
@@ -89,14 +83,15 @@ inline std::vector<uint64_t> decode_base_delta(
   return addrs;
 }
 
-inline std::vector<uint64_t> decode(
-    unsigned address_mode,
-    std::stringstream &ss,
-    std::bitset<WARP_SIZE> mask_bits
-) {
+inline std::vector<uint64_t> decode(unsigned address_mode,
+                                    std::stringstream &ss,
+                                    std::bitset<WARP_SIZE> mask_bits) {
 
-    if(address_mode == 0) return decode_list_all(ss, mask_bits);
-    if(address_mode == 1) return decode_base_stride(ss, mask_bits);
-    if(address_mode == 2) return decode_base_delta(ss, mask_bits);
-    throw std::runtime_error("Unsupported address mode");
-  }
+  if (address_mode == 0)
+    return decode_list_all(ss, mask_bits);
+  if (address_mode == 1)
+    return decode_base_stride(ss, mask_bits);
+  if (address_mode == 2)
+    return decode_base_delta(ss, mask_bits);
+  throw std::runtime_error("Unsupported address mode");
+}

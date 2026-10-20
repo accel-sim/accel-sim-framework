@@ -22,8 +22,8 @@
 #include <zdict.h>
 #include <zstd.h>
 
-#include "../tracez_format.h"
 #include "../decode.h"
+#include "../tracez_format.h"
 
 using namespace std;
 
@@ -604,7 +604,8 @@ static mbar_inst_info classify_mbar_inst(const string &line,
     try {
       addrs = decode(addr_mode, ss, mask);
     } catch (const std::exception &e) {
-      fprintf(stderr, "Warning: %s (mode %u), classifying as OTHER\n", e.what(), addr_mode);
+      fprintf(stderr, "Warning: %s (mode %u), classifying as OTHER\n", e.what(),
+              addr_mode);
       return r;
     }
   }
