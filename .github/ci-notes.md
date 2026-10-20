@@ -13,7 +13,7 @@
   on a remote H200 over VPN) then SASS-H200 (`H200-SASS`: rodinia, ubench, TMA,
   cutlass_tma_small); Tracer-V100 (on tgrogers-dgx) then SASS-V100
   (`QV100-SASS`: rodinia, ubench); SASS-H200-ML (`H200-SASS` on the hosted
-  `H200_ml_traces`, never traced here). Each SASS job simulates,
+  ML traces of the static H200 depot, never traced here). Each SASS job simulates,
   correlates, archives.
 - gpgpu-sim is cloned at build time (`clone_gpgpusim` in `lib/common.sh`: the
   same-named branch of the code's gpgpu-sim fork if it has one, else upstream

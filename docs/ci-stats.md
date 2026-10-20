@@ -6,7 +6,7 @@
 |---|---|---|---|
 | pull_request (smoke) | QV100/H200: GPU_Microbenchmark_CI, rodinia_2.0-ft; H200: GPU_Microbenchmark_TMA_CI, cutlass_tma_CI, hopper_features_CI | no | no |
 | push to dev (full) | QV100/H200: GPU_Microbenchmark, rodinia_2.0-ft; H200: cutlass_tma_small, GPU_Microbenchmark_TMA | yes | yes |
-| weekly | H200 (this week's traces): rodinia, ubench, TMA, cutlass_tma_small; QV100 (this week's V100 traces): rodinia, ubench; H200 ML (hosted `H200_ml_traces`, 14 suites, 20 runs, ~9K kernels) | all | all |
+| weekly | H200 (this week's traces): rodinia, ubench, TMA, cutlass_tma_small; QV100 (this week's V100 traces): rodinia, ubench; H200 ML (static H200 depot, 14 suites, 20 runs, ~9K kernels) | all | all |
 
 Each SASS job: simulate (`run_simulations`), monitor, `verify_simulations`
 (`get_stats --strict` per config into `ci-stats/<config>/run.csv`),
@@ -68,17 +68,17 @@ CSVs can be diffed by hand when needed.
   `weekly.sh` stage per step. No A100, no static-depot regression runs.
 - `concurrency: weekly-<repo>`: the depots are per repo, not per run, so a
   second run's tracer would replace the traces the first run's sims read.
-- SASS-H200-ML replays `accel-sim/H200_ml_traces` (owned by another user;
-  its layout is `<workload>/<args>/{processed_traces,ncu/full,ncu/cycles}`).
-  `accelsim-layout.sh` in that depot adds, without touching its files,
-  `traces/device-0/12.8/<w>/<a>/traces` (links to `processed_traces`, with
-  its own `kernelslist.g`, which the depot's layout script may filter; the
-  hardware rows of a left-out kernel go too, so both sides pair one-to-one) and
-  `device-0/12.8/<w>/<a>/` with
-  `ncu.csv.nsight` (-> ncu_stats.csv) and `ncu.csv.gpc__cycles_elapsed.0`
-  (ncu_cycles.0.csv converted to the long one-metric format). Not in it:
-  `llama_inference_32k` (no traces), FA3 (`benchmark_hopper_forward_varlen_prefill.py`:
-  its 18 dirs hold only legacy ncu backups, no traces).
+- SASS-H200-ML replays the ML traces in the static depot
+  `accel-sim/H200/hw_run` (`traces/device-7/12.8/<w>/<a>/traces`, HW in
+  `device-7/12.8/<w>/<a>/{ncu.csv.nsight,ncu.csv.gpc__cycles_elapsed.0}`),
+  copied 2026-10-20 from `accel-sim/H200_ml_traces` (another user's depot:
+  `<w>/<a>/{processed_traces,ncu/full,ncu/cycles}`) by that depot's
+  `accelsim-layout.sh` layer: the kernels in `H200/ML-DROPPED-KERNELS.md` are
+  left out of `kernelslist.g` and their HW rows dropped too, so both sides pair
+  one-to-one; `ncu.csv.gpc__cycles_elapsed.0` is ncu_cycles.0.csv in the long
+  one-metric format. Not in it: `llama_inference_32k` (no traces), FA3
+  (`benchmark_hopper_forward_varlen_prefill.py`: no traces). Like every
+  static-depot trace, nothing updates them automatically.
 - ~9K per-kernel jobs: `run_simulations.py --per-kernel --array` submits each
   app's kernels as Slurm job arrays (<= MaxArraySize = 1001 tasks), one queue
   record while pending, instead of ~9K sbatch calls against the cluster-wide
