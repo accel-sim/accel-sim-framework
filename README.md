@@ -397,14 +397,14 @@ The detection tool lives in [`./util/tracer_nvbit/others/spinlock_tool/`](./util
 
 **Pre-traced applications.**
 Pre-collected traces are published as GitHub release assets, one tar per GPU / workload / argument set, split into parts under 2 GB with SHA-256 checksums in the release's `manifest.json`.
-To list, download, verify and extract them into `./hw_run/traces/<GPU>/<workload>/<args>/`:
+To list, download, verify and extract them under `./hw_run/<GPU>/` in the standard layout (`traces/device-0/<cuda>/<workload>/<args>/traces/` plus the Nsight Compute stats in `device-0/<cuda>/<workload>/<args>/`):
 ```bash
 ./get-accel-sim-traces.py -l                                   # list what is available
 ./get-accel-sim-traces.py -a H200/inference_bert.sh/32_256     # one argument set
 ./get-accel-sim-traces.py -a H200/inference_sdxl.sh,H200/all   # GPU[/workload[/args]], 'all' at any level
 ```
-Each set also carries the matching Nsight Compute CSV, `ncu_stats.csv`, next to its `traces/`.
-Pass `-T ./hw_run/traces/<GPU>` to `run_simulations.py` and `-H ./hw_run/traces/<GPU>` to `plot-correlation.py`.
+Pass `-T ./hw_run/<GPU>/traces/device-0/<cuda>` to `run_simulations.py` and `-H ./hw_run/<GPU>` to `plot-correlation.py`.
+The release's `README.md` lists every set and how to download one by hand.
 Maintainers publish new trace sets with `./util/tracer_nvbit/publish-trace-release.py`.
 Downloading from a private repository needs `GITHUB_TOKEN` or a `gh auth login` session.
 

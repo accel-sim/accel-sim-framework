@@ -17,11 +17,12 @@ and a reworked CI.
 - The first set is the **H200 ML suite**: 20 argument sets of BERT, ResNet-50, DLRMv2,
   3D U-Net, RetinaNet, Whisper, SDXL, Llama 3.1 8B (inference and training), Qwen 2.5 7B,
   DeepSeek R1 and Mixtral 8x7B, traced with NVBit 1.8 as `.tracez`. Each argument set comes
-  with its Nsight Compute CSV (`ncu_stats.csv`).
+  with its Nsight Compute stats, row-aligned with `kernelslist.g`. A few kernels that do not
+  complete in simulation are left out of both.
 - `get-accel-sim-traces.py` is rewritten. It lists the available sets (`-l`), downloads a
   selection (`-a H200/inference_bert.sh/32_256`, with `all` at any level), checks every
-  checksum, and extracts to `hw_run/traces/<GPU>/<workload>/<args>/`. That directory works
-  directly with `run_simulations.py -T` and `plot-correlation.py -H`. The FTP download path
+  checksum, and extracts under `hw_run/<GPU>/` in the standard layout, ready for
+  `run_simulations.py -T hw_run/<GPU>/traces/device-0/<cuda>` and `plot-correlation.py -H hw_run/<GPU>`. The FTP download path
   and the pre-2.0 trace listing are removed.
 - New `util/tracer_nvbit/publish-trace-release.py` packs and uploads trace sets for
   maintainers.

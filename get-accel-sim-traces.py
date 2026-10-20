@@ -4,8 +4,9 @@
 Each trace set (one GPU / workload / argument set) is a tar split into parts
 smaller than 2 GB. The release's manifest.json lists every part with its
 SHA-256; this script downloads the selected parts, verifies them, and extracts
-the tar under <download_dir>/traces/<GPU>/<workload>/<args>/: traces/ for
-run_simulations.py and ncu_stats.csv for plot-correlation.py.
+the tar under <download_dir> (default ./hw_run) in the standard Accel-Sim layout:
+  <GPU>/traces/device-0/<cuda>/<workload>/<args>/traces/   run_simulations.py -T
+  <GPU>/device-0/<cuda>/<workload>/<args>/ncu.csv.*         plot-correlation.py -H <GPU>
 Traces are published with util/tracer_nvbit/publish-trace-release.py.
 
 Private repositories need a token: set GITHUB_TOKEN, or log in with `gh`.
@@ -142,21 +143,30 @@ class Concat:
         return out
 
 
-def extract(entry, part_paths, traces_dir):
+def set_name(e):
+    return f"{e['gpu']}/{e['workload']}/{e['args']}"
+
+
+def extract(entry, part_paths, out_dir):
+    """Extract one set; every member must be a file or directory inside its trace or hw directory."""
+    allowed = [d for d in (entry["trace_dir"], entry["hw_dir"]) if d]
     stream = Concat(part_paths)
     with tarfile.open(fileobj=stream, mode="r|") as tar:
-        root = os.path.realpath(traces_dir)
+        root = os.path.realpath(out_dir)
         for m in tar:
-            target = os.path.realpath(os.path.join(traces_dir, m.name))
-            if not (target == root or target.startswith(root + os.sep)) or not (m.isfile() or m.isdir()):
+            target = os.path.realpath(os.path.join(out_dir, m.name))
+            if not target.startswith(root + os.sep) or not (m.isfile() or m.isdir()):
                 sys.exit(f"Refusing unexpected tar member {m.name}")
-            if not m.name.startswith(entry["path"] + "/"):
-                sys.exit(f"Tar member {m.name} is outside {entry['path']}")
-            tar.extract(m, traces_dir, **EXTRACT_KW)
+            if not any(m.name == d or m.name.startswith(d + "/") for d in allowed):
+                sys.exit(f"Tar member {m.name} is outside {allowed}")
+            tar.extract(m, out_dir, **EXTRACT_KW)
     while stream.read(CHUNK):  # hash trailing padding so the whole-tar checksum covers every byte
         pass
     if stream.h.hexdigest() != entry["sha256"]:
-        sys.exit(f"{entry['path']}: whole-tar SHA-256 mismatch after extraction")
+        sys.exit(f"{set_name(entry)}: whole-tar SHA-256 mismatch after extraction")
+    listed = [l for l in open(os.path.join(out_dir, entry["trace_dir"], "kernelslist.g")) if l.startswith("kernel-")]
+    if len(listed) != entry["kernels"]:
+        sys.exit(f"{set_name(entry)}: kernelslist.g has {len(listed)} kernels, manifest says {entry['kernels']}")
 
 
 def select(manifest, selection):
@@ -179,7 +189,7 @@ def main():
     p.add_argument("-a", "--apps", help="Comma separated GPU[/workload[/args]] list, 'all' allowed at any level. "
                    "Example: -a H200/inference_bert.sh/32_256,H200/inference_sdxl.sh")
     p.add_argument("-d", "--download_dir", default=os.path.join(this_directory, "hw_run"),
-                   help="Traces go to <download_dir>/traces/ (default: ./hw_run)")
+                   help="Extract into <download_dir>/<GPU>/ (default: ./hw_run)")
     p.add_argument("-l", "--list", action="store_true", help="List the available traces and exit")
     p.add_argument("--repo", default=DEFAULT_REPO, help=f"GitHub repository (default: {DEFAULT_REPO})")
     p.add_argument("--tag", default=DEFAULT_TAG, help=f"Release tag (default: {DEFAULT_TAG})")
@@ -189,7 +199,7 @@ def main():
     release = Release(o.repo, o.tag, get_token())
     with release.open_asset("manifest.json") as r:
         manifest = json.load(r)
-    assert manifest.get("format") == 1, f"unsupported manifest format {manifest.get('format')}"
+    assert manifest.get("format") == 2, f"unsupported manifest format {manifest.get('format')}, expected 2"
 
     print(f"Available traces in {o.repo} release {o.tag}:")
     for e in sorted(manifest["traces"], key=lambda e: (e["gpu"], e["workload"], e["args"])):
@@ -209,10 +219,10 @@ def main():
             if o.apps:
                 sys.exit(1)
 
-    traces_dir = os.path.join(os.path.abspath(o.download_dir), "traces")
-    parts_dir = os.path.join(os.path.abspath(o.download_dir), ".trace-parts")
+    out_dir = os.path.abspath(o.download_dir)
+    parts_dir = os.path.join(out_dir, ".trace-parts")
     os.makedirs(parts_dir, exist_ok=True)
-    print(f"\nDownloading {len(chosen)} trace sets, {human(sum(e['size'] for e in chosen))}, into {traces_dir}")
+    print(f"\nDownloading {len(chosen)} trace sets, {human(sum(e['size'] for e in chosen))}, into {out_dir}")
     for e in chosen:
         print(f"\n{e['gpu']}/{e['workload']}/{e['args']} ({len(e['parts'])} parts)")
         paths = []
@@ -220,18 +230,21 @@ def main():
             dest = os.path.join(parts_dir, part["name"])
             download_part(release, part, dest)
             paths.append(dest)
-        extract(e, paths, traces_dir)
+        extract(e, paths, out_dir)
         if not o.keep_parts:
             for path in paths:
                 os.remove(path)
-        print(f"  extracted to {os.path.join(traces_dir, e['path'])}")
+        print(f"  extracted to {os.path.join(out_dir, e['trace_dir'])}")
     if not o.keep_parts:
         try:
             os.rmdir(parts_dir)
         except OSError:
             pass
-    print(f"\nDone. Use -T {traces_dir}/<GPU> with util/job_launching/run_simulations.py"
-          f" and -H {traces_dir}/<GPU> with util/plotting/plot-correlation.py.")
+    print("\nDone.")
+    for t, h in sorted({(e["trace_root"], e["hw_root"]) for e in chosen}):
+        gpu_dir = os.path.join(out_dir, t.split("/")[0])
+        print(f"  run_simulations.py -T {os.path.join(out_dir, t)}")
+        print(f"  plot-correlation.py -H {gpu_dir}")
 
 
 if __name__ == "__main__":
