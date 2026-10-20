@@ -35,10 +35,6 @@ concurrency:
 
 jobs:
   check-format:
-    # Branches live in the purdue-aalp fork and are tested by their PR's run:
-    # a push run there would repeat it and race it on the stats branch. Every
-    # other job needs this one, so all of them skip with it.
-    if: github.event_name != 'push' || github.repository == 'accel-sim/accel-sim-framework'
     runs-on: tgrogers-raid
     steps:
       - uses: actions/checkout@v6
