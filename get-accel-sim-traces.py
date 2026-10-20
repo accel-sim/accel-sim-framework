@@ -7,7 +7,6 @@ SHA-256; this script downloads the selected parts, verifies them, and extracts
 the tar under <download_dir> (default ./hw_run) in the standard Accel-Sim layout:
   <GPU>/traces/device-0/<cuda>/<workload>/<args>/traces/   run_simulations.py -T
   <GPU>/device-0/<cuda>/<workload>/<args>/ncu.csv.*         plot-correlation.py -H <GPU>
-Traces are published with util/tracer_nvbit/publish-trace-release.py.
 
 Private repositories need a token: set GITHUB_TOKEN, or log in with `gh`.
 """

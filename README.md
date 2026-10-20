@@ -405,7 +405,6 @@ To list, download, verify and extract them under `./hw_run/<GPU>/` in the standa
 ```
 Pass `-T ./hw_run/<GPU>/traces/device-0/<cuda>` to `run_simulations.py` and `-H ./hw_run/<GPU>` to `plot-correlation.py`.
 The release's `README.md` lists every set and how to download one by hand.
-Maintainers publish new trace sets with `./util/tracer_nvbit/publish-trace-release.py`.
 Downloading from a private repository needs `GITHUB_TOKEN` or a `gh auth login` session.
 
 ### SASS Frontend and Simulation Engine

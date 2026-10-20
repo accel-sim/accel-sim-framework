@@ -24,8 +24,6 @@ and a reworked CI.
   checksum, and extracts under `hw_run/<GPU>/` in the standard layout, ready for
   `run_simulations.py -T hw_run/<GPU>/traces/device-0/<cuda>` and `plot-correlation.py -H hw_run/<GPU>`. The FTP download path
   and the pre-2.0 trace listing are removed.
-- New `util/tracer_nvbit/publish-trace-release.py` packs and uploads trace sets for
-  maintainers.
 
 ## Tracer
 - `post-traces-processing` decodes every lane's `mbarrier` address when dropping unused
