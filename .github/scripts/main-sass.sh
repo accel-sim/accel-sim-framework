@@ -108,11 +108,11 @@ stage_simulate() {
     for run in "${RUNS[@]}"; do
         config="${run%%:*}"
         trace=$(trace_dir "$config")
-        run_simulations "${run#*:}" "$config" "$trace" "$JOB_NAME"
+        run_simulations "${run#*:}" "$config" "$trace" "$JOB_NAME" "${SIM_PER_KERNEL[@]}"
     done
 
     monitor_simulations "$JOB_NAME" 12 300 "stats-per-app-sass.csv" -v
-    verify_simulations "$JOB_NAME" "${RUNS[@]}"
+    verify_simulations --per-kernel-dirs "$JOB_NAME" "${RUNS[@]}"
 }
 
 stage_correlate() {

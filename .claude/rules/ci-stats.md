@@ -41,6 +41,10 @@ Read `docs/ci-stats.md` before redesigning any of this.
   per repo at a time (`concurrency`). No A100.
 - `--array` (with `--per-kernel`) logs tasks as `<array>_<task>`; keep job ids
   strings and `squeue -r` in job_status. Without `--array` nothing changes.
+- Every CI SASS run (main-sass, main-tracer, weekly) launches with
+  `SIM_PER_KERNEL` (lib/common.sh: `--per-kernel --array -M 10G`) and verifies
+  with `--per-kernel-dirs`. Not main-docker: inside the image the launcher is
+  procman, and `--array` needs sbatch.
 - A trace depot is replaced only by `publish_depot` of a finished run.
 - `CI_SANDBOX=<dir>` is the only path override; do not add per-path env knobs.
 - Every simulated app needs hardware stats: `NO-HW-REFERENCE` fails

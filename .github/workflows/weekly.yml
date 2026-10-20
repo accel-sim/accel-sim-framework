@@ -156,7 +156,7 @@ jobs:
           CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
         run: $AI/ci-analysis.sh
 
-  # The hosted ML traces of H200_ml_traces (never traced here), one Slurm array
+  # The ML traces of the static H200 depot (never traced here), one Slurm array
   # task per kernel; independent of the tracers
   SASS-H200-ML:
     runs-on: tgrogers-raid
