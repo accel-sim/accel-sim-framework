@@ -1,17 +1,20 @@
 #!/usr/bin/env python3
 """Publish pre-collected traces as GitHub release assets for get-accel-sim-traces.py.
 
-Input, one directory per argument set:
-  <src>/<workload>/<args>/<traces_subdir>/kernelslist.g + kernel-*.trace(z|g...)
-  <src>/<workload>/<args>/<ncu_csv>        (optional Nsight Compute CSV)
+Input is the standard Accel-Sim layout under --src:
+  <src>/<trace_root>/<workload>/<args>/traces/kernelslist.g + kernel-* trace files
+  <src>/<hw_root>/<workload>/<args>/*.csv*          (Nsight Compute stats, optional)
+with --trace_root traces/device-0/<cuda> and --hw_root device-0/<cuda> by default.
 
 Each argument set becomes one uncompressed tar (traces are already compressed)
-laid out as
-  <GPU>/<workload>/<args>/traces/...
-  <GPU>/<workload>/<args>/ncu_stats.csv
-so that run_simulations.py -T <dir>/<GPU> and plot-correlation.py -H <dir>/<GPU>
-both work after extraction. Tars are split into parts below GitHub's 2 GiB asset
-limit, uploaded with `gh release upload`, and described in manifest.json and a\nREADME.md with download instructions.
+holding exactly the kernels listed in its kernelslist.g, prefixed with the GPU
+name, e.g.
+  H200/traces/device-0/12.8/<workload>/<args>/traces/...
+  H200/device-0/12.8/<workload>/<args>/ncu.csv.nsight
+Extracted under hw_run/, that is run_simulations.py -T hw_run/H200/traces/device-0/12.8
+and plot-correlation.py -H hw_run/H200. Tars are split below GitHub's 2 GiB asset
+limit, uploaded with `gh release upload`, and described in manifest.json and a
+README.md with download instructions.
 
 Re-running resumes: argument sets already recorded in <work>/meta are skipped.
 """
@@ -23,7 +26,6 @@ import json
 import os
 import shlex
 import subprocess
-import sys
 import threading
 from concurrent.futures import ThreadPoolExecutor
 
@@ -62,13 +64,15 @@ class Publisher:
         entries = [json.load(open(f)) for f in sorted(glob.glob(os.path.join(self.o.work, "meta", "*.json")))]
         path = os.path.join(self.o.work, "manifest.json")
         with open(path, "w") as f:
-            json.dump(dict(format=1, repo=self.o.repo, tag=self.o.tag, traces=entries), f, indent=1)
+            json.dump(dict(format=2, repo=self.o.repo, tag=self.o.tag, traces=entries), f, indent=1)
         readme = os.path.join(self.o.work, "README.md")
         with open(readme, "w") as f:
             f.write(open(self.o.readme).read().rstrip("\n") + "\n\n")
             f.write("| GPU | Workload | Arguments | Kernels | Size | Parts |\n|---|---|---|---|---|---|\n")
             for e in sorted(entries, key=lambda e: (e["gpu"], e["workload"], e["args"])):
-                f.write(f"| {e['gpu']} | {e['workload']} | {e['args']} | {e['kernels']} | {e['size'] / 1e9:.2f} GB | {len(e['parts'])} |\n")
+                f.write(
+                    f"| {e['gpu']} | {e['workload']} | {e['args']} | {e['kernels']} | {e['size'] / 1e9:.2f} GB | {len(e['parts'])} |\n"
+                )
         self.gh_upload([path, readme])
         return entries
 
@@ -79,26 +83,27 @@ class Publisher:
         if os.path.exists(meta):
             print(f"skip {base} (already published)", flush=True)
             return
-        src = os.path.join(o.src, workload, args)
-        tdir = os.path.join(src, o.traces_subdir)
-        kernels = [l for l in open(os.path.join(tdir, "kernelslist.g")).read().split("\n") if l.startswith("kernel-")]
-        files = sorted(f for f in os.listdir(tdir) if f.startswith("kernel-"))
-        assert sorted(kernels) == files, f"{workload}/{args}: kernelslist.g lists {len(kernels)} kernels, directory has {len(files)} trace files"
-        pre = f"{o.gpu}/{workload}/{args}"
-        members = [f"{workload}/{args}/{o.traces_subdir}"]
-        transforms = [f"s|^{workload}/{args}/{o.traces_subdir}|{pre}/traces|"]
-        ncu = os.path.join(src, o.ncu_csv) if o.ncu_csv else None
-        if ncu and os.path.exists(ncu):
-            members.append(f"{workload}/{args}/{o.ncu_csv}")
-            transforms.append(f"s|^{workload}/{args}/{o.ncu_csv}|{pre}/ncu_stats.csv|")
-        elif ncu and o.require_ncu:
-            sys.exit(f"{workload}/{args}: missing {ncu}")
+        tdir = os.path.join(o.trace_root, workload, args, "traces")
+        hdir = os.path.join(o.hw_root, workload, args)
+        klist = open(os.path.join(o.src, tdir, "kernelslist.g")).read().split("\n")
+        kernels = [l.strip() for l in klist if l.startswith("kernel-")]
+        assert len(set(kernels)) == len(kernels), f"{workload}/{args}: duplicate kernel in kernelslist.g"
+        members = [os.path.join(tdir, "kernelslist.g")]
+        for k in kernels:
+            assert os.path.isfile(os.path.join(o.src, tdir, k)), f"{workload}/{args}: kernelslist.g lists {k}, file missing"
+            members.append(os.path.join(tdir, k))
+        hw = sorted(glob.glob(os.path.join(o.src, hdir, "*.csv*")))
+        if o.require_hw:
+            assert hw, f"{workload}/{args}: no hardware CSV in {os.path.join(o.src, hdir)}"
+        members += [os.path.relpath(h, o.src) for h in hw]
         stage = os.path.join(o.work, "stage", base)
         os.makedirs(stage, exist_ok=True)
         for p in glob.glob(stage + "/*"):
             os.remove(p)
-        tar = ["tar", "-C", o.src, "--dereference", "--sort=name", "-cf", "-"]
-        tar += [f"--transform={t}" for t in transforms] + members
+        listing = os.path.join(stage, "members.txt")
+        with open(listing, "w") as f:
+            f.write("\n".join(members) + "\n")
+        tar = ["tar", "-C", o.src, "--dereference", "-cf", "-", f"--transform=s|^|{o.gpu}/|", "-T", listing]
         cmd = (
             "set -o pipefail; "
             + " ".join(map(shlex.quote, tar))
@@ -114,7 +119,10 @@ class Publisher:
             gpu=o.gpu,
             workload=workload,
             args=args,
-            path=pre,
+            trace_dir=f"{o.gpu}/{tdir}",
+            hw_dir=f"{o.gpu}/{hdir}" if hw else None,
+            trace_root=f"{o.gpu}/{o.trace_root}",
+            hw_root=f"{o.gpu}/{o.hw_root}",
             kernels=len(kernels),
             size=sum(p["size"] for p in plist),
             sha256=open(os.path.join(stage, "full.sha256")).read().strip(),
@@ -124,19 +132,19 @@ class Publisher:
             json.dump(entry, f, indent=1)
         for p in parts:
             os.remove(p)
-        print(f"published {base}: {len(plist)} parts, {entry['size'] / 1e9:.2f} GB", flush=True)
+        print(f"published {base}: {len(kernels)} kernels, {len(plist)} parts, {entry['size'] / 1e9:.2f} GB", flush=True)
 
 
 def main():
     p = argparse.ArgumentParser(description=__doc__, formatter_class=argparse.RawDescriptionHelpFormatter)
-    p.add_argument("--src", required=True, help="Root holding <workload>/<args>/")
+    p.add_argument("--src", required=True, help="Root holding <trace_root>/ and <hw_root>/")
     p.add_argument("--gpu", required=True, help="GPU name used as the top-level directory, e.g. H200")
     p.add_argument("--repo", required=True, help="GitHub repository, e.g. accel-sim/accel-sim-framework")
     p.add_argument("--tag", required=True, help="Release tag; the release must already exist")
     p.add_argument("--work", required=True, help="Scratch directory for tar parts and per-set metadata")
-    p.add_argument("--traces_subdir", default="traces", help="Trace directory inside each <workload>/<args> (default: traces)")
-    p.add_argument("--ncu_csv", default="", help="Nsight Compute CSV inside each <workload>/<args>, shipped as ncu_stats.csv")
-    p.add_argument("--require_ncu", action="store_true", help="Fail if an argument set has no NCU CSV")
+    p.add_argument("--trace_root", default="traces/device-0/12.8", help="Trace tree under --src")
+    p.add_argument("--hw_root", default="device-0/12.8", help="Hardware stats tree under --src")
+    p.add_argument("--require_hw", action="store_true", help="Fail if an argument set has no hardware CSV")
     p.add_argument("--jobs", type=int, default=3, help="Argument sets packed and uploaded in parallel")
     p.add_argument(
         "--readme",
@@ -146,15 +154,16 @@ def main():
     p.add_argument("only", nargs="*", help="Optional <workload>/<args> subset")
     o = p.parse_args()
 
+    root = os.path.join(o.src, o.trace_root)
     sets = sorted(
-        (k.split("/")[-4], k.split("/")[-3])
-        for k in glob.glob(os.path.join(o.src, "*", "*", o.traces_subdir, "kernelslist.g"))
+        tuple(os.path.relpath(k, root).split(os.sep)[:2])
+        for k in glob.glob(os.path.join(root, "*", "*", "traces", "kernelslist.g"))
     )
     if o.only:
         sets = [s for s in sets if f"{s[0]}/{s[1]}" in o.only]
         missing = set(o.only) - {f"{a}/{b}" for a, b in sets}
-        assert not missing, f"not found under {o.src}: {sorted(missing)}"
-    assert sets, f"no <workload>/<args>/{o.traces_subdir}/kernelslist.g under {o.src}"
+        assert not missing, f"not found under {root}: {sorted(missing)}"
+    assert sets, f"no <workload>/<args>/traces/kernelslist.g under {root}"
     pub = Publisher(o)
     print(f"{len(sets)} argument sets -> {o.repo} release {o.tag}", flush=True)
     with ThreadPoolExecutor(o.jobs) as ex:
