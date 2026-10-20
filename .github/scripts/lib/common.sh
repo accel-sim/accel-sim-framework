@@ -186,7 +186,11 @@ build_accelsim() {
 #   $2 - Config
 #   $3 - Trace path
 #   $4 - Job name suffix (default: $$)
-#   $5.. - Extra run_simulations.py flags (e.g. --per-kernel)
+#   $5.. - Extra run_simulations.py flags (e.g. -M)
+# Every CI run is per kernel: one Slurm array task per kernel (get_stats
+# --per-kernel-dirs collects them), so a long kernel neither serialises the
+# app's other kernels nor delays its own failure.
+SIM_PER_KERNEL=(--per-kernel --array -M 10G)
 run_simulations() {
     local benchmarks="$1"
     local config="$2"

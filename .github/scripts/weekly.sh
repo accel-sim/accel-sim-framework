@@ -51,19 +51,16 @@ depot_dir() {
     echo "$SHARED_ROOT/nightly-$1/${GITHUB_REPOSITORY//\//_}"
 }
 
-# Sets CONFIG, SUITES, TRACES, HW, SIM_FLAGS, STATS_FLAGS, MONITOR_HOURS and
-# GROUP for run $1
+# Sets CONFIG, SUITES, TRACES, HW, MONITOR_HOURS and GROUP for run $1
 gpu_vars() {
-    SIM_FLAGS=() STATS_FLAGS=() MONITOR_HOURS=14 GROUP=ubench
+    MONITOR_HOURS=14 GROUP=ubench
     case "$1" in
         h200) CONFIG="H200-SASS"; SUITES="$H200_SUITES" ;;
         v100) CONFIG="QV100-SASS"; SUITES="$V100_SUITES" ;;
         h200-ml)
-            # ~9K kernels, one array task each (accelsim-layout.sh in the depot
-            # adds the traces/ and device-0/ layout these paths read)
+            # ~9K kernels (accelsim-layout.sh in the depot adds the traces/ and
+            # device-0/ layout these paths read)
             CONFIG="H200-SASS" SUITES="$ML_SUITES" GROUP=ml MONITOR_HOURS=40
-            # one kernel needs far less than its app's accel-sim-mem; 10G ran all of them
-            SIM_FLAGS=(--per-kernel --array -M 10G) STATS_FLAGS=(--per-kernel-dirs)
             TRACES="$ML_DEPOT/traces/device-0/12.8/" HW="$ML_DEPOT/"
             return
             ;;
@@ -165,10 +162,10 @@ stage_simulate() {
     source ./env-setup/12.8_env_setup.sh
     source ./gpu-simulator/setup_environment.sh
     local job_name="weekly-$run-$(ci_job_name)"
-    run_simulations "$SUITES" "$CONFIG" "$TRACES" "$job_name" "${SIM_FLAGS[@]}"
+    run_simulations "$SUITES" "$CONFIG" "$TRACES" "$job_name" "${SIM_PER_KERNEL[@]}"
     # Weekly: one summary line per poll; a job the node's OOM killer took is not a failure
     monitor_simulations "$job_name" "$MONITOR_HOURS" 300 "weekly-$run-stats-per-app.csv" --allow-oom
-    verify_simulations "${STATS_FLAGS[@]}" --allow-oom "$job_name" "$CONFIG:$SUITES"
+    verify_simulations --per-kernel-dirs --allow-oom "$job_name" "$CONFIG:$SUITES"
 }
 
 stage_correlate() {

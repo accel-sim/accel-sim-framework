@@ -115,7 +115,8 @@ stage_test() {
         -B "$BENCHMARKS" \
         -C "$CONFIG" \
         -T ./hw_run/traces/ \
-        -N "$JOB_NAME"
+        -N "$JOB_NAME" \
+        "${SIM_PER_KERNEL[@]}"
 
     monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv" -v
 }
