@@ -27,12 +27,24 @@ Use this if you're tracing an entire benchmark suite (e.g., Rodinia):
 ```
 
 - `-B`: Benchmark suite name  (app list can be found or defined in [this file](../job_launching/apps/define-all-apps.yml))
-- `-D`: Hardware device ID (e.g., GPU 0)
+- `-D`: Hardware device ID (e.g., GPU 0), a comma separated list (`-D 0,1,2,3`), or `all`
 
 📁 Traces will be stored in:  
-`../../hw_run/traces/device-0/`
+`../../hw_run/traces/device-0/` (with several GPUs, `device-<first listed GPU>`)
 
 **This script handles trace generation, post-processing, and cleanup automatically.**  
+
+On a node with several GPUs, the apps are spread over two worker pools:
+
+```bash
+./run_hw_trace.py -B rodinia-3.1 -D 0,1,2,3 --cpu_workers 4 -j 8
+```
+
+- One GPU tracing worker per GPU in `-D`, each with that GPU to itself, takes the next app of the suites in order and traces it with NVBit.
+- A traced app goes on a queue; `--cpu_workers` post-processing workers take apps off it and post-process them with `-j` threads each, while the GPUs keep tracing.
+- `--queue_size` (default: the number of GPUs) is how many traced apps may wait for a post-processing worker. When the queue is full, a GPU worker that finished a trace waits for room.
+- Every output line is prefixed with the worker and app (`[gpu2 l1_lat/...]`, `[cpu0 ...]`). A failed app does not stop the others; the failures are listed at the end and the script exits non-zero.
+- Each app's directory has `traced_on_gpu.txt` (index, name, UUID, PCI bus id of the GPU that traced it), `run_trace.sh` (tracing), `run_postprocess.sh` (post-processing), and `run.sh`, which runs both.  
 See the [Trace File Structure](#-trace-file-structure) section for details on the output.
 
 ---
