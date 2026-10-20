@@ -31,6 +31,8 @@ import numpy
 import datetime
 import time
 import math
+import json
+import subprocess
 
 
 def getAppData(kernels, x, y, xaxis_title, correlmap):
@@ -128,6 +130,82 @@ def getCorrelCsvRaw(anno, names, x, y):
         )
         count += 1
     return out_csv
+
+
+_demangled = {}
+
+
+def demangle(names):
+    """Demangle with c++filt, cached; names that are not mangled come back unchanged."""
+    todo = sorted(set(n for n in names if n not in _demangled))
+    if todo:
+        out = subprocess.run(
+            ["c++filt"],
+            input="\n".join(todo) + "\n",
+            stdout=subprocess.PIPE,
+            universal_newlines=True,
+            check=True,
+        ).stdout.splitlines()
+        assert len(out) == len(todo), "c++filt returned {0} names for {1}".format(
+            len(out), len(todo)
+        )
+        _demangled.update(zip(todo, out))
+    return [_demangled[n] for n in names]
+
+
+def kernel_base_name(demangled):
+    """'void ns::k<int, 2>(float*, int)' -> 'ns::k': ncu and c++filt format the
+    template and parameter lists differently, so only the qualified name is compared."""
+    name = demangled.replace("(anonymous namespace)", "")
+    out, depth = "", 0
+    for ch in name:
+        if ch == "<":
+            depth += 1
+        elif ch == ">" and depth > 0:
+            depth -= 1
+        elif depth == 0:
+            out += ch
+    out = out.split("(")[0].strip()
+    return out.split()[-1] if out else demangled
+
+
+def hw_kernel_name(hw):
+    for key in ("Kernel Name", "Name"):
+        names = [n for n in hw.get(key, []) if isinstance(n, str)]
+        if names:
+            return names[0]
+    return None
+
+
+def pair_kernels(sim_klist, hw_klist):
+    """Pair each sim kernel with the hardware kernel of the same name and occurrence.
+
+    Returns (pairs, sim-only kernel names, number of unpaired hardware kernels).
+    Hardware data without kernel names is paired by position, as before.
+    """
+    hw_names = [hw_kernel_name(hw) for hw in hw_klist]
+    if None in hw_names:
+        if len(sim_klist) > len(hw_klist):
+            return [], [s["Kernel"] for s in sim_klist], 0
+        return list(zip(sim_klist, hw_klist)), [], len(hw_klist) - len(sim_klist)
+
+    def keys(names):
+        seen, out = {}, []
+        for base in (kernel_base_name(n) for n in demangle(names)):
+            out.append((base, seen.get(base, 0)))
+            seen[base] = seen.get(base, 0) + 1
+        return out
+
+    # get_stats -K names a kernel instance <name>--<N>
+    sim_names = [re.sub(r"--\d+$", "", s["Kernel"]) for s in sim_klist]
+    hw_by_key = dict(zip(keys(hw_names), hw_klist))
+    pairs, sim_only = [], []
+    for sim, key in zip(sim_klist, keys(sim_names)):
+        if key in hw_by_key:
+            pairs.append((sim, hw_by_key[key]))
+        else:
+            sim_only.append(sim["Kernel"])
+    return pairs, sim_only, len(hw_klist) - len(pairs)
 
 
 def isAppBanned(appargs, blacklist):
@@ -967,6 +1045,14 @@ parser.add_option(
     "which kernels simulate slowest. Uses gpgpu_simulation_time and "
     "gpu_tot_sim_insn from the CSV to compute rate per kernel.",
 )
+parser.add_option(
+    "-S",
+    "--summary_json",
+    dest="summary_json",
+    default="",
+    help="Write per-config results (matched device, per-stat correlation and error, "
+    "apps without hardware data, kernel pairing problems) to this JSON file.",
+)
 
 
 (options, args) = parser.parse_args()
@@ -988,6 +1074,12 @@ if options.blacklist != "":
         blacklist.append(re.compile(bannedname))
 
 logger = Logger(options.verbose, options.logchannel)
+
+correl_outdir = os.path.join(this_directory, "correl-html")
+os.makedirs(correl_outdir, exist_ok=True)
+# Problems that make the correlation invalid; reported together, then exit 1
+correl_errors = []
+summary = {}
 
 # Get the hardware Data
 logger.log("Getting HW data\n")
@@ -1070,29 +1162,61 @@ exec(open(options.data_mappings, "r").read())
 
 fig_data = {}  # map of HW config to a list of scatters
 for cfg, sim_for_cfg in sim_data.items():
-    if cfg.split("-")[0] not in config_maps:
-        logger.log("cfg {0} not in config_maps:{1}.".format(cfg, config_maps))
+    gpu = cfg.split("-")[0]
+    if gpu not in config_maps:
+        correl_errors.append(
+            "config {0}: {1} is not in config_maps ({2})".format(
+                cfg, gpu, sorted(config_maps)
+            )
+        )
         continue
 
-    hw_cfg = None
-    for device in hw_data.keys():
-        logger.log("Testing hw_cfg={0}".format(device))
-        logger.log("\tcfg={0}, config_maps={1}".format(cfg, config_maps))
-
-        # Each simulation config name maps to potentially more than one NVIDIA card name
-        # we iterate through them all here.
-        for hw_name in config_maps[cfg.split("-")[0]]:
-            if hw_name in device:
-                hw_cfg = device
-                logger.log("Setting hw_cfg={0}".format(device))
-                continue
-
-    if hw_cfg == None:
-        logger.log("Cannot find HW data for {0} skipping plots.".format(hw_cfg))
+    # Each simulation config maps to one or more exact NVIDIA card names; the
+    # hardware directory must hold data for exactly one of them.
+    matches = sorted(d for d in hw_data if d in config_maps[gpu])
+    if len(matches) != 1:
+        correl_errors.append(
+            "config {0}: expected HW data for exactly one of {1}, found {2} (devices in {3}: {4})".format(
+                cfg,
+                sorted(config_maps[gpu]),
+                matches,
+                options.hardware_dir,
+                sorted(hw_data),
+            )
+        )
         continue
+    hw_cfg = matches[0]
+    logger.log("cfg={0}: hw_cfg={1}".format(cfg, hw_cfg))
+    no_hw = sorted(
+        a for a in sim_for_cfg if a not in hw_data[hw_cfg] and not isAppBanned(a, blacklist)
+    )
+    for appargs in no_hw:
+        print("NO-HW-REFERENCE {0} {1}".format(cfg, appargs))
+        correl_errors.append("config {0}: {1} has no hardware stats".format(cfg, appargs))
+    cfg_summary = summary.setdefault(
+        cfg,
+        {"hw_device": hw_cfg, "no_hw_reference": no_hw, "kernel_mismatch": {}, "stats": {}},
+    )
+    kernel_pairs = {}
+    for appargs, sim_klist in sim_for_cfg.items():
+        if appargs not in hw_data[hw_cfg] or isAppBanned(appargs, blacklist):
+            continue
+        pairs, sim_only, hw_only = pair_kernels(sim_klist, hw_data[hw_cfg][appargs])
+        kernel_pairs[appargs] = pairs
+        if sim_only or hw_only:
+            print(
+                "KERNEL-MISMATCH {0} {1}: {2} paired, sim kernels without HW: {3}, HW kernels without sim: {4}".format(
+                    cfg, appargs, len(pairs), sim_only, hw_only
+                )
+            )
+            cfg_summary["kernel_mismatch"][appargs] = {
+                "paired": len(pairs),
+                "sim_only": sim_only,
+                "hw_only": hw_only,
+            }
 
     for correl in correl_list:
-        if correl.hw_name != "all" and correl.hw_name not in hw_cfg:
+        if correl.hw_name != "all" and correl.hw_name != hw_cfg:
             logger.log(
                 "for cfg:{0}, hw_cfg:{1} - Skipping plot:\n{2}".format(
                     cfg, hw_cfg, correl
@@ -1128,17 +1252,15 @@ for cfg, sim_for_cfg in sim_data.items():
 
                 hw_klist = hw_data[hw_cfg][appargs]
                 processAnyKernels = False
-                if len(sim_klist) <= len(hw_klist):
+                if kernel_pairs[appargs]:
                     logger.log(
-                        "Found hw/sim match for {0}. Sim={1}. HW={2}".format(
-                            appargs, len(sim_klist), len(hw_klist)
+                        "Found hw/sim match for {0}. Sim={1}. HW={2}. Paired={3}".format(
+                            appargs, len(sim_klist), len(hw_klist), len(kernel_pairs[appargs])
                         )
                     )
                     sim_appargs_leftover.remove(appargs)
                     hw_appargs_leftover.remove(appargs)
-                    count = 0
-                    for sim in sim_klist:
-                        hw = hw_klist[count]
+                    for sim, hw in kernel_pairs[appargs]:
                         try:
                             logger.log("Evaluating HW: {0}".format(correl.hw_eval))
                             hw_array.append(eval(correl.hw_eval))
@@ -1151,13 +1273,11 @@ for cfg, sim_for_cfg in sim_data.items():
                             )
                             #                            print hw
                             #                            exit(1)
-                            count += 1
                             continue
 
                         if hw_array[-1] < correl.drophwnumbelow:
                             hw_low_drop_stats += 1
                             hw_array = hw_array[:-1]
-                            count += 1
                             continue
 
                         try:
@@ -1169,7 +1289,6 @@ for cfg, sim_for_cfg in sim_data.items():
                                 )
                             )
                             hw_array = hw_array[:-1]
-                            count += 1
                             continue
                         except ZeroDivisionError as e:
                             logger.log(
@@ -1177,7 +1296,6 @@ for cfg, sim_for_cfg in sim_data.items():
                                     correl.sim_eval, e
                                 )
                             )
-                            count += 1
                             hw_array = hw_array[:-1]
                             continue
 
@@ -1221,15 +1339,14 @@ for cfg, sim_for_cfg in sim_data.items():
                             num_under += 1
 
                         errs.append(abs(err))
-                        apps_included[appargs].append((err, sim_klist[count]["Kernel"]))
+                        apps_included[appargs].append((err, sim["Kernel"]))
 
                         label_array.append(
-                            (appargs + "--" + sim_klist[count]["Kernel"])
+                            (appargs + "--" + sim["Kernel"])
                             + " (Err={0:.2f}%,HW-Range=+{1:.2f}%/-{2:.2f}%)".format(
                                 err, hw_high, hw_low
                             )
                         )
-                        count += 1
                         if hw_array[-1] > max_axis_val:
                             max_axis_val = hw_array[-1]
                         if sim_array[-1] > max_axis_val:
@@ -1242,7 +1359,7 @@ for cfg, sim_for_cfg in sim_data.items():
 
                 else:
                     logger.log(
-                        "For appargs={0}, HW/SW kernels do not match HW={1}, SIM={2} and software has more than hardware\n".format(
+                        "For appargs={0}, no sim kernel pairs with a HW kernel HW={1}, SIM={2}\n".format(
                             appargs, len(hw_klist), len(sim_klist)
                         )
                     )
@@ -1270,6 +1387,13 @@ for cfg, sim_for_cfg in sim_data.items():
         for err in errs:
             avg_err += err
         avg_err = avg_err / len(errs)
+        cfg_summary["stats"][correl.plotfile] = {
+            "chart_name": correl.chart_name,
+            "apps": appcount,
+            "kernels": kernelcount,
+            "correl": None if math.isnan(correl_co) else float(correl_co),
+            "mean_abs_err_pct": float(avg_err),
+        }
 
         trace = go.Scatter(
             x=hw_array,
@@ -1345,7 +1469,12 @@ for cfg, sim_for_cfg in sim_data.items():
         )
 
 
-correl_outdir = os.path.join(this_directory, "correl-html")
+if not fig_data:
+    correl_errors.append(
+        "no correlation figure was produced from {0} and {1}".format(
+            options.csv_file, options.hardware_dir
+        )
+    )
 
 # Collect all figures (separate kernel and app figures)
 figs = {"kernel": {}, "app": {}}
@@ -1374,3 +1503,12 @@ print("Combined per-app output available at: file://{0}".format(app_out_path))
 
 if options.sim_rate:
     plot_sim_rate(sim_data, correl_outdir)
+
+if options.summary_json:
+    with open(options.summary_json, "w") as f:
+        json.dump({"configs": summary, "errors": correl_errors}, f, indent=1)
+
+if correl_errors:
+    for e in correl_errors:
+        print("ERROR: " + e, file=sys.stderr)
+    exit(1)

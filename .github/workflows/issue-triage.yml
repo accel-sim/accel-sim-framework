@@ -50,7 +50,8 @@ jobs:
       - env:
           BRANCH_NAME: ${{ github.event.repository.default_branch }}
         run: |
-          ./.github/scripts/clone-gpgpusim.sh -d ./gpu-simulator/gpgpu-sim -f dev ||
+          # own bash: errexit is off inside the left side of ||
+          bash -c 'source ./.github/scripts/lib/common.sh && clone_gpgpusim' ||
             echo "::warning::gpgpu-sim clone failed; triage runs against the framework tree only"
       - run: $AI/issue-triage.sh
       - if: failure()

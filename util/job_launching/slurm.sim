@@ -11,9 +11,11 @@
 #SBATCH --output=/tmp/REPLACE_NAME.o%j
 #SBATCH --error=/tmp/REPLACE_NAME.e%j
 
+# A job array task (run_simulations.py --array) is named <array id>_<task id>
+JOB_TAG=${ACCELSIM_JOB_ID:-$SLURM_JOB_ID}
 copy_output() {
-    mv /tmp/REPLACE_NAME.e$SLURM_JOB_ID ./REPLACE_NAME.e$SLURM_JOB_ID
-    mv /tmp/REPLACE_NAME.o$SLURM_JOB_ID ./REPLACE_NAME.o$SLURM_JOB_ID
+    mv /tmp/REPLACE_NAME.e$JOB_TAG ./REPLACE_NAME.e$JOB_TAG
+    mv /tmp/REPLACE_NAME.o$JOB_TAG ./REPLACE_NAME.o$JOB_TAG
 }
 
 trap copy_output ERR

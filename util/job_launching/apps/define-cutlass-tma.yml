@@ -23,3 +23,19 @@ cutlass_tma_medium:
               accel-sim-mem: 20G
             - args: --m=8192 --n=4 --k=4096 --iterations=0
               accel-sim-mem: 20G
+
+# PR CI smoke test (H200 only). The traces hold only the TMA warp-specialized
+# GEMM kernel: the three random-fill kernels before it cost a fixed ~35M
+# instructions each whatever the problem size, and the reference GEMM and
+# compare after it only exist for the host-side verification.
+cutlass_tma_CI:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - cutlass_48_hopper_warp_specialized_gemm:
+            - args: --m=256 --n=256 --k=512 --iterations=0
+              kernel-name-filter: ".*GemmUniversal.*"
+              accel-sim-mem: 4G
+            - args: --m=256 --n=4 --k=512 --iterations=0
+              kernel-name-filter: ".*GemmUniversal.*"
+              accel-sim-mem: 4G
