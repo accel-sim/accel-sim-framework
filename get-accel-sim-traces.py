@@ -4,7 +4,9 @@
 Each trace set (one GPU / workload / argument set) is a tar split into parts
 smaller than 2 GB. The release's manifest.json lists every part with its
 SHA-256; this script downloads the selected parts, verifies them, and extracts
-the tar under <download_dir>/traces/<GPU>/<workload>/<args>/.
+the tar under <download_dir>/traces/<GPU>/<workload>/<args>/: traces/ for
+run_simulations.py and ncu_stats.csv for plot-correlation.py.
+Traces are published with util/tracer_nvbit/publish-trace-release.py.
 
 Private repositories need a token: set GITHUB_TOKEN, or log in with `gh`.
 """
@@ -20,8 +22,9 @@ import tarfile
 import urllib.error
 import urllib.request
 
-DEFAULT_REPO = "purdue-aalp/accel-sim-framework-private"
-DEFAULT_TAG = "h200-ml-traces-test"
+DEFAULT_REPO = "accel-sim/accel-sim-framework"
+# Traces ship as assets of the code release they were validated with.
+DEFAULT_TAG = "v2.0.1"
 API = "https://api.github.com"
 CHUNK = 1 << 22
 EXTRACT_KW = {"filter": "data"} if hasattr(tarfile, "data_filter") else {}
@@ -227,7 +230,8 @@ def main():
             os.rmdir(parts_dir)
         except OSError:
             pass
-    print(f"\nDone. Pass -T {traces_dir}/<GPU> to util/job_launching/run_simulations.py.")
+    print(f"\nDone. Use -T {traces_dir}/<GPU> with util/job_launching/run_simulations.py"
+          f" and -H {traces_dir}/<GPU> with util/plotting/plot-correlation.py.")
 
 
 if __name__ == "__main__":
