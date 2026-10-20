@@ -1,4 +1,51 @@
 
+# Release v2.0.1
+
+_October 2026._
+
+A maintenance release on top of 2.0.0: pre-collected traces move from the FTP server to
+GitHub release assets, a trace post-processing fix for multi-lane `mbarrier` instructions,
+and a reworked CI.
+
+> **Requires the matching GPGPU-Sim:** `gpgpu-sim_distribution` tag `v2.0.1`.
+
+## Pre-collected traces on GitHub releases
+- Traces are now published as assets of the code release they were validated with, starting
+  with this one, so code and traces stay consistent. Each GPU / workload / argument set is one
+  tar, split into parts under 2 GB, and `manifest.json` records the SHA-256 of every part and
+  of the whole tar. The release also carries a `README.md` with download instructions.
+- The first set is the **H200 ML suite**: 20 argument sets of BERT, ResNet-50, DLRMv2,
+  3D U-Net, RetinaNet, Whisper, SDXL, Llama 3.1 8B (inference and training), Qwen 2.5 7B,
+  DeepSeek R1 and Mixtral 8x7B, traced with NVBit 1.8 as `.tracez`. Each argument set comes
+  with its Nsight Compute CSV (`ncu_stats.csv`).
+- `get-accel-sim-traces.py` is rewritten. It lists the available sets (`-l`), downloads a
+  selection (`-a H200/inference_bert.sh/32_256`, with `all` at any level), checks every
+  checksum, and extracts to `hw_run/traces/<GPU>/<workload>/<args>/`. That directory works
+  directly with `run_simulations.py -T` and `plot-correlation.py -H`. The FTP download path
+  and the pre-2.0 trace listing are removed.
+- New `util/tracer_nvbit/publish-trace-release.py` packs and uploads trace sets for
+  maintainers.
+
+## Tracer
+- `post-traces-processing` decodes every lane's `mbarrier` address when dropping unused
+  `TRYWAIT`s (#564). It used to read only the first lane of `base_stride` / `base_delta`
+  lines, so a `TRYWAIT` on an `mbarrier` reached only through another lane could be dropped
+  and the kernel could deadlock (#561).
+
+## Job launching
+- `slurm.sim` is back to the pre-2.0 template (#556).
+
+## CI
+- PRs run a smoke tier, every `dev` push runs correlated QV100 and H200 suites, and a
+  single Weekly workflow replaces the Volta and Hopper weeklies, adding the H200 ML suite
+  (#566).
+- Issue triage and PR review automation moved to `purdue-aalp/github-ci`, with Slurm
+  cleanup and fork-aware fixes (#559).
+
+## GPGPU-Sim v2.0.1
+- Fixes 47 build warnings and two statistics that read uninitialized memory (#147).
+- CI picks its runner pool by repository visibility (#144); README badge cleanup (#146).
+
 # Release v2.0.0 — Accel-Sim 2.0 (full Hopper support)
 
 _Aug 25, 2026._
