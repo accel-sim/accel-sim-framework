@@ -6,12 +6,19 @@ paths:
   - "util/plotting/plot-correlation.py"
   - "util/plotting/correl_mappings.py"
   - "util/job_launching/get_stats.py"
+  - "util/job_launching/job_status.py"
+  - "util/job_launching/monitor_func_test.py"
 ---
 
 # CI stats pipeline
 
 Read `docs/ci-stats.md` before redesigning any of this.
 
+- The monitor's verdict on a done Slurm job is sacct's state (anything but
+  COMPLETED fails) plus the output checks; never judge it from squeue, which
+  forgets a finished job within minutes. Not the GPGPU-Sim terminating string
+  either: PTX mode prints it from an atexit hook on every exit. A done job is
+  judged once and cached in `logfiles/node_details.<launch>`.
 - Never archive or correlate from a failed run: archive/correlate steps rely on
   the default `success()`; never `always()`, `!cancelled()` or `|| log_error`.
 - Each script has one table of what it runs (`main-sass.sh` RUNS, `weekly.sh`

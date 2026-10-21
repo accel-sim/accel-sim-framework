@@ -148,7 +148,7 @@ stage_test() {
         -N "$JOB_NAME" \
         "${SIM_PER_KERNEL[@]}"
 
-    monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv" -v
+    monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv"
 }
 
 # Run all stages

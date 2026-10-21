@@ -20,14 +20,18 @@
   same-named branch of the code's gpgpu-sim fork if it has one, else upstream
   `dev`, also when there is no such fork; any other clone or fetch failure
   fails the build): a simulator failure may come from that repo, not this one.
-- Simulations run as slurm jobs; the monitor prints each job's status. Every
+- Simulations run as slurm jobs; the monitor prints one summary line per poll
+  and, at the end, the failed jobs' rows (their output tails are in
+  `util/job_launching/logfiles/failed_job_log_*.txt`). Every
   SASS run except SASS-Simulation-Docker is per kernel (`--per-kernel --array
   -M 10G`): one Slurm array task per kernel, job ids `<array>_<task>`, run dirs
   `.../<config>/per-kernel/<kernel>/`.
   `FUNC_TEST_FAILED` = the simulation ran but its output was wrong;
   `FUNC_TEST_FAILED, ASSERT` = the simulator hit an assertion;
   `COMPLETE_ERR_FILE_HAS_CONTENTS` = completed but wrote to stderr (a warning
-  or a real error).
+  or a real error); `SIM_ERROR` = GPGPU-Sim printed `ERROR **`;
+  `SLURM_<STATE>(<exit>)` = Slurm ended the job other than COMPLETED (e.g.
+  `SLURM_FAILED(1:0)`: the simulator exited 1).
 - The monitor's `-T <hours>` timeout cancels the whole job if one simulation
   exceeds it. Cancelled jobs are usually side effects of another failure.
 - After the monitor, `get_stats.py --strict` fails the simulate step if any

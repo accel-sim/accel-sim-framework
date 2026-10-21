@@ -32,7 +32,7 @@ USE_SRUN=true
 BUILD_JOBS=20
 
 # PTX configs (no trace paths needed)
-CONFIGS="QV100-PTX,A100-PTX,H200-PTX"
+CONFIGS="QV100-PTX,A100-PTX"
 
 # Benchmarks
 BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark"
@@ -88,7 +88,7 @@ stage_simulate() {
         -C "$CONFIGS" \
         -N "$JOB_NAME"
 
-    monitor_simulations "$JOB_NAME" 12 300 "stats-per-app-ptx.csv" -v
+    monitor_simulations "$JOB_NAME" 12 300 "stats-per-app-ptx.csv"
 }
 
 # Run all stages

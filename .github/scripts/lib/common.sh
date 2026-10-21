@@ -212,7 +212,8 @@ run_simulations() {
 #   $2 - Timeout hours (default: 12)
 #   $3 - Sleep time seconds (default: 300)
 #   $4 - Output stats file (default: stats-per-app.csv)
-#   $5.. - monitor_func_test.py flags (-v: every job's status each poll;
+#   $5.. - monitor_func_test.py flags (-v: every job's row each poll, for local
+#          use: CI prints only the summary line and, at the end, the failed jobs;
 #          --allow-oom: a job killed for memory is not a failure)
 monitor_simulations() {
     local name_pattern="$1"

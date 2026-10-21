@@ -96,6 +96,22 @@ CSVs can be diffed by hand when needed.
   get_stats checks only failed sims; MaxRSS (job steps) only for failed jobs.
   A killed job's output may never appear, so job_status waits at most 5 s for
   it instead of spinning forever.
+- Monitor rewrite (2026-10-20): `job_status.py` judged a done job by its output
+  text only. A failed Slurm job shows as `F` in `squeue -t all` for a few
+  minutes (`MinJobAge`), then disappears; the old code then took the output
+  (no failure token) as `COMPLETE_NO_OTHER_INFO`, so the verdict depended on
+  whether the last poll still saw it. Every PTX-Simulation run since at least
+  2026-09-21 passed with 17 of 27 jobs per config Slurm-FAILED (ubench:
+  `ptxas` on their sm_90a PTX), and the dev SASS run of 3ce4795b showed
+  `No error:445/445` for two `tma_tensor` kernels that exited 1. The terminating
+  string does not help in PTX mode: gpgpu-sim's `atexit(termination_callback)`
+  prints `GPGPU-Sim: *** exit detected ***` on every exit. Now: squeue only for
+  what is still running or queued, one chunked `sacct` (`common.slurm_outcomes`)
+  for the jobs that left it, a verdict once per job (cached), and the monitor
+  calls `job_status.status()` instead of parsing its printed table. On those
+  launches it reports 51/81 failed (PTX) and 0/563 (a clean SASS run, 18 s per
+  poll). Also fixed: one `sstat` per running job per poll (gone), a timeout
+  with jobs still running exited 0, and `-K` used `qdel` under Slurm.
 - `get_stats --per-kernel-dirs` names each kernel column by its CUDA name and
   occurrence (`-K`), as the normal mode does, so plot-correlation can pair it.
   2026-10-19 check on the weekly's ML output: 8942 kernels of 20 apps paired, no
