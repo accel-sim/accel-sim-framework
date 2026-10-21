@@ -1,7 +1,7 @@
 # Accel-Sim CI (for the AI failure and result analysis)
 
-- `main.yml`: check-format, then SASS-Simulation, PTX-Simulation (`TITANV`,
-  `QV100`, `RTX2060`, `RTX3070`, `TITANV-LOCALXBAR`), Tracer-Tool (build the
+- `main.yml`: check-format, then SASS-Simulation, PTX-Simulation (`rodinia_2.0-ft`
+  and `GPU_Microbenchmark_CI` on `QV100-PTX`, `A100-PTX`), Tracer-Tool (build the
   NVBit tracer, trace, trace again on GPUs 3,7 with run_hw_trace.py's worker
   pools and compare (`compare-traces.py`), test the new traces), SASS-Simulation-Docker.
   SASS-Simulation has two tiers (`CI_TIER`, `main-sass.sh`): smoke on PRs

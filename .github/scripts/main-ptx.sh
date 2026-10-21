@@ -34,8 +34,10 @@ BUILD_JOBS=20
 # PTX configs (no trace paths needed)
 CONFIGS="QV100-PTX,A100-PTX"
 
-# Benchmarks
-BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark"
+# Suites simulated; MAKE_TARGETS builds them (the _CI suite is a define-all-apps
+# subset of GPU_Microbenchmark with short args, not a make target)
+BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark_CI"
+MAKE_TARGETS="rodinia_2.0-ft GPU_Microbenchmark"
 
 # Job naming
 JOB_NAME="short-ptx-$(ci_job_name)"
@@ -64,8 +66,7 @@ stage_build_apps() {
     git clone --quiet --recurse-submodules -b dev git@github.com:accel-sim/gpu-app-collection.git
     source ./gpu-app-collection/src/setup_environment > /dev/null 2>&1
 
-    # Convert comma-separated benchmarks to space-separated for make
-    local make_targets="${BENCHMARKS//,/ }"
+    local make_targets="$MAKE_TARGETS"
 
     if [ "$USE_SRUN" = "true" ]; then
         srun --time=8:00:00 -c"$BUILD_JOBS" make $make_targets -j"$BUILD_JOBS" -C ./gpu-app-collection/src
