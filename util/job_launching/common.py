@@ -509,7 +509,10 @@ def _mem_kb(v, cpus=1):
     per = v[-1] if v[-1] in "cn" else "n"
     v = v.rstrip("cn")
     unit = {"K": 1, "M": 1024, "G": 1024 ** 2, "T": 1024 ** 3}
-    kb = float(v[:-1]) * unit[v[-1]] if v[-1] in unit else float(v) / 1024
+    try:
+        kb = float(v[:-1]) * unit[v[-1]] if v[-1] in unit else float(v) / 1024
+    except ValueError:  # a just-submitted job can show ReqMem "16?"
+        return None
     return kb * (cpus if per == "c" else 1)
 
 

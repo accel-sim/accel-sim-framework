@@ -35,6 +35,12 @@
   `SLURM_FAILED(1:0)`: the simulator exited 1).
 - The monitor's `-T <hours>` timeout cancels the whole job if one simulation
   exceeds it. Cancelled jobs are usually side effects of another failure.
+- A simulation job that fails or is cancelled scancels its own Slurm jobs
+  (comment `gh-run:<run>.<attempt>:<job>`) before the runner is reused: the
+  next job's checkout deletes the run dirs, and sims still running then
+  segfault (`Stale file handle`).
+- PTX-Simulation links the rodinia data from the lab's shared copy
+  (`/scratch/.../for-sharing/gpgpu-sim-appdata/data_dirs`); no download.
 - After the monitor, `get_stats.py --strict` fails the simulate step if any
   simulation has no output or no GPGPU-Sim terminating string
   (`ERROR --strict: <config> <app>: <reason>`).

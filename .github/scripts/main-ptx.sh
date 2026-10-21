@@ -33,6 +33,8 @@ BUILD_JOBS=20
 
 # PTX configs (no trace paths needed)
 CONFIGS="QV100-PTX,A100-PTX"
+# The lab's extracted all.gpgpu-sim-app-data.tgz, shared with the functional CI
+APPDATA_DIRS="/scratch/tgrogers-disk01/a/common/for-sharing/gpgpu-sim-appdata/data_dirs"
 
 # Suites simulated, by tier as in main-sass.sh: the short ubench args on PRs, the
 # full ones on dev. MAKE_TARGETS builds both (the _CI suite is a define-all-apps
@@ -83,7 +85,10 @@ stage_build_apps() {
         make $make_targets -j"$BUILD_JOBS" -C ./gpu-app-collection/src
     fi
 
-    ./gpu-app-collection/get_regression_data.sh
+    # get_regression_data.sh downloads only when data_dirs is missing, and
+    # exits 0 on a truncated download
+    [ -d "$APPDATA_DIRS/cuda/rodinia/2.0-ft" ] || { log_error "no rodinia_2.0-ft data under $APPDATA_DIRS"; exit 1; }
+    ln -sfn "$APPDATA_DIRS" ./gpu-app-collection/data_dirs
     log_info "Applications built successfully"
 }
 
