@@ -1,10 +1,11 @@
 
 # Release v2.0.1
 
-_October 2026._
+_Oct 20, 2026._
 
 A maintenance release on top of 2.0.0: pre-collected traces move from the FTP server to
-GitHub release assets, trace post-processing and parsing fixes, and a reworked CI.
+GitHub release assets, multi-GPU tracing, trace post-processing and parsing fixes, and a
+reworked CI.
 
 > **Requires the matching GPGPU-Sim:** `gpgpu-sim_distribution` tag `v2.0.1`.
 
@@ -29,6 +30,9 @@ GitHub release assets, trace post-processing and parsing fixes, and a reworked C
   `TRYWAIT`s (#564). It used to read only the first lane of `base_stride` / `base_delta`
   lines, so a `TRYWAIT` on an `mbarrier` reached only through another lane could be dropped
   and the kernel could deadlock (#561).
+- `run_hw_trace.py` traces on several GPUs at once: `-D 0,1,2,3` (or `all`) runs one tracing
+  worker per GPU, and `--cpu_workers` post-processing workers take traced apps from a queue
+  (`--queue_size`), so no GPU sits idle during post-processing. `-D 0` behaves as before (#570).
 
 ## Trace parsing
 - Opening a `.tracez` file checks every `fread`, so a truncated file fails with an error
@@ -51,6 +55,8 @@ GitHub release assets, trace post-processing and parsing fixes, and a reworked C
 
 ## GPGPU-Sim v2.0.1
 - Fixes 47 build warnings and two statistics that read uninitialized memory (#147).
+- PTX mode honours `-gpgpu_ptx_force_max_capability` when loading cuobjdump PTX, so fat
+  binaries with `sm_90a` PTX (e.g. the `GPU_Microbenchmark` apps) load on older configs (#148).
 - CI picks its runner pool by repository visibility (#144); README badge cleanup (#146).
 
 # Release v2.0.0 — Accel-Sim 2.0 (full Hopper support)
