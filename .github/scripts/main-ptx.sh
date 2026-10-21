@@ -34,9 +34,18 @@ BUILD_JOBS=20
 # PTX configs (no trace paths needed)
 CONFIGS="QV100-PTX,A100-PTX"
 
-# Suites simulated; MAKE_TARGETS builds them (the _CI suite is a define-all-apps
-# subset of GPU_Microbenchmark with short args, not a make target)
-BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark_CI"
+# Suites simulated, by tier as in main-sass.sh: the short ubench args on PRs, the
+# full ones on dev. MAKE_TARGETS builds both (the _CI suite is a define-all-apps
+# entry with short args, not a make target).
+CI_TIER="${CI_TIER:-smoke}"
+case "$CI_TIER" in
+    smoke) BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark_CI" ;;
+    full)  BENCHMARKS="rodinia_2.0-ft,GPU_Microbenchmark" ;;
+    *)
+        echo "CI_TIER must be smoke or full, not '$CI_TIER'" >&2
+        exit 1
+        ;;
+esac
 MAKE_TARGETS="rodinia_2.0-ft GPU_Microbenchmark"
 
 # Job naming
