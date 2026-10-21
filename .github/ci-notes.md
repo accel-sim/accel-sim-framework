@@ -1,8 +1,10 @@
 # Accel-Sim CI (for the AI failure and result analysis)
 
-- `main.yml`: check-format, then SASS-Simulation, PTX-Simulation (`TITANV`,
-  `QV100`, `RTX2060`, `RTX3070`, `TITANV-LOCALXBAR`), Tracer-Tool (build the
-  NVBit tracer, trace, test the new traces), SASS-Simulation-Docker.
+- `main.yml`: check-format, then SASS-Simulation, PTX-Simulation (`rodinia_2.0-ft`
+  and `GPU_Microbenchmark_CI`, on dev the full `GPU_Microbenchmark`, on
+  `QV100-PTX`, `A100-PTX`), Tracer-Tool (build the NVBit tracer, trace, trace
+  again on GPUs 3,7 with run_hw_trace.py's worker pools and compare
+  (`compare-traces.py`), test the new traces), SASS-Simulation-Docker.
   SASS-Simulation has two tiers (`CI_TIER`, `main-sass.sh`): smoke on PRs
   (`GPU_Microbenchmark_CI`, `rodinia_2.0-ft` on `QV100-SASS` and `H200-SASS`,
   `GPU_Microbenchmark_TMA_CI`, `cutlass_tma_CI`, `hopper_features_CI` on
@@ -19,14 +21,18 @@
   same-named branch of the code's gpgpu-sim fork if it has one, else upstream
   `dev`, also when there is no such fork; any other clone or fetch failure
   fails the build): a simulator failure may come from that repo, not this one.
-- Simulations run as slurm jobs; the monitor prints each job's status. Every
+- Simulations run as slurm jobs; the monitor prints one summary line per poll
+  and, at the end, the failed jobs' rows (their output tails are in
+  `util/job_launching/logfiles/failed_job_log_*.txt`). Every
   SASS run except SASS-Simulation-Docker is per kernel (`--per-kernel --array
   -M 10G`): one Slurm array task per kernel, job ids `<array>_<task>`, run dirs
   `.../<config>/per-kernel/<kernel>/`.
   `FUNC_TEST_FAILED` = the simulation ran but its output was wrong;
   `FUNC_TEST_FAILED, ASSERT` = the simulator hit an assertion;
   `COMPLETE_ERR_FILE_HAS_CONTENTS` = completed but wrote to stderr (a warning
-  or a real error).
+  or a real error); `SIM_ERROR` = GPGPU-Sim printed `ERROR **`;
+  `SLURM_<STATE>(<exit>)` = Slurm ended the job other than COMPLETED (e.g.
+  `SLURM_FAILED(1:0)`: the simulator exited 1).
 - The monitor's `-T <hours>` timeout cancels the whole job if one simulation
   exceeds it. Cancelled jobs are usually side effects of another failure.
 - After the monitor, `get_stats.py --strict` fails the simulate step if any

@@ -151,7 +151,9 @@ Python wrapper for batch tracing:
 | Flag | Description |
 |------|-------------|
 | `-B` | Benchmark suite(s) from define-all-apps.yml |
-| `-D` | CUDA device number |
+| `-D` | CUDA device number(s): `0`, `0,1,2,3` or `all`; one GPU tracing worker per GPU, traces under `device-<first>` |
+| `--cpu_workers` | Post-processing workers (default 1), each with `-j` threads |
+| `--queue_size` | Traced apps that may wait for post-processing (default: number of GPUs); a full queue stalls the GPU workers |
 | `-l` | Limit number of kernels traced |
 | `-t` | Terminate after kernel limit reached |
 | `--spinlock_handling` | `none` or `fast_forward` |

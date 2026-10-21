@@ -64,7 +64,7 @@ stage_in_image() {
     build_accelsim false "$BUILD_JOBS"
     source ./gpu-simulator/setup_environment.sh release
     run_simulations "$BENCHMARKS" "$CONFIG" "$TRACE_PATH" "$JOB_NAME"
-    monitor_simulations "$JOB_NAME" 4 60 "stats-per-app-docker.csv" -v
+    monitor_simulations "$JOB_NAME" 4 60 "stats-per-app-docker.csv"
 }
 
 #==============================================================================
