@@ -105,40 +105,16 @@ for bench in benchmarks:
             )
         )
         this_trace_folder = os.path.join(this_run_dir, "traces")
-        if not os.path.exists(this_run_dir):
-            os.makedirs(this_run_dir)
+        exec_path = common.prepare_run_dir(
+            this_run_dir, ddir, edir, exe, this_directory
+        )
+        if exec_path is None:
+            continue
         if not os.path.exists(this_trace_folder):
             os.makedirs(this_trace_folder)
 
-        # link the data directory
-        try:
-            benchmark_data_dir = common.dir_option_test(
-                os.path.join(ddir, exe, "data"), "", this_directory
-            )
-            if os.path.lexists(os.path.join(this_run_dir, "data")):
-                os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(benchmark_data_dir, os.path.join(this_run_dir, "data"))
-        except common.PathMissing:
-            pass
-
-        all_data_link = os.path.join(this_run_dir, "data_dirs")
-        if os.path.lexists(all_data_link):
-            os.remove(all_data_link)
-        top_data_dir_path = common.dir_option_test(ddir, "", this_directory)
-        os.symlink(top_data_dir_path, all_data_link)
-
         if args == None:
             args = ""
-        # A benchmark listed in define-*.yml may simply not be built in this
-        # tree (suites differ by branch). Skip it instead of aborting the
-        # whole suite, which used to lose every app after the first gap.
-        try:
-            exec_path = common.file_option_test(
-                os.path.join(edir, exe), "", this_directory
-            )
-        except common.PathMissing:
-            print("SKIP - no binary for {0}".format(exe))
-            continue
         sh_contents = "set -e\n"
 
         if options.terminate_upon_limit:
@@ -225,9 +201,7 @@ for bench in benchmarks:
         )
 
         for path, content in [("run.sh", tracer_contents), ("run_spinlock_detection.sh", spinlock_contents)]:
-            open(os.path.join(this_run_dir, path), "w").write(content)
-            if subprocess.call(["chmod", "u+x", os.path.join(this_run_dir, path)]) != 0:
-                exit(f"Error chmod {path} runfile")
+            common.write_run_script(this_run_dir, path, content)
 
 
         if not options.norun:

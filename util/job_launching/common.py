@@ -231,6 +231,57 @@ def dir_option_test(name, default, this_directory):
     return name
 
 
+def prepare_run_dir(this_run_dir, ddir, edir, exe, this_directory):
+    """Set up one benchmark's run directory and resolve its binary.
+
+    Creates the directory, links in the benchmark's own data dir (as "data")
+    and the suite-wide one (as "data_dirs"), then locates the executable.
+
+    Returns the executable path, or None when the benchmark is not built in
+    this tree -- suites differ between branches, so callers skip it rather
+    than aborting every app listed after it.
+    """
+    # Resolve the binary first: a benchmark that is not built should not leave
+    # an empty run directory behind.
+    try:
+        exec_path = file_option_test(os.path.join(edir, exe), "", this_directory)
+    except PathMissing:
+        print("SKIP - no binary for {0}".format(exe))
+        return None
+
+    if not os.path.exists(this_run_dir):
+        os.makedirs(this_run_dir)
+
+    # link the data directory
+    try:
+        benchmark_data_dir = dir_option_test(
+            os.path.join(ddir, exe, "data"), "", this_directory
+        )
+        if os.path.lexists(os.path.join(this_run_dir, "data")):
+            os.remove(os.path.join(this_run_dir, "data"))
+        os.symlink(benchmark_data_dir, os.path.join(this_run_dir, "data"))
+    except PathMissing:
+        pass
+
+    all_data_link = os.path.join(this_run_dir, "data_dirs")
+    if os.path.lexists(all_data_link):
+        os.remove(all_data_link)
+    top_data_dir_path = dir_option_test(ddir, "", this_directory)
+    os.symlink(top_data_dir_path, all_data_link)
+
+    return exec_path
+
+
+def write_run_script(this_run_dir, name, contents):
+    """Write an executable run script into a run directory."""
+    path = os.path.join(this_run_dir, name)
+    with open(path, "w") as f:
+        f.write(contents)
+    if subprocess.call(["chmod", "u+x", path]) != 0:
+        exit("Error chmod {0}".format(path))
+    return path
+
+
 def parse_run_simulations_options():
     parser = OptionParser()
     parser.add_option(
