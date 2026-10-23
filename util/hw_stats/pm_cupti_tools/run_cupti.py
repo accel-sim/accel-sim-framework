@@ -125,7 +125,16 @@ for bench in benchmarks:
         if args is None:
             args = ""
 
-        exec_path = common.file_option_test(os.path.join(edir, exe), "", this_directory)
+        # A benchmark listed in define-*.yml may simply not be built in this
+        # tree (suites differ by branch). Skip it instead of aborting the
+        # whole suite, which used to lose every app after the first gap.
+        try:
+            exec_path = common.file_option_test(
+                os.path.join(edir, exe), "", this_directory
+            )
+        except common.PathMissing:
+            print(f"SKIP - no binary for {exe}")
+            continue
 
         # Build the run script with CUPTI injection
         sh_contents = f"""#!/bin/bash
