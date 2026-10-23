@@ -26,10 +26,11 @@ rodinia_2.0-ft:
         - heartwall-rodinia-2.0-ft:
             - args:  ./data/test.avi 1 ./data/result-1.txt
               accel-sim-mem: 1G
-        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
-#        - kmeans-rodinia-2.0-ft:
-#            - args:  -i ./data/400.txt -g data/400-result.txt -o
-#              accel-sim-mem: 1G
+        # The legacy texture-reference API it used was removed in CUDA 12; the
+        # kernel now uses texture objects and passes its gold check again.
+        - kmeans-rodinia-2.0-ft:
+            - args:  -i ./data/400.txt -g data/400-result.txt -o
+              accel-sim-mem: 1G
         - lud-rodinia-2.0-ft:
             - args:  -v -b -i ./data/64.dat
               accel-sim-mem: 1G
@@ -447,27 +448,28 @@ Deepbench_nvidia_normal:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"
     execs:
-        - conv_bench:
-            - args: train half 7 7 832 16 128 5 5 2 2 1 1
-              accel-sim-mem: 16G
-            - args: train half 7 7 512 8 512 1 1 0 0 1 1
-              accel-sim-mem: 3G
-            - args: train half 7 7 832 16 256 1 1 0 0 1 1
-              accel-sim-mem: 4G
-            - args: train half 7 7 512 8 512 3 3 1 1 1 1
-              accel-sim-mem: 9G
-            - args: train half 14 14 512 16 512 3 3 1 1 1 1
-              accel-sim-mem: 17G
-            - args: inference half 700 161 1 1 32 20 5 0 0 2 2
-              accel-sim-mem: 2G
-            - args: inference half 700 161 1 2 32 20 5 0 0 2 2
-              accel-sim-mem: 2G
-            - args: inference half 341 79 32 1 32 10 5 0 0 2 2
-              accel-sim-mem: 6G
-            - args: inference half 341 79 32 2 32 10 5 0 0 2 2
-              accel-sim-mem: 80G
-            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
-              accel-sim-mem: 2G
+        # not built: they use cuDNN APIs removed in cuDNN 9.
+#        - conv_bench:
+#            - args: train half 7 7 832 16 128 5 5 2 2 1 1
+#              accel-sim-mem: 16G
+#            - args: train half 7 7 512 8 512 1 1 0 0 1 1
+#              accel-sim-mem: 3G
+#            - args: train half 7 7 832 16 256 1 1 0 0 1 1
+#              accel-sim-mem: 4G
+#            - args: train half 7 7 512 8 512 3 3 1 1 1 1
+#              accel-sim-mem: 9G
+#            - args: train half 14 14 512 16 512 3 3 1 1 1 1
+#              accel-sim-mem: 17G
+#            - args: inference half 700 161 1 1 32 20 5 0 0 2 2
+#              accel-sim-mem: 2G
+#            - args: inference half 700 161 1 2 32 20 5 0 0 2 2
+#              accel-sim-mem: 2G
+#            - args: inference half 341 79 32 1 32 10 5 0 0 2 2
+#              accel-sim-mem: 6G
+#            - args: inference half 341 79 32 2 32 10 5 0 0 2 2
+#              accel-sim-mem: 80G
+#            - args: inference half 480 48 1 1 16 3 3 1 1 1 1
+#              accel-sim-mem: 2G
         - gemm_bench:
             - args: train half 1760 7000 1760 0 0
               accel-sim-mem: 18G
@@ -489,35 +491,35 @@ Deepbench_nvidia_normal:
               accel-sim-mem: 7G
             - args: inference half 35 1500 2560 0 0
               accel-sim-mem: 2G
-        - rnn_bench:
-            - args: inference half 512 1 25 lstm
-              accel-sim-mem: 12G
-            - args: inference half 512 2 25 lstm
-              accel-sim-mem: 12G
-            - args: inference half 1024 1 25 lstm
-              accel-sim-mem: 12G
-            - args: inference half 256 4 150 lstm
-              accel-sim-mem: 12G
-            - args: inference half 1536 1 50 lstm
-              accel-sim-mem: 12G
-            - args: inference half 512 1 1 gru
-              accel-sim-mem: 12G
-            - args: inference half 512 2 1 gru
-              accel-sim-mem: 12G
-            - args: inference half 512 4 1 gru
-              accel-sim-mem: 12G
-            - args: inference half 1536 1 750 gru
-              accel-sim-mem: 12G
-            - args: train half 128 32 15 lstm
-              accel-sim-mem: 20G
-            - args: train half 128 64 15 lstm
-              accel-sim-mem: 20G
-            - args: train half 128 32 1 lstm
-              accel-sim-mem: 20G
-            - args: train half 128 64 1 gru
-              accel-sim-mem: 20G
-            - args: train half 128 32 1 gru
-              accel-sim-mem: 20G
+#        - rnn_bench:
+#            - args: inference half 512 1 25 lstm
+#              accel-sim-mem: 12G
+#            - args: inference half 512 2 25 lstm
+#              accel-sim-mem: 12G
+#            - args: inference half 1024 1 25 lstm
+#              accel-sim-mem: 12G
+#            - args: inference half 256 4 150 lstm
+#              accel-sim-mem: 12G
+#            - args: inference half 1536 1 50 lstm
+#              accel-sim-mem: 12G
+#            - args: inference half 512 1 1 gru
+#              accel-sim-mem: 12G
+#            - args: inference half 512 2 1 gru
+#              accel-sim-mem: 12G
+#            - args: inference half 512 4 1 gru
+#              accel-sim-mem: 12G
+#            - args: inference half 1536 1 750 gru
+#              accel-sim-mem: 12G
+#            - args: train half 128 32 15 lstm
+#              accel-sim-mem: 20G
+#            - args: train half 128 64 15 lstm
+#              accel-sim-mem: 20G
+#            - args: train half 128 32 1 lstm
+#              accel-sim-mem: 20G
+#            - args: train half 128 64 1 gru
+#              accel-sim-mem: 20G
+#            - args: train half 128 32 1 gru
+#              accel-sim-mem: 20G
 
 sdk-4.2-scaled:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
@@ -937,13 +939,13 @@ dragon-cdp:
 
 
 proxy-apps-doe:
-    exec_dir: "$GPUAPPS_ROOT/src/cuda/proxy-apps-doe/"
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/proxy-apps-doe/"
     execs:
             # Does not compile
 #         - comd/CoMDCUDA:
 #            - args: p ag -e -x 20 -y 20 -z 20 -n 0 -m thread_atom
-         - cns/cns_all:
+         - cns_all:
             - args: 64 32 32 1
          - XSBench:
             - args: 12 small 0
