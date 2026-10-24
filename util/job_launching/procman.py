@@ -140,6 +140,16 @@ class Job:
         return self.string()
 
 
+def load_state(pickleFile):
+    """A procman's pickled state, or None while it cannot be read (removed, or written
+    by a procman from before saveState was atomic)."""
+    try:
+        with open(pickleFile, "rb") as f:
+            return pickle.load(f)
+    except (OSError, EOFError, pickle.UnpicklingError):
+        return None
+
+
 class ProcMan:
     def __init__(self, jobLimit, pickleFile):
         self.initialize(jobLimit, pickleFile)
@@ -148,7 +158,12 @@ class ProcMan:
         self.initialize(jobLimit, procManStateFile)
 
     def saveState(self):
-        pickle.dump(self, open(self.pickleFile, "wb+"))
+        # Write a whole file and rename it, so a reader never sees a half-written pickle; the
+        # temp name must not match the "*pickle*" glob of getCPUCountFromOtherProcMans.
+        tmp = os.path.join(os.path.dirname(self.pickleFile), ".save.%d" % os.getpid())
+        with open(tmp, "wb") as f:
+            pickle.dump(self, f)
+        os.replace(tmp, self.pickleFile)
 
     def clear(self):
         if not self.mutable or len(self.activeJobs) > 0 or len(self.completeJobs) > 0:
@@ -270,8 +285,9 @@ class ProcMan:
             os.path.join(os.path.dirname(self.pickleFile), "*pickle*")
         ):
             if pickleFile != self.pickleFile:
-                otherProcMan = pickle.load(open(pickleFile, "rb"))
-                othersCores += len(otherProcMan.activeJobs)
+                otherProcMan = load_state(pickleFile)
+                if otherProcMan:
+                    othersCores += len(otherProcMan.activeJobs)
         return othersCores
 
     def getState(self):
@@ -494,8 +510,9 @@ def main():
         procmanfiles = glob.glob(options.file + ".*")
         for f in procmanfiles:
             print("Killing active jobs in Procman: {0}".format(os.path.basename(f)))
-            procMan = pickle.load(open(f, "rb"))
-            procMan.killJobs()
+            procMan = load_state(f)
+            if procMan:
+                procMan.killJobs()
     elif options.printState:
         numProcMans = 0
         numQueued = 0
@@ -531,8 +548,8 @@ def main():
     elif options.procManForJob != None:
         procmanfiles = glob.glob(options.file + ".*")
         for f in procmanfiles:
-            procMan = pickle.load(open(f, "rb"))
-            j = procMan.getJob(options.procManForJob)
+            procMan = load_state(f)
+            j = procMan.getJob(options.procManForJob) if procMan else None
             if j != None:
                 print(procMan.pickleFile)
                 break
