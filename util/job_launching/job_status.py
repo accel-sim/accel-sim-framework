@@ -65,11 +65,11 @@ ROW_STRING = (
 )
 
 # A job missing from both squeue and sacct this many polls in a row (sacct lags
-# a job's end by seconds), or whose procman state cannot be read, is judged
+# a job's end by seconds), or whose procman state is unknown, is judged
 # without a scheduler state
 SACCT_MISSES = 3
 # procman_state() for a job whose procman pickle could not be looked up or read
-UNREADABLE = "UNREADABLE"
+UNKNOWN = "UNKNOWN"
 # sacct states of a job that is not over yet
 SLURM_ACTIVE = ("", "PENDING", "RUNNING", "REQUEUED", "COMPLETING", "CONFIGURING",
                 "SUSPENDED", "RESIZING", "REQUEUE_HOLD", "REQUEUE_FED")
@@ -187,20 +187,20 @@ class _ProcManUnpickler(pickle.Unpickler):
 
 
 def procman_state(job_id):
-    """(state, node, time, mem); state None = done (no procman has the job), UNREADABLE =
-    the lookup or the pickle read failed, which is not evidence that the job is done."""
+    """(state, node, time, mem); state None = no procman has the job, UNKNOWN = the lookup
+    or the pickle read failed, which is not evidence that the job is done."""
     r = subprocess.run([os.path.join(this_directory, "procman.py"), "-j", job_id],
                        capture_output=True, text=True)
     out = r.stdout.strip()
     if r.returncode != 0:
-        return UNREADABLE, "", "", ""
-    if not out:  # its procman finished and removed its pickle
+        return UNKNOWN, "", "", ""
+    if not out:  # its procman finished, or is still taking over the launcher's jobs
         return None, "", "", ""
     try:
         with open(out, "rb") as f:
             job = _ProcManUnpickler(f).load().getJob(int(job_id))
     except Exception:
-        return UNREADABLE, "", "", ""
+        return UNKNOWN, "", "", ""
     if job is None:
         return None, "", "", ""
     state = job.status if job.status in (RUNNING, WAITING) else None
@@ -293,7 +293,11 @@ def status(logfile, run_dir, job_manager):
             state, entry["node"], entry["time"] = qstat_state(j["id"])
         else:
             state, node, elapsed, mem = procman_state(j["id"])
-            if state == UNREADABLE:
+            # procman -S clears the launcher's pickle before the procman it spawned saves its
+            # own, so right after a launch no pickle may hold a job that has not started yet
+            if state is None and not os.path.exists(j["outfile"]):
+                state = UNKNOWN
+            if state == UNKNOWN:
                 entry["misses"] = entry.get("misses", 0) + 1
                 if entry["misses"] < SACCT_MISSES:
                     continue
