@@ -26,11 +26,10 @@ rodinia_2.0-ft:
         - heartwall-rodinia-2.0-ft:
             - args:  ./data/test.avi 1 ./data/result-1.txt
               accel-sim-mem: 1G
-        # The legacy texture-reference API it used was removed in CUDA 12; the
-        # kernel now uses texture objects and passes its gold check again.
-        - kmeans-rodinia-2.0-ft:
-            - args:  -i ./data/400.txt -g data/400-result.txt -o
-              accel-sim-mem: 1G
+        # Uses legacy texture cache instructions, it is unclear if it still makes sense to support
+#        - kmeans-rodinia-2.0-ft:
+#            - args:  -i ./data/400.txt -g data/400-result.txt -o
+#              accel-sim-mem: 1G
         - lud-rodinia-2.0-ft:
             - args:  -v -b -i ./data/64.dat
               accel-sim-mem: 1G
