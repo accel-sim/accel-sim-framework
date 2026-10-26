@@ -32,8 +32,6 @@ enum address_scope {
   SYS_MEM,
 };
 
-enum address_format { tma_list_all = 3, tma_base_delta = 4 };
-
 struct trace_command {
   std::string command_string;
   command_type m_type;
