@@ -26,7 +26,7 @@ message: >-
 type: software
 url: "https://accel-sim.github.io/"
 repository-code: "https://github.com/accel-sim/accel-sim-framework"
-version: "2.0"
+version: "2.0.1"
 # CFF requires a top-level `authors` key, so Accel-Sim is credited here as a single
 # entity rather than an enumerated list -- the project has many contributors beyond any
 # one paper's author list. See the GitHub contributors page for individual credit.

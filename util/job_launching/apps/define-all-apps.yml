@@ -137,6 +137,204 @@ GPU_Microbenchmark_TMA:
             - args: -n 262144 -o UBLKRED_G_S -i 16
               accel-sim-mem: 10G
 
+# Short versions of the two suites above for PR CI (smoke tests, not
+# correlation). --iters / --bytes cut the loop trip count / working set
+# (see hw_def/common/gpuConfig.h in gpu-app-collection); benches that already
+# finish in a few minutes keep their GPU_Microbenchmark args and traces.
+GPU_Microbenchmark_CI:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: "$GPUAPPS_ROOT/data_dirs/"
+    execs:
+        - l1_bw_32f:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
+              accel-sim-mem: 1G
+        - l1_bw_64f:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
+              accel-sim-mem: 1G
+        - l1_bw_128:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1
+              accel-sim-mem: 2G
+        - l1_lat:
+            - args: --blocks 1 --fast
+              accel-sim-mem: 1G
+        - l2_bw_32f:
+            - args: --tpb 1024 --tpsm 1024 --fast --iters 16
+              accel-sim-mem: 2G
+        - l2_bw_64f:
+            - args: --tpb 1024 --tpsm 1024 --fast --iters 16
+              accel-sim-mem: 2G
+        - l2_lat:
+            - args: --fast --iters 1024
+              accel-sim-mem: 1G
+        - mem_bw:
+            - args: --tpb 1024 --tpsm 1024 --bytes 2097152
+              accel-sim-mem: 2G
+        - mem_lat:
+            - args: --fast --iters 1024 --bytes 1048576
+              accel-sim-mem: 1G
+        - shared_bw:
+            - args: --tpb 1024 --tpsm 1024 --blocks 1  
+              accel-sim-mem: 2G
+        - shared_lat:
+            - args:  --blocks 1  
+              accel-sim-mem: 1G
+        - shared_bank_conflicts:
+            - args: 1
+              accel-sim-mem: 1G
+            - args: 2
+              accel-sim-mem: 1G
+        - MaxIops_int32:
+            - args: --tpb 1024  --blocks 1  
+              accel-sim-mem: 1G
+        - l1_shared_bw:
+            - args: --tpb 1024 --blocks 1 --iters 1024 --bytes 32768
+              accel-sim-mem: 1G
+        - l1_bw_32f_unroll:
+            - args: --tpb 1024 --blocks 1  
+              accel-sim-mem: 1G
+        - l1_bw_32f_unroll_large:
+            - args: --tpb 1024  --blocks 1 
+              accel-sim-mem: 1G
+
+# H200 only. tma_bulk keeps its GPU_Microbenchmark_TMA args (all short).
+GPU_Microbenchmark_TMA_CI:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - tma_tensor:
+            - args: -w 256 -h 256 -o UTMALDG -i 16
+              accel-sim-mem: 4G
+            - args: -w 256 -h 256 -o UTMASTG -i 16
+              accel-sim-mem: 4G
+            - args: -w 256 -h 256 -o UTMAREDG -i 16
+              accel-sim-mem: 4G
+            - args: -w 256 -h 256 -o REGULAR_LOAD -i 4
+              accel-sim-mem: 4G
+        - tma_bulk:
+            - args: -n 1024 -o UBLKCP_S_G -i 128
+              accel-sim-mem: 4G
+            - args: -n 1024 -o UBLKCP_G_S -i 128
+              accel-sim-mem: 4G
+            - args: -n 1024 -o UBLKRED_G_S -i 128
+              accel-sim-mem: 4G
+            - args: -n 262144 -o UBLKCP_S_G -i 16
+              accel-sim-mem: 4G
+            - args: -n 262144 -o UBLKCP_G_S -i 16
+              accel-sim-mem: 4G
+            - args: -n 262144 -o UBLKRED_G_S -i 16
+              accel-sim-mem: 4G
+
+hopper_features_CI:
+    exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
+    data_dirs: ""
+    execs:
+        - mbarrier_reduction:
+            - args:
+              accel-sim-mem: 1G
+        - mbarrier_reduction2:
+            - args:
+              accel-sim-mem: 1G
+        - mbarrier_test:
+            - args:
+              accel-sim-mem: 1G
+        - ublkpf:
+            - args: -n 1024 -i 1
+              accel-sim-mem: 1G
+        - ublkred_g_s:
+            - args: -n 1024 -i 1 -r all
+              accel-sim-mem: 1G
+        - elect_sync:
+            - args:
+              accel-sim-mem: 1G
+        - bar_sync:
+            - args:
+              accel-sim-mem: 1G
+        - bar_warp_sync:
+            - args:
+              accel-sim-mem: 1G
+        # brx.idx N-way divergence (ubench/system/brx_idx); with no args it
+        # sweeps 1..8 targets and prints "RESULT: PASSED|FAILED".
+        - brx_idx:
+            - args:
+              accel-sim-mem: 1G
+        # Rank-aware shared addresses (ubench/mem/cluster_rank): every
+        # CTA of 2- and 4-CTA clusters runs .shared, generic, mapa,
+        # .shared::cluster, mbarrier, cp.async and bulk/TMA paths, so ranks
+        # >= 1 are covered. Prints "RESULT: PASSED|FAILED".
+        - cluster_rank:
+            - args:
+              accel-sim-mem: 1G
+        - ublkcp_g_s:
+            - args:
+              accel-sim-mem: 1G
+        - ublkcp_s_g:
+            - args:
+              accel-sim-mem: 1G
+        - utmaldg:
+            - args:
+              accel-sim-mem: 1G
+        - utmaldg_3d:
+            - args:
+              accel-sim-mem: 1G
+        - utmaldg_3d_tx:
+            - args:
+              accel-sim-mem: 1G
+        - utmapf:
+            - args:
+              accel-sim-mem: 1G
+        - utmapf_3d:
+            - args:
+              accel-sim-mem: 1G
+        - utmastg:
+            - args:
+              accel-sim-mem: 1G
+        - utmastg_3d:
+            - args:
+              accel-sim-mem: 1G
+        - utmaredg:
+            - args:
+              accel-sim-mem: 1G
+        - utmaredg_3d:
+            - args:
+              accel-sim-mem: 1G
+        # WGMMA ubenches (undergrad_ubench branch). Only the standalone tests
+        # are listed — wgmma_no_tma / wgmma_tf32_128 / wgmma_sweep /
+        # wgmma_rs_verify / lat_gmma need the CUTLASS headers; their Makefiles
+        # skip them when the headers are absent.
+        # Each prints "Overall: PASSED|FAILED" for monitor_func_test.py.
+        - wgmma_verify:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_dtypes:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_scale:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_shapes:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_sync:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_fence:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_multik:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_timing_edge:
+            - args:
+              accel-sim-mem: 1G
+        - wgmma_pattern_origin:
+            - args:
+              accel-sim-mem: 1G
+        # NVIDIA CUDA Samples v12.8 shfl_intimage_rows (tests/shfl_scan/).
+        # Single-row regression; prints "Overall: PASSED|FAILED".
+        - shfl_scan:
+            - args:
+              accel-sim-mem: 1G
+
 GPU_Atomic:
     exec_dir: "$GPUAPPS_ROOT/bin/$CUDA_VERSION/release/"
     data_dirs: "$GPUAPPS_ROOT/data_dirs/"

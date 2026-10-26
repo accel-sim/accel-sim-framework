@@ -547,16 +547,17 @@ static void write_tracez(FILE *out_fp, const vector<string> &header_lines,
 // Classify an instruction line for the unused-mbarrier scan.
 // Input is the post-cluster portion of a trace line: [linenum] pc mask <dst...>
 //   <opcode> <src...> <mem_width> [<addr_data>] ...
-// Returns the mbarrier address (lower 32 bits) for ARRIVE-on / TRYWAIT
-// instructions, or 0 if the inst is unrelated or cannot be parsed.
+// Returns the mbarrier address (lower 32 bits) of every active lane for
+// ARRIVE-on / TRYWAIT instructions, or kind OTHER if the inst is unrelated or
+// cannot be parsed.
 struct mbar_inst_info {
   enum kind_t { OTHER, ARRIVE, TRYWAIT };
   kind_t kind;
-  uint32_t mbar_addr;
+  vector<uint32_t> mbar_addrs;
 };
 static mbar_inst_info classify_mbar_inst(const string &line,
                                          unsigned lineinfo) {
-  mbar_inst_info r{mbar_inst_info::OTHER, 0};
+  mbar_inst_info r{mbar_inst_info::OTHER, {}};
   stringstream ss(line);
   string tok;
   if (lineinfo) {
@@ -588,17 +589,53 @@ static mbar_inst_info classify_mbar_inst(const string &line,
   if (mem_width == 0)
     return r;
 
-  uint64_t addr = 0;
+  // Each lane can name a different mbarrier, so decode every active lane the
+  // same way trace_parser.cc does; the base alone misses the other lanes.
+  vector<uint64_t> addrs;
   if (is_tma_load) {
     // TMA format: tma_mbar_addr is the next field after mem_width.
+    uint64_t addr = 0;
     ss >> hex >> addr;
+    addrs.push_back(addr);
   } else {
     unsigned addr_mode;
     ss >> dec >> addr_mode;
-    // address_format::list_all=0 -> first listed addr is for the first
-    // active lane. base_stride=1 / base_delta=2 -> base_address is first.
-    if (addr_mode == 0 || addr_mode == 1 || addr_mode == 2) {
+    int first_lane = -1;
+    for (int s = 0; s < 32 && first_lane < 0; s++)
+      if ((mask >> s) & 1u)
+        first_lane = s;
+    if (first_lane < 0)
+      return r;
+    if (addr_mode == 0) { // list_all: one address per active lane
+      for (int s = first_lane; s < 32; s++) {
+        if (!((mask >> s) & 1u))
+          continue;
+        uint64_t addr = 0;
+        ss >> hex >> addr;
+        addrs.push_back(addr);
+      }
+    } else if (addr_mode == 1) { // base_stride: one contiguous run of lanes
+      uint64_t base = 0;
+      long long stride = 0;
+      ss >> hex >> base;
+      ss >> dec >> stride;
+      uint64_t addr = base;
+      for (int s = first_lane; s < 32 && ((mask >> s) & 1u); s++) {
+        addrs.push_back(addr);
+        addr += stride;
+      }
+    } else if (addr_mode == 2) { // base_delta: delta from the previous lane
+      uint64_t addr = 0;
       ss >> hex >> addr;
+      addrs.push_back(addr);
+      for (int s = first_lane + 1; s < 32; s++) {
+        if (!((mask >> s) & 1u))
+          continue;
+        long long delta = 0;
+        ss >> dec >> delta;
+        addr += delta;
+        addrs.push_back(addr);
+      }
     } else {
       return r;
     }
@@ -606,13 +643,15 @@ static mbar_inst_info classify_mbar_inst(const string &line,
   if (!ss)
     return r;
 
-  r.mbar_addr = (uint32_t)addr;
+  for (uint64_t a : addrs)
+    if ((uint32_t)a != 0)
+      r.mbar_addrs.push_back((uint32_t)a);
   r.kind = is_trywait ? mbar_inst_info::TRYWAIT : mbar_inst_info::ARRIVE;
   return r;
 }
 
-// Drop SYNCS.PHASECHK.*.TRYWAIT instructions targeting mbarriers that no
-// instruction in this kernel ever ARRIVE-s on (SYNCS.ARRIVE*,
+// Drop SYNCS.PHASECHK.*.TRYWAIT instructions with a lane targeting an mbarrier
+// that no instruction in this kernel ever ARRIVE-s on (SYNCS.ARRIVE*,
 // ARRIVES.LDGSTSBAR, or TMA load via tma_mbar_addr). Such trywaits would
 // deadlock the simulator since the mbarrier phase never advances.
 static void drop_unused_trywaits(const string &filepath_str,
@@ -623,8 +662,8 @@ static void drop_unused_trywaits(const string &filepath_str,
     for (const auto &warp : tb.warp_insts_array) {
       for (const string *inst_ptr : warp) {
         auto c = classify_mbar_inst(*inst_ptr, lineinfo);
-        if (c.kind == mbar_inst_info::ARRIVE && c.mbar_addr != 0)
-          arrived.insert(c.mbar_addr);
+        if (c.kind == mbar_inst_info::ARRIVE)
+          arrived.insert(c.mbar_addrs.begin(), c.mbar_addrs.end());
       }
     }
   }
@@ -635,12 +674,17 @@ static void drop_unused_trywaits(const string &filepath_str,
       deque<const string *> filtered;
       for (const string *inst_ptr : warp) {
         auto c = classify_mbar_inst(*inst_ptr, lineinfo);
-        if (c.kind == mbar_inst_info::TRYWAIT && c.mbar_addr != 0 &&
-            arrived.count(c.mbar_addr) == 0) {
-          dropped[c.mbar_addr]++;
-          continue;
+        bool drop = false;
+        if (c.kind == mbar_inst_info::TRYWAIT) {
+          for (uint32_t a : c.mbar_addrs) {
+            if (arrived.count(a) == 0) {
+              dropped[a]++;
+              drop = true;
+            }
+          }
         }
-        filtered.push_back(inst_ptr);
+        if (!drop)
+          filtered.push_back(inst_ptr);
       }
       warp = std::move(filtered);
     }
@@ -650,7 +694,7 @@ static void drop_unused_trywaits(const string &filepath_str,
     lock_guard<mutex> lock(stderr_mutex);
     for (auto &kv : dropped) {
       cout << "[" << filepath_str << "] Dropped " << kv.second
-           << " TRYWAIT(s) on mbarrier 0x" << hex << kv.first << dec
+           << " TRYWAIT lane(s) on mbarrier 0x" << hex << kv.first << dec
            << " (no ARRIVE in this kernel)\n";
     }
   }

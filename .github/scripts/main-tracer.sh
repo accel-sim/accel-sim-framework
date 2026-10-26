@@ -10,6 +10,7 @@
 #   ./main-tracer.sh build-tracer # Build tracer tool
 #   ./main-tracer.sh build-apps   # Build applications
 #   ./main-tracer.sh trace        # Generate traces
+#   ./main-tracer.sh trace-parallel # Trace again on several GPUs, compare
 #   ./main-tracer.sh hw-stats     # Generate HW stats
 #   ./main-tracer.sh test         # Test new traces
 #
@@ -19,7 +20,7 @@
 #   GITHUB_EVENT_NAME       - Event type (push, pull_request)
 #   PR_HEAD_REPO_FULL_NAME  - For PRs: head repo in owner/repo format
 
-set -e
+set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/lib/common.sh"
@@ -34,6 +35,7 @@ BUILD_JOBS=20
 
 # Tracer settings
 GPU_DEVICE=7  # GPU device to use for tracing
+PARALLEL_GPU_DEVICES="3,7"  # GPUs for the run_hw_trace.py worker pool test
 BENCHMARKS="rodinia_2.0-ft"
 CONFIG="QV100-SASS"
 DATA_DIRS_PATH="/home/tgrogers-raid/a/common/data_dirs"
@@ -88,10 +90,39 @@ stage_trace() {
     source ./gpu-app-collection/src/setup_environment
 
     rm -rf ./hw_run/
+    # nvbit-trace.sh also removes NVBit's /tmp files on the GPU node
     srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- \
-        ./util/tracer_nvbit/run_hw_trace.py -B "$BENCHMARKS" -D "$GPU_DEVICE"
+        "$SCRIPT_DIR/nvbit-trace.sh" -B "$BENCHMARKS" -D "$GPU_DEVICE"
 
     log_info "Traces generated successfully"
+}
+
+# The apps of stage_trace again, spread over PARALLEL_GPU_DEVICES by
+# run_hw_trace.py's GPU tracing workers and post-processed by two CPU workers.
+# The traces must match stage_trace's (compare-traces.py), and every listed GPU
+# must have traced an app.
+stage_trace_parallel() {
+    log_section "Tracing on GPUs $PARALLEL_GPU_DEVICES (worker pools)"
+    source ./env-setup/12.8_env_setup.sh
+    source ./gpu-app-collection/src/setup_environment
+
+    rm -rf ./hw_run_parallel/
+    srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 --cpus-per-task=8 -- \
+        "$SCRIPT_DIR/nvbit-trace.sh" -B "$BENCHMARKS" -D "$PARALLEL_GPU_DEVICES" \
+        --cpu_workers 2 -j 4 --output_name hw_run_parallel
+
+    local serial=(./hw_run/traces/device-"$GPU_DEVICE"/*/)
+    local parallel=(./hw_run_parallel/traces/device-"${PARALLEL_GPU_DEVICES%%,*}"/*/)
+    python3 "$SCRIPT_DIR/compare-traces.py" "${serial[0]}" "${parallel[0]}"
+
+    local used
+    used=$(find ./hw_run_parallel -name traced_on_gpu.txt -exec tail -n 1 {} \; | cut -d, -f1 | sort -n -u | paste -sd, -)
+    if [ "$used" != "$(echo "$PARALLEL_GPU_DEVICES" | tr ',' '\n' | sort -n -u | paste -sd, -)" ]; then
+        log_error "Apps were traced on GPUs '$used', expected every GPU of $PARALLEL_GPU_DEVICES"
+        exit 1
+    fi
+
+    log_info "Worker pool traces match the single-GPU traces (traced on GPUs $used)"
 }
 
 stage_hw_stats() {
@@ -114,7 +145,8 @@ stage_test() {
         -B "$BENCHMARKS" \
         -C "$CONFIG" \
         -T ./hw_run/traces/ \
-        -N "$JOB_NAME"
+        -N "$JOB_NAME" \
+        "${SIM_PER_KERNEL[@]}"
 
     monitor_simulations "$JOB_NAME" 12 300 "rodinia-stats-per-app.csv"
 }
@@ -126,6 +158,7 @@ run_all() {
     stage_build_tracer
     stage_build_apps
     stage_trace
+    stage_trace_parallel
     stage_hw_stats
     stage_test
 }
@@ -135,7 +168,7 @@ run_all() {
 #==============================================================================
 
 show_usage() {
-    echo "Usage: $0 {setup|build|build-tracer|build-apps|trace|hw-stats|test|all}"
+    echo "Usage: $0 {setup|build|build-tracer|build-apps|trace|trace-parallel|hw-stats|test|all}"
     echo ""
     echo "Stages:"
     echo "  setup        - Clone and setup env-setup repository"
@@ -143,6 +176,7 @@ show_usage() {
     echo "  build-tracer - Build the NVBit tracer tool"
     echo "  build-apps   - Clone and build gpu-app-collection"
     echo "  trace        - Generate traces on GPU (uses srun)"
+    echo "  trace-parallel - Trace on several GPUs, compare with trace (uses srun)"
     echo "  hw-stats     - Generate hardware stats (uses srun)"
     echo "  test         - Test traces with simulation"
     echo "  all          - Run all stages in order"
@@ -154,6 +188,7 @@ case "${1:-all}" in
     build-tracer) stage_build_tracer ;;
     build-apps)   stage_build_apps ;;
     trace)        stage_trace ;;
+    trace-parallel) stage_trace_parallel ;;
     hw-stats)     stage_hw_stats ;;
     test)         stage_test ;;
     all)          run_all ;;

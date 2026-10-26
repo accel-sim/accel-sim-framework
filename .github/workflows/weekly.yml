@@ -1,160 +1,242 @@
-name: Weekly Tests
+name: Weekly
+
+# This week's H200 and V100 traces and hardware stats, plus the hosted H200 ML
+# traces, simulated, correlated and archived. Each SASS job's steps run only
+# after the previous ones succeed.
 
 on:
-  workflow_dispatch:  # manually dispatch
-  # push:
+  workflow_dispatch:
+    inputs:
+      skip_tracer:
+        description: 'Skip the tracers (use the last traces)'
+        required: false
+        type: boolean
+        default: false
   schedule:
-    - cron: '0 20 * * FRI'  # 8:00 PM every Friday
+    - cron: '0 19 * * FRI'  # 7:00 PM every Friday
+
+# The trace depots are per repo: one weekly of a repo at a time, never cancelled
+concurrency:
+  group: weekly-${{ github.repository }}
+  cancel-in-progress: false
+
 env:
-  BRANCH_NAME: ${{ github.head_ref || github.ref_name }}
+  BRANCH_NAME: ${{ github.ref_name }}
+  # run_simulations.py and the tracer sruns put this in their Slurm jobs' comment
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
+
 jobs:
-  Tracer-Weekly:
-    timeout-minutes: 720
-    # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
-    runs-on: tgrogers-gpu01
+  Tracer-H200:
+    if: ${{ !inputs.skip_tracer }}
+    runs-on: tgrogers-raid
+    timeout-minutes: 1440 # 720 for the tracer, 720 for another repo's to finish
+    steps:
+      - uses: actions/checkout@v6
+
+      # VPN, sync, trace on the remote H200 and sync back, as one Slurm job.
+      # The singleton name is the lock: one tracer uses the remote, VPN and
+      # SOCKS port at a time, across repos.
+      - name: Generate H200 traces and hardware stats
+        env:
+          VPN_HOST: ${{ secrets.VPN_HOST }}
+          VPN_CERT: ${{ secrets.VPN_CERT }}
+          REMOTE_HOST: ${{ secrets.REMOTE_HOST }}
+        run: |
+          srun -p tgrogers-dgx -J hopper-weekly-tracer --dependency=singleton \
+            --time=12:00:00 -c 4 --comment="$ACCELSIM_SLURM_COMMENT" \
+            ./.github/scripts/weekly.sh trace-h200
+
+  Tracer-V100:
+    if: ${{ !inputs.skip_tracer }}
+    runs-on: tgrogers-raid
+    timeout-minutes: 1440
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
+
       - name: Setup Environment
+        run: ./.github/scripts/weekly.sh setup
+
+      - name: Build Tracer and Applications
+        run: ./.github/scripts/weekly.sh build-tracer-v100
+
+      # The GPU work goes to gpu01 through the gpu-lock Slurm singleton, which
+      # PR Tracer-Tool runs share; each srun holds it only for its own step
+      - name: Generate V100 traces
         run: |
-          rm -rf env-setup
-          git clone --quiet git@github.com:purdue-aalp/env-setup.git 
-          cd env-setup 
-          git checkout cluster-ubuntu
-      - name: Build Tracer
+          srun -p tgrogers-dgx -J gpu-lock --dependency=singleton --time=08:00:00 \
+            --comment="$ACCELSIM_SLURM_COMMENT" ./.github/scripts/weekly.sh trace-v100
+
+      - name: Generate V100 hardware stats
         run: |
-          source ./env-setup/12.8_env_setup.sh
-          ./util/tracer_nvbit/install_nvbit.sh
-          make clean -C ./util/tracer_nvbit/
-          make -C ./util/tracer_nvbit/
-      - name: build applications
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          export PATH=/home/tgrogers-raid/a/common/python2:$PATH
-          rm -rf ./gpu-app-collection/
-          git clone --quiet --recurse-submodules https://github.com/accel-sim/gpu-app-collection.git
-          source ./gpu-app-collection/src/setup_environment
-          ln -s /home/tgrogers-raid/a/common/data_dirs ./gpu-app-collection/
-          make -j8 -C ./gpu-app-collection/src rodinia_2.0-ft
-          make -j8 -C ./gpu-app-collection/src rodinia-3.1
-          make -j8 -C ./gpu-app-collection/src GPU_Microbenchmark
-          # make -j8 -C ./gpu-app-collection/src Deepbench_nvidia
-          # make -j8 -C ./gpu-app-collection/src parboil
-          # make -j8 -C ./gpu-app-collection/src polybench
-          # make -j8 -C ./gpu-app-collection/src cutlass
-      - name: generate traces
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-app-collection/src/setup_environment
-          rm -rf ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/hw_stats/run_hw.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -D 7
-          rm -rf /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
-          mkdir -p /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run
-          # ./util/tracer_nvbit/run_hw_trace.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark,parboil,polybench,cutlass_5_trace,Deepbench_nvidia_tencore,Deepbench_nvidia_normal -D 7
-      - name: generate-spinlock-traces-spinlock_handling
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-app-collection/src/setup_environment
-          rm -rf ./hw_run/
-          mkdir -p ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling fast_forward
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward
-          mkdir -p ./hw_run/
-          srun --job-name=gpu-lock --dependency=singleton --partition=tgrogers-dgx --time=02:00:00 -- ./util/tracer_nvbit/run_hw_trace.py -B Spinlock -D 7 --spinlock_handling none
-          mv ./hw_run /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none
-  SASS-Weekly:
-    timeout-minutes: 900
-    needs: [Tracer-Weekly]
-    # if: ${{ github.repository == 'accel-sim/accel-sim-framework' || github.event_name == 'workflow_dispatch' }}
-    runs-on: tgrogers-raid 
+          srun -p tgrogers-dgx -J gpu-lock --dependency=singleton --time=08:00:00 \
+            --comment="$ACCELSIM_SLURM_COMMENT" ./.github/scripts/weekly.sh hw-stats-v100
+
+      - name: Publish V100 traces
+        run: ./.github/scripts/weekly.sh publish-v100
+
+  SASS-H200:
+    needs: [Tracer-H200]
+    if: ${{ !cancelled() && (needs.Tracer-H200.result == 'success' || needs.Tracer-H200.result == 'skipped') }}
+    runs-on: tgrogers-raid
+    timeout-minutes: 960
     defaults:
       run:
         shell: bash
     steps:
       - uses: actions/checkout@v6
-        with:
-          ref: dev
+
       - name: Setup Environment
-        run: |
-          rm -rf env-setup
-          git clone --quiet git@github.com:purdue-aalp/env-setup.git 
-          cd env-setup 
-          git checkout cluster-ubuntu
+        run: ./.github/scripts/weekly.sh setup
+
       - name: Build Accel-Sim
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          rm -rf ./gpu-simulator/gpgpu-sim
+        run: ./.github/scripts/weekly.sh build 2>&1 | tee build.log
 
-          # Clone gpgpu-sim with fork-aware branch selection
-          echo "Cloning gpgpu-sim with fork-aware branch selection..."
-          git clone --quiet git@github.com:accel-sim/gpgpu-sim_distribution.git ./gpu-simulator/gpgpu-sim
-          
-          current_owner=$(echo ${{ github.repository }} | cut -d'/' -f1)
-          current_branch=$BRANCH_NAME
-          current_repo=$(echo $GITHUB_REPOSITORY | cut -d'/' -f2)
-          
-          gpgpusim_repo=$(echo $current_repo | sed 's/accel-sim-framework/gpgpu-sim_distribution/')
+      # Fails when any simulation has no valid output (get_stats --strict)
+      - name: Run SASS Simulations
+        run: ./.github/scripts/weekly.sh simulate h200
 
-          echo "Attempting to checkout branch '$BRANCH_NAME' from '$current_owner/$gpgpusim_repo'"
-          
-          # First, try to add the fork owner's repository as a remote and check if the branch exists
-          if git -C ./gpu-simulator/gpgpu-sim/ remote add fork-owner git@github.com:$current_owner/$gpgpusim_repo.git 2>/dev/null; then
-            # Check if the branch exists in the fork owner's repository
-            if git -C ./gpu-simulator/gpgpu-sim/ ls-remote fork-owner | grep -q "refs/heads/$BRANCH_NAME"; then
-              echo "Found branch '$BRANCH_NAME' in '$current_owner/$gpgpusim_repo' repository, checking it out"
-              git -C ./gpu-simulator/gpgpu-sim/ fetch fork-owner
-              git -C ./gpu-simulator/gpgpu-sim/ checkout -B $BRANCH_NAME fork-owner/$BRANCH_NAME
-            else
-              echo "Branch '$BRANCH_NAME' not found in '$current_owner/$gpgpusim_repo' repository, falling back to accel-sim dev branch"
-              git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-            fi
-            # Remove the temporary remote
-            git -C ./gpu-simulator/gpgpu-sim/ remote remove fork-owner
-          else
-            echo "Could not add '$current_owner/$gpgpusim_repo' remote, falling back to upstream dev branch"
-            git -C ./gpu-simulator/gpgpu-sim/ checkout -B dev origin/dev
-          fi
+      - name: Correlate with Hardware
+        run: ./.github/scripts/weekly.sh correlate h200
 
-          source ./gpu-simulator/setup_environment.sh
-          rm -rf ./gpu-simulator/build/release ./gpu-simulator/bin/release
-          cmake -S ./gpu-simulator/ -B ./gpu-simulator/build/release
-          cmake --build ./gpu-simulator/build/release -j
-          cmake --install ./gpu-simulator/build/release
-      - name: run SASS
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-simulator/setup_environment.sh
-          ln -s /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run ./hw_run
-          ./util/job_launching/run_simulations.py -B rodinia_2.0-ft,rodinia-3.1,GPU_Microbenchmark -C QV100-SASS -T ./hw_run/traces/device-7/12.8 -N weekly-$$ -M 70G
-          ./util/job_launching/monitor_func_test.py -T 12 -S 300 -v -s weekly-stats-per-app.csv -N weekly-$$
-      - name: test-new-traces-spinlock_handling
-        # Test only fast-forwarded traces as the none one takes too long to run (~2-3 hr)
-        run: |
-          source ./env-setup/12.8_env_setup.sh
-          source ./gpu-simulator/setup_environment.sh
-          ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_fast_forward/traces/device-7/ -N spinlock-microbenchmark-$$-fast_forward
-          ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-fast_forward
-          # ./util/job_launching/run_simulations.py -B Spinlock -C QV100-SASS -T /scratch/tgrogers-disk01/a/common/for-sharing/$USER/nightly-traces/hw_run_none/traces/device-7/ -N spinlock-microbenchmark-$$-none
-          # ./util/job_launching/monitor_func_test.py -v -s spinlock-stats-per-app.csv -N spinlock-microbenchmark-$$-none
+      - name: Archive Stats
+        run: ./.github/scripts/weekly.sh archive h200
+
+      - name: AI analysis of the results
+        if: success()
+        continue-on-error: true # the analysis never changes the CI result
+        env:
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
+
+  SASS-V100:
+    needs: [Tracer-V100]
+    if: ${{ !cancelled() && (needs.Tracer-V100.result == 'success' || needs.Tracer-V100.result == 'skipped') }}
+    runs-on: tgrogers-raid
+    timeout-minutes: 960
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Environment
+        run: ./.github/scripts/weekly.sh setup
+
+      - name: Build Accel-Sim
+        run: ./.github/scripts/weekly.sh build 2>&1 | tee build.log
+
+      # Fails when any simulation has no valid output (get_stats --strict)
+      - name: Run SASS Simulations
+        run: ./.github/scripts/weekly.sh simulate v100
+
+      - name: Correlate with Hardware
+        run: ./.github/scripts/weekly.sh correlate v100
+
+      # Same archive branch as SASS-H200; a push that loses the race retries
+      - name: Archive Stats
+        run: ./.github/scripts/weekly.sh archive v100
+
+      - name: AI analysis of the results
+        if: success()
+        continue-on-error: true # the analysis never changes the CI result
+        env:
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
+
+  # The ML traces of the static H200 depot (never traced here), one Slurm array
+  # task per kernel; independent of the tracers
+  SASS-H200-ML:
+    runs-on: tgrogers-raid
+    timeout-minutes: 2880
+    defaults:
+      run:
+        shell: bash
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Setup Environment
+        run: ./.github/scripts/weekly.sh setup
+
+      - name: Build Accel-Sim
+        run: ./.github/scripts/weekly.sh build 2>&1 | tee build.log
+
+      # Fails when any simulation has no valid output (get_stats --strict)
+      - name: Run SASS Simulations
+        run: ./.github/scripts/weekly.sh simulate h200-ml
+
+      - name: Correlate with Hardware
+        run: ./.github/scripts/weekly.sh correlate h200-ml
+
+      - name: Archive Stats
+        run: ./.github/scripts/weekly.sh archive h200-ml
+
+      - name: AI analysis of the results
+        if: success()
+        continue-on-error: true # the analysis never changes the CI result
+        env:
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
+
   failures:
     if: failure()
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       REPORT_URL: ""
     runs-on: tgrogers-raid
-    needs: [Tracer-Weekly, SASS-Weekly]
+    needs: [Tracer-H200, Tracer-V100, SASS-H200, SASS-V100, SASS-H200-ML]
     steps:
       - uses: actions/checkout@v6
       - name: Notify Failure
         run: |
-          # Setup envs
-          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git 
+          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
           source ./env-setup/common/common_inc.sh
-          export BRANCH_NAME="Weekly Tests"
+          export BRANCH_NAME="Weekly"
           python3 .github/scripts/send_ci_email.py -t failure
+
+  success:
+    if: ${{ !cancelled() && !failure() }}
+    env:
+      ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+      # the archive branch weekly.sh pushes: weekly/<repo>/<branch>/<group>/<config>
+      REPORT_URL: "https://rawcdn.githack.com/accel-sim/statistics-archive/weekly/${{ github.repository }}/${{ github.ref_name }}/"
+      CORREL_GPUS: "ubench/H200-SASS:H200 ubench/QV100-SASS:V100 ml/H200-SASS:H200-ML"
+    runs-on: tgrogers-raid
+    needs: [Tracer-H200, Tracer-V100, SASS-H200, SASS-V100, SASS-H200-ML]
+    steps:
+      - uses: actions/checkout@v6
+      - name: Notify Success
+        run: |
+          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
+          source ./env-setup/common/common_inc.sh
+          export BRANCH_NAME="Weekly"
+          python3 .github/scripts/send_ci_email.py -t success
+
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always()
+    runs-on: tgrogers-raid
+    needs: [Tracer-H200, Tracer-V100, SASS-H200, SASS-V100, SASS-H200-ML]
+    steps:
+      - name: Cancel this run's Slurm jobs
+        run: |
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

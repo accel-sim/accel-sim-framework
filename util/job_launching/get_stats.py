@@ -61,10 +61,11 @@ def find_latest_outfile(directory):
 
 
 def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
-    """Parse one per-kernel directory output file (reverse scan for final stats)."""
+    """Parse one per-kernel directory output file (reverse scan for final stats);
+    also returns the CUDA kernel name it simulated (None if not printed)."""
     outfile = find_latest_outfile(kernel_dir)
     if outfile is None:
-        return None, False, 0, 0
+        return None, False, 0, 0, None
     BYTES_TO_READ = int(250 * 1024 * 1024)
     fsize = os.stat(outfile).st_size
     local_bytes = min(fsize, BYTES_TO_READ)
@@ -86,6 +87,13 @@ def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
             exit_success = True
             break
 
+    cuda_name = None
+    for line in lines:
+        m = re.match(r"kernel_name\s+=\s+(.*)", line)
+        if m:
+            cuda_name = m.group(1).strip()
+            break
+
     stat_entries = {}
     stat_found = set()
     for line in reversed(lines):
@@ -99,7 +107,7 @@ def _worker_per_kernel_dir(kernel_dir, stats_to_pull):
         if len(stat_found) == len(stats_to_pull):
             break
     del lines
-    return stat_entries, exit_success, 1, local_bytes
+    return stat_entries, exit_success, 1, local_bytes, cuda_name
 
 
 # *********************************************************--
@@ -230,6 +238,20 @@ parser.add_option(
     action="store_true",
     help="Print the averages for each statistic",
 )
+parser.add_option(
+    "--strict",
+    dest="strict",
+    action="store_true",
+    help="Exit 1 (after printing the stats) if any expected simulation has no output "
+    "directory, no output file or no GPGPU-Sim terminating string",
+)
+parser.add_option(
+    "--allow-oom",
+    dest="allow_oom",
+    action="store_true",
+    help="With --strict, -N (the launch's logfile) and Slurm: a simulation whose every "
+    "failed job was killed for memory (common.oom_killed) is a warning, not a failure",
+)
 (options, args) = parser.parse_args()
 options.logfile = options.logfile.strip()
 options.run_dir = options.run_dir.strip()
@@ -347,6 +369,60 @@ else:
                     added_apps.add(app_and_args)
                 specific_jobIds[config + app_and_args] = (jobId, jobname)
 
+# (app_and_args, config) -> "ok" or why its stats are missing
+sim_status = {}
+
+
+# (app_and_args, config) -> per-kernel dirs that failed
+failed_kernels = {}
+
+
+def sim_problem(app_and_args, config, reason, path, kernel_name=None):
+    print("WARNING - {0}: {1}".format(reason, path), file=sys.stderr)
+    if sim_status.get((app_and_args, config)) == "ok":
+        sim_status[(app_and_args, config)] = reason
+    if kernel_name:
+        failed_kernels.setdefault((app_and_args, config), []).append(kernel_name)
+
+
+def launched_job_ids(sim_name):
+    """{(config, app_and_args, kernel or None): job id} of launch sim_name's newest logfile."""
+    logdir = this_directory + "../job_launching/logfiles/"
+    logs = [os.path.join(logdir, f) for f in os.listdir(logdir) if re.match(r"sim_log\.{0}\..*".format(re.escape(sim_name)), f)]
+    if not logs:
+        exit('Could not find logfiles for job with the name "{0}"'.format(sim_name))
+    ids = {}
+    for line in open(max(logs, key=os.path.getmtime)):
+        fields = line.split()
+        if len(fields) != 6:
+            continue
+        _, jobId, app, args, config, _ = fields
+        m = re.match(r"(.*)/(kernel-[^/]+)$", args)
+        base, kernel = (m.group(1), m.group(2)) if m else (args, None)
+        ids[(config, os.path.join(app.replace("/", "_"), base), kernel)] = jobId
+    return ids
+
+
+def sim_oom_killed(app_and_args, config, job_ids):
+    """True if every failed job of this simulation was killed for memory."""
+    kernels = failed_kernels.get((app_and_args, config)) or [None]
+    ids = [job_ids.get((config, app_and_args, k)) for k in kernels]
+    if None in ids:
+        return False
+    outcomes = common.slurm_outcomes(ids)
+    if outcomes is None:
+        return False
+    for k, jid in zip(kernels, ids):
+        run_dir = os.path.join(options.run_dir, app_and_args, config)
+        if k:
+            run_dir = os.path.join(run_dir, "per-kernel", k)
+        logs = [os.path.join(run_dir, f) for f in os.listdir(run_dir)
+                if re.search(r"\.[oe]" + re.escape(jid) + "$", f)] if os.path.isdir(run_dir) else []
+        if not common.oom_killed(outcomes.get(jid), common.tail_text(logs)):
+            return False
+    return True
+
+
 all_named_kernels = {}
 # per-kernel-dirs work items: (kernel_name, kernel_dir, app_and_args, config)
 pkd_work = []
@@ -356,21 +432,18 @@ for idx, app_and_args in enumerate(apps_and_args):
     for config in configs:
         # now get the right output file
         output_dir = os.path.join(options.run_dir, app_and_args, config)
+        # with -N/-l, only the app/config pairs the logfile launched are expected
+        if not specific_jobIds or config + app_and_args in specific_jobIds:
+            sim_status[(app_and_args, config)] = "ok"
         if not os.path.isdir(output_dir):
-            print(
-                "WARNING the outputdir " + output_dir + " does not exist",
-                file=sys.stderr,
-            )
+            sim_problem(app_and_args, config, "no output dir", output_dir)
             continue
 
         # Handle per-kernel directories mode — collect work items for parallel processing
         if options.per_kernel_dirs:
             kernel_dirs = find_per_kernel_dirs(output_dir)
             if len(kernel_dirs) == 0:
-                print(
-                    "WARNING - No per-kernel directories found in " + output_dir,
-                    file=sys.stderr,
-                )
+                sim_problem(app_and_args, config, "no per-kernel dirs", output_dir)
                 continue
             for kernel_name, kernel_dir in kernel_dirs:
                 pkd_work.append((kernel_name, kernel_dir, app_and_args, config))
@@ -394,12 +467,13 @@ for idx, app_and_args in enumerate(apps_and_args):
             if len(all_outfiles) != 0:
                 outfile = max(all_outfiles, key=os.path.getmtime)
             else:
+                sim_problem(app_and_args, config, "no output file", output_dir)
                 continue
 
         stat_found = set()
 
         if not os.path.isfile(outfile):
-            print("WARNING - " + outfile + " does not exist", file=sys.stderr)
+            sim_problem(app_and_args, config, "no output file", outfile)
             continue
 
         # Do a quick 100-line pass to get the GPGPU-Sim Version number
@@ -447,12 +521,7 @@ for idx, app_and_args in enumerate(apps_and_args):
         f.close()
 
         if not exit_success:
-            print(
-                "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(
-                    outfile
-                ),
-                file=sys.stderr,
-            )
+            sim_problem(app_and_args, config, "no GPGPU-Sim terminating string", outfile)
             if not options.ignore_failures:
                 continue
 
@@ -595,25 +664,31 @@ if pkd_work:
             for (_, kernel_dir, _, _) in pkd_work
         ]
         # Collect results in submission order (preserves kernel ordering)
-        for (kernel_name, kernel_dir, app_and_args, config), future in zip(pkd_work, futures):
-            stat_entries, exit_success, fp, bp = future.result()
+        occurrences = {}
+        for (dir_name, kernel_dir, app_and_args, config), future in zip(pkd_work, futures):
+            stat_entries, exit_success, fp, bp, cuda_name = future.result()
+            # Name the column as the normal mode does (<kernel>[--<occurrence>]) so
+            # it pairs with the hardware rows; without output, keep the dir name
+            kernel_name = dir_name
+            if cuda_name:
+                kernel_name = cuda_name
+                if options.kernel_instance:
+                    key = (app_and_args, config, cuda_name)
+                    occurrences[key] = occurrences.get(key, -1) + 1
+                    kernel_name += "--" + str(occurrences[key])
+            # Register the kernel before any skip below: a failed kernel keeps
+            # its column (printed as NA) instead of shifting every later one
+            if kernel_name not in all_named_kernels[app_and_args]:
+                all_named_kernels[app_and_args].append(kernel_name)
             if stat_entries is None:
-                print(
-                    "WARNING - No output file found in " + kernel_dir,
-                    file=sys.stderr,
-                )
+                sim_problem(app_and_args, config, "no output file", kernel_dir, dir_name)
                 continue
             if not exit_success:
-                print(
-                    "WARNING - Detected that {0} does not contain a terminating string from GPGPU-Sim. The output is potentially invalid".format(
-                        kernel_dir
-                    ),
-                    file=sys.stderr,
+                sim_problem(
+                    app_and_args, config, "no GPGPU-Sim terminating string", kernel_dir, dir_name
                 )
                 if not options.ignore_failures:
                     continue
-            if kernel_name not in all_named_kernels[app_and_args]:
-                all_named_kernels[app_and_args].append(kernel_name)
             for stat_name, number in stat_entries.items():
                 stat_map[kernel_name + app_and_args + config + stat_name] = number
             files_parsed += fp
@@ -672,3 +747,26 @@ print(
     ),
     file=sys.stderr,
 )
+
+if options.strict:
+    failed = [(k, st) for k, st in sim_status.items() if st != "ok"]
+    if len(sim_status) == 0:
+        exit("ERROR --strict: no simulations expected; check -B/-C/-N")
+    if failed and options.allow_oom:
+        if not options.sim_name:
+            exit("ERROR --allow-oom needs -N: the launch's logfile has the job ids")
+        job_ids = launched_job_ids(options.sim_name)
+        oom = [(k, st) for k, st in failed if sim_oom_killed(k[0], k[1], job_ids)]
+        for (a, c), st in oom:
+            kernels = failed_kernels.get((a, c))
+            print("WARNING --strict: {0} {1}: OOM-killed ({2}), not a failure".format(
+                c, a, ", ".join(kernels) if kernels else st), file=sys.stderr)
+        failed = [f for f in failed if f not in oom]
+    if failed:
+        for (a, c), st in failed:
+            print("ERROR --strict: {0} {1}: {2}".format(c, a, st), file=sys.stderr)
+        exit(
+            "ERROR --strict: {0} of {1} simulations have no valid output".format(
+                len(failed), len(sim_status)
+            )
+        )

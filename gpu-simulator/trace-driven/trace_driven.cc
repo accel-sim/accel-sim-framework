@@ -504,24 +504,36 @@ bool trace_warp_inst_t::parse_from_trace_struct(
       //   register value
       // Old format: "BAR.ARV 0 0 <bar_id> <bar_count> Val"
       //   - imm is bar_id, imm2 is bar_count
-      if (active_count() > 0) {
-        if (trace.reg_dsts_num > 0 && !trace.reg_dest_vals.empty() &&
-            trace.imm2 == 0) {
-          // New format: imm is bar_count, bar_id is in first destination
-          // register value
-          bar_count = static_cast<unsigned>(trace.imm);
-          bar_id = static_cast<unsigned>(trace.reg_dest_vals[0][0]);
+      // Parse regardless of the active mask so a fully predicated-off warp
+      // still carries its barrier id where the trace provides one (a
+      // gpgpu-sim that counts predicated-off warps toward named barriers
+      // asserts on the -1 default in warp_reaches_barrier).
+      if (trace.reg_dsts_num > 0 && !trace.reg_dest_vals.empty() &&
+          trace.imm2 == 0) {
+        // New format: imm is bar_count, bar_id is in first destination
+        // register value
+        bar_count = static_cast<unsigned>(trace.imm);
+        bar_id = static_cast<unsigned>(trace.reg_dest_vals[0][0]);
+      } else {
+        // Old format: imm is bar_id, imm2 is bar_count
+        bar_id = static_cast<unsigned>(trace.imm);
+        if (trace.imm2 != 0) {
+          bar_count = static_cast<unsigned>(trace.imm2);
         } else {
-          // Old format: imm is bar_id, imm2 is bar_count
-          bar_id = static_cast<unsigned>(trace.imm);
-          if (trace.imm2 != 0) {
-            bar_count = static_cast<unsigned>(trace.imm2);
-          } else {
-            bar_count = static_cast<unsigned>(-1);
-          }
+          bar_count = static_cast<unsigned>(-1);
         }
+      }
+      // A fully predicated-off BAR never executes, so a register-sourced
+      // barrier id is whatever the non-participating warp last left in that
+      // register (warp-specialized kernels skip the other role's BAR.SYNC
+      // this way) and can be out of range. Only an executing warp's id is a
+      // trace-format problem; an out-of-range id on a predicated-off warp is
+      // reset to the invalid default so nothing can index a barrier with it.
+      if (active_count() > 0) {
         assert(bar_id < 16 &&
                "Named barrier id is 0~15, possibly a trace format problem.");
+      } else if (bar_id >= 16) {
+        bar_id = static_cast<unsigned>(-1);
       }
       break;
     // LDGDEPBAR is to form a group containing the previous LDGSTS instructions

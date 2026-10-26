@@ -19,6 +19,20 @@ env:
   GITHUB_REPOSITORY: ${{ github.repository }}
   GITHUB_RUN_NUMBER: ${{ github.run_number }}
   GITHUB_RUN_ATTEMPT: ${{ github.run_attempt }}
+  # run_simulations.py and on-cluster.sh put this in their Slurm jobs' comment;
+  # the simulation jobs append :<job> so each can cancel only its own
+  ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}
+  # SASS suites: full (archived, correlated) on dev, smoke elsewhere (main-sass.sh)
+  CI_TIER: ${{ (github.event_name == 'push' || github.event_name == 'workflow_dispatch') && github.ref_name == 'dev' && 'full' || 'smoke' }}
+  # the <GPU>-<config> dirs of statistics-archive the emails link to
+  CORREL_GPUS: "QV100-SASS:V100 H200-SASS:H200"
+
+# A new push cancels its branch's older run, except on the default branch.
+# dev: one group per commit, so every dev commit runs and is correlated (a
+# shared group would drop all but the newest pending run). Elsewhere: newest wins.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref == format('refs/heads/{0}', github.event.repository.default_branch) && github.sha || github.ref }}
+  cancel-in-progress: ${{ github.ref != format('refs/heads/{0}', github.event.repository.default_branch) }}
 
 jobs:
   check-format:
@@ -51,6 +65,8 @@ jobs:
     runs-on: tgrogers-raid
     needs: [check-format]
     timeout-minutes: 720
+    env:
+      ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}:${{ github.job }}
     defaults:
       run:
         shell: bash
@@ -63,63 +79,43 @@ jobs:
       - name: Build Accel-Sim
         run: ./.github/scripts/main-sass.sh build 2>&1 | tee build.log
 
+      # Fails when any simulation has no valid output (get_stats --strict)
       - name: Run SASS Simulations
         run: ./.github/scripts/main-sass.sh simulate
 
-      - name: Archive Stats
-        run: ./.github/scripts/main-sass.sh archive
-
-      - name: Correlate Ubench
+      - name: Correlate with Hardware
+        if: env.CI_TIER == 'full'
         run: ./.github/scripts/main-sass.sh correlate
 
-      - name: Analyze success with opencode
-        if: success()
-        env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-analysis-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-analysis.md to analyze this successful CI run. Write your final report to ci-analysis-report.md as instructed." \
-            || true
-          if [ -s ci-analysis-report.md ]; then
-            cat ci-analysis-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Simulation Analysis"
-              echo
-              echo "opencode did not produce \`ci-analysis-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+      # Only after every step above succeeded, so a failed run is never archived
+      - name: Archive Stats
+        if: env.CI_TIER == 'full' && github.event_name == 'push'
+        run: ./.github/scripts/main-sass.sh archive
 
-      - name: Analyze failure with opencode
-        if: failure()
+      - name: AI analysis of the results
+        if: success()
+        continue-on-error: true # the analysis never changes the CI result
         env:
-          GITHUB_RUN_ID: ${{ github.run_id }}
-          GITHUB_WORKSPACE: ${{ github.workspace }}
-        run: |
-          rm -f ci-failure-report.md
-          opencode run \
-            --dir "$GITHUB_WORKSPACE" \
-            --model local-llamacpp/Qwen3.5-27B-Q8_0.gguf \
-            "Follow the procedure in .github/skills/ci-failure.md to analyze this failed CI run. Write your final report to ci-failure-report.md as instructed." \
-            || true
-          if [ -s ci-failure-report.md ]; then
-            cat ci-failure-report.md >> "$GITHUB_STEP_SUMMARY"
-          else
-            {
-              echo "## AI Failure Analysis"
-              echo
-              echo "opencode did not produce \`ci-failure-report.md\`. See the step log for details."
-            } >> "$GITHUB_STEP_SUMMARY"
-          fi
+          AI: ${{ vars.AALP_CI_DIR || '/scratch/tgrogers-disk01/a/tgrghci/github-ci' }}/ai
+          REPO: ${{ github.repository }}
+          RUN_ID: ${{ github.run_id }}
+          HEAD_SHA: ${{ github.event.pull_request.head.sha || github.sha }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          # plot-correlation stdout per config; per-kernel CSVs of the last config
+          CI_ANALYSIS_FILES: "ci-stats/*/correl.txt ci-stats/*/*.kernel.raw.csv util/job_launching/logfiles/failed_job_log_*.txt"
+        run: $AI/ci-analysis.sh
+
+      # The next job on this runner wipes the workspace the sims run in
+      - name: Cancel this job's Slurm jobs
+        if: failure() || cancelled()
+        run: ./.github/scripts/cancel-slurm.sh
 
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
     timeout-minutes: 720
+    env:
+      ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}:${{ github.job }}
     defaults:
       run:
         shell: bash
@@ -138,10 +134,17 @@ jobs:
       - name: Run PTX Simulations
         run: ./.github/scripts/main-ptx.sh simulate
 
+      # The next job on this runner wipes the workspace the sims run in
+      - name: Cancel this job's Slurm jobs
+        if: failure() || cancelled()
+        run: ./.github/scripts/cancel-slurm.sh
+
   Tracer-Tool:
     needs: [check-format]
     runs-on: tgrogers-raid
     timeout-minutes: 720
+    env:
+      ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}:${{ github.job }}
     defaults:
       run:
         shell: bash
@@ -163,19 +166,45 @@ jobs:
       - name: Generate Traces
         run: ./.github/scripts/main-tracer.sh trace
 
+      - name: Test Multi-GPU Tracing
+        run: ./.github/scripts/main-tracer.sh trace-parallel
+
       - name: Generate HW Stats
         run: ./.github/scripts/main-tracer.sh hw-stats
 
       - name: Test New Traces
         run: ./.github/scripts/main-tracer.sh test
 
+      # The next job on this runner wipes the workspace the sims run in
+      - name: Cancel this job's Slurm jobs
+        if: failure() || cancelled()
+        run: ./.github/scripts/cancel-slurm.sh
+
   SASS-Simulation-Docker:
+    # The short QV100 SASS regression built and run in the accel-sim-framework
+    # image, under apptainer on a Slurm node (.github/scripts/main-docker.sh)
     needs: [check-format]
-    runs-on: tgrogers-pc01
+    runs-on: tgrogers-raid
+    timeout-minutes: 360
+    env:
+      ACCELSIM_SLURM_COMMENT: gh-run:${{ github.run_id }}.${{ github.run_attempt }}:${{ github.job }}
+      IMAGE_TAG: ubuntu-24.04-cuda-12.8-minimal
+    defaults:
+      run:
+        shell: bash
     steps:
       - uses: actions/checkout@v6
-      - name: Run Simulation
-        run: echo "Docker-based CI tests are currently disabled."
+
+      - name: Setup Environment
+        run: ./.github/scripts/main-docker.sh setup
+
+      - name: Build and Run in the Image
+        run: ./.github/scripts/main-docker.sh run
+
+      # The next job on this runner wipes the workspace the sims run in
+      - name: Cancel this job's Slurm jobs
+        if: failure() || cancelled()
+        run: ./.github/scripts/cancel-slurm.sh
 
   CI-Success:
     env:
@@ -192,15 +221,17 @@ jobs:
           echo "Tracer-Tool: OK"
           echo "SASS-Simulation-Docker: OK"
 
-          git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
-          source ./env-setup/common/common_inc.sh
-          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$PR_HEAD_REPO_FULL_NAME/$BRANCH_NAME/ubench/"
+          # Email only for dev pushes (full suite + correlation); PRs get none
+          if [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
+            git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
+            source ./env-setup/common/common_inc.sh
+            export REPORT_URL="https://rawcdn.githack.com/accel-sim/statistics-archive/$GITHUB_REPOSITORY/$BRANCH_NAME/ubench/"
             python3 .github/scripts/send_ci_email.py -t success
           fi
 
+  # PRs get no email; see CI-Success
   failures:
-    if: failure()
+    if: failure() && github.event_name == 'push' && github.ref_name == 'dev'
     env:
       ACTION_URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
       REPORT_URL: ""
@@ -212,20 +243,16 @@ jobs:
         run: |
           git clone --quiet --branch cluster-ubuntu git@github.com:purdue-aalp/env-setup.git
           source ./env-setup/common/common_inc.sh
-          if [[ ${{ github.event_name }} == 'pull_request' ]]; then
-            python3 .github/scripts/send_ci_email.py -t failure
-          elif [[ ${{ github.event_name }} == 'push' && ${{ github.ref_name }} == 'dev' ]]; then
-            python3 .github/scripts/send_ci_email.py -t failure -u
-          fi
+          python3 .github/scripts/send_ci_email.py -t failure -u
 
-  cleanup-on-cancel:
-    if: cancelled()
+  # Also on failure or timeout: a monitor that gives up leaves its sims queued
+  cleanup-slurm:
+    if: always() && needs.check-format.result != 'skipped'
     runs-on: tgrogers-raid
-    needs: [SASS-Simulation, PTX-Simulation, Tracer-Tool]
+    needs: [check-format, SASS-Simulation, PTX-Simulation, Tracer-Tool, SASS-Simulation-Docker]
     steps:
-      - uses: actions/checkout@v6
-      - name: Cancel Slurm jobs
+      - name: Cancel this run's Slurm jobs
         run: |
-          ./.github/scripts/cancel-slurm-jobs.sh "sass-short-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "short-ptx-${{ github.run_number }}_${{ github.run_attempt }}"
-          ./.github/scripts/cancel-slurm-jobs.sh "rodinia_2.0-ft-$$"
+          jobs=$(squeue -h -u "$(id -un)" -o '%i %k' | awk -v t="$ACCELSIM_SLURM_COMMENT" '$2 == t || index($2, t ":") == 1 {print $1}')
+          echo "cancelling: ${jobs:-none}"
+          [ -z "$jobs" ] || scancel $jobs

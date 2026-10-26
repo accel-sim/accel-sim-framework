@@ -52,6 +52,13 @@ class TracezReader {
   TracezReader(const TracezReader &) = delete;
   TracezReader &operator=(const TracezReader &) = delete;
 
+  // Throws on a short read so a truncated .tracez fails here, not later.
+  static void read_exact(void *dst, size_t size, size_t count, FILE *fp,
+                         const std::string &filepath) {
+    if (fread(dst, size, count, fp) != count)
+      throw std::runtime_error("TracezReader: short read in " + filepath);
+  }
+
   // Open a .tracez file: read header, dict, and index from footer.
   // Returns the kernel header text (lines before the null terminator).
   std::string open(const std::string &filepath) {
@@ -68,47 +75,50 @@ class TracezReader {
 
     // Read compression header
     uint32_t subchunk_insts_unused;
-    fread(&dict_size_, sizeof(dict_size_), 1, fp);
-    fread(&subchunk_insts_unused, sizeof(subchunk_insts_unused), 1, fp);
+    read_exact(&dict_size_, sizeof(dict_size_), 1, fp, filepath);
+    read_exact(&subchunk_insts_unused, sizeof(subchunk_insts_unused), 1, fp,
+               filepath);
 
     // Read dictionary
     if (dict_size_ > 0) {
       dict_data_.resize(dict_size_);
-      fread(dict_data_.data(), 1, dict_size_, fp);
+      read_exact(dict_data_.data(), 1, dict_size_, fp, filepath);
       ddict_ = ZSTD_createDDict(dict_data_.data(), dict_size_);
     }
 
     // Read index from footer: seek to end - 8 (u64 index_offset)
     fseeko(fp, -8, SEEK_END);
     uint64_t index_offset;
-    fread(&index_offset, sizeof(index_offset), 1, fp);
+    read_exact(&index_offset, sizeof(index_offset), 1, fp, filepath);
 
     // Read index
     fseeko(fp, index_offset, SEEK_SET);
     uint32_t num_tbs;
-    fread(&num_tbs, sizeof(num_tbs), 1, fp);
+    read_exact(&num_tbs, sizeof(num_tbs), 1, fp, filepath);
     tb_index_.resize(num_tbs);
     for (uint32_t i = 0; i < num_tbs; ++i) {
       auto &tb = tb_index_[i];
-      fread(&tb.tb_id_x, sizeof(uint32_t), 1, fp);
-      fread(&tb.tb_id_y, sizeof(uint32_t), 1, fp);
-      fread(&tb.tb_id_z, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_id_x, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_id_y, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_id_z, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_cta_id_x, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_cta_id_y, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_cta_id_z, sizeof(uint32_t), 1, fp);
-      fread(&tb.cluster_rank, sizeof(uint32_t), 1, fp);
-      fread(&tb.warp_count, sizeof(uint32_t), 1, fp);
+      read_exact(&tb.tb_id_x, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.tb_id_y, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.tb_id_z, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_id_x, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_id_y, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_id_z, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_cta_id_x, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_cta_id_y, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_cta_id_z, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.cluster_rank, sizeof(uint32_t), 1, fp, filepath);
+      read_exact(&tb.warp_count, sizeof(uint32_t), 1, fp, filepath);
       tb.warps.resize(tb.warp_count);
       for (uint32_t j = 0; j < tb.warp_count; ++j) {
-        fread(&tb.warps[j].inst_count, sizeof(uint32_t), 1, fp);
-        fread(&tb.warps[j].num_subchunks, sizeof(uint32_t), 1, fp);
-        fread(&tb.warps[j].file_offset, sizeof(uint64_t), 1, fp);
+        read_exact(&tb.warps[j].inst_count, sizeof(uint32_t), 1, fp, filepath);
+        read_exact(&tb.warps[j].num_subchunks, sizeof(uint32_t), 1, fp,
+                   filepath);
+        read_exact(&tb.warps[j].file_offset, sizeof(uint64_t), 1, fp, filepath);
         tb.warps[j].subchunk_inst_counts.resize(tb.warps[j].num_subchunks);
         for (uint32_t k = 0; k < tb.warps[j].num_subchunks; ++k) {
-          fread(&tb.warps[j].subchunk_inst_counts[k], sizeof(uint32_t), 1, fp);
+          read_exact(&tb.warps[j].subchunk_inst_counts[k], sizeof(uint32_t), 1,
+                     fp, filepath);
         }
       }
     }

@@ -34,6 +34,7 @@ import os
 import yaml
 import glob
 import hashlib
+import shutil
 
 this_directory = os.path.dirname(os.path.realpath(__file__)) + "/"
 
@@ -391,6 +392,14 @@ def parse_run_simulations_options():
         "with individual kernelslist.g files, enabling parallel execution of all kernels.",
     )
     parser.add_option(
+        "--array",
+        dest="array",
+        action="store_true",
+        help="With --per-kernel and sbatch: submit each app's kernels as Slurm job arrays "
+        "(at most MaxArraySize tasks each) instead of one job per kernel. Task i of array A "
+        "is logged as job A_i.",
+    )
+    parser.add_option(
         "--profile-perf",
         dest="profile_perf",
         action="store_true",
@@ -541,3 +550,87 @@ def print_stat(
     csv_str = csv_str[:-1]
     csv_str += "\n"
     print(csv_str)
+
+
+
+def _mem_kb(v, cpus=1):
+    """sacct MaxRSS ("123K") or ReqMem ("10G", "4Gc" per cpu, "384Gn" per node) in KB."""
+    if not v:
+        return None
+    per = v[-1] if v[-1] in "cn" else "n"
+    v = v.rstrip("cn")
+    unit = {"K": 1, "M": 1024, "G": 1024 ** 2, "T": 1024 ** 3}
+    try:
+        kb = float(v[:-1]) * unit[v[-1]] if v[-1] in unit else float(v) / 1024
+    except ValueError:  # a just-submitted job can show ReqMem "16?"
+        return None
+    return kb * (cpus if per == "c" else 1)
+
+
+# Job states that are not a finished failure
+NOT_FAILED_STATES = ("", "COMPLETED", "PENDING", "RUNNING", "REQUEUED")
+
+
+def _sacct(ids, fields, steps):
+    """sacct -P lines for ids, 200 per call (-X: one line per job, no steps)."""
+    lines = []
+    for i in range(0, len(ids), 200):
+        cmd = ["sacct", "-n", "-P", "-o", fields, "-j", ",".join(ids[i : i + 200])]
+        lines += subprocess.check_output(cmd + ([] if steps else ["-X"])).decode().splitlines()
+    return lines
+
+
+def slurm_outcomes(job_ids):
+    """{job id: {state, exit, maxrss_kb, reqmem_kb}} from sacct for Slurm job ids
+    ("<id>" or "<array>_<task>"); None when sacct is not installed (another launcher).
+    One line per job (an array id lists its tasks); MaxRSS, which only the job's
+    steps carry, is fetched just for the jobs that ended in a failure state."""
+    if shutil.which("sacct") is None:
+        return None
+    jobs = {}
+    arrays = sorted({str(j).split("_")[0] for j in job_ids})
+    for line in _sacct(arrays, "JobID,State,ExitCode,ReqMem,AllocCPUS", steps=False):
+        jid, state, exit_code, reqmem, cpus = line.split("|")
+        # "CANCELLED by <uid>" -> CANCELLED
+        jobs[jid] = {"state": state.split()[0] if state else "", "exit": exit_code,
+                     "reqmem_kb": _mem_kb(reqmem, int(cpus or 1)), "maxrss_kb": None}
+    failed = sorted(j for j, o in jobs.items() if o["state"] not in NOT_FAILED_STATES)
+    for line in _sacct(failed, "JobID,MaxRSS", steps=True) if failed else []:
+        jid, maxrss = line.split("|")
+        job, rss = jobs.get(jid.split(".")[0]), _mem_kb(maxrss)
+        if job and rss is not None and (job["maxrss_kb"] is None or rss > job["maxrss_kb"]):
+            job["maxrss_kb"] = rss
+    return jobs
+
+
+def oom_killed(outcome, log_text=""):
+    """The slurm-monitor rule: a finished job was killed for memory if it is not a
+    segfault or assert, and Slurm says OUT_OF_MEMORY/NODE_FAIL, it died of SIGKILL
+    (signal 9, exit 137), its log says so, or it peaked above its request. This
+    cluster does not enforce --mem: the kernel's OOM killer SIGKILLs the job."""
+    if not outcome or outcome.get("state") in NOT_FAILED_STATES:
+        return False
+    code, _, sig = outcome.get("exit", "0:0").partition(":")
+    if sig == "11" or code == "139" or re.search(r"segmentation fault|sigsegv|signal 11", log_text, re.I):
+        return False
+    if sig == "6" or code == "134" or re.search(r"assertion|assert failed|sigabrt|core dumped|aborted", log_text, re.I):
+        return False
+    rss, req = outcome.get("maxrss_kb"), outcome.get("reqmem_kb")
+    return (
+        outcome["state"] in ("OUT_OF_MEMORY", "NODE_FAIL")
+        or sig == "9"
+        or code == "137"
+        or bool(re.search(r"out of memory|oom-kill|oom killed", log_text, re.I))
+        or (rss is not None and req and rss > req)
+    )
+
+
+def tail_text(paths, nbytes=4000):
+    """The last nbytes of each existing file, joined (for log scans)."""
+    text = ""
+    for p in paths:
+        if p and os.path.isfile(p):
+            with open(p, "rb") as f:
+                f.seek(max(0, os.path.getsize(p) - nbytes))
+                text += f.read().decode(errors="replace") + "\n"
+    return text

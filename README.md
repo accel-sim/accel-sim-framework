@@ -31,6 +31,7 @@ Each panel shows the Pearson correlation and mean absolute percentage error (MAP
 - [How to Cite](#how-to-cite)
 - [Dependencies](#dependencies)
 - [Quick Start](#quick-start)
+- [**Pre-collected Traces**](#pre-collected-traces) — no GPU needed
 - [Full Hopper Support](#full-hopper-support)
 - [**Tracing with vLLM**](#tracing-llms-with-vllm)
 - [Core Components](#core-components)
@@ -231,6 +232,56 @@ For **PTX execution-driven** mode (no traces required), drop `-T` and use a `*-P
 
 ---
 
+## Pre-collected Traces
+
+No GPU needed: download SASS traces collected on real hardware and simulate them directly.
+Traces ship as assets of the Accel-Sim release they were validated with, together with the Nsight Compute stats measured on the same GPU, so simulation results can be correlated against hardware right away.
+
+### Available traces
+
+| GPU | Release | Workloads | Configurations | Kernels | Download size |
+|---|---|---|---|---|---|
+| H200 | [v2.0.1](https://github.com/accel-sim/accel-sim-framework/releases/tag/v2.0.1) | BERT, ResNet-50, DLRMv2, 3D U-Net, RetinaNet, Whisper, SDXL, Llama 3.1 8B (inference and training), Qwen 2.5 7B, DeepSeek R1, Mixtral 8x7B | 20 | 8942 | 208 GB |
+
+Each configuration (workload + arguments) downloads on its own, from under 1 GB to about 50 GB.
+`./get-accel-sim-traces.py -l` lists every configuration with its size, and the release's `README.md` has the same table.
+A few kernels that do not complete in simulation are left out of both the traces and the Nsight Compute stats.
+
+### Download
+
+```bash
+./get-accel-sim-traces.py -l                                   # list what is available
+./get-accel-sim-traces.py -a H200/inference_bert.sh/32_256     # one configuration
+./get-accel-sim-traces.py -a H200/inference_sdxl.sh            # every configuration of a workload
+./get-accel-sim-traces.py -a H200/all                          # everything for one GPU
+```
+
+The script checks every download against the SHA-256 checksums in the release's `manifest.json`, resumes interrupted downloads, and extracts under `./hw_run/` in the standard Accel-Sim layout:
+
+```
+hw_run/H200/traces/device-0/12.8/<workload>/<args>/traces/   kernelslist.g + kernel-*.tracez
+hw_run/H200/device-0/12.8/<workload>/<args>/                 Nsight Compute stats (ncu.csv.*)
+```
+
+Options: `-d <dir>` extracts somewhere else, `--keep_parts` keeps the downloaded tar parts, and `--repo` / `--tag` read another release (a private repository needs `GITHUB_TOKEN` or a `gh auth login` session).
+Each configuration is one tar split into parts under 2 GB; the release's `README.md` also shows how to download and check them by hand.
+
+### Simulate and correlate
+
+The workloads are defined in [`define-ml-workloads.yml`](./util/job_launching/apps/define-ml-workloads.yml) (`bert_inference`, `resnet_inference`, `sdxl_inference`, `llama_inference`, …):
+
+```bash
+./util/job_launching/run_simulations.py -B bert_inference -C H200-SASS \
+    -T ./hw_run/H200/traces/device-0/12.8 -N bert-h200
+./util/job_launching/monitor_func_test.py -v -N bert-h200
+./util/job_launching/get_stats.py -R -k -K -N bert-h200 | tee bert-h200.csv
+./util/plotting/plot-correlation.py -c bert-h200.csv -H ./hw_run/H200
+```
+
+For large workloads, `run_simulations.py --per-kernel` runs each kernel as its own job (collect with `get_stats.py --per-kernel-dirs`).
+
+---
+
 ## Full Hopper Support
 
 Accel-Sim 2.0 models the asynchronous, warp-specialized, persistent execution style of modern Hopper kernels (FlashAttention-3, cuBLAS/CUTLASS GEMMs, NCCL).
@@ -396,10 +447,7 @@ To disable it entirely, pass `--spinlock_handling none`:
 The detection tool lives in [`./util/tracer_nvbit/others/spinlock_tool/`](./util/tracer_nvbit/others/spinlock_tool/).
 
 **Pre-traced applications.**
-To fetch a repository of pre-collected traces:
-```bash
-./get-accel-sim-traces.py
-```
+To simulate without a GPU, download traces collected on real hardware — see [Pre-collected Traces](#pre-collected-traces).
 
 ### SASS Frontend and Simulation Engine
 
