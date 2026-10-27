@@ -58,9 +58,10 @@ decode_base_stride(std::stringstream &ss, std::bitset<WARP_SIZE> mask_bits) {
       if (mask_bits.test(s)) {
         addr += stride;
         addrs.push_back(addr);
-      } else
+      } else {
         last_bit1_found = true;
-      addrs.push_back(0);
+        addrs.push_back(0);
+      }
     } else
       addrs.push_back(0);
   }
