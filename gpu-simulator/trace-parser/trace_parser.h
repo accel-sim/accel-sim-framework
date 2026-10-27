@@ -13,7 +13,8 @@
 #include <string>
 #include <vector>
 
-#define WARP_SIZE 32
+#include "../../util/tracer_nvbit/tracer_tool/decode.h"
+
 #define MAX_DST 1
 #define MAX_SRC 4
 
@@ -31,15 +32,6 @@ enum address_scope {
   SYS_MEM,
 };
 
-// TODO Fix this shared enum with tracer tool
-enum address_format {
-  list_all = 0,
-  base_stride = 1,
-  base_delta = 2,
-  tma_list_all = 3,
-  tma_base_delta = 4
-};
-
 struct trace_command {
   std::string command_string;
   command_type m_type;
@@ -48,12 +40,6 @@ struct trace_command {
 struct inst_memadd_info_t {
   uint64_t addrs[WARP_SIZE];
   int32_t width;
-
-  void base_stride_decompress(unsigned long long base_address, int stride,
-                              const std::bitset<WARP_SIZE> &mask);
-  void base_delta_decompress(unsigned long long base_address,
-                             const std::vector<long long> &deltas,
-                             const std::bitset<WARP_SIZE> &mask);
 };
 
 struct tma_inst_memaddr_info_t {
