@@ -247,13 +247,7 @@ def write_trace_scripts(item, gpu):
         ("run_spinlock_detection.sh", spinlock_contents),
         ("run.sh", run_contents),
     ]:
-        write_script(item["run_dir"], path, content)
-
-
-def write_script(run_dir, path, content):
-    open(os.path.join(run_dir, path), "w").write(content)
-    if subprocess.call(["chmod", "u+x", os.path.join(run_dir, path)]) != 0:
-        exit(f"Error chmod {path} runfile")
+        common.write_run_script(item["run_dir"], path, content)
 
 
 # Set up every app's directory before any GPU work, so path errors show up first
@@ -281,31 +275,16 @@ for bench in benchmarks:
             )
         )
         this_trace_folder = os.path.join(this_run_dir, "traces")
-        if not os.path.exists(this_run_dir):
-            os.makedirs(this_run_dir)
+        exec_path = common.prepare_run_dir(
+            this_run_dir, ddir, edir, exe, this_directory
+        )
+        if exec_path is None:
+            continue
         if not os.path.exists(this_trace_folder):
             os.makedirs(this_trace_folder)
 
-        # link the data directory
-        try:
-            benchmark_data_dir = common.dir_option_test(
-                os.path.join(ddir, exe, "data"), "", this_directory
-            )
-            if os.path.lexists(os.path.join(this_run_dir, "data")):
-                os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(benchmark_data_dir, os.path.join(this_run_dir, "data"))
-        except common.PathMissing:
-            pass
-
-        all_data_link = os.path.join(this_run_dir, "data_dirs")
-        if os.path.lexists(all_data_link):
-            os.remove(all_data_link)
-        top_data_dir_path = common.dir_option_test(ddir, "", this_directory)
-        os.symlink(top_data_dir_path, all_data_link)
-
         if args == None:
             args = ""
-        exec_path = common.file_option_test(os.path.join(edir, exe), "", this_directory)
         sh_contents = "set -e\n"
 
         if options.terminate_upon_limit:
@@ -357,7 +336,7 @@ for bench in benchmarks:
             + this_trace_folder
             + "/kernelslist "
         )
-        write_script(this_run_dir, "run_postprocess.sh", postprocess_contents)
+        common.write_run_script(this_run_dir, "run_postprocess.sh", postprocess_contents)
 
         item = {
             "name": run_name,

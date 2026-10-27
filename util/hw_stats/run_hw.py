@@ -190,30 +190,14 @@ for bench in benchmarks:
             cuda_version,
             run_name,
         )
-        if not os.path.exists(this_run_dir):
-            os.makedirs(this_run_dir)
-
-        # link the data directory
-        try:
-            benchmark_data_dir = common.dir_option_test(
-                os.path.join(ddir, exe, "data"), "", this_directory
-            )
-            if os.path.lexists(os.path.join(this_run_dir, "data")):
-                os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(benchmark_data_dir, os.path.join(this_run_dir, "data"))
-        except common.PathMissing:
-            pass
-
-        all_data_link = os.path.join(this_run_dir, "data_dirs")
-        if os.path.lexists(all_data_link):
-            os.remove(all_data_link)
-        top_data_dir_path = common.dir_option_test(ddir, "", this_directory)
-        os.symlink(top_data_dir_path, all_data_link)
+        exec_path = common.prepare_run_dir(
+            this_run_dir, ddir, edir, exe, this_directory
+        )
+        if exec_path is None:
+            continue
 
         if args == None:
             args = ""
-
-        exec_path = common.file_option_test(os.path.join(edir, exe), "", this_directory)
         sh_contents = ""
         kernel_number = ""
         if "mlperf" in exec_path:
@@ -379,7 +363,9 @@ for bench in benchmarks:
                     + str(args)
                     + "; nsys stats -f csv --report cuda_gpu_trace "
                     + os.path.join(this_run_dir, "out.nsys-rep")
-                    + " | tee cycles.csv; python "
+                    + " | tee cycles.csv; "
+                    + sys.executable
+                    + " "
                     + os.path.join(this_directory, "postprocess-nsys-csv.py")
                     + " --path "
                     + this_run_dir
@@ -419,9 +405,7 @@ for bench in benchmarks:
                     )
                 )
 
-        open(os.path.join(this_run_dir, "run.sh"), "w").write(sh_contents)
-        if subprocess.call(["chmod", "u+x", os.path.join(this_run_dir, "run.sh")]) != 0:
-            exit("Error chmod runfile")
+        common.write_run_script(this_run_dir, "run.sh", sh_contents)
 
         if not options.norun:
             saved_dir = os.getcwd()

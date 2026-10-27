@@ -102,30 +102,14 @@ for bench in benchmarks:
             cuda_version,
             run_name,
         )
-        if not os.path.exists(this_run_dir):
-            os.makedirs(this_run_dir)
-
-        # link the data directory
-        try:
-            benchmark_data_dir = common.dir_option_test(
-                os.path.join(ddir, exe, "data"), "", this_directory
-            )
-            if os.path.lexists(os.path.join(this_run_dir, "data")):
-                os.remove(os.path.join(this_run_dir, "data"))
-            os.symlink(benchmark_data_dir, os.path.join(this_run_dir, "data"))
-        except common.PathMissing:
-            pass
-
-        all_data_link = os.path.join(this_run_dir, "data_dirs")
-        if os.path.lexists(all_data_link):
-            os.remove(all_data_link)
-        top_data_dir_path = common.dir_option_test(ddir, "", this_directory)
-        os.symlink(top_data_dir_path, all_data_link)
+        exec_path = common.prepare_run_dir(
+            this_run_dir, ddir, edir, exe, this_directory
+        )
+        if exec_path is None:
+            continue
 
         if args is None:
             args = ""
-
-        exec_path = common.file_option_test(os.path.join(edir, exe), "", this_directory)
 
         # Build the run script with CUPTI injection
         sh_contents = f"""#!/bin/bash
@@ -145,10 +129,7 @@ export CUDA_INJECTION64_PATH="{injection_lib}"
 {exec_path} {args}
 """
 
-        run_script = os.path.join(this_run_dir, "run.sh")
-        with open(run_script, "w") as f:
-            f.write(sh_contents)
-        subprocess.call(["chmod", "u+x", run_script])
+        run_script = common.write_run_script(this_run_dir, "run.sh", sh_contents)
 
         if not options.norun:
             saved_dir = os.getcwd()
