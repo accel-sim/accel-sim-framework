@@ -107,18 +107,27 @@ def parse_kernelslist(kernelslist_path):
 # This function will pull the SO name out of the shared object,
 # which will have current GIT commit number attatched.
 def extract_version(exec_path, simulator):
+    """The <regex_base>... build string embedded in exec_path; exits if it is missing, since the
+    string goes unquoted into the job scripts' paths (the run dir's gpgpu-sim-builds/<version>)."""
     if simulator == "gpgpusim":
         regex_base = "gpgpu-sim_git-commit"
     else:
         regex_base = "accelsim-commit"
-    regex_str = r".*({0}[^\s^']+).*".format(regex_base)
+    if not os.path.isfile(exec_path):
+        hint = " (was the simulator built with cmake --install?)" if exec_path.endswith(".so") else ""
+        sys.exit("ERROR: cannot read the {0} version: {1} does not exist{2}".format(simulator, exec_path, hint))
     strings_process = Popen(["strings", exec_path], stdout=PIPE)
     grep_process = Popen(
         ["grep", regex_base], stdin=strings_process.stdout, stdout=PIPE
     )
     strings_process.stdout.close()
     out, err = grep_process.communicate()
-    version = re.sub(regex_str, r"\1", str(out.rstrip()))
+    m = re.search(r"({0}[^\s^']+)".format(regex_base), out.decode(errors="replace"))
+    if not m:
+        sys.exit("ERROR: no {0} string in {1}: is it a {2} build?".format(regex_base, exec_path, simulator))
+    version = m.group(1)
+    if not re.fullmatch(r"[A-Za-z0-9._+-]+", version):
+        sys.exit("ERROR: {0} version {1!r} from {2} is not safe in a path".format(simulator, version, exec_path))
     return version
 
 

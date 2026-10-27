@@ -110,6 +110,19 @@ jobs:
         if: failure() || cancelled()
         run: ./.github/scripts/cancel-slurm.sh
 
+      - name: Collect simulation logs
+        if: failure() || cancelled()
+        run: ./.github/scripts/collect-sim-logs.sh sim-logs
+
+      - name: Upload simulation logs
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-logs-${{ github.job }}-${{ github.run_attempt }}
+          path: sim-logs/
+          retention-days: 1
+          if-no-files-found: ignore
+
   PTX-Simulation:
     needs: [check-format]
     runs-on: tgrogers-raid
@@ -138,6 +151,19 @@ jobs:
       - name: Cancel this job's Slurm jobs
         if: failure() || cancelled()
         run: ./.github/scripts/cancel-slurm.sh
+
+      - name: Collect simulation logs
+        if: failure() || cancelled()
+        run: ./.github/scripts/collect-sim-logs.sh sim-logs
+
+      - name: Upload simulation logs
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-logs-${{ github.job }}-${{ github.run_attempt }}
+          path: sim-logs/
+          retention-days: 1
+          if-no-files-found: ignore
 
   Tracer-Tool:
     needs: [check-format]
@@ -205,6 +231,19 @@ jobs:
       - name: Cancel this job's Slurm jobs
         if: failure() || cancelled()
         run: ./.github/scripts/cancel-slurm.sh
+
+      - name: Collect simulation logs
+        if: failure() || cancelled()
+        run: ./.github/scripts/collect-sim-logs.sh sim-logs
+
+      - name: Upload simulation logs
+        if: failure() || cancelled()
+        uses: actions/upload-artifact@v4
+        with:
+          name: sim-logs-${{ github.job }}-${{ github.run_attempt }}
+          path: sim-logs/
+          retention-days: 1
+          if-no-files-found: ignore
 
   CI-Success:
     env:
