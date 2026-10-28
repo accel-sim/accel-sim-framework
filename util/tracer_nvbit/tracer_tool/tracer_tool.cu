@@ -82,6 +82,7 @@ bool skip_flag = false;
 uint32_t instr_begin_interval = 0;
 uint32_t instr_end_interval = UINT32_MAX;
 int verbose = 0;
+int inst_histogram = 0;
 int enable_compress = 1;
 int print_core_id = 0;
 int exclude_pred_off = 1;
@@ -137,6 +138,8 @@ std::unordered_map<CUcontext, std::string> ctx_stats_location;
 std::unordered_map<CUcontext, int> ctx_kernelid;
 std::unordered_map<CUcontext, FILE *> ctx_resultsFile;
 std::unordered_map<CUcontext, std::string> ctx_current_kernel_name;
+
+std::unordered_map<std::string, uint64_t> inst_usage_counters;
 
 std::string kernel_ranges = "";
 
@@ -308,6 +311,9 @@ void nvbit_at_init() {
       "and cuProfilerStop. If set to 0, DYNAMIC_KERNEL_RANGE options have no "
       "effect");
   GET_VAR_INT(verbose, "TOOL_VERBOSE", 0, "Enable verbosity inside the tool");
+  GET_VAR_INT(
+      inst_histogram, "HISTOGRAM", 0,
+      "Add a histogram with instruction counts to each generated trace file");
   GET_VAR_INT(enable_compress, "TOOL_COMPRESS", 1, "Enable traces compression");
   GET_VAR_INT(print_core_id, "TOOL_TRACE_CORE", 0,
               "write the core id in the traces");
@@ -845,6 +851,40 @@ static void leave_kernel_launch(CUcontext ctx, CUfunction func) {
   fclose(statsFile);
 
   if (!stop_report) {
+    if (inst_histogram) {
+      // Dump instruction histogram (if requested)
+      std::vector<const std::pair<const std::string, uint64_t> *>
+          sorted_inst_usage;
+      sorted_inst_usage.reserve(inst_usage_counters.size());
+      int max_key_chars = 11;
+      for (const auto &kv : inst_usage_counters) {
+        sorted_inst_usage.push_back(&kv);
+        max_key_chars = std::max(max_key_chars, (int)kv.first.size());
+      }
+
+      std::sort(sorted_inst_usage.begin(), sorted_inst_usage.end(),
+                [](auto a, auto b) { return a->second > b->second; });
+
+      if (!sorted_inst_usage.empty()) {
+        int maxValue = sorted_inst_usage.front()->second;
+        int max_value_chars = std::max(9, (int)std::to_string(maxValue).size());
+        fprintf(ctx_resultsFile[ctx], "# %-*s%-*sHISTOGRAM\n",
+                max_key_chars + 1, "INSTRUCTION", max_value_chars + 1,
+                "FREQUENCY");
+        for (const auto *kv : sorted_inst_usage) {
+          int count = std::max(1, (int)(20.0 * kv->second / maxValue));
+          std::string bar;
+          bar.reserve(count * 3);
+          for (int i = 0; i < count; ++i)
+            bar += "█";
+          fprintf(ctx_resultsFile[ctx], "# %-*s%-*lu%s\n", max_key_chars + 1,
+                  kv->first.c_str(), max_value_chars + 1, kv->second,
+                  bar.c_str());
+        }
+      }
+      inst_usage_counters.clear();
+    }
+
     if (!xz_compress_trace) {
       fclose(ctx_resultsFile[ctx]);
     } else {
@@ -1237,6 +1277,8 @@ void *recv_thread_fun(void *args) {
         }
 
         std::string opcode = id_to_opcode_map[trace->opcode_id];
+        if (inst_histogram)
+          inst_usage_counters[opcode] += 1;
         // only dump reg val if opcode contains: BAR
         bool dump_reg_val = false;
         if (allow_reg_val_tracing &&
