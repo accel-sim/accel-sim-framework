@@ -70,7 +70,7 @@ void accel_sim_framework::simulation_loop() {
     unsigned finished_kernel_uid = simulate();
     // cleanup finished kernel
     if (finished_kernel_uid || m_gpgpu_sim->cycle_insn_cta_max_hit() ||
-        !m_gpgpu_sim->active()) {
+        (!concurrent_kernel_sm  && !m_gpgpu_sim->active())) {
       cleanup(finished_kernel_uid);
     }
 
@@ -125,7 +125,8 @@ void accel_sim_framework::cleanup(unsigned finished_kernel) {
   for (unsigned j = 0; j < kernels_info.size(); j++) {
     k = kernels_info.at(j);
     if (k->get_uid() == finished_kernel ||
-        m_gpgpu_sim->cycle_insn_cta_max_hit() || !m_gpgpu_sim->active()) {
+        m_gpgpu_sim->cycle_insn_cta_max_hit() || 
+        (!concurrent_kernel_sm  && !m_gpgpu_sim->active())) {
       for (unsigned int l = 0; l < busy_streams.size(); l++) {
         if (busy_streams.at(l) == k->get_cuda_stream_id()) {
           finished_kernel_cuda_stream_id = k->get_cuda_stream_id();
