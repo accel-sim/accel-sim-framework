@@ -52,7 +52,7 @@ def get_argfoldername(argpair: dict):
     name = argpair.get("name", "")
     if name != "":
         return name
-    elif args == "":
+    elif args == "" or args is None:
         return "NO_ARGS"
     else:
         foldername = re.sub(r"[^a-z^A-Z^0-9]", "_", str(args).strip())

@@ -1125,6 +1125,9 @@ if options.hardware_dict == None:
                 # Construct appargs relative to the base_dir
                 rel_path = os.path.relpath(csv_dir, base_dir)
                 appargs = rel_path
+                # 2.0.0/2.0.1 wrote empty-args runs to "None" instead of "NO_ARGS"
+                if os.path.basename(appargs) == "None":
+                    appargs = os.path.join(os.path.dirname(appargs), "NO_ARGS")
                 logger.log("Found CSVs in {0}, appargs={1}".format(csv_dir, appargs))
                 kdata = []
                 for csvf in csvs:
