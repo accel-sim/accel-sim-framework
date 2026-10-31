@@ -49,6 +49,8 @@ jobs:
     if: needs.plan.outputs.images != '[]'
     strategy:
       fail-fast: false
+      # Builds share pc02 (40 cores, 125 GB); the Dockerfiles use make -j8, so 4 at once is 32 jobs.
+      max-parallel: 4
       matrix:
         image: ${{ fromJSON(needs.plan.outputs.images) }}
     name: ${{ matrix.image }}

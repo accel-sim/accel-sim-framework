@@ -34,9 +34,9 @@ RUN git clone --recurse-submodules https://github.com/accel-sim/gpu-app-collecti
 # Invoke make directly instead of test-build.sh, which hardcodes a serial
 # `make -C src/ ci`. src/setup_environment is still required: it exports
 # BINDIR/BINSUBDIR/SETENV and the per-CUDA-version gencode flags the
-# suite makefiles read. -j32 propagates to every recursive $(MAKE),
+# suite makefiles read. -j8 propagates to every recursive $(MAKE),
 # including cutlass_mini's cmake-generated makefiles.
-RUN cd gpu-app-collection && source ./src/setup_environment && make -j32 -C src/ ci && bash get_regression_data.sh
+RUN cd gpu-app-collection && source ./src/setup_environment && make -j8 -C src/ ci && bash get_regression_data.sh
 
 # AWS CLI v2 and boto3, so this image can run as an AWS Batch job (accel-sim-framework util/aws_batch)
 RUN apt-get update && apt-get install -y --no-install-recommends unzip && apt-get clean && \
