@@ -376,17 +376,19 @@ class ConfigurationSpec:
     def find_benchmark_trace_dir(self, appargs_subdir):
         """Find the benchmark trace directory for the given appargs_subdir."""
         benchmark_trace_dir = None
-        paths_to_try = (
-            [os.path.join(options.trace_dir, appargs_subdir, "traces")]
-            + glob.glob(
-                os.path.join(
-                    options.trace_dir, "**", "**", appargs_subdir, "traces"
+        subdirs = [appargs_subdir]
+        # 2.0.0/2.0.1 wrote empty-args runs to "None" instead of "NO_ARGS"
+        if os.path.basename(appargs_subdir) == "NO_ARGS":
+            subdirs.append(os.path.join(os.path.dirname(appargs_subdir), "None"))
+        paths_to_try = []
+        for subdir in subdirs:
+            paths_to_try += (
+                [os.path.join(options.trace_dir, subdir, "traces")]
+                + glob.glob(
+                    os.path.join(options.trace_dir, "**", "**", subdir, "traces")
                 )
+                + glob.glob(os.path.join(options.trace_dir, "**", subdir, "traces"))
             )
-            + glob.glob(
-                os.path.join(options.trace_dir, "**", appargs_subdir, "traces")
-            )
-        )
         for path in paths_to_try:
             try:
                 benchmark_trace_dir = common.dir_option_test(
