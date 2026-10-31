@@ -1,0 +1,83 @@
+# Builds the CI images in dockerfiles/ (one <tag>.Dockerfile per ghcr tag).
+# PR: build the changed images only, no push. Merge to dev: build again (a cache hit on
+# tgrogers-pc02, so only the push costs time) and push. Manual: rebuild the named images.
+# Which images count as changed: .github/scripts/docker-plan.sh.
+name: Docker images
+
+on:
+  pull_request:
+    paths: ["dockerfiles/*.Dockerfile"]
+  push:
+    branches: [dev]
+    paths: ["dockerfiles/*.Dockerfile"]
+  workflow_dispatch:
+    inputs:
+      images:
+        description: "Tags to build (dockerfiles/<tag>.Dockerfile), space separated"
+        required: true
+        type: string
+      no_cache:
+        description: "Rebuild every layer (e.g. to pick up a newer gpu-app-collection)"
+        type: boolean
+        default: false
+
+env:
+  IMAGE: accel-sim/accel-sim-framework
+
+jobs:
+  plan:
+    if: github.repository == 'accel-sim/accel-sim-framework'
+    runs-on: tgrogers-raid
+    outputs:
+      images: ${{ steps.plan.outputs.images }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Pick images to build
+        id: plan
+        env:
+          EVENT: ${{ github.event_name }}
+          # A PR checks out its merge commit, whose first parent is the base branch.
+          BASE: ${{ github.event_name == 'pull_request' && 'HEAD^1' || github.event.before }}
+          HEAD: ${{ github.event_name == 'pull_request' && 'HEAD' || github.sha }}
+          INPUT_IMAGES: ${{ inputs.images }}
+        run: echo "images=$(.github/scripts/docker-plan.sh)" >> "$GITHUB_OUTPUT"
+
+  build:
+    needs: plan
+    if: needs.plan.outputs.images != '[]'
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.plan.outputs.images) }}
+    name: ${{ matrix.image }}
+    # tgrogers-raid has no docker daemon: tgrghci's docker CLI + buildx drive tgrogers-pc02's over ssh.
+    runs-on: tgrogers-raid
+    permissions:
+      contents: read
+      packages: write
+    env:
+      DOCKER_HOST: ssh://tgrogers-pc02
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to ghcr.io
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@65b78e6e13532edd9afa3aa52ac7964289d1a9c1
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Build${{ github.event_name != 'pull_request' && ' and push' || '' }}
+        uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
+        with:
+          context: dockerfiles
+          file: dockerfiles/${{ matrix.image }}.Dockerfile
+          push: ${{ github.event_name != 'pull_request' }}
+          no-cache: ${{ inputs.no_cache == true }}
+          tags: ghcr.io/${{ env.IMAGE }}:${{ matrix.image }}
+          labels: |
+            org.opencontainers.image.source=https://github.com/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
