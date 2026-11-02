@@ -27,6 +27,8 @@ ENV PATH="/venv/bin:$PATH"
 RUN pip3 install --upgrade pip
 RUN pip3 install pyyaml plotly psutil
 
+# Set by CI to gpu-app-collection dev's HEAD, so a newer dev invalidates the cached clone.
+ARG GPU_APP_COLLECTION_SHA
 # For CI, only build the CI apps and pull the regression data
 # Clone the gpu-app-collection repository
 RUN git clone --recurse-submodules https://github.com/accel-sim/gpu-app-collection.git

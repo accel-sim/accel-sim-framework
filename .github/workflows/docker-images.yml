@@ -1,6 +1,6 @@
 # Builds the CI images in dockerfiles/ (one <tag>.Dockerfile per ghcr tag).
-# PR: build the changed images only, no push. Merge to dev: build again (a cache hit on
-# tgrogers-pc02, so only the push costs time) and push. Manual: rebuild the named images.
+# PR: build the changed images only, no push. Merge to dev: build again and push (a cache hit on
+# tgrogers-pc02 unless gpu-app-collection's dev moved since the PR built). Manual: rebuild the named images.
 # Which images count as changed: .github/scripts/docker-plan.sh.
 name: Docker images
 
@@ -17,7 +17,7 @@ on:
         required: true
         type: string
       no_cache:
-        description: "Rebuild every layer (e.g. to pick up a newer gpu-app-collection)"
+        description: "Rebuild every layer, including apt and pip"
         type: boolean
         default: false
 
@@ -72,6 +72,13 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve gpu-app-collection dev HEAD
+        id: apps
+        run: |
+          sha=$(git ls-remote https://github.com/accel-sim/gpu-app-collection.git refs/heads/dev | cut -f1)
+          [[ $sha =~ ^[0-9a-f]{40}$ ]] || { echo "::error::expected a 40-hex dev SHA, got '$sha'"; exit 1; }
+          echo "sha=$sha" >> "$GITHUB_OUTPUT"
+
       - name: Build${{ github.event_name != 'pull_request' && ' and push' || '' }}
         uses: docker/build-push-action@3b5e8027fcad23fda98b2e3ac259d8d67585f671
         with:
@@ -79,6 +86,7 @@ jobs:
           file: dockerfiles/${{ matrix.image }}.Dockerfile
           push: ${{ github.event_name != 'pull_request' }}
           no-cache: ${{ inputs.no_cache == true }}
+          build-args: GPU_APP_COLLECTION_SHA=${{ steps.apps.outputs.sha }}
           tags: ghcr.io/${{ env.IMAGE }}:${{ matrix.image }}
           labels: |
             org.opencontainers.image.source=https://github.com/${{ github.repository }}

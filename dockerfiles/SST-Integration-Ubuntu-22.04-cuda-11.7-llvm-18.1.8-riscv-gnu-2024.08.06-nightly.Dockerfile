@@ -48,6 +48,8 @@ RUN git clone https://github.com/riscv-collab/riscv-gnu-toolchain.git \
 && cd .. \
 && rm -rf riscv-gnu-toolchain
 
+# Set by CI to gpu-app-collection dev's HEAD, so a newer dev invalidates the cached clone.
+ARG GPU_APP_COLLECTION_SHA
 # Setup GPU app collection in SST mode
 # Also remove prebuilt x86 binaries
 # Also remove all data except for rodinia-2.0

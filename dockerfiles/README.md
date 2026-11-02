@@ -15,8 +15,10 @@ The `*-minimal` images are what CI runs (`IMAGE_TAG` in `.github/workflows/main.
   - A modified file always builds.
   - A new file builds only if its tag is not on ghcr yet.
 - **Merge to `dev`:** the same rules, followed by a push to ghcr.
-  - The build runs on the same docker daemon as the PR's build, so it is a cache hit and the push is the only real work.
-- **Manual:** Actions → Docker images → Run workflow, with the tags to build. Tick `no_cache` to rebuild from scratch, for example to pick up a newer gpu-app-collection.
+  - The build runs on the same docker daemon as the PR's build, so it is a cache hit and the push is the only real work, unless gpu-app-collection's `dev` moved in between.
+- **Manual:** Actions → Docker images → Run workflow, with the tags to build. Tick `no_cache` to rebuild from scratch, including apt and pip.
+
+The workflow passes gpu-app-collection `dev`'s HEAD as `GPU_APP_COLLECTION_SHA`, so a built image always has the current apps. The arg only keys the cache. It does not choose what is cloned.
 
 ## Build host
 
