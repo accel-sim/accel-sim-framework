@@ -724,6 +724,18 @@ void trace_warp_inst_t::parseSASSInstruction(
       sp_op = INT__OP;
   }
 
+  // Memory barrier scope: MEMBAR.{CTA,GL,SYS} before Volta,
+  // MEMBAR.{SC,ALL}.{CTA,GPU,SYS} from Volta on
+  if (opcode1 == "MEMBAR") {
+    if (trace.check_opcode_contain(opcode_tokens, "CTA"))
+      set_membar_scope(MEMBAR_SCOPE_CTA);
+    else if (trace.check_opcode_contain(opcode_tokens, "GL") ||
+             trace.check_opcode_contain(opcode_tokens, "GPU"))
+      set_membar_scope(MEMBAR_SCOPE_GPU);
+    else if (trace.check_opcode_contain(opcode_tokens, "SYS"))
+      set_membar_scope(MEMBAR_SCOPE_SYS);
+  }
+
   // Fence instructions
   if (opcodeStr == "FENCE.VIEW.ASYNC.S") {
     // TODO microbenchmark for cluster fence
